@@ -137,6 +137,10 @@ If I violate any of these, I'm failing.
 
 See [Rules](./RULES.md) for coding standards.
 
+## Distillation
+
+See [DISTILLATION.md](./DISTILLATION.md) for distilled lessons learned with links to detailed entries.
+
 ## Project Context
 
 - [Vision](./VISION.md) - Product direction

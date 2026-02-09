@@ -39,6 +39,8 @@ This directory is an **Obsidian vault**. Open it in Obsidian to:
 | `DEVELOPMENT.md` | Dev setup guide |
 | `START.md` | Getting started |
 | `MONOREPO_SETUP.md` | Architecture |
+| `DISTILLATION.md` | Summarized lessons with links |
+| `daily/` | Daily notes (YYYY-MM-DD) |
 
 ## Memory Management
 
@@ -122,5 +124,5 @@ Before starting work:
 
 ## Related
 
-- [OpenClaw Memory](../.openclaw/workspace/memory/) - Agent context
+- [Distillation](./DISTILLATION.md) - Summarized lessons with links to details
 - Git history - Previous decisions
