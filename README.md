@@ -68,6 +68,27 @@ biz.ing/
 - [FEATURE_SPACE.md](FEATURE_SPACE.md) - Feature catalog
 - [SCHEMA_DESIGN.md](SCHEMA_DESIGN.md) - Database schema
 - [MONOREPO_SETUP.md](MONOREPO_SETUP.md) - Development setup
+- [memory/](memory/) - Design exploration and decisions
+
+### Memory Folder
+
+The `memory/` folder is an **Obsidian vault** for design exploration and decisions:
+
+| File/Folder | Purpose |
+|-------------|---------|
+| `memory/` | Design exploration and decisions |
+| `memory/WORKFLOW.md` | How work happens |
+| `memory/RULES.md` | Coding standards |
+| `memory/DISTILLATION.md` | Lessons learned with links |
+| `memory/daily/` | Daily notes (YYYY-MM-DD) |
+
+**Key Rules:**
+- Work on a branch, never touch main directly
+- Never commit without asking for confirmation
+- Never push to main without approval
+- Ask for clarification when ambiguous
+
+See [memory/WORKFLOW.md](memory/WORKFLOW.md) for full guidelines.
 
 ## 🧪 Testing
 
