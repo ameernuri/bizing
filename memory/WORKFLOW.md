@@ -2,6 +2,13 @@
 
 > How work happens. Updated 2026-02-08.
 
+## When in Doubt, Ask
+
+If there are multiple unrelated uncommitted changes:
+- Ask how to handle them
+- If changes are in the same category, commit together
+- If changes are unrelated, ask for guidance
+
 ## Feedback Loop
 
 ```
