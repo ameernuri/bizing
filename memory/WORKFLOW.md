@@ -83,6 +83,32 @@ See [Rules](./RULES.md) for:
 - [Features](./FEATURE_SPACE.md) - Feature backlog
 - [Schema](./SCHEMA_DESIGN.md) - Database design
 
+## Creating a Pull Request
+
+After pushing your branch:
+
+```bash
+# Create PR using gh CLI
+gh pr create --title "[type]: description" \
+  --body "## Summary
+Brief description of changes
+
+## Changes
+- List of changes made
+
+## Testing
+- How changes were tested
+
+## Checklist
+- [ ] Type check passes
+- [ ] Tests pass
+- [ ] Memory updated"
+
+# View PR status
+gh pr list
+gh pr view [number]
+```
+
 ## Emergency
 
 Something breaks:
