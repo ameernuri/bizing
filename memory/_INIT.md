@@ -2,6 +2,31 @@
 
 > How to manage and update project memory. Updated 2026-02-08.
 
+## Obsidian Vault
+
+This directory is an **Obsidian vault**. Open it in Obsidian to:
+- Edit docs directly
+- View diagrams (Excalidraw)
+- Track tasks (Tasks plugin)
+- Navigate links and tags
+
+### Installed Plugins
+
+| Plugin | Purpose |
+|--------|---------|
+| **Excalidraw** | Schema diagrams and visual thinking |
+| **Templater** | Templates for consistent docs |
+| **Tasks** | Track TODOs inline |
+| **Advanced Tables** | Markdown tables made easy |
+| **Kanban** | Visual task boards |
+| **QuickAdd** | Macros for fast entry |
+| **Outliner** | Bullet/nested note editing |
+| **Tag Wrangler** | Manage tags efficiently |
+| **Admonition** | Callout boxes in docs |
+| **Smart Connections** | AI-assisted editing |
+| **Linter** | Markdown formatting |
+| **Mind Map** | Visual outline maps |
+
 ## Files
 
 | File | Purpose |
@@ -27,7 +52,7 @@
 **To update memory:**
 1. Read [_INIT.md](./_INIT.md) for context
 2. Read relevant file(s)
-3. Make edits
+3. Make edits (Obsidian or editor)
 4. Update links if files move/rename
 5. Verify changes make sense
 
@@ -44,6 +69,21 @@ Memory updates include:
 - Technical decisions and context
 - Problem solutions
 - Coding standards updates
+
+## Visual + JSON Feedback Loop
+
+**Ameer's workflow (Visual):**
+1. Draw schema in Excalidraw (`drawings/` folder)
+2. Annotate with notes
+3. Export/share JSON if needed
+
+**Pac's workflow (JSON):**
+1. Read Excalidraw JSON from `.excalidraw` files
+2. Validate against Drizzle ORM schema
+3. Propose schema changes
+4. Document decisions
+
+**Iterate until aligned, then commit.**
 
 ## JSDoc Standards
 
@@ -78,7 +118,7 @@ Use relative paths:
 Before starting work:
 1. Read [WORKFLOW.md](./WORKFLOW.md)
 2. Read [RULES.md](./RULES.md)
-3. Check related docs for context
+3. Check related docs and drawings for context
 
 ## Related
 
