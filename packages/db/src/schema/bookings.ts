@@ -4,11 +4,15 @@ import { id, createdAt, updatedAt } from './_common'
 import { organizations } from './organizations'
 import { services } from './services'
 import { users } from './users'
+import { assets } from './assets'
+import { venues } from './venues'
 
 export const bookings = pgTable('bookings', {
   id: id,
   orgId: uuid('org_id').references(() => organizations.id).notNull(),
-  serviceId: uuid('service_id').references(() => services.id).notNull(),
+  serviceId: uuid('service_id').references(() => services.id),
+  assetId: uuid('asset_id').references(() => assets.id),
+  venueId: uuid('venue_id').references(() => venues.id),
   customerId: uuid('customer_id').references(() => users.id),
   customerName: varchar('customer_name', { length: 255 }),
   customerEmail: varchar('customer_email', { length: 255 }),

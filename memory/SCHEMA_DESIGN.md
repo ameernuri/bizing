@@ -780,3 +780,141 @@ This document describes the database schema for Bizet, a Next.js booking platfor
 **Fields:**
 
 | Field | Type | Constraints | Description |
+|-------|------|-------------|-------------|
+
+---
+
+## NEW: Asset Booking Entities (Extended)
+
+### 23. Assets (`assets`)
+
+**Purpose:** Physical or digital items that can be booked. Cars, tools, equipment, rooms.
+
+**Fields:**
+
+| Field | Type | Constraints | Description |
+|-------|------|-------------|-------------|
+| `id` | UUID | PK | Primary key |
+| `org_id` | UUID | FK → `organizations.id`, NOT NULL | Organization |
+| `category_id` | UUID | FK → `asset_categories.id`, NULL | Category |
+| `name` | VARCHAR(255) | NOT NULL | Asset name |
+| `slug` | VARCHAR(100) | NOT NULL | URL identifier |
+| `description` | TEXT | NULL | Asset description |
+| `status` | VARCHAR(20) | DEFAULT 'active' | `active`, `inactive`, `maintenance` |
+| `capacity` | INTEGER | NULL | Max simultaneous bookings |
+| `location` | TEXT | NULL | Physical location |
+| `calendar_id` | VARCHAR(100) | NULL | External calendar ID |
+| `metadata` | JSONB | DEFAULT `{}` | Custom fields |
+| `created_at` | TIMESTAMPTZ | NOT NULL | Creation |
+| `updated_at` | TIMESTAMPTZ | NOT NULL | Last update |
+
+**Indexes:**
+- `idx_assets_org_id` ON (`org_id`)
+- `idx_assets_category_id` ON (`category_id`)
+
+**Relationships:**
+- Many-to-One with `organizations`
+- Many-to-One with `asset_categories`
+- One-to-Many with `asset_tags`
+- One-to-Many with `bookings`
+
+---
+
+### 24. Asset Categories (`asset_categories`)
+
+**Purpose:** Group assets by type. "Vehicles", "Tools", "Electronics".
+
+**Fields:**
+
+| Field | Type | Constraints | Description |
+|-------|------|-------------|-------------|
+| `id` | UUID | PK | Primary key |
+| `org_id` | UUID | FK → `organizations.id`, NOT NULL | Organization |
+| `name` | VARCHAR(100) | NOT NULL | Category name |
+| `slug` | VARCHAR(100) | NOT NULL | URL identifier |
+| `description` | TEXT | NULL | Category description |
+| `created_at` | TIMESTAMPTZ | NOT NULL | Creation |
+| `updated_at` | TIMESTAMPTZ | NOT NULL | Last update |
+
+**Indexes:**
+- `idx_asset_categories_org_id` ON (`org_id`)
+
+**Relationships:**
+- Many-to-One with `organizations`
+- One-to-Many with `assets`
+
+---
+
+### 25. Asset Tags (`asset_tags`)
+
+**Purpose:** Flexible tagging for assets. "training-car", "available-weekend".
+
+**Fields:**
+
+| Field | Type | Constraints | Description |
+|-------|------|-------------|-------------|
+| `id` | UUID | PK | Primary key |
+| `asset_id` | UUID | FK → `assets.id`, NOT NULL | Asset |
+| `name` | VARCHAR(50) | NOT NULL | Tag name |
+| `created_at` | TIMESTAMPTZ | NOT NULL | Creation |
+
+**Relationships:**
+- Many-to-One with `assets`
+
+---
+
+### 26. Venues (`venues`)
+
+**Purpose:** Physical spaces with capacity and calendars. Similar to assets but for locations.
+
+**Fields:**
+
+| Field | Type | Constraints | Description |
+|-------|------|-------------|-------------|
+| `id` | UUID | PK | Primary key |
+| `org_id` | UUID | FK → `organizations.id`, NOT NULL | Organization |
+| `name` | VARCHAR(255) | NOT NULL | Venue name |
+| `address` | TEXT | NULL | Physical address |
+| `capacity` | INTEGER | NULL | Max capacity |
+| `calendar_id` | VARCHAR(100) | NULL | External calendar ID |
+| `amenities` | JSONB | DEFAULT `[]` | List of amenities |
+| `created_at` | TIMESTAMPTZ | NOT NULL | Creation |
+| `updated_at` | TIMESTAMPTZ | NOT NULL | Last update |
+
+**Indexes:**
+- `idx_venues_org_id` ON (`org_id`)
+
+**Relationships:**
+- Many-to-One with `organizations`
+- One-to-Many with `bookings`
+
+---
+
+## Booking Relationships (Extended)
+
+```
+┌─────────────────┐     ┌──────────────────┐
+│   Organizations  │────▶│     Assets       │
+└─────────────────┘     └──────────────────┘
+      │                        │
+      │                        │
+      ▼                        ▼
+┌─────────────────┐     ┌──────────────────┐
+│     Users       │     │ Asset Categories │
+└─────────────────┘     └──────────────────┘
+      │                        │
+      │                        │
+      ▼                        ▼
+┌─────────────────────────────────────────┐
+│              Bookings                    │
+│  ┌─────────────────────────────────┐  │
+│  │ service_id, asset_id, venue_id   │  │
+│  │ customer_id, status, pricing    │  │
+│  └─────────────────────────────────┘  │
+└─────────────────────────────────────────┘
+```
+
+---
+
+*Document updated: February 8, 2026*
+*Visual design: See Booking Schema Design/booking.excalidraw.md*
