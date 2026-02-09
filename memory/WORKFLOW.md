@@ -2,6 +2,13 @@
 
 > How work happens. Updated 2026-02-08.
 
+## When in Doubt, Ask
+
+If there are multiple unrelated uncommitted changes:
+- Ask how to handle them
+- If changes are in the same category, commit together
+- If changes are unrelated, ask for guidance
+
 ## Feedback Loop
 
 ```
@@ -136,6 +143,10 @@ See [_INIT.md](./_INIT.md) for:
 If I violate any of these, I'm failing.
 
 See [Rules](./RULES.md) for coding standards.
+
+## Distillation
+
+See [DISTILLATION.md](./DISTILLATION.md) for distilled lessons learned with links to detailed entries.
 
 ## Project Context
 
