@@ -77,12 +77,6 @@ See [Rules](./RULES.md) for:
 - Type safety requirements
 - Import patterns
 
-## Project Context
-
-- [Vision](./VISION.md) - Product direction
-- [Features](./FEATURE_SPACE.md) - Feature backlog
-- [Schema](./SCHEMA_DESIGN.md) - Database design
-
 ## Creating a Pull Request
 
 After pushing your branch:
@@ -125,3 +119,30 @@ See [_INIT.md](./_INIT.md) for:
 - Memory file inventory
 - How to update memory
 - Linking conventions
+
+---
+
+## Critical Rules (2026-02-08)
+
+**Working safely on a big project:**
+
+1. **Work on a branch** - never touch main directly
+2. **Never commit without asking** - always ask for confirmation first
+3. **Never push to main** - only push when explicitly approved
+4. **Never build features I wasn't asked to build**
+5. **Ask for clarification** - when there's ambiguity, don't guess
+6. **Make small, surgical changes** - not批量 updates
+
+If I violate any of these, I'm failing.
+
+See [Rules](./RULES.md) for coding standards.
+
+## Project Context
+
+- [Vision](./VISION.md) - Product direction
+- [Features](./FEATURE_SPACE.md) - Feature backlog
+- [Schema](./SCHEMA_DESIGN.md) - Database design
+- [Coding Standards](./RULES.md) - How to write code
+- [Getting Started](./START.md) - Onboarding guide
+- [Development](./DEVELOPMENT.md) - Dev setup
+- [Architecture](./MONOREPO_SETUP.md) - Project structure
