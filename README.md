@@ -1,0 +1,102 @@
+# biz.ing
+
+**Sell your services and digital products online, easily.**
+
+A modern, API-first business platform for selling services, digital products, and managing bookings. Built with TypeScript, Next.js, and Hono.
+
+## 🚀 Quick Start
+
+### Prerequisites
+
+- Node.js 20+
+- pnpm 9+
+- PostgreSQL 14+
+
+### Installation
+
+```bash
+# Clone and enter directory
+cd biz.ing
+
+# Install dependencies
+pnpm install
+
+# Copy environment variables
+cp .env.example .env
+
+# Setup database (requires PostgreSQL running)
+pnpm db:migrate
+
+# Start development servers
+pnpm dev
+```
+
+### Access Points
+
+| Service         | URL                       | Description           |
+| --------------- | ------------------------- | --------------------- |
+| API Server      | http://localhost:6000     | REST API              |
+| API Docs        | http://localhost:6000/doc | OpenAPI Documentation |
+| Admin Dashboard | http://localhost:9000     | Admin UI              |
+
+## 📁 Project Structure
+
+```
+biz.ing/
+├── apps/
+│   ├── api/           # Hono API server
+│   └── admin/        # Next.js admin dashboard
+└── packages/
+    ├── db/           # Drizzle ORM schemas
+    ├── auth/         # Better Auth configuration
+    ├── schema/       # Zod validation schemas
+    └── api-client/   # Generated API client
+```
+
+## 🛠️ Tech Stack
+
+- **Runtime:** Node.js
+- **API Framework:** Hono + @hono/zod-openapi
+- **Database:** PostgreSQL + Drizzle ORM
+- **Auth:** Better Auth
+- **Frontend:** Next.js 14 + React + Tailwind CSS
+- **Monorepo:** Turborepo + pnpm
+
+## 📚 Documentation
+
+- [VISION.md](VISION.md) - Project vision and scope
+- [FEATURE_SPACE.md](FEATURE_SPACE.md) - Feature catalog
+- [SCHEMA_DESIGN.md](SCHEMA_DESIGN.md) - Database schema
+- [MONOREPO_SETUP.md](MONOREPO_SETUP.md) - Development setup
+
+## 🧪 Testing
+
+```bash
+# Run all tests
+pnpm test
+
+# Run API tests
+pnpm --filter @biz.ing/api test
+
+# Run admin tests
+pnpm --filter @biz.ing/admin test
+```
+
+## 📦 Building
+
+```bash
+# Build all packages
+pnpm build
+
+# Build specific app
+pnpm --filter @biz.ing/api build
+pnpm --filter @biz.ing/admin build
+```
+
+## 🚀 Deployment
+
+See [DEPLOYMENT.md]() for production deployment instructions.
+
+---
+
+Built with ❤️ for the AI age.
