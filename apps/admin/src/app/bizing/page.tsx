@@ -193,7 +193,7 @@ export default function BizingEntityPage() {
                         </div>
                       )}
                       <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-                      <p className="text-xs opacity-70 mt-1">
+                      <p className="text-xs opacity-70 mt-1" suppressHydrationWarning>
                         {new Date(message.timestamp).toLocaleTimeString()}
                       </p>
                     </div>
@@ -261,7 +261,7 @@ export default function BizingEntityPage() {
                         <p className="text-xs text-muted-foreground line-clamp-2">
                           {item.description}
                         </p>
-                        <p className="text-xs text-muted-foreground/70 mt-1">
+                        <p className="text-xs text-muted-foreground/70 mt-1" suppressHydrationWarning>
                           {new Date(item.timestamp).toLocaleTimeString()}
                         </p>
                       </div>
