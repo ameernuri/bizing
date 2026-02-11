@@ -29,34 +29,45 @@ export async function chatWithLLM(options: ChatOptions): Promise<string> {
   const apiKey = getApiKey()
   const baseUrl = getBaseUrl()
   
-  const response = await fetch(`${baseUrl}/chat/completions`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model: process.env.KIMI_MODEL || 'kimi-k2.5',
-      messages: options.messages,
-      temperature: options.temperature ?? 0.7,
-      max_tokens: options.maxTokens ?? 2000,
-    }),
-  })
+  console.log(`[LLM] Using base URL: ${baseUrl}`)
+  console.log(`[LLM] API Key present: ${apiKey ? 'Yes (length: ' + apiKey.length + ')' : 'No'}`)
+  
+  try {
+    const response = await fetch(`${baseUrl}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: process.env.KIMI_MODEL || 'kimi-k2.5',
+        messages: options.messages,
+        temperature: options.temperature ?? 0.7,
+        max_tokens: options.maxTokens ?? 2000,
+      }),
+    })
 
-  if (!response.ok) {
-    const error = await response.text()
-    throw new Error(`Kimi API error: ${error}`)
+    console.log(`[LLM] Response status: ${response.status}`)
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error(`[LLM] Error response: ${errorText}`)
+      throw new Error(`Kimi API error ${response.status}: ${errorText}`)
+    }
+
+    const data = await response.json() as {
+      choices: Array<{
+        message: {
+          content: string
+        }
+      }>
+    }
+
+    return data.choices[0]?.message?.content ?? 'I apologize, but I could not generate a response.'
+  } catch (error) {
+    console.error(`[LLM] Fetch error:`, error)
+    throw error
   }
-
-  const data = await response.json() as {
-    choices: Array<{
-      message: {
-        content: string
-      }
-    }>
-  }
-
-  return data.choices[0]?.message?.content ?? 'I apologize, but I could not generate a response.'
 }
 
 export function createBizingSystemPrompt(): string {
