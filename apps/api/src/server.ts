@@ -139,16 +139,66 @@ app.get('/api/v1/bookings', (c) => {
 })
 
 // ============================================
-// Documentation
+// Schema Routes
 // ============================================
 
-app.doc('/doc', {
-  openapi: '3.0.0',
-  info: {
-    version: '0.1.0',
-    title: 'biz.ing API',
-    description: 'API for selling services and digital products',
-  },
+app.get('/api/v1/schema/graph', (c) => {
+  return c.json({
+    entities: [
+      {
+        name: 'Booking',
+        tableName: 'bookings',
+        columns: [
+          { name: 'id', type: 'uuid', nullable: false, primaryKey: true },
+          { name: 'customerId', type: 'uuid', nullable: false, primaryKey: false },
+          { name: 'serviceId', type: 'uuid', nullable: false, primaryKey: false },
+          { name: 'date', type: 'timestamp', nullable: false, primaryKey: false },
+          { name: 'status', type: 'enum', nullable: false, primaryKey: false },
+          { name: 'price', type: 'decimal', nullable: false, primaryKey: false },
+        ],
+        relationships: [
+          { type: 'N:1', to: 'Customer', field: 'customerId', description: 'Booking belongs to customer' },
+          { type: 'N:1', to: 'Service', field: 'serviceId', description: 'Booking is for a service' },
+        ],
+      },
+      {
+        name: 'Customer',
+        tableName: 'customers',
+        columns: [
+          { name: 'id', type: 'uuid', nullable: false, primaryKey: true },
+          { name: 'name', type: 'varchar', nullable: false, primaryKey: false },
+          { name: 'email', type: 'varchar', nullable: false, primaryKey: false },
+          { name: 'phone', type: 'varchar', nullable: true, primaryKey: false },
+        ],
+        relationships: [
+          { type: '1:N', to: 'Booking', field: 'customerId', description: 'Customer has many bookings' },
+        ],
+      },
+      {
+        name: 'Service',
+        tableName: 'services',
+        columns: [
+          { name: 'id', type: 'uuid', nullable: false, primaryKey: true },
+          { name: 'name', type: 'varchar', nullable: false, primaryKey: false },
+          { name: 'description', type: 'text', nullable: true, primaryKey: false },
+          { name: 'price', type: 'decimal', nullable: false, primaryKey: false },
+          { name: 'duration', type: 'integer', nullable: false, primaryKey: false },
+        ],
+        relationships: [
+          { type: '1:N', to: 'Booking', field: 'serviceId', description: 'Service has many bookings' },
+        ],
+      },
+    ],
+    nodes: [
+      { id: 'Booking', type: 'entityNode', position: { x: 400, y: 100 }, data: { label: 'Booking' } },
+      { id: 'Customer', type: 'entityNode', position: { x: 100, y: 100 }, data: { label: 'Customer' } },
+      { id: 'Service', type: 'entityNode', position: { x: 700, y: 100 }, data: { label: 'Service' } },
+    ],
+    edges: [
+      { id: 'e1', source: 'Booking', target: 'Customer', label: 'N:1', type: 'smoothstep', animated: true },
+      { id: 'e2', source: 'Booking', target: 'Service', label: 'N:1', type: 'smoothstep', animated: true },
+    ],
+  })
 })
 
 // ============================================
