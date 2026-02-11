@@ -20,10 +20,9 @@ function getApiKey(): string {
 }
 
 function getBaseUrl(): string {
-  // Support both subscription and metered API keys
-  // Subscription API uses standard endpoint
-  // Can override with KIMI_BASE_URL if needed
-  return process.env.KIMI_BASE_URL || 'https://api.moonshot.cn/v1'
+  // OpenClaw uses api.moonshot.ai (not .cn)
+  // Support override with KIMI_BASE_URL env var
+  return process.env.KIMI_BASE_URL || 'https://api.moonshot.ai/v1'
 }
 
 export async function chatWithLLM(options: ChatOptions): Promise<string> {
