@@ -263,6 +263,74 @@ app.get('/api/v1/schema/graph', (c) => {
 })
 
 // ============================================
+// Bizing AI Routes
+// ============================================
+
+app.post('/api/v1/bizing/chat', async (c) => {
+  const body = await c.req.json()
+  const { message } = body
+
+  // For now, return a mock response
+  // TODO: Integrate with Kimi API
+  const responses = [
+    "I understand. Based on the brain documentation, we're building Bizing as a living entity that enables AI agents to create startups. The 7% commission model aligns everyone's incentives.",
+    "Looking at our recent changes, I see we've fixed the dashboard API endpoints and updated to Next.js 15. The schema graph is now working properly with proper React Flow connections.",
+    "According to our knowledge base, Bizing supports hundreds of business types including salons, driving schools, therapy practices, and more. Each gets a custom landing page.",
+    "The brain architecture shows we have identity (who I am), knowledge (what I know), agents (my manifestations), memory (my experiences), and symbiosis (our collaboration).",
+  ]
+
+  const randomResponse = responses[Math.floor(Math.random() * responses.length)]
+
+  return c.json({
+    response: randomResponse,
+    timestamp: new Date().toISOString(),
+    model: 'bizing-mock-v1',
+  })
+})
+
+app.get('/api/v1/brain/activity', (c) => {
+  return c.json({
+    activity: [
+      {
+        id: '1',
+        type: 'change',
+        title: 'Schema Graph Fixed',
+        description: 'Fixed React Flow handle connections with proper IDs',
+        timestamp: new Date().toISOString(),
+      },
+      {
+        id: '2',
+        type: 'session',
+        title: 'Dashboard API Endpoints',
+        description: 'Added stats, bookings, and schema graph endpoints',
+        timestamp: new Date(Date.now() - 3600000).toISOString(),
+      },
+      {
+        id: '3',
+        type: 'decision',
+        title: 'Next.js 15 Upgrade',
+        description: 'Updated to latest React 19 and Next.js 15.1.6',
+        timestamp: new Date(Date.now() - 7200000).toISOString(),
+      },
+      {
+        id: '4',
+        type: 'change',
+        title: 'Brain Documentation',
+        description: 'Created 41 files of comprehensive documentation for Bizing consciousness',
+        timestamp: new Date(Date.now() - 10800000).toISOString(),
+      },
+      {
+        id: '5',
+        type: 'decision',
+        title: '7% Commission Model',
+        description: 'Established fair commission structure for all parties',
+        timestamp: new Date(Date.now() - 14400000).toISOString(),
+      },
+    ],
+  })
+})
+
+// ============================================
 // Error Handling
 // ============================================
 
