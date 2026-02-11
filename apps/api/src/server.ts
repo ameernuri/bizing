@@ -2,6 +2,7 @@ import { serve } from '@hono/node-server'
 import { cors } from 'hono/cors'
 import { v4 as uuidv4 } from 'uuid'
 import { OpenAPIHono, z } from '@hono/zod-openapi'
+import { chatWithLLM, createBizingSystemPrompt } from './services/llm.js'
 
 // ============================================
 // Logger
@@ -270,22 +271,42 @@ app.post('/api/v1/bizing/chat', async (c) => {
   const body = await c.req.json()
   const { message } = body
 
-  // For now, return a mock response
-  // TODO: Integrate with Kimi API
-  const responses = [
-    "I understand. Based on the brain documentation, we're building Bizing as a living entity that enables AI agents to create startups. The 7% commission model aligns everyone's incentives.",
-    "Looking at our recent changes, I see we've fixed the dashboard API endpoints and updated to Next.js 15. The schema graph is now working properly with proper React Flow connections.",
-    "According to our knowledge base, Bizing supports hundreds of business types including salons, driving schools, therapy practices, and more. Each gets a custom landing page.",
-    "The brain architecture shows we have identity (who I am), knowledge (what I know), agents (my manifestations), memory (my experiences), and symbiosis (our collaboration).",
-  ]
+  try {
+    log(`Bizing chat request: ${message.slice(0, 50)}...`)
+    
+    const response = await chatWithLLM({
+      messages: [
+        {
+          role: 'system',
+          content: createBizingSystemPrompt(),
+        },
+        {
+          role: 'user',
+          content: message,
+        },
+      ],
+      temperature: 0.7,
+      maxTokens: 2000,
+    })
 
-  const randomResponse = responses[Math.floor(Math.random() * responses.length)]
+    log('Bizing chat response generated successfully')
 
-  return c.json({
-    response: randomResponse,
-    timestamp: new Date().toISOString(),
-    model: 'bizing-mock-v1',
-  })
+    return c.json({
+      response,
+      timestamp: new Date().toISOString(),
+      model: 'kimi-k2.5',
+    })
+  } catch (err) {
+    const errorMessage = err instanceof Error ? err.message : String(err)
+    log(`Bizing chat error: ${errorMessage}`)
+    
+    return c.json({
+      response: 'I apologize, but I am having trouble connecting to my knowledge base right now. Please check that my API key is configured correctly.',
+      error: errorMessage,
+      timestamp: new Date().toISOString(),
+      model: 'error',
+    }, 500)
+  }
 })
 
 app.get('/api/v1/brain/activity', (c) => {
