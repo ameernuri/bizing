@@ -64,24 +64,28 @@ export function EntityNode(props: NodeProps) {
 
       {/* Handles */}
       <Handle
+        id="source-1"
         type="source"
         position={Position.Right}
         className="!w-3 !h-3 !bg-primary"
         style={{ top: '40%' }}
       />
       <Handle
+        id="source-2"
         type="source"
         position={Position.Right}
         className="!w-3 !h-3 !bg-primary"
         style={{ top: '60%' }}
       />
       <Handle
+        id="target-1"
         type="target"
         position={Position.Left}
         className="!w-3 !h-3 !bg-purple-500"
         style={{ top: '30%' }}
       />
       <Handle
+        id="target-2"
         type="target"
         position={Position.Left}
         className="!w-3 !h-3 !bg-purple-500"
