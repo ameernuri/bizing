@@ -20,10 +20,12 @@ status: active
 
 ### Rules to Remember
 
-1. **Always ask before committing** — "Can I commit this?"
-2. **Test with user first** — Don't commit until feature works
-3. **Update mind with every change** — Log learnings, rules, preferences
-4. **Read MIND.md first** — Entry point for every session
+1. **ALWAYS ask before committing** — "Can I commit this?"
+2. **Commit only AFTER feature is approved** — Test with user, get "yes", THEN ask
+3. **Test with user first** — Don't commit until feature works
+4. **Update mind with every change** — Log learnings, rules, preferences
+5. **Read INDEX.md first** — Entry point for every session
+6. **Update links when changing files** — Keep MIND interconnected
 
 ---
 
