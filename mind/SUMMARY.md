@@ -209,6 +209,8 @@ START → Context → Execute → Document → Brief
 - [[identity/essence|Bizing's Essence]]
 - [[symbiosis/standup|Daily Standup]]
 - [[memory/briefings/latest|Latest Briefing]]
+- [[bizing-consciousness.canvas]]
+- [[consciousness-map.canvas]]
 
 ---
 
