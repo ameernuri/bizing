@@ -74,4 +74,4 @@ Research, evaluation, decision-making.
 ## Links
 
 - [[../ai-context/skills|AI Skills]] — My capabilities
-- [[../START|START HERE]]
+- [[HUMAN|START HERE]]

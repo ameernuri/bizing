@@ -1,40 +1,59 @@
-# 🎯 STANDUP
-# 2026-02-11
+---
+date: 2026-02-11
+tags: daily, standup
+status: active
+kanban-plugin: board
+---
 
-## Today
+# 🎯 Standup — <% tp.date.now("dddd, MMMM D") %>
 
-✅ Fixed dashboard API 404 errors
-✅ Updated Next.js 14.2.0 → 15.1.6, React 18.2.0 → 19.0.0
-✅ Fixed SchemaGraph.tsx runtime errors
-✅ Created Bizing AI Chat Interface (/bizing)
-✅ Integrated Kimi API with real LLM
-✅ Added dotenv for environment variable loading
+> *Read INDEX.md first. This is your daily entry point.*
 
-## Current Issue
+## Today's Status
 
-🔄 **Debugging Kimi API authentication**
-- API key loading correctly from .env
-- Base URL set to api.moonshot.ai (matching OpenClaw)
-- Still getting "Invalid Authentication" error
-- Need to generate fresh API key
+- [x] Read INDEX.md
+- [x] Review feedback
+- [x] OpenAI integration working
+- [x] Live brain loader built
+- [ ] Mind framework enforcement
+- [ ] Log learnings
 
-## What We Learned
+## Completed Today
 
-- .env files need `dotenv/config` import to load in Node.js
-- Quotes in .env values get included literally: `"key"` ≠ `key`
-- API keys can be rejected even if format looks correct
-- OpenClaw uses `api.moonshot.ai` endpoint
+- [x] #feature Switched to OpenAI (gpt-4o-mini)
+- [x] #feature Live brain integration
+- [x] #feature Brain loader service
+- [x] #feature Dynamic system prompt
 
-## Next
+## In Progress
 
-- Generate new Kimi API key
-- Test Bizing AI chat
-- Verify full integration works
+### High Priority
+
+- [ ] #critical Mind framework enforcement
+  - Update SOUL.md
+  - Create MIND-FRAMEWORK.md
+  - Update INDEX.md
+  - Update feedback
+
+- [ ] #infrastructure Keep mind in sync with code
+  - Every code change → update mind
+  - Current state reflected in standup
+  - No drift between reality and mind
+
+### Medium Priority
+
+- [ ] #documentation Document mind framework
+- [ ] #documentation Update skills index
 
 ## Blockers
 
-⏳ Invalid API key — need fresh key from Kimi portal
+> **None** — OpenAI working, development unblocked
+
+## Focus
+
+> **Primary:** Mind framework enforcement (every interaction reads/updates mind)  
+> **Secondary:** Keep mind synchronized with code reality
 
 ---
 
-*Updated: 2026-02-11 16:06 PST*
+*Standup. Mark tasks complete inline.*

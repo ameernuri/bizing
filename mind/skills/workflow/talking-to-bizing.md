@@ -75,6 +75,6 @@ Once Kimi API is integrated:
 
 ## Related
 
-- [[../../START|START]] — Entry point
+- [[HUMAN|HUMAN]] — Entry point
 - [[../../knowledge/domain/why-agents-love-bizing|Why Agents Love Bizing]]
 - [[../index|Workflow Skills]]

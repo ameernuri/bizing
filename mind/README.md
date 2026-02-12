@@ -7,10 +7,10 @@
 ## 📍 Entry Points
 
 **For Every Session:**
-- **[[MIND|MIND.md]]** ← READ THIS FIRST
+- **[[mind/INDEX|MIND.md]]** ← READ THIS FIRST
 
 **For Humans:**
-- **[[START|START.md]]** — Human interface
+- **[[HUMAN|START.md]]** — Human interface
 - **[[symbiosis/standup|Daily Standup]]** — Today's focus
 
 **For Agents:**

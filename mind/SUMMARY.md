@@ -120,7 +120,7 @@
 ## 🎯 Entry Points
 
 **Every Session:**
-1. **Humans:** [[START]]
+1. **Humans:** [[HUMAN]]
 2. **Agents:** [[AGENT]]
 3. **Daily:** [[memory/briefings/latest|Briefing]]
 
@@ -201,7 +201,7 @@ START → Context → Execute → Document → Brief
 - [[knowledge/domain/why-agents-love-bizing|Why Agents Love Bizing]]
 
 **Entry:**
-- [[START|Human Entry]]
+- [[HUMAN|Human Entry]]
 - [[AGENT|Agent Entry]]
 - [[README|Overview]]
 

@@ -75,7 +75,7 @@
 
 ## 🔗 Navigation
 
-**Entry Point:** [[START|START HERE]]
+**Entry Point:** [[HUMAN|START HERE]]
 
 **Contexts:**
 - [[human-context/index|👤 Human]]
