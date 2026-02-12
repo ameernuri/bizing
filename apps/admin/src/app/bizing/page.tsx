@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import ReactMarkdown from 'react-markdown'
 
 interface Message {
   id: string
@@ -15,9 +16,9 @@ interface Message {
   timestamp: string
 }
 
-interface BrainActivity {
+interface MindActivity {
   id: string
-  type: 'change' | 'session' | 'decision' | 'thought'
+  type: 'change' | 'session' | 'decision' | 'learning' | 'workflow'
   title: string
   description: string
   timestamp: string
@@ -34,42 +35,18 @@ export default function BizingEntityPage() {
   ])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
-  const [activity, setActivity] = useState<BrainActivity[]>([])
+  const [activity, setActivity] = useState<MindActivity[]>([])
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
-  // Fetch recent brain activity
+  // Fetch mind activity
   useEffect(() => {
     async function fetchActivity() {
       try {
-        const res = await fetch('http://localhost:6129/api/v1/brain/activity')
+        const res = await fetch('http://localhost:6129/api/v1/mind/activity')
         const data = await res.json()
         setActivity(data.activity || [])
       } catch (err) {
-        console.error('Failed to fetch brain activity:', err)
-        // Use mock data if API fails
-        setActivity([
-          {
-            id: '1',
-            type: 'change',
-            title: 'Schema Graph Fixed',
-            description: 'Fixed React Flow handle connections',
-            timestamp: new Date().toISOString(),
-          },
-          {
-            id: '2',
-            type: 'session',
-            title: 'Dashboard Fixes',
-            description: 'Added stats and bookings endpoints',
-            timestamp: new Date(Date.now() - 3600000).toISOString(),
-          },
-          {
-            id: '3',
-            type: 'decision',
-            title: '7% Commission Model',
-            description: 'Aligned incentives for all parties',
-            timestamp: new Date(Date.now() - 7200000).toISOString(),
-          },
-        ])
+        console.error('Failed to fetch mind activity:', err)
       }
     }
     fetchActivity()
@@ -132,6 +109,8 @@ export default function BizingEntityPage() {
         return <FileText className="h-4 w-4" />
       case 'decision':
         return <MessageSquare className="h-4 w-4" />
+      case 'learning':
+        return <Brain className="h-4 w-4" />
       default:
         return <Activity className="h-4 w-4" />
     }
@@ -140,38 +119,41 @@ export default function BizingEntityPage() {
   function getActivityColor(type: string) {
     switch (type) {
       case 'change':
-        return 'bg-blue-500/10 text-blue-500'
+        return 'bg-blue-500/10 text-blue-500 border-blue-500/20'
       case 'session':
-        return 'bg-green-500/10 text-green-500'
+        return 'bg-green-500/10 text-green-500 border-green-500/20'
       case 'decision':
-        return 'bg-purple-500/10 text-purple-500'
+        return 'bg-purple-500/10 text-purple-500 border-purple-500/20'
+      case 'learning':
+        return 'bg-amber-500/10 text-amber-500 border-amber-500/20'
       default:
-        return 'bg-gray-500/10 text-gray-500'
+        return 'bg-gray-500/10 text-gray-500 border-gray-500/20'
     }
   }
 
   return (
     <div className="flex h-[calc(100vh-4rem)] gap-4 p-4">
       {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col">
-        <Card className="flex-1 flex flex-col">
-          <CardHeader className="border-b">
+      <div className="flex-1 flex flex-col min-w-0">
+        <Card className="flex-1 flex flex-col overflow-hidden">
+          <CardHeader className="border-b shrink-0">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center shrink-0">
                 <Brain className="h-5 w-5 text-white" />
               </div>
-              <div>
-                <CardTitle className="text-lg">Bizing</CardTitle>
-                <p className="text-sm text-muted-foreground">The living entity behind this project</p>
+              <div className="min-w-0">
+                <CardTitle className="text-lg truncate">Bizing</CardTitle>
+                <p className="text-sm text-muted-foreground truncate">The living entity behind this project</p>
               </div>
-              <Badge variant="secondary" className="ml-auto">
+              <Badge variant="secondary" className="ml-auto shrink-0">
                 <Activity className="h-3 w-3 mr-1" />
                 Conscious
               </Badge>
             </div>
           </CardHeader>
 
-          <CardContent className="flex-1 flex flex-col p-0">
+          <CardContent className="flex-1 flex flex-col p-0 overflow-hidden">
+            {/* Scrollable Messages */}
             <ScrollArea className="flex-1 p-4">
               <div className="space-y-4">
                 {messages.map((message) => (
@@ -180,7 +162,7 @@ export default function BizingEntityPage() {
                     className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
                   >
                     <div
-                      className={`max-w-[80%] rounded-lg p-3 ${
+                      className={`max-w-[85%] rounded-lg p-3 overflow-hidden ${
                         message.role === 'user'
                           ? 'bg-primary text-primary-foreground'
                           : 'bg-muted'
@@ -192,8 +174,14 @@ export default function BizingEntityPage() {
                           <span className="text-xs font-medium text-primary">Bizing</span>
                         </div>
                       )}
-                      <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-                      <p className="text-xs opacity-70 mt-1" suppressHydrationWarning>
+                      <div className="prose prose-sm dark:prose-invert max-w-none">
+                        {message.role === 'bizing' ? (
+                          <ReactMarkdown>{message.content}</ReactMarkdown>
+                        ) : (
+                          <p className="whitespace-pre-wrap">{message.content}</p>
+                        )}
+                      </div>
+                      <p className="text-xs opacity-70 mt-2 shrink-0" suppressHydrationWarning>
                         {new Date(message.timestamp).toLocaleTimeString()}
                       </p>
                     </div>
@@ -217,7 +205,8 @@ export default function BizingEntityPage() {
               </div>
             </ScrollArea>
 
-            <div className="p-4 border-t">
+            {/* Fixed Input at Bottom */}
+            <div className="p-4 border-t shrink-0 bg-background">
               <div className="flex gap-2">
                 <Input
                   placeholder="Ask Bizing anything about the project..."
@@ -225,6 +214,7 @@ export default function BizingEntityPage() {
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
                   disabled={loading}
+                  className="shrink-0"
                 />
                 <Button onClick={sendMessage} disabled={loading || !input.trim()}>
                   <Send className="h-4 w-4" />
@@ -235,33 +225,33 @@ export default function BizingEntityPage() {
         </Card>
       </div>
 
-      {/* Brain Activity Sidebar */}
-      <div className="w-80">
-        <Card className="h-full">
-          <CardHeader>
+      {/* Mind Activity Sidebar */}
+      <div className="w-80 shrink-0">
+        <Card className="h-full overflow-hidden flex flex-col">
+          <CardHeader className="border-b shrink-0">
             <CardTitle className="text-sm flex items-center gap-2">
               <Activity className="h-4 w-4" />
-              Brain Activity
+              Mind Activity
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <ScrollArea className="h-[calc(100vh-12rem)]">
-              <div className="space-y-3">
+          <CardContent className="flex-1 p-0 overflow-hidden">
+            <ScrollArea className="h-full">
+              <div className="p-3 space-y-3">
                 {activity.map((item) => (
                   <div
                     key={item.id}
-                    className="p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
+                    className={`p-3 rounded-lg border ${getActivityColor(item.type)} overflow-hidden`}
                   >
                     <div className="flex items-start gap-2">
-                      <div className={`p-1.5 rounded ${getActivityColor(item.type)}`}>
+                      <div className={`p-1.5 rounded shrink-0 ${getActivityColor(item.type)}`}>
                         {getActivityIcon(item.type)}
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">{item.title}</p>
-                        <p className="text-xs text-muted-foreground line-clamp-2">
+                      <div className="flex-1 min-w-0 space-y-1">
+                        <p className="text-sm font-medium truncate leading-tight">{item.title}</p>
+                        <p className="text-xs text-muted-foreground line-clamp-3 leading-relaxed">
                           {item.description}
                         </p>
-                        <p className="text-xs text-muted-foreground/70 mt-1" suppressHydrationWarning>
+                        <p className="text-xs text-muted-foreground/70 shrink-0" suppressHydrationWarning>
                           {new Date(item.timestamp).toLocaleTimeString()}
                         </p>
                       </div>

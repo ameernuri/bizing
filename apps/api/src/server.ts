@@ -468,19 +468,19 @@ app.get('/api/v1/mind/activity', (c) => {
     const feedback = readFileSync(feedbackPath, 'utf-8')
     const learnings = feedback.match(/\[(\d{4}-\d{2}-\d{2})\]\s+\*\*([^*]+)\*\*/g)
     if (learnings) {
-      const recent = learnings.slice(-3).reverse()
-      for (const learning of recent) {
+      const recent = learnings.slice(-5).reverse()
+      recent.forEach((learning, index) => {
         const match = learning.match(/\[(\d{4}-\d{2}-\d{2})\]\s+\*\*([^*]+)\*\*/)
         if (match) {
           activity.push({
-            id: `learning-${match[1]}`,
+            id: `learning-${match[1]}-${index}`,
             type: 'learning',
             title: match[2],
             description: 'Documented in feedback',
             timestamp: new Date(match[1]).toISOString()
           })
         }
-      }
+      })
     }
   }
   
