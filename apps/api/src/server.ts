@@ -1,3 +1,4 @@
+import 'dotenv/config'
 import { serve } from '@hono/node-server'
 import { cors } from 'hono/cors'
 import { v4 as uuidv4 } from 'uuid'
