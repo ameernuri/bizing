@@ -4,6 +4,8 @@ import { cors } from 'hono/cors'
 import { v4 as uuidv4 } from 'uuid'
 import { OpenAPIHono, z } from '@hono/zod-openapi'
 import { chatWithLLM, createBizingSystemPrompt } from './services/llm.js'
+import { getCompactMindState, getMindFile } from './services/mind-api.js'
+import { getCachedMindMap, searchMindDynamic, getMindStructure, listAllFiles, exploreDirectory } from './services/mind-map.js'
 
 // ============================================
 // Logger
@@ -265,37 +267,67 @@ app.get('/api/v1/schema/graph', (c) => {
 })
 
 // ============================================
-// Bizing AI Routes
+// Bizing AI Chat with Conversation Memory
 // ============================================
+
+// Simple in-memory conversation store (per-session)
+const conversations = new Map<string, { role: 'system' | 'user' | 'assistant'; content: string }[]>()
+const MAX_HISTORY = 10 // Keep last 10 messages
 
 app.post('/api/v1/bizing/chat', async (c) => {
   const body = await c.req.json()
-  const { message } = body
+  const { message, sessionId = 'default', enableFunctions = true } = body
 
   try {
-    log(`Bizing chat request: ${message.slice(0, 50)}...`)
+    log(`Bizing chat request [${sessionId}]: ${message.slice(0, 50)}...`)
     
+    // Get or create conversation history
+    let history = conversations.get(sessionId) || []
+    
+    // If new conversation, start with system prompt
+    if (history.length === 0) {
+      history = [{
+        role: 'system',
+        content: createBizingSystemPrompt(),
+      }]
+    }
+    
+    // Add user message
+    history.push({
+      role: 'user',
+      content: message,
+    })
+    
+    // Trim history if too long (keep system + last N messages)
+    if (history.length > MAX_HISTORY + 1) {
+      const systemMsg = history[0]
+      history = [systemMsg, ...history.slice(-(MAX_HISTORY))]
+    }
+
     const response = await chatWithLLM({
-      messages: [
-        {
-          role: 'system',
-          content: createBizingSystemPrompt(),
-        },
-        {
-          role: 'user',
-          content: message,
-        },
-      ],
+      messages: history,
       temperature: 0.7,
       maxTokens: 2000,
+      enableFunctions,
     })
+
+    // Add assistant response to history
+    history.push({
+      role: 'assistant',
+      content: response,
+    })
+    
+    // Save updated history
+    conversations.set(sessionId, history)
 
     log('Bizing chat response generated successfully')
 
     return c.json({
       response,
+      sessionId,
+      messageCount: history.length,
       timestamp: new Date().toISOString(),
-      model: 'kimi-k2.5',
+      model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
     })
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : String(err)
@@ -308,6 +340,54 @@ app.post('/api/v1/bizing/chat', async (c) => {
       model: 'error',
     }, 500)
   }
+})
+
+// ============================================
+// Mind API Routes (Dynamic Discovery)
+// ============================================
+
+app.get('/api/v1/mind/state', (c) => {
+  return c.json(getCompactMindState())
+})
+
+app.get('/api/v1/mind/file/:path{.+}', (c) => {
+  const path = c.req.param('path')
+  return c.json(getMindFile(path))
+})
+
+app.get('/api/v1/mind/map', (c) => {
+  const map = getCachedMindMap()
+  return c.json({
+    entryPoint: map.entryPoint,
+    totalFiles: map.nodes.size,
+    directories: map.directories,
+    files: Array.from(map.nodes.entries()).map(([path, node]) => ({
+      path,
+      title: node.title,
+      type: node.type,
+      links: node.links.length,
+      backLinks: node.backLinks.length
+    }))
+  })
+})
+
+app.get('/api/v1/mind/search', (c) => {
+  const query = c.req.query('q')
+  if (!query) return c.json({ error: 'Missing query' }, 400)
+  return c.json(searchMindDynamic(query))
+})
+
+app.get('/api/v1/mind/structure', (c) => {
+  return c.json(getMindStructure())
+})
+
+app.get('/api/v1/mind/files', (c) => {
+  return c.json(listAllFiles())
+})
+
+app.get('/api/v1/mind/explore/:path{.*}', (c) => {
+  const path = c.req.param('path') || ''
+  return c.json(exploreDirectory(path))
 })
 
 app.get('/api/v1/brain/activity', (c) => {
