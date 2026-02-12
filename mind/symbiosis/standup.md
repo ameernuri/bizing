@@ -24,6 +24,7 @@ kanban-plugin: board
 - [x] #feature Live brain integration
 - [x] #feature Brain loader service
 - [x] #feature Dynamic system prompt
+- [x] #feature Bizing AI mind awareness with function calling
 
 ## In Progress
 

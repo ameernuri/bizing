@@ -7,6 +7,8 @@
 ## 🚨 MANDATORY: Mind Framework
 
 **→ [[MIND-FRAMEWORK|READ THE FRAMEWORK FIRST]]** ←  
+**→ [[MAP|🗺️ VIEW COMPLETE MAP]]** ← *Every file, organized*
+
 **EVERY interaction MUST follow this workflow. NO EXCEPTIONS.**
 
 If you skip this, you work without memory. Don't skip it.

@@ -20,6 +20,15 @@ status: active
 - [2026-02-11] **Obsidian features** — Kanban, Templater, Dataview, Canvas for smarter mind
 - [2026-02-11] **MIND FRAMEWORK IS MANDATORY** — Every interaction MUST: read INDEX → standup → feedback → work → update feedback
 - [2026-02-11] **Mind must stay in sync with code** — Every code change → update mind state
+- [2026-02-11] **Bizing AI mind awareness** — Implemented function calling so Bizing can query its own mind
+- [2026-02-11] **Dynamic mind discovery** — Bizing only knows INDEX.md, discovers everything else by traversing links. Resilient to renames/moves/reorganization
+- [2026-02-11] **COMPLETE mind inventory** — Walks entire directory tree to discover ALL 65 files (not just linked ones). Can explore any directory, search all content, find orphaned files
+- [2026-02-11] **MAP.md master index** — Created comprehensive MAP.md linking to EVERYTHING. Now 0 orphaned files. Bizing uses MAP.md as primary navigation guide
+- [2026-02-11] **Conversation memory + file reading** — Bizing now remembers context across messages AND reads actual file contents (not just names). Uses sessionId for memory, getMindFile() for content
+
+---
+
+✅ **COMMITTED** — `1c8db86` — Feature branch ready
 
 ### Rules to Remember
 
@@ -30,6 +39,7 @@ status: active
 5. **Read INDEX.md first** — Entry point for every session
 6. **Update links when changing files** — Keep MIND interconnected
 7. **MIND FRAMEWORK IS MANDATORY** — Read INDEX.md → standup → feedback → work → update feedback
+8. **Use 🏷️ UNCOMMITTED tag** — Add at bottom of messages instead of asking to commit every time. User decides when to commit after testing.
 
 ---
 
