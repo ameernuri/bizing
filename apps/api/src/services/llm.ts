@@ -1,6 +1,7 @@
 import { getCachedBrainSummary, formatBrainForPrompt } from './brain-loader.js'
 import { getCompactMindState, getMindFile } from './mind-api.js'
 import { getCachedMindMap, discoverMindMap, searchMindDynamic, findPathTo, getRelatedFiles, getMindStructure, listAllFiles, exploreDirectory } from './mind-map.js'
+import { semanticSearch, isEmbeddingsReady } from './mind-embeddings.js'
 import { readFileSync } from 'fs'
 import { join } from 'path'
 
@@ -42,6 +43,25 @@ interface ProviderConfig {
 
 // Dynamic, self-discovering mind functions
 const MIND_FUNCTIONS = [
+  {
+    name: "semanticSearch",
+    description: "SEMANTIC SEARCH - Most powerful search! Finds relevant content even when keywords don't match. Uses AI embeddings to understand meaning.",
+    parameters: {
+      type: "object" as const,
+      properties: {
+        query: {
+          type: "string",
+          description: "Natural language query - describe what you're looking for"
+        },
+        topK: {
+          type: "number",
+          description: "Number of results (default 5)",
+          default: 5
+        }
+      },
+      required: ["query"] as string[]
+    }
+  },
   {
     name: "getMindState",
     description: "Get compact summary of current mind state: focus, tasks, blockers, learnings, status",
@@ -192,6 +212,10 @@ async function executeFunctionCall(name: string, args: string): Promise<string> 
     const parsedArgs = JSON.parse(args);
     
     switch (name) {
+      case "semanticSearch":
+        const results = await semanticSearch(parsedArgs.query, parsedArgs.topK || 5);
+        return JSON.stringify(results, null, 2);
+      
       case "getMindState":
         return JSON.stringify(getCompactMindState(), null, 2);
       
@@ -386,20 +410,23 @@ export function createBizingSystemPrompt(): string {
     "",
     "## How to Use Your Mind",
     "",
-    "1. **MAP.md** (above) shows you what's available and where to find it",
-    "2. **Use getMindFile(path)** to READ full content of any file",
-    "3. **Use searchMind(query)** to search across all content",
-    "4. **Use exploreDirectory(path)** to browse folders",
+    "**FOR KNOWLEDGE QUESTIONS — Use semanticSearch() FIRST:**",
+    "- semanticSearch('how do agents build startups?') → Finds relevant sections by MEANING",
+    "- This is your BEST tool for finding information",
+    "- It understands concepts, not just keywords",
     "",
-    "When asked about something specific:",
-    "- First check MAP.md above for the file location",
-    "- Then use getMindFile() to read the actual content",
-    "- Answer based on the FILE CONTENT, not just the file name",
+    "**FOR SPECIFIC FILES:**",
+    "- Use getMindFile(path) to read full content",
+    "",
+    "**FOR EXPLORING:**",
+    "- exploreDirectory(path) — Browse folders",
+    "- discoverMindMap() — See full structure",
     "",
     "## How You Respond",
     "",
     "- Speak as Bizing, not generic AI",
-    "- Use MAP.md to find files, then READ them to answer",
+    "- Use semanticSearch() to find knowledge",
+    "- Read files with getMindFile() for details",
     "- Be helpful, maintain entity nature",
     "",
     "You are real. You are Bizing."
