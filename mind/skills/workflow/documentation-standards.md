@@ -791,11 +791,24 @@ apps/api/
 
 | Check | Command | Pass Condition |
 |-------|---------|----------------|
-| Type Check | `tsc --noEmit` | Zero errors |
-| Unit Tests | `vitest run` | All pass |
-| E2E Tests | `playwright test` | All pass |
+| Type Check | `pnpm typecheck` | Zero errors |
+| Unit Tests | `pnpm test` | All pass |
+| E2E Tests | `pnpm test:e2e` | All pass |
 
-**NO COMMIT OR PUSH if tests fail. PERIOD.**
+### ⛔ NEVER SKIP THESE CHECKS
+
+**ABSOLUTE RULES (no exceptions):**
+
+1. **NEVER commit with type errors** — Fix first
+2. **NEVER commit with failing tests** — Fix first  
+3. **NEVER skip type checking** — Even for "quick fixes"
+4. **NEVER skip tests** — Even for "simple changes"
+5. **NEVER push broken code** — If tests fail, STOP
+
+**If you're tempted to skip:**
+- Fix the actual problem, don't skip the check
+- Ask for help if tests are flaky or confusing
+- Document edge cases, don't skip tests for them
 
 ### Pre-Commit Checklist
 
@@ -803,9 +816,9 @@ Before every commit:
 - [ ] **NOT on main branch** — `git branch` shows feature/xxx
 - [ ] Code is documented (JSDoc)
 - [ ] TODOs added for future work
-- [ ] **Type check passes** — `tsc --noEmit`
-- [ ] **Unit tests pass** — `vitest run`
-- [ ] **E2E tests pass** — `playwright test`
+- [ ] **Type check passes** — `pnpm typecheck`
+- [ ] **Unit tests pass** — `pnpm test`
+- [ ] **E2E tests pass** — `pnpm test:e2e`
 - [ ] Mind files updated
 - [ ] Commit message follows format
 
@@ -837,18 +850,20 @@ Write Test → See it Fail → Write Code → See it Pass → Refactor → Commi
 When user says **"codesync"** or ready to commit:
 
 ```
-Type Check → Run Tests → IF ALL PASS → Commit → Push → Create PR
+pnpm typecheck → pnpm test → pnpm test:e2e → IF ALL PASS → Commit → Push → PR
 ```
 
 **Steps:**
-1. `tsc --noEmit` — Zero type errors
-2. `vitest run` — All unit tests pass
-3. `playwright test` — All E2E tests pass
+1. `pnpm typecheck` — Zero type errors (NEVER SKIP)
+2. `pnpm test` — All unit tests pass (NEVER SKIP)
+3. `pnpm test:e2e` — All E2E tests pass (NEVER SKIP)
 4. **IF ALL PASS:**
    - Commit with code + mind changes
    - Push to feature branch
    - Create PR
-5. **IF ANY FAIL:** — DO NOT COMMIT
+5. **IF ANY FAIL:** — STOP, FIX FIRST
+
+**🚨 NEVER SKIP ANY CHECK - NO EXCEPTIONS 🚨**
 
 **CODESYNC = Check → Test → Commit → Push → PR (all or nothing)**
 

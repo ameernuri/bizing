@@ -537,10 +537,7 @@ app.notFound((c) => {
   return c.json({ success: false, error: { code: 'NOT_FOUND' } }, 404)
 })
 
-// Embeddings rebuild on startup
-import { buildAndCacheEmbeddings, getEmbeddingStats } from './services/mind-embeddings.js'
-
-// Build embeddings on startup (non-blocking)
+// Embeddings rebuild on startup (non-blocking)
 buildAndCacheEmbeddings().then(() => {
   log('Embeddings built: ' + JSON.stringify(getEmbeddingStats()))
 }).catch(err => {

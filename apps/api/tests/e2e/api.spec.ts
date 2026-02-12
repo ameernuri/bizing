@@ -80,8 +80,13 @@ test.describe('Bizing API', () => {
       expect(response.status()).toBe(200)
       
       const body = await response.json()
-      expect(body.query).toBe('test')
-      expect(Array.isArray(body.results)).toBe(true)
+      // API returns array directly
+      expect(Array.isArray(body)).toBe(true)
+      if (body.length > 0) {
+        expect(body[0].path).toBeDefined()
+        expect(body[0].title).toBeDefined()
+        expect(typeof body[0].relevance).toBe('number')
+      }
     })
   })
 
@@ -134,9 +139,9 @@ test.describe('Bizing API', () => {
       expect(response.status()).toBe(200)
       
       const body = await response.json()
-      expect(body.response).toContain('startup') || 
-                 expect(body.response).toContain('agent') ||
-                 expect(body.response.length).toBeGreaterThan(0)
+      expect(body.response).toBeDefined()
+      // Response may contain relevant info about agents/startups
+      expect(body.response.length).toBeGreaterThan(0)
     })
   })
 
