@@ -91,7 +91,7 @@ status: active
 1. **ALWAYS ask before committing** — "Can I commit this?"
 2. **Commit only AFTER feature is approved** — Test with user, get "yes", THEN ask
 3. **Test with user first** — Don't commit until feature works
-4. **NEVER commit to main** — Always create feature branches for commits
+4. **NEVER commit to main** — ALWAYS create feature branches for commits. This is ABSOLUTE.
 5. **ALL tests must pass** — Type checks, Vitest, Playwright. NO exceptions.
 6. **SOFT MINDSYNC on every change** — Light update (feedback) after work
 7. **HARD MINDSYNC on big events** — Extensive update when explicit "mindsync"
@@ -100,6 +100,7 @@ status: active
 10. **Update links when changing files** — Keep MIND interconnected
 11. **MIND FRAMEWORK IS MANDATORY** — Read INDEX.md → standup → feedback → work → update feedback
 12. **Use 🏷️ UNCOMMITTED tag** — Add at bottom of messages instead of asking to commit every time. User decides when to commit after testing.
+13. **COMMIT TO MAIN = VIOLATION** — Never, ever, under any circumstances commit directly to main. ALWAYS use feature branches.
 
 ---
 
