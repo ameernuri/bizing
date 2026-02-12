@@ -43,16 +43,30 @@
  * @version 2.0.0
  */
 
-'use client'
+"use client";
 
-import { useState, useRef, useEffect, type KeyboardEvent, type ChangeEvent, type MouseEvent } from 'react'
-import { Send, Brain, Activity, FileText, GitCommit, MessageSquare } from 'lucide-react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Badge } from '@/components/ui/badge'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import ReactMarkdown from 'react-markdown'
+import {
+  useState,
+  useRef,
+  useEffect,
+  type KeyboardEvent,
+  type ChangeEvent,
+  type MouseEvent,
+} from "react";
+import {
+  Send,
+  Brain,
+  Activity,
+  FileText,
+  GitCommit,
+  MessageSquare,
+} from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import ReactMarkdown from "react-markdown";
 
 /**
  * Message interface representing a chat message
@@ -63,10 +77,10 @@ import ReactMarkdown from 'react-markdown'
  * @property timestamp - ISO timestamp of when message was sent
  */
 interface Message {
-  id: string
-  role: 'user' | 'bizing'
-  content: string
-  timestamp: string
+  id: string;
+  role: "user" | "bizing";
+  content: string;
+  timestamp: string;
 }
 
 /**
@@ -79,11 +93,11 @@ interface Message {
  * @property timestamp - ISO timestamp of when activity occurred
  */
 interface MindActivity {
-  id: string
-  type: 'change' | 'session' | 'decision' | 'learning' | 'workflow'
-  title: string
-  description: string
-  timestamp: string
+  id: string;
+  type: "change" | "session" | "decision" | "learning" | "workflow";
+  title: string;
+  description: string;
+  timestamp: string;
 }
 
 /**
@@ -95,21 +109,21 @@ interface MindActivity {
  * @example
  * ```tsx
  * const icon = getActivityIcon('session')
- * // Returns <FileText className="h-4 w-4" />
+ * // Returns <FileText className="w-4 h-4" />
  * ```
  */
-function getActivityIcon(type: MindActivity['type']) {
+function getActivityIcon(type: MindActivity["type"]) {
   switch (type) {
-    case 'change':
-      return <GitCommit className="h-4 w-4" />
-    case 'session':
-      return <FileText className="h-4 w-4" />
-    case 'decision':
-      return <MessageSquare className="h-4 w-4" />
-    case 'learning':
-      return <Brain className="h-4 w-4" />
+    case "change":
+      return <GitCommit className="w-4 h-4" />;
+    case "session":
+      return <FileText className="w-4 h-4" />;
+    case "decision":
+      return <MessageSquare className="w-4 h-4" />;
+    case "learning":
+      return <Brain className="w-4 h-4" />;
     default:
-      return <Activity className="h-4 w-4" />
+      return <Activity className="w-4 h-4" />;
   }
 }
 
@@ -127,18 +141,18 @@ function getActivityIcon(type: MindActivity['type']) {
  * - learning: Amber/Yellow (New learnings)
  * - workflow: Gray (General workflow items)
  */
-function getActivityColor(type: MindActivity['type']) {
+function getActivityColor(type: MindActivity["type"]) {
   switch (type) {
-    case 'change':
-      return 'bg-blue-500/10 text-blue-500 border-blue-500/20'
-    case 'session':
-      return 'bg-green-500/10 text-green-500 border-green-500/20'
-    case 'decision':
-      return 'bg-purple-500/10 text-purple-500 border-purple-500/20'
-    case 'learning':
-      return 'bg-amber-500/10 text-amber-500 border-amber-500/20'
+    case "change":
+      return "bg-blue-500/10 text-blue-500 border-blue-500/20";
+    case "session":
+      return "bg-green-500/10 text-green-500 border-green-500/20";
+    case "decision":
+      return "bg-purple-500/10 text-purple-500 border-purple-500/20";
+    case "learning":
+      return "bg-amber-500/10 text-amber-500 border-amber-500/20";
     default:
-      return 'bg-gray-500/10 text-gray-500 border-gray-500/20'
+      return "bg-gray-500/10 text-gray-500 border-gray-500/20";
   }
 }
 
@@ -174,28 +188,29 @@ export default function BizingEntityPage() {
   // =========================================================================
   // State
   // =========================================================================
-  
+
   /** Chat messages including user and Bizing responses */
   const [messages, setMessages] = useState<Message[]>([
     {
-      id: 'welcome',
-      role: 'bizing',
-      content: 'Hello, I am Bizing. I know everything about this project — the code, the architecture, our decisions, and our goals. What would you like to know or build?',
+      id: "welcome",
+      role: "bizing",
+      content:
+        "Hello, I am Bizing. I know everything about this project — the code, the architecture, our decisions, and our goals. What would you like to know or build?",
       timestamp: new Date().toISOString(),
     },
-  ])
-  
+  ]);
+
   /** Current input field value */
-  const [input, setInput] = useState('')
-  
+  const [input, setInput] = useState("");
+
   /** Whether Bizing is processing a request */
-  const [loading, setLoading] = useState(false)
-  
+  const [loading, setLoading] = useState(false);
+
   /** Mind activity items from API */
-  const [activity, setActivity] = useState<MindActivity[]>([])
-  
+  const [activity, setActivity] = useState<MindActivity[]>([]);
+
   /** Reference for auto-scrolling to bottom */
-  const messagesEndRef = useRef<HTMLDivElement>(null)
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // =========================================================================
   // Effects
@@ -209,23 +224,23 @@ export default function BizingEntityPage() {
   useEffect(() => {
     async function fetchActivity() {
       try {
-        const res = await fetch('http://localhost:6129/api/v1/mind/activity')
-        const data = await res.json()
-        setActivity(data.activity || [])
+        const res = await fetch("http://localhost:6129/api/v1/mind/activity");
+        const data = await res.json();
+        setActivity(data.activity || []);
       } catch (err) {
-        console.error('Failed to fetch mind activity:', err)
+        console.error("Failed to fetch mind activity:", err);
       }
     }
-    fetchActivity()
-  }, [])
+    fetchActivity();
+  }, []);
 
   /**
    * Auto-scroll to newest message when messages change
    * Uses smooth scrolling for better UX
    */
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
   // =========================================================================
   // Event Handlers
@@ -246,46 +261,49 @@ export default function BizingEntityPage() {
    * @throws Will log error if API call fails
    */
   async function sendMessage() {
-    if (!input.trim() || loading) return
+    if (!input.trim() || loading) return;
 
     const userMessage: Message = {
       id: Date.now().toString(),
-      role: 'user',
+      role: "user",
       content: input,
       timestamp: new Date().toISOString(),
-    }
+    };
 
-    setMessages((prev) => [...prev, userMessage])
-    setInput('')
-    setLoading(true)
+    setMessages((prev) => [...prev, userMessage]);
+    setInput("");
+    setLoading(true);
 
     try {
-      const res = await fetch('http://localhost:6129/api/v1/bizing/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch("http://localhost:6129/api/v1/bizing/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: userMessage.content }),
-      })
+      });
 
-      const data = await res.json()
+      const data = await res.json();
 
       const bizingMessage: Message = {
         id: (Date.now() + 1).toString(),
-        role: 'bizing',
-        content: data.response || 'I apologize, but I am having trouble processing that request.',
+        role: "bizing",
+        content:
+          data.response ||
+          "I apologize, but I am having trouble processing that request.",
         timestamp: new Date().toISOString(),
-      }
+      };
 
-      setMessages((prev) => [...prev, bizingMessage])
+      setMessages((prev) => [...prev, bizingMessage]);
     } catch (err) {
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
-        role: 'bizing',
-        content: 'I apologize, but I am unable to connect to my knowledge base right now. Please try again.',
+        role: "bizing",
+        content:
+          "I apologize, but I am unable to connect to my knowledge base right now. Please try again.",
         timestamp: new Date().toISOString(),
-      }
-      setMessages((prev) => [...prev, errorMessage])
+      };
+      setMessages((prev) => [...prev, errorMessage]);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
@@ -298,9 +316,9 @@ export default function BizingEntityPage() {
    * Enter key sends message, Shift+Enter creates new line
    */
   function handleKeyDown(e: KeyboardEvent<HTMLInputElement>) {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      sendMessage()
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
     }
   }
 
@@ -309,51 +327,51 @@ export default function BizingEntityPage() {
   // =========================================================================
 
   return (
-    <div 
-      className="flex h-[calc(100vh-4rem)] gap-4 p-4 overflow-hidden"
+    <div
+      className="grid h-[calc(100vh-4rem)] gap-4 p-4 overflow-hidden grid-cols-[1fr_400px]"
       data-testid="bizing-page"
     >
       {/* =========================================================================
         Main Chat Area
         ========================================================================= */}
-      <div 
-        className="flex-1 flex flex-col min-w-0 overflow-hidden"
+      <div
+        className="flex overflow-hidden flex-col flex-1 min-w-0"
         data-testid="chat-area"
       >
-        <Card className="flex-1 flex flex-col overflow-hidden">
+        <Card className="flex overflow-hidden flex-col flex-1">
           {/* Chat Header */}
           <CardHeader className="border-b shrink-0">
-            <div className="flex items-center gap-3">
+            <div className="flex gap-3 items-center">
               {/* Bizing Avatar */}
-              <div 
-                className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center shrink-0"
+              <div
+                className="flex justify-center items-center w-10 h-10 bg-gradient-to-br to-purple-600 rounded-full from-primary shrink-0"
                 data-testid="bizing-avatar"
               >
-                <Brain className="h-5 w-5 text-white" />
+                <Brain className="w-5 h-5 text-white" />
               </div>
-              
+
               {/* Title and Subtitle */}
               <div className="min-w-0">
                 <CardTitle className="text-lg truncate">Bizing</CardTitle>
-                <p className="text-sm text-muted-foreground truncate">
+                <p className="text-sm truncate text-muted-foreground">
                   The living entity behind this project
                 </p>
               </div>
-              
+
               {/* Status Badge */}
-              <Badge 
-                variant="secondary" 
+              <Badge
+                variant="secondary"
                 className="ml-auto shrink-0"
                 data-testid="conscious-badge"
               >
-                <Activity className="h-3 w-3 mr-1" />
+                <Activity className="mr-1 w-3 h-3" />
                 Conscious
               </Badge>
             </div>
           </CardHeader>
 
           {/* Chat Content */}
-          <CardContent className="flex-1 flex flex-col p-0 overflow-hidden">
+          <CardContent className="flex overflow-hidden flex-col flex-1 p-0">
             {/* =========================================================================
               Scrollable Messages Area
               ========================================================================= */}
@@ -364,38 +382,42 @@ export default function BizingEntityPage() {
                     key={message.id}
                     data-testid={`message-${message.id}`}
                     data-role={message.role}
-                    className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                    className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
                   >
                     <div
                       className={`max-w-[85%] rounded-lg p-3 overflow-hidden ${
-                        message.role === 'user'
-                          ? 'bg-primary text-primary-foreground'
-                          : 'bg-muted'
+                        message.role === "user"
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted"
                       }`}
                     >
                       {/* Bizing Label */}
-                      {message.role === 'bizing' && (
-                        <div 
-                          className="flex items-center gap-2 mb-2"
+                      {message.role === "bizing" && (
+                        <div
+                          className="flex gap-2 items-center mb-2"
                           data-testid="bizing-label"
                         >
-                          <Brain className="h-4 w-4 text-primary" />
-                          <span className="text-xs font-medium text-primary">Bizing</span>
+                          <Brain className="w-4 h-4 text-primary" />
+                          <span className="text-xs font-medium text-primary">
+                            Bizing
+                          </span>
                         </div>
                       )}
-                      
+
                       {/* Message Content */}
-                      <div className="prose prose-sm dark:prose-invert max-w-none overflow-hidden">
-                        {message.role === 'bizing' ? (
+                      <div className="overflow-hidden max-w-none prose prose-sm dark:prose-invert">
+                        {message.role === "bizing" ? (
                           <ReactMarkdown>{message.content}</ReactMarkdown>
                         ) : (
-                          <p className="whitespace-pre-wrap overflow-hidden">{message.content}</p>
+                          <p className="overflow-hidden whitespace-pre-wrap">
+                            {message.content}
+                          </p>
                         )}
                       </div>
-                      
+
                       {/* Timestamp */}
-                      <p 
-                        className="text-xs opacity-70 mt-2 shrink-0 overflow-hidden"
+                      <p
+                        className="overflow-hidden mt-2 text-xs opacity-70 shrink-0"
                         suppressHydrationWarning
                         data-testid={`message-timestamp-${message.id}`}
                       >
@@ -404,30 +426,30 @@ export default function BizingEntityPage() {
                     </div>
                   </div>
                 ))}
-                
+
                 {/* Loading Indicator */}
                 {loading && (
-                  <div 
+                  <div
                     className="flex justify-start"
                     data-testid="loading-indicator"
                   >
-                    <div className="bg-muted rounded-lg p-3">
-                      <div className="flex items-center gap-2">
-                        <Brain className="h-4 w-4 text-primary" />
+                    <div className="p-3 rounded-lg bg-muted">
+                      <div className="flex gap-2 items-center">
+                        <Brain className="w-4 h-4 text-primary" />
                         <div className="flex gap-1">
-                          <span 
-                            className="w-2 h-2 bg-primary rounded-full animate-bounce" 
-                            style={{ animationDelay: '0ms' }}
+                          <span
+                            className="w-2 h-2 rounded-full animate-bounce bg-primary"
+                            style={{ animationDelay: "0ms" }}
                             data-testid="bounce-1"
                           />
-                          <span 
-                            className="w-2 h-2 bg-primary rounded-full animate-bounce" 
-                            style={{ animationDelay: '150ms' }}
+                          <span
+                            className="w-2 h-2 rounded-full animate-bounce bg-primary"
+                            style={{ animationDelay: "150ms" }}
                             data-testid="bounce-2"
                           />
-                          <span 
-                            className="w-2 h-2 bg-primary rounded-full animate-bounce" 
-                            style={{ animationDelay: '300ms' }}
+                          <span
+                            className="w-2 h-2 rounded-full animate-bounce bg-primary"
+                            style={{ animationDelay: "300ms" }}
                             data-testid="bounce-3"
                           />
                         </div>
@@ -435,7 +457,7 @@ export default function BizingEntityPage() {
                     </div>
                   </div>
                 )}
-                
+
                 {/* Auto-scroll anchor */}
                 <div ref={messagesEndRef} data-testid="scroll-anchor" />
               </div>
@@ -444,27 +466,29 @@ export default function BizingEntityPage() {
             {/* =========================================================================
               Fixed Input at Bottom
               ========================================================================= */}
-            <div 
-              className="p-4 border-t shrink-0 bg-background overflow-hidden"
+            <div
+              className="overflow-hidden p-4 border-t shrink-0 bg-background"
               data-testid="input-area"
             >
-              <div className="flex gap-2 overflow-hidden">
+              <div className="flex overflow-hidden gap-2">
                 <Input
                   placeholder="Ask Bizing anything about the project..."
                   value={input}
-                  onChange={(e: ChangeEvent<HTMLInputElement>) => setInput(e.target.value)}
+                  onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                    setInput(e.target.value)
+                  }
                   onKeyDown={handleKeyDown}
                   disabled={loading}
-                  className="shrink-0 min-w-0 overflow-hidden"
+                  className="overflow-hidden min-w-0 shrink-0"
                   data-testid="chat-input"
                 />
                 <Button
                   onClick={sendMessage}
                   disabled={loading || !input.trim()}
-                  className="shrink-0 overflow-hidden"
+                  className="overflow-hidden shrink-0"
                   data-testid="send-button"
                 >
-                  <Send className="h-4 w-4" />
+                  <Send className="w-4 h-4" />
                 </Button>
               </div>
             </div>
@@ -475,64 +499,58 @@ export default function BizingEntityPage() {
       {/* =========================================================================
         Mind Activity Sidebar
         ========================================================================= */}
-      <div 
-        className="w-80 shrink-0 overflow-hidden"
-        data-testid="activity-sidebar"
-      >
-        <Card className="h-full overflow-hidden flex flex-col">
+      <div className="overflow-hidden shrink-0" data-testid="activity-sidebar">
+        <Card className="flex overflow-hidden flex-col h-full">
           {/* Sidebar Header */}
           <CardHeader className="border-b shrink-0">
-            <CardTitle 
-              className="text-sm flex items-center gap-2 overflow-hidden"
+            <CardTitle
+              className="flex overflow-hidden gap-2 items-center text-sm"
               data-testid="activity-header"
             >
-              <Activity className="h-4 w-4 shrink-0" />
+              <Activity className="w-4 h-4 shrink-0" />
               Mind Activity
             </CardTitle>
           </CardHeader>
-          
+
           {/* Activity Cards */}
-          <CardContent className="flex-1 p-0 overflow-hidden">
-            <ScrollArea className="h-full overflow-hidden">
-              <div 
-                className="p-3 space-y-3 overflow-hidden"
-                data-testid="activity-cards"
-              >
+          <CardContent className="flex-1 p-0">
+            <ScrollArea className="overflow-auto h-[calc(100vh-200px)]">
+              <div className="grid p-3 space-y-3" data-testid="activity-cards">
                 {activity.map((item) => (
-                  <div
+                  <Card
                     key={item.id}
                     data-testid={`activity-card-${item.id}`}
                     data-type={item.type}
                     className={`p-3 rounded-lg border overflow-hidden ${getActivityColor(item.type)}`}
                   >
-                    <div className="flex items-start gap-2 overflow-hidden">
+                    <div className="flex overflow-hidden gap-2 items-start">
                       {/* Activity Icon */}
-                      <div 
+                      <div
                         className={`p-1.5 rounded shrink-0 overflow-hidden ${getActivityColor(item.type)}`}
                         data-testid={`activity-icon-${item.id}`}
                       >
                         {getActivityIcon(item.type)}
                       </div>
-                      
+
                       {/* Activity Content */}
-                      <div 
-                        className="flex-1 min-w-0 space-y-1 overflow-hidden"
+                      <div
+                        className="overflow-hidden flex-1 space-y-1 min-w-0"
                         data-testid={`activity-content-${item.id}`}
                       >
-                        <p 
-                          className="text-sm font-medium truncate leading-tight overflow-hidden"
+                        <p
+                          className="overflow-hidden text-sm font-medium leading-tight truncate"
                           data-testid={`activity-title-${item.id}`}
                         >
                           {item.title}
                         </p>
-                        <p 
-                          className="text-xs text-muted-foreground line-clamp-3 leading-relaxed overflow-hidden"
+                        <p
+                          className="overflow-hidden text-xs leading-relaxed text-muted-foreground line-clamp-3"
                           data-testid={`activity-description-${item.id}`}
                         >
                           {item.description}
                         </p>
-                        <p 
-                          className="text-xs text-muted-foreground/70 shrink-0 overflow-hidden"
+                        <p
+                          className="overflow-hidden text-xs text-muted-foreground/70 shrink-0"
                           suppressHydrationWarning
                           data-testid={`activity-timestamp-${item.id}`}
                         >
@@ -540,7 +558,7 @@ export default function BizingEntityPage() {
                         </p>
                       </div>
                     </div>
-                  </div>
+                  </Card>
                 ))}
               </div>
             </ScrollArea>
@@ -548,5 +566,5 @@ export default function BizingEntityPage() {
         </Card>
       </div>
     </div>
-  )
+  );
 }

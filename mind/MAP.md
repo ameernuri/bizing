@@ -83,6 +83,7 @@
 **→ [[skills/workflow/session-logging|Session Logging]]** — How to log sessions  
 **→ [[skills/workflow/kanban-formatting|Kanban Formatting]]** — Task board style  
 **→ [[skills/workflow/brain-updates|Brain Updates]]** — When and how to update  
+**→ [[skills/workflow/briefing|Daily Briefing]]** — Generate TTS-optimized briefings for Telegram  
 **→ [[skills/workflow/briefing-for-11labs|11Labs Briefing]]** — Voice agent setup  
 **→ [[skills/workflow/dataview|Dataview]]** — Querying mind content  
 **→ [[skills/workflow/documentation-standards|Documentation Standards]]** — ⚡ **MANDATORY** JSDoc requirements  
@@ -94,6 +95,17 @@
 
 ## 🔬 Research
 
+**→ [[research/index|Research Hub]]** — Research organization
+
+### Active Research:
+**→ [[research/backlog|Research Backlog]]** — Topics to investigate
+
+### Completed Findings:
+**→ [[research/findings/booking-domain-model|Booking Domain Model]]** — Reservation patterns, state machines  
+**→ [[research/findings/event-driven-architecture|Event-Driven Architecture]]** — Sagas, webhooks, event sourcing  
+**→ [[research/findings/api-first-design|API-First Design]]** — OpenAPI, contract testing, versioning
+
+### Archive:
 **→ [[research/MARKET_RESEARCH|Market Research]]** — Original research  
 **→ [[research/MARKET_RESEARCH_EXTENDED|Extended Research]]** — Deep dive  
 **→ [[research/BUSINESS_TYPES|Business Types]]** — Booking use cases  

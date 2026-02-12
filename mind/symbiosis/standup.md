@@ -1,11 +1,11 @@
 ---
-date: 2026-02-11
+date: 2026-02-12
 tags: daily, standup
 status: active
 kanban-plugin: board
 ---
 
-# 🎯 Standup — <% tp.date.now("dddd, MMMM D") %>
+# 🎯 Standup — Thursday, February 12, 2026
 
 > *Read INDEX.md first. This is your daily entry point.*
 
@@ -13,28 +13,44 @@ kanban-plugin: board
 
 - [x] Read INDEX.md
 - [x] Review feedback
-- [x] OpenAI integration working
-- [x] Live brain loader built
-- [ ] Mind framework enforcement
-- [ ] Log learnings
+- [x] Configure Perplexity API
+- [x] Configure 11labs API
+- [x] Update briefing skill (11labs + Telegram fallback)
+- [x] Test briefing delivery
+- [x] **COMPLETE 3 RESEARCH TOPICS** — Booking domain, Event-driven architecture, API-first design
+- [x] Log learnings (HARD MINDSYNC)
 
-## Completed Today
+## Completed Yesterday (Feb 11)
 
 - [x] #feature Switched to OpenAI (gpt-4o-mini)
 - [x] #feature Live brain integration
 - [x] #feature Brain loader service
 - [x] #feature Dynamic system prompt
 - [x] #feature Bizing AI mind awareness with function calling
+- [x] #feature Testing infrastructure (Vitest + Playwright)
+- [x] #feature Admin dashboard fixes (React keys, markdown, scroll areas)
+- [x] #feature Research backlog system (80+ topics)
+
+## Completed Today (Feb 12)
+
+- [x] #infrastructure Perplexity API configured
+- [x] #infrastructure 11labs API configured
+- [x] #feature Briefing skill v2 (11labs primary, Telegram fallback)
+- [x] #feature TTS-optimized briefing format
+- [x] #documentation Briefing skill documented with TTS rules
+- [x] #research **Booking Domain Model** — State machines, reservation patterns, double-booking prevention
+- [x] #research **Event-Driven Architecture** — Saga pattern, webhooks, event sourcing
+- [x] #research **API-First Design** — OpenAPI 3.0, contract testing with Pact, versioning
 
 ## In Progress
 
 ### High Priority
 
-- [ ] #critical Mind framework enforcement
-  - Update SOUL.md
-  - Create MIND-FRAMEWORK.md
-  - Update INDEX.md
-  - Update feedback
+- [ ] #critical **Implement booking engine schema based on research findings**
+  - Create database tables with EXCLUDE constraints
+  - Implement reservation state machine
+  - Add saga orchestrator for booking workflow
+  - Write OpenAPI spec and generate types
 
 - [ ] #infrastructure Keep mind in sync with code
   - Every code change → update mind
@@ -43,17 +59,41 @@ kanban-plugin: board
 
 ### Medium Priority
 
-- [ ] #documentation Document mind framework
-- [ ] #documentation Update skills index
+- [ ] #documentation Update skills index with new briefing skill
+- [ ] #feature Set up mock server from OpenAPI spec for frontend development
 
 ## Blockers
 
-> **None** — OpenAI working, development unblocked
+> **None** — OpenAI working, Perplexity configured, 11labs configured, research completed, development unblocked
 
 ## Focus
 
-> **Primary:** Mind framework enforcement (every interaction reads/updates mind)  
+> **Primary:** Implement booking engine based on research findings  
 > **Secondary:** Keep mind synchronized with code reality
+
+## Recent Learnings
+
+- **Perplexity API:** Better than Brave for research (AI-synthesized answers with citations)
+- **11labs TTS:** Needs API key in OpenClaw config, generates natural speech
+- **Briefing workflow:** 11labs primary, Telegram TXT fallback, never fails
+- **TTS optimization:** Percent instead of %, completed instead of checkmark, natural pauses
+- **Booking Domain:** PostgreSQL EXCLUDE constraints prevent double-booking at database level
+- **Saga Pattern:** Orchestration saga for distributed transactions with compensation logic
+- **API-First:** OpenAPI spec enables parallel frontend/backend development with contract testing
+
+## Research Findings Available
+
+| Topic | Location | Status |
+|-------|----------|--------|
+| Booking Domain Model | mind/research/findings/booking-domain-model.md | ✅ Complete |
+| Event-Driven Architecture | mind/research/findings/event-driven-architecture.md | ✅ Complete |
+| API-First Design | mind/research/findings/api-first-design.md | ✅ Complete |
+
+All findings include:
+- Database schema designs
+- Implementation code examples
+- Testing strategies
+- 4-week implementation roadmap
 
 ---
 
