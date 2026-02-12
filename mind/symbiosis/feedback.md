@@ -30,27 +30,55 @@ status: active
 - [2026-02-11] **Git workflow rule** — NEVER commit to main. Always create feature branches (`feature/description`). Code + mind changes go in same commit.
 - [2026-02-11] **JSDoc linking standards** — Use `{@link ./file.ts}` for code files, `mind/path/file.md` for mind files. Wiki links `[[file]]` only work in Markdown, not JSDoc. VS Code understands `{@link}` and shows clickable links!
 
-### Comprehensive Documentation Workflow (NEW)
+- [2026-02-11] **Testing Requirements** — ALL tests must pass before commit/push. Check type errors after every change. Use Vitest for unit tests, Playwright for E2E. NO commits with failing tests.
+
+- [2026-02-11] **CODESYNC** — When user says "codesync", perform: type check → run tests → if ALL pass, commit → push to feature branch → create PR. NO commit if tests fail.
+
+- [2026-02-11] **MINDSYNC Levels** — SOFT: Light update (feedback) on every change. HARD: Extensive update (feedback + standup + sessions + knowledge + backlog + MAP) for big events or explicit "mindsync" command.
+
+### Comprehensive Documentation & Testing Workflow (NEW)
 
 **For every code change, we MUST:**
 
-1. **Document the code** (JSDoc requirements):
+1. **Check type errors** — Run TypeScript compiler, fix all errors
+2. **Run tests** — Vitest unit tests, Playwright E2E tests. ALL must pass.
+3. **Document the code** (JSDoc requirements):
    - File header: @fileoverview, @description, @architecture, @design-decisions, @todo
    - Function docs: @description, @params, @returns, @throws, @example, @related
    - Inline tags: TODO, FIXME, HACK, NOTE, REVIEW, OPTIMIZE, IDEA
 
-2. **Update multiple mind locations**:
+4. **SOFT MINDSYNC** — Light update on every change:
    - `symbiosis/feedback.md` — Learnings, rules, preferences
-   - `symbiosis/standup.md` — Task status, blockers
-   - `memory/sessions/YYYY-MM-DD.md` — Session log with documentation work
-   - Relevant knowledge files — Architecture patterns, domain knowledge
-   - `MAP.md` — If structure changed
+   - `symbiosis/standup.md` — Task status (if changed)
+   - Minimal updates to other files
 
-3. **Update project tracking**:
-   - Project kanban (backlog.md) — Move tasks, add new ones
+5. **HARD MINDSYNC** — Extensive update for big events/explicit command:
+   - `symbiosis/feedback.md` — Detailed learnings
+   - `symbiosis/standup.md` — Task status, blockers  
+   - `memory/sessions/YYYY-MM-DD.md` — Full session log
+   - Relevant `knowledge/` files — Architecture patterns
+   - `MAP.md` — If structure changed
+   - `backlog.md` — Kanban board updates
+   - Any other relevant mind files
+   - **Create mindful links** — Add `[[wikilinks]]` to connect related files
+
+6. **CODESYNC** — When ready to commit:
+   - Type check: `tsc --noEmit` → ZERO errors
+   - Unit tests: Vitest → ALL pass
+   - E2E tests: Playwright → ALL pass
+   - If ALL pass → commit → push → create PR
+   - **NO COMMIT if any check fails**
+
+7. **Update project tracking**:
+   - Project kanban (backlog.md) — Move tasks
    - README.md — If project-level changes
-   - Commit with both code AND mind changes together
    - **NEVER commit to main** — Always use feature branches
+
+**CODESYNC = Type Check → Tests → Commit → Push → PR (all or nothing)**
+
+**SOFT MINDSYNC = Light update (feedback) on every change**
+
+**HARD MINDSYNC = Extensive update (all relevant files) + thoughtful links**
 
 **Documentation IS the interface between human minds, AI assistants, and code.**
 
@@ -64,11 +92,14 @@ status: active
 2. **Commit only AFTER feature is approved** — Test with user, get "yes", THEN ask
 3. **Test with user first** — Don't commit until feature works
 4. **NEVER commit to main** — Always create feature branches for commits
-5. **Update mind with every change** — Log learnings, rules, preferences
-6. **Read INDEX.md first** — Entry point for every session
-7. **Update links when changing files** — Keep MIND interconnected
-8. **MIND FRAMEWORK IS MANDATORY** — Read INDEX.md → standup → feedback → work → update feedback
-9. **Use 🏷️ UNCOMMITTED tag** — Add at bottom of messages instead of asking to commit every time. User decides when to commit after testing.
+5. **ALL tests must pass** — Type checks, Vitest, Playwright. NO exceptions.
+6. **SOFT MINDSYNC on every change** — Light update (feedback) after work
+7. **HARD MINDSYNC on big events** — Extensive update when explicit "mindsync"
+8. **CODESYNC = Check → Test → Commit → Push → PR** — Only when ALL pass
+9. **Read INDEX.md first** — Entry point for every session
+10. **Update links when changing files** — Keep MIND interconnected
+11. **MIND FRAMEWORK IS MANDATORY** — Read INDEX.md → standup → feedback → work → update feedback
+12. **Use 🏷️ UNCOMMITTED tag** — Add at bottom of messages instead of asking to commit every time. User decides when to commit after testing.
 
 ---
 

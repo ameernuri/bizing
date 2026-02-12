@@ -503,6 +503,175 @@ Before every commit:
 
 ---
 
+## 🧪 Testing Requirements
+
+**NO COMMIT OR PUSH if tests fail. PERIOD.**
+
+### Required Checks Before Every Commit
+
+1. **Type Checking**
+   ```bash
+   # Check for TypeScript errors
+   pnpm typecheck
+   # or
+   tsc --noEmit
+   ```
+   - [ ] Zero type errors
+   - [ ] Zero type warnings (ideally)
+
+2. **Unit Tests (Vitest)**
+   ```bash
+   # Run all unit tests
+   pnpm test
+   # or
+   vitest run
+   ```
+   - [ ] All tests pass
+   - [ ] No test failures
+   - [ ] Coverage maintained/improved
+
+3. **E2E Tests (Playwright)**
+   ```bash
+   # Run end-to-end tests
+   pnpm test:e2e
+   # or
+   playwright test
+   ```
+   - [ ] All E2E tests pass
+   - [ ] No flaky tests
+   - [ ] Screenshots match (if visual testing)
+
+### Pre-Commit Checklist (Updated)
+
+Before every commit:
+- [ ] Code is documented (JSDoc)
+- [ ] TODOs added for future work
+- [ ] **Type check passes** — `tsc --noEmit`
+- [ ] **Unit tests pass** — Vitest
+- [ ] **E2E tests pass** — Playwright
+- [ ] Mind files updated:
+  - [ ] `symbiosis/feedback.md` — Learnings
+  - [ ] `symbiosis/standup.md` — Status
+  - [ ] `memory/sessions/` — If significant work
+- [ ] On feature branch (not main)
+- [ ] Commit message follows format
+
+### Test-Driven Workflow
+
+```
+Write Test → See it Fail → Write Code → See it Pass → Refactor → Commit
+```
+
+**Red-Green-Refactor:**
+1. **Red** — Write failing test first
+2. **Green** — Write minimal code to pass
+3. **Refactor** — Clean up while tests pass
+4. **Commit** — Only when all green
+
+### Why This Matters
+
+- **Type errors** → Runtime crashes, bad UX
+- **Test failures** → Broken features, regressions  
+- **Committing failures** → Broken main branch, blocked team
+- **Skipping tests** → Technical debt, fear of changes
+
+**Tests are the safety net. Don't remove the net.**
+
+---
+
+## CODESYNC
+
+When user says **"codesync"** or ready to commit:
+
+```
+Type Check → Run Tests → IF ALL PASS → Commit → Push → Create PR
+```
+
+**Steps:**
+1. `tsc --noEmit` — Zero type errors
+2. `vitest run` — All unit tests pass
+3. `playwright test` — All E2E tests pass
+4. **IF ALL PASS:**
+   - Commit with code + mind changes
+   - Push to feature branch
+   - Create PR
+5. **IF ANY FAIL:** — DO NOT COMMIT
+
+**CODESYNC = Check → Test → Commit → Push → PR (all or nothing)**
+
+---
+
+## MINDSYNC Levels
+
+### SOFT MINDSYNC (Every Change)
+Light update after every work session:
+- [[symbiosis/feedback]] — Learnings, rules
+- [[symbiosis/standup]] — Status if changed
+- Brief notes if significant
+
+### HARD MINDSYNC (Big Events / Explicit)
+Extensive update for:
+- Major features completed
+- Workflow changes
+- Architecture updates
+- Explicit "mindsync" command
+
+**Includes:**
+- [[symbiosis/feedback]] — Detailed learnings
+- [[symbiosis/standup]] — Task status, blockers
+- [[memory/sessions/YYYY-MM-DD]] — Full session log
+- [[knowledge/]] files — Architecture patterns
+- [[MAP]] — If structure changed
+- [[backlog]] — Kanban updates
+- Any other relevant files
+
+### MINDSYNC Checklist
+
+- [ ] feedback.md updated with learnings
+- [ ] standup.md updated with status
+- [ ] Session log created/updated
+- [ ] Knowledge files updated (architecture, domain)
+- [ ] Skills documented (if new patterns)
+- [ ] MAP.md updated (if structure changed)
+- [ ] Kanban board updated (backlog.md)
+- [ ] **Mindful links created** — Added `[[wikilinks]]` to connect related files
+- [ ] Cross-references added
+- [ ] Links verified working
+
+---
+
+## Link Creation Guidelines
+
+**Why Links Matter:**
+- Creates the "edges" in your mind graph
+- Enables semantic discovery via wikilinks
+- Connects related concepts across files
+- Makes navigation intuitive
+
+**When to Link:**
+- When a file mentions concepts from another file
+- When adding new knowledge that relates to existing files
+- When creating session logs that reference previous work
+- When documenting patterns that extend existing ones
+
+**Mindful Linking:**
+```markdown
+- Good: "See [[skills/workflow/documentation-standards]] for details"
+- Good: "Building on [[knowledge/domain/startup-builder]]"
+- Good: "Related to [[memory/sessions/2026-02-11]]"
+- Avoid: "Click here [[some-random-file]]" (no context)
+- Avoid: "Link everything [[to/everything]]" (over-linking)
+```
+
+**Link Strategy:**
+1. Read the file you're updating
+2. Identify concepts that exist elsewhere
+3. Add wikilinks with descriptive text
+4. Verify links point to existing files
+5. Don't link for the sake of linking — link purposefully
+
+---
+
 ## 📖 Example: Fully Documented Module
 
 ```typescript

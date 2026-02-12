@@ -40,6 +40,10 @@
 - Reference mind files for context
 - Follow documented patterns
 - Apply previous learnings
+- **Check type errors after every change**
+- **Run tests: Vitest + Playwright**
+- **SOFT MINDSYNC** — Light update after work (feedback, standup if changed)
+- **NO COMMIT if tests fail**
 
 ---
 
@@ -88,12 +92,14 @@
 | Read INDEX.md first | **MANDATORY** |
 | Read standup | **MANDATORY** |
 | Read feedback | **MANDATORY** |
+| Type check before commit | **MANDATORY** |
+| All tests pass before commit | **MANDATORY** |
 | Update feedback after | **MANDATORY** |
 | Document code changes | **MANDATORY** |
 | Update standup if changed | Required |
 | Create session log if significant | Required |
 
-**Breaking these rules = working blind.**
+**Breaking these rules = working blind. Committing with failing tests = broken code.**
 
 ---
 
@@ -134,7 +140,56 @@ git push -u origin feature/descriptive-name
 
 ---
 
-## Documentation Requirements (NEW)
+## CODESYNC
+
+When user says **"codesync"** or ready to commit:
+
+```
+Type Check → Run Tests → IF ALL PASS → Commit → Push → Create PR
+```
+
+**Steps:**
+1. `tsc --noEmit` — Zero type errors
+2. Vitest run — All unit tests pass
+3. Playwright test — All E2E tests pass
+4. **IF ALL PASS:**
+   - Commit with code + mind changes
+   - Push to feature branch
+   - Create PR
+5. **IF ANY FAIL:** — DO NOT COMMIT
+
+**CODESYNC = Check → Test → Commit → Push → PR (all or nothing)**
+
+---
+
+## MINDSYNC Levels
+
+### SOFT MINDSYNC (Every Change)
+Light update after every work session:
+- [[symbiosis/feedback]] — Learnings, rules
+- [[symbiosis/standup]] — Status if changed
+- Brief notes if significant
+
+### HARD MINDSYNC (Big Events / Explicit)
+Extensive update for:
+- Major features completed
+- Workflow changes
+- Architecture updates
+- Explicit "mindsync" command
+
+**Includes:**
+- [[symbiosis/feedback]] — Detailed learnings
+- [[symbiosis/standup]] — Task status, blockers
+- [[memory/sessions/YYYY-MM-DD]] — Full session log
+- [[knowledge/]] files — Architecture patterns
+- [[MAP]] — If structure changed
+- [[backlog]] — Kanban updates
+- **Mindful link creation** — Add `[[wikilinks]]` to connect related files
+- Any other relevant files
+
+---
+
+## Testing Requirements (NEW)
 
 Every code file MUST have:
 
@@ -164,6 +219,8 @@ Before every interaction:
 - [ ] Read [[symbiosis/standup]]
 - [ ] Read [[symbiosis/feedback]]
 - [ ] Do the work
+- [ ] **Type check** — `tsc --noEmit` or equivalent
+- [ ] **Run tests** — Vitest + Playwright (ALL must pass)
 - [ ] Update [[symbiosis/feedback]]
 - [ ] **Document code changes** (JSDoc, TODOs, architecture)
 - [ ] Update [[symbiosis/standup]] if needed

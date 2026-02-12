@@ -18,6 +18,13 @@ kanban-plugin: board
   - [ ] Update MIND-FRAMEWORK with doc requirements
   - [ ] Add documentation checklist to session template
 
+- [ ] #testing Set up testing infrastructure
+  - [ ] Configure Vitest for unit tests
+  - [ ] Configure Playwright for E2E tests
+  - [ ] Add type check to pre-commit
+  - [ ] Add test run to pre-commit
+  - [ ] Create test documentation
+
 ## Urgent
 
 - [x] #feature Bizing AI mind awareness

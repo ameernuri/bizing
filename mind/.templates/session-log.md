@@ -57,6 +57,34 @@ tags: session, log
 - [ ] Pushed to origin
 - [ ] PR created (if ready)
 
+### Testing
+- [ ] Type check passes — `tsc --noEmit`
+- [ ] Unit tests pass — Vitest
+- [ ] E2E tests pass — Playwright
+- [ ] No test failures
+
+### MINDSYNC Level
+- [ ] SOFT MINDSYNC — Light update (feedback only)
+- [ ] HARD MINDSYNC — Extensive update (feedback + standup + sessions + knowledge + backlog + MAP)
+
+### MINDSYNC (HARD)
+- [ ] feedback.md updated with learnings
+- [ ] standup.md updated with status
+- [ ] Session log created/updated
+- [ ] Knowledge files updated (architecture, domain)
+- [ ] Skills documented (if new patterns)
+- [ ] MAP.md updated (if structure changed)
+- [ ] Kanban board updated (backlog.md)
+- [ ] **Mindful links created** — Added wikilinks to connect related files
+- [ ] Cross-references added
+- [ ] Links verified working
+
+### CODESYNC
+- [ ] Type check → pass
+- [ ] Tests → pass
+- [ ] Commit → pushed
+- [ ] PR → created
+
 ```dataview
 TABLE file.link FROM "mind/memory/sessions/<% tp.date.now("YYYY-MM-DD") %>*" WHERE file.name != this.file.name
 ```
