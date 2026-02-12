@@ -103,7 +103,8 @@
 ### Completed Findings:
 **→ [[research/findings/booking-domain-model|Booking Domain Model]]** — Reservation patterns, state machines  
 **→ [[research/findings/event-driven-architecture|Event-Driven Architecture]]** — Sagas, webhooks, event sourcing  
-**→ [[research/findings/api-first-design|API-First Design]]** — OpenAPI, contract testing, versioning
+**→ [[research/findings/api-first-design|API-First Design]]** — OpenAPI, contract testing, versioning  
+**→ [[research/findings/merchant-of-record-stripe-fees|Merchant of Record & Stripe Fees]]** — MoR model, fee optimization strategies
 
 ### Architecture Visualizations:
 **→ [[../canvas/architecture-overview|Architecture Overview]]** — Complete system overview  

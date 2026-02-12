@@ -39,6 +39,8 @@ status: active
 ### Bizing Core Features
 - [ ] **Marketplace mechanics** — How do agent marketplaces work?  
   *🔵 IN PROGRESS — Using Perplexity API, findings: mind/research/findings/marketplace-mechanics.md*
+- [x] **Merchant of Record & Stripe Fees** — MoR responsibilities, fee optimization strategies  
+  *✅ COMPLETED — findings: mind/research/findings/merchant-of-record-stripe-fees.md*
 - [ ] **Pricing models** — Subscription, usage-based, outcome-based?
 - [ ] **Agent discovery** — How do users find the right agent?
 - [ ] **Agent reputation** — Rating/review systems for agents
