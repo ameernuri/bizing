@@ -33,6 +33,9 @@ status: active
 - [2026-02-11] **Testing Requirements** — ALL tests must pass before commit/push. Check type errors after every change. Use Vitest for unit tests, Playwright for E2E. NO commits with failing tests.
 - [2026-02-11] **Mind Activity API** — Renamed brain/activity to mind/activity with real data. Now reads from session logs, feedback learnings, and mind structure. Returns: recent sessions, documented learnings, current focus, file count.
 - [2026-02-11] **Never Skip Tests** — Installed Playwright, added `pnpm typecheck`, `pnpm test`, `pnpm test:e2e` commands. Updated documentation to NEVER SKIP any check. Type errors or test failures = STOP and FIX first.
+- [2026-02-11] **Admin Dashboard Documentation** — Added extensive JSDoc to bizing/page.tsx with @fileoverview, @description, @architecture, @design-decisions, @dependencies, @todo. Every function needs docs. Critical for understanding and maintenance.
+- [2026-02-11] **Admin Dashboard Tests** — Created __tests__/page.test.tsx with 20+ tests covering: rendering, user interactions, API calls, accessibility. Added vitest.config.ts, vitest.setup.ts, @testing-library/react, jsdom. Tests verify component behavior.
+- [2026-02-11] **Overflow Fixes** — Fixed activity cards and send button overflow. Key fix: add `overflow-hidden` to parent containers AND child elements. Use `min-w-0` on flex children. Use `shrink-0` on fixed-width elements. Test with `data-testid` for verification.
 - [2026-02-11] **Admin Dashboard Fixes** — Fixed duplicate React key error (learning-ID now unique). Added react-markdown for chat responses. Fixed chat layout with fixed input at bottom (Telegram style). Fixed activity card overflow with proper scroll areas.
 
 - [2026-02-11] **CODESYNC** — When user says "codesync", perform: type check → run tests → if ALL pass, commit → push to feature branch → create PR. NO commit if tests fail.
