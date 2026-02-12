@@ -1,0 +1,168 @@
+{
+  "nodes": [
+    {
+      "id": "title",
+      "type": "text",
+      "text": "# Event-Driven Architecture\n\nSaga pattern, webhooks, and event sourcing for booking workflows",
+      "x": -200,
+      "y": -500,
+      "width": 600,
+      "height": 100
+    },
+    {
+      "id": "why-events",
+      "type": "text",
+      "text": "## Why Event-Driven?\n\n**Problems Solved:**\n- Decoupled services\n- Complete audit trail\n- Easy to add integrations\n- Resilient with retries\n\n**Booking Workflow:**\n```\nCreate → Hold → Payment → Confirm → Notify\n  ↓       ↓       ↓          ↓        ↓\nValidate  DB    Stripe     Update   Email/\n          Lock   Charge     DB       SMS/\n                                     Calendar\n```",
+      "x": -600,
+      "y": -300,
+      "width": 350,
+      "height": 300
+    },
+    {
+      "id": "event-store",
+      "type": "text",
+      "text": "## Event Store\n\n**PostgreSQL Schema:**\n```sql\nCREATE TABLE events (\n  id UUID PRIMARY KEY,\n  type TEXT,           -- 'BookingCreated'\n  aggregate_id UUID,   -- booking ID\n  payload JSONB,       -- event data\n  metadata JSONB,      -- correlationId,\n                       -- causationId,\n                       -- timestamp\n  sequence_number,     -- ordering\n  created_at\n);\n```\n\n**Indexes:**\n- aggregate_type + id + seq\n- type + created_at",
+      "x": -100,
+      "y": -300,
+      "width": 350,
+      "height": 320
+    },
+    {
+      "id": "event-types",
+      "type": "text",
+      "text": "## Event Types\n\n**Booking Lifecycle:**\n- BookingCreated\n- InventoryHeld\n- PaymentRequested\n- PaymentReceived\n- PaymentFailed\n- BookingConfirmed\n- NotificationSent\n- CalendarSynced\n- BookingCancelled\n- InventoryReleased\n\n**Each Event Has:**\n- Unique ID\n- Aggregate ID (booking)\n- Payload (data)\n- Metadata (context)",
+      "x": 400,
+      "y": -300,
+      "width": 300,
+      "height": 350
+    },
+    {
+      "id": "saga-pattern",
+      "type": "text",
+      "text": "## Saga Pattern\n\n**Problem:** Distributed transaction\nBooking spans multiple services\n\n**Solution:** Saga\nSequence of steps with\ncompensation (rollback)\n\n**Orchestration vs Choreography:**\n- Orchestration: Central coordinator\n  ✓ Better visibility\n  ✓ Easier debug\n  ✓ Centralized errors\n\n- Choreography: Services react\n  ✓ More decoupled\n  ✗ Harder to trace\n\n**Recommendation: Orchestration**",
+      "x": -600,
+      "y": 100,
+      "width": 350,
+      "height": 320
+    },
+    {
+      "id": "booking-saga",
+      "type": "text",
+      "text": "## Booking Saga\n\n**Step 1: HoldInventory**\nAction: Create time slot hold\nCompensation: Release hold\n\n**Step 2: CreatePaymentIntent**\nAction: Stripe payment intent\nCompensation: (auto-expires)\n\n**Step 3: CapturePayment**\nAction: Charge card\nCompensation: Refund\n\n**Step 4: ConfirmBooking**\nAction: Update status\nCompensation: Cancel booking\n\n**Step 5: SendNotifications**\nAction: Email, SMS, calendar\nCompensation: Cancellation notice",
+      "x": -100,
+      "y": 100,
+      "width": 350,
+      "height": 380
+    },
+    {
+      "id": "saga-state",
+      "type": "text",
+      "text": "## Saga State Management\n\n**saga_instances Table:**\n- id, saga_type\n- aggregate_id (booking)\n- status: running, completed,\n  failed, compensating\n- current_step\n- completed_steps[]\n- failed_step\n- error_message\n- started_at, completed_at\n\n**Monitoring:**\n- Dashboard of running sagas\n- Failed saga alerts\n- Compensation tracking",
+      "x": 400,
+      "y": 100,
+      "width": 300,
+      "height": 300
+    },
+    {
+      "id": "webhooks-out",
+      "type": "text",
+      "text": "## Outgoing Webhooks\n\n**Purpose:** Notify external\nsystems of events\n\n**Supported Integrations:**\n- Google Calendar\n- Zoom (create meetings)\n- Slack notifications\n- Twilio (SMS)\n- Custom endpoints\n\n**Security:**\n- HMAC signature verification\n- Retry with backoff\n- Dead letter queue\n- Idempotency keys",
+      "x": -600,
+      "y": 550,
+      "width": 300,
+      "height": 280
+    },
+    {
+      "id": "webhooks-in",
+      "type": "text",
+      "text": "## Incoming Webhooks\n\n**Stripe Events:**\n- payment_intent.succeeded\n- payment_intent.payment_failed\n- charge.refunded\n- customer.subscription.updated\n\n**Handler Pattern:**\n```\n1. Verify signature\n2. Map to domain event\n3. Publish to event bus\n4. Return 200 OK\n```\n\n**Event Mapping:**\nStripe event → Domain event\npayment_intent.succeeded\n  → PaymentReceived",
+      "x": -100,
+      "y": 550,
+      "width": 350,
+      "height": 280
+    },
+    {
+      "id": "projections",
+      "type": "text",
+      "text": "## Projections (Read Models)\n\n**Problem:** Event store is\nwrite-optimized\n\n**Solution:** Denormalized\nread models\n\n**How It Works:**\n1. Event published\n2. Projection handler\n   updates read model\n3. Queries use read model\n\n**Example:**\nbooking_projections table\n- Fast queries\n- Eventually consistent\n- Can rebuild from events",
+      "x": 400,
+      "y": 550,
+      "width": 300,
+      "height": 280
+    },
+    {
+      "id": "infrastructure",
+      "type": "text",
+      "text": "## Infrastructure Options\n\n| Option | Best For |\n|--------|----------|\n| PostgreSQL | Start simple |\n| Redis + Bull | Small-medium |\n| RabbitMQ | Enterprise |\n| Kafka | Large scale |\n\n**Recommendation:**\nStart with PostgreSQL,\nmigrate to Redis/Bull\nwhen needed",
+      "x": -100,
+      "y": 900,
+      "width": 350,
+      "height": 220
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "fromNode": "title",
+      "fromSide": "bottom",
+      "toNode": "why-events",
+      "toSide": "top"
+    },
+    {
+      "id": "e2",
+      "fromNode": "title",
+      "fromSide": "bottom",
+      "toNode": "event-store",
+      "toSide": "top"
+    },
+    {
+      "id": "e3",
+      "fromNode": "title",
+      "fromSide": "bottom",
+      "toNode": "event-types",
+      "toSide": "top"
+    },
+    {
+      "id": "e4",
+      "fromNode": "why-events",
+      "fromSide": "bottom",
+      "toNode": "saga-pattern",
+      "toSide": "top"
+    },
+    {
+      "id": "e5",
+      "fromNode": "event-store",
+      "fromSide": "bottom",
+      "toNode": "booking-saga",
+      "toSide": "top"
+    },
+    {
+      "id": "e6",
+      "fromNode": "event-types",
+      "fromSide": "bottom",
+      "toNode": "saga-state",
+      "toSide": "top"
+    },
+    {
+      "id": "e7",
+      "fromNode": "saga-pattern",
+      "fromSide": "bottom",
+      "toNode": "webhooks-out",
+      "toSide": "top"
+    },
+    {
+      "id": "e8",
+      "fromNode": "booking-saga",
+      "fromSide": "bottom",
+      "toNode": "webhooks-in",
+      "toSide": "top"
+    },
+    {
+      "id": "e9",
+      "fromNode": "saga-state",
+      "fromSide": "bottom",
+      "toNode": "projections",
+      "toSide": "top"
+    }
+  ]
+}

@@ -1,0 +1,159 @@
+{
+  "nodes": [
+    {
+      "id": "title",
+      "type": "text",
+      "text": "# API-First Design\n\nOpenAPI specification, contract testing, and versioning strategy",
+      "x": -200,
+      "y": -500,
+      "width": 600,
+      "height": 100
+    },
+    {
+      "id": "api-first-workflow",
+      "type": "text",
+      "text": "## API-First Workflow\n\n**Traditional:**\n1. Build backend\n2. Build frontend\n3. Integrate (breaks)\n\n**API-First:**\n1. Design OpenAPI spec\n2. Generate mock server\n3. Frontend builds against mock\n4. Backend implements spec\n5. Contract tests verify\n\n**Benefits:**\n- Parallel development\n- Clear contracts\n- Living documentation\n- Generated code\n- Testable early",
+      "x": -600,
+      "y": -300,
+      "width": 350,
+      "height": 320
+    },
+    {
+      "id": "timeline",
+      "type": "text",
+      "text": "## 4-Week Timeline\n\n**Week 1: Design**\n- Define resources\n- Write OpenAPI spec\n- Team review\n- Generate mock\n\n**Week 2: Frontend**\n- Build against mock\n- Discover edge cases\n- Update spec\n\n**Week 3: Backend**\n- Implement to spec\n- Run contract tests\n- Fix violations\n\n**Week 4: Integration**\n- Remove mock\n- E2E tests\n- Deploy staging",
+      "x": -100,
+      "y": -300,
+      "width": 300,
+      "height": 320
+    },
+    {
+      "id": "openapi-spec",
+      "type": "text",
+      "text": "## OpenAPI 3.0 Spec\n\n**Key Endpoints:**\n\n`GET /bookings`\n- List with filters\n- Pagination\n\n`POST /bookings`\n- Create (starts checkout)\n- Returns pending\n\n`GET /bookings/{id}`\n- Get details\n\n`PATCH /bookings/{id}`\n- Update notes/metadata\n\n`DELETE /bookings/{id}`\n- Cancel with refund\n\n`POST /bookings/{id}/confirm`\n- After payment\n\n`GET /resources/{id}/availability`\n- Check slots",
+      "x": 350,
+      "y": -300,
+      "width": 300,
+      "height": 400
+    },
+    {
+      "id": "code-generation",
+      "type": "text",
+      "text": "## Code Generation\n\n**TypeScript Types:**\n```bash\nnpx openapi-typescript\n  openapi.yaml\n  -o apps/api/src/types/api.ts\n```\n\n**Mock Server:**\n```bash\nprism mock openapi.yaml\n  --port 4010\n```\n\n**API Client:**\n```bash\nopenapi-generator-cli generate\n  -i openapi.yaml\n  -g typescript-fetch\n  -o apps/admin/src/api\n```\n\n**Benefits:**\n- Type safety\n- Auto-sync with spec\n- Less boilerplate",
+      "x": -600,
+      "y": 100,
+      "width": 350,
+      "height": 320
+    },
+    {
+      "id": "contract-testing",
+      "type": "text",
+      "text": "## Contract Testing with Pact\n\n**Problem:**\nBackend changes break frontend\n\n**Solution:**\nConsumer-driven contracts\n\n**How It Works:**\n1. Frontend defines expected contract\n2. Backend verifies fulfillment\n3. CI catches breaking changes\n\n**Consumer Test:**\n```\nprovider.addInteraction({\n  state: 'bookings exist',\n  request: {\n    method: 'GET',\n    path: '/bookings'\n  },\n  response: {\n    status: 200,\n    body: {\n      data: eachLike(booking)\n    }\n  }\n});\n```\n\n**Provider Test:**\n```\nnew Verifier({\n  provider: 'bizing-api',\n  pactUrls: ['pacts/...']\n}).verify();\n```",
+      "x": -100,
+      "y": 100,
+      "width": 350,
+      "height": 380
+    },
+    {
+      "id": "versioning",
+      "type": "text",
+      "text": "## API Versioning\n\n**Strategy: URL Versioning**\n```\n/api/v1/bookings\n/api/v2/bookings\n```\n\n**Policy:**\n- Support N and N-1\n- 6-month deprecation\n- Breaking changes = new version\n- Migration guides\n\n**Breaking Changes:**\n- Removing fields\n- Changing types\n- Changing behavior\n- Removing endpoints\n\n**Non-Breaking:**\n- Adding optional fields\n- New endpoints\n- New query params",
+      "x": 350,
+      "y": 200,
+      "width": 300,
+      "height": 300
+    },
+    {
+      "id": "security",
+      "type": "text",
+      "text": "## Security\n\n**Authentication:**\n- Bearer JWT (users)\n- API Key (programmatic)\n\n**Authorization:**\n- RBAC (roles)\n- Resource ownership\n- Agent permissions\n\n**Rate Limiting:**\n- Per user/agent\n- Per endpoint\n- Token bucket algorithm\n\n**Validation:**\n- Input validation (Zod)\n- Output serialization\n- SQL injection prevention",
+      "x": -600,
+      "y": 500,
+      "width": 300,
+      "height": 280
+    },
+    {
+      "id": "testing-pyramid",
+      "type": "text",
+      "text": "## Testing Pyramid\n\n**Unit Tests (Many):**\n- Component logic\n- Vitest/Jest\n- Fast \u003c100ms\n\n**Contract Tests (Medium):**\n- API compatibility\n- Pact\n- Fast ~1s\n\n**Integration Tests (Some):**\n- Service interaction\n- Supertest\n- Medium ~1s\n\n**E2E Tests (Few):**\n- Full workflows\n- Playwright\n- Slow ~10s",
+      "x": -100,
+      "y": 550,
+      "width": 350,
+      "height": 250
+    },
+    {
+      "id": "documentation",
+      "type": "text",
+      "text": "## Documentation\n\n**OpenAPI = Living Docs**\n- Auto-generated from spec\n- Always up-to-date\n- Interactive (try it)\n\n**Tools:**\n- Swagger UI\n- Redoc\n- Scalar\n\n**Includes:**\n- Endpoints\n- Request/response examples\n- Authentication\n- Error codes",
+      "x": 350,
+      "y": 600,
+      "width": 300,
+      "height": 220
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "fromNode": "title",
+      "fromSide": "bottom",
+      "toNode": "api-first-workflow",
+      "toSide": "top"
+    },
+    {
+      "id": "e2",
+      "fromNode": "title",
+      "fromSide": "bottom",
+      "toNode": "timeline",
+      "toSide": "top"
+    },
+    {
+      "id": "e3",
+      "fromNode": "title",
+      "fromSide": "bottom",
+      "toNode": "openapi-spec",
+      "toSide": "top"
+    },
+    {
+      "id": "e4",
+      "fromNode": "api-first-workflow",
+      "fromSide": "bottom",
+      "toNode": "code-generation",
+      "toSide": "top"
+    },
+    {
+      "id": "e5",
+      "fromNode": "timeline",
+      "fromSide": "bottom",
+      "toNode": "contract-testing",
+      "toSide": "top"
+    },
+    {
+      "id": "e6",
+      "fromNode": "openapi-spec",
+      "fromSide": "bottom",
+      "toNode": "versioning",
+      "toSide": "top"
+    },
+    {
+      "id": "e7",
+      "fromNode": "code-generation",
+      "fromSide": "bottom",
+      "toNode": "security",
+      "toSide": "top"
+    },
+    {
+      "id": "e8",
+      "fromNode": "contract-testing",
+      "fromSide": "bottom",
+      "toNode": "testing-pyramid",
+      "toSide": "top"
+    },
+    {
+      "id": "e9",
+      "fromNode": "versioning",
+      "fromSide": "bottom",
+      "toNode": "documentation",
+      "toSide": "top"
+    }
+  ]
+}

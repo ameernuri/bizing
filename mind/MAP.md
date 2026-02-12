@@ -105,6 +105,12 @@
 **→ [[research/findings/event-driven-architecture|Event-Driven Architecture]]** — Sagas, webhooks, event sourcing  
 **→ [[research/findings/api-first-design|API-First Design]]** — OpenAPI, contract testing, versioning
 
+### Architecture Visualizations:
+**→ [[../canvas/architecture-overview|Architecture Overview]]** — Complete system overview  
+**→ [[../canvas/booking-domain-architecture|Booking Domain]]** — Domain model canvas  
+**→ [[../canvas/event-driven-architecture|Event-Driven]]** — Saga and events canvas  
+**→ [[../canvas/api-first-design|API-First Design]]** — API workflow canvas
+
 ### Archive:
 **→ [[research/MARKET_RESEARCH|Market Research]]** — Original research  
 **→ [[research/MARKET_RESEARCH_EXTENDED|Extended Research]]** — Deep dive  
