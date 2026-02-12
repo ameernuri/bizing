@@ -85,6 +85,7 @@
 **→ [[skills/workflow/brain-updates|Brain Updates]]** — When and how to update  
 **→ [[skills/workflow/briefing-for-11labs|11Labs Briefing]]** — Voice agent setup  
 **→ [[skills/workflow/dataview|Dataview]]** — Querying mind content  
+**→ [[skills/workflow/documentation-standards|Documentation Standards]]** — ⚡ **MANDATORY** JSDoc requirements  
 **→ [[skills/workflow/dotenv-config|Dotenv Config]]** — Environment setup  
 **→ [[skills/workflow/kimi-api-keys|Kimi API Keys]]** — API key management  
 **→ [[skills/workflow/talking-to-bizing|Talking to Bizing]]** — Conversation patterns

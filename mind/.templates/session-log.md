@@ -30,6 +30,33 @@ tags: session, log
 
 ## Files Changed
 
+### Code Files
+- [ ] File 1 — JSDoc added/updated
+- [ ] File 2 — JSDoc added/updated
+
+### Mind Files
+- [ ] [[symbiosis/feedback]] — Learnings documented
+- [ ] [[symbiosis/standup]] — Status updated
+- [ ] Knowledge file — Architecture documented
+- [ ] [[MAP]] — Structure updated (if changed)
+
+### Documentation Work
+- [ ] File headers with @fileoverview
+- [ ] Function JSDoc completed
+- [ ] TODOs added for future work
+- [ ] Architecture diagrams included
+- [ ] Related files cross-referenced
+  - [ ] Code files: `{@link ./file.ts}` format
+  - [ ] Mind files: `mind/path/file.md` format
+
+### Git Workflow
+- [ ] Feature branch created (NEVER commit to main)
+- [ ] Branch named: `feature/description`
+- [ ] Code + mind committed together
+- [ ] Commit message follows format
+- [ ] Pushed to origin
+- [ ] PR created (if ready)
+
 ```dataview
 TABLE file.link FROM "mind/memory/sessions/<% tp.date.now("YYYY-MM-DD") %>*" WHERE file.name != this.file.name
 ```

@@ -2,46 +2,61 @@
 kanban-plugin: board
 ---
 
+## 🚨 In Progress
+
+- [ ] #documentation Comprehensive code documentation
+  - [ ] Document mind-api.ts with JSDoc
+  - [ ] Document mind-map.ts with JSDoc  
+  - [ ] Document mind-embeddings.ts with JSDoc
+  - [ ] Document llm.ts with JSDoc
+  - [ ] Document server.ts with JSDoc
+  - [ ] Add TODOs and architecture notes to all files
+  - [ ] Update project README
+
+- [ ] #workflow Update documentation workflow
+  - [ ] Create docs/workflow-code-documentation.md
+  - [ ] Update MIND-FRAMEWORK with doc requirements
+  - [ ] Add documentation checklist to session template
+
 ## Urgent
 
-- [ ] #bug Kimi API key invalid
-  - Generate fresh key from portal
-  - Test authentication
-  - Document result
+- [x] #feature Bizing AI mind awareness
+  - [x] Implement function calling
+  - [x] Add conversation memory
+  - [x] Create MAP.md master index
+  - [x] Semantic search with embeddings
 
 ## High
 
-- [ ] #feature MIND entry point
-  - [x] Create INDEX.md
-  - [x] Update SOUL.md
-  - [ ] Add Dataview queries
-  - [ ] Create templates
+- [ ] #feature Auto-integrate code docs into embeddings
+  - Extract JSDoc comments
+  - Include TODOs in semantic search
+  - Update embeddings when code changes
 
-- [ ] #infrastructure Obsidian setup
-  - [ ] Install Templater
-  - [ ] Install Kanban
-  - [ ] Install Dataview
-  - [ ] Configure templates
+- [ ] #documentation Create project README
+  - Project overview and vision
+  - Architecture diagram
+  - Setup instructions
+  - API documentation
 
 ## Medium
 
-- [ ] #documentation Document dotenv lesson
-- [ ] #documentation Document Kimi API debugging
-- [ ] #documentation Update skills index
+- [ ] #documentation Document all existing code files
+  - Brain loader service
+  - All API routes
+  - Utility functions
 
-- [ ] #visual Create consciousness canvas
-- [ ] #visual Create project roadmap canvas
+- [ ] #infrastructure Set up automated doc checks
+  - Pre-commit hook for JSDoc
+  - CI check for documentation coverage
 
 ## Low
 
-- [ ] #cleanup Archive old sessions
-- [ ] #cleanup Clean up unused skills
-- [ ] #cleanup Review and prune decisions
-
-- [ ] #explore Research AI agents integration
-- [ ] #explore Explore voice interface
-- [ ] #explore Experiment with automation
+- [ ] #explore AI-generated documentation
+  - Auto-generate docs from code
+  - Keep in sync with changes
 
 ---
 
 *Backlog. Open in Obsidian with Kanban plugin.*
+*Last updated: 2026-02-11*
