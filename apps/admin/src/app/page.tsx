@@ -13,7 +13,8 @@ import {
   Bug,
   Database,
   Sun,
-  Moon
+  Moon,
+  Brain
 } from 'lucide-react'
 import { useTheme } from '@/components/ThemeProvider'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
@@ -224,6 +225,12 @@ export default function Dashboard() {
             <Button variant="outline" className="w-full justify-start gap-3 border-purple-200 text-purple-600 hover:bg-purple-50 dark:border-purple-900/50 dark:text-purple-400">
               <Database className="h-5 w-5" />
               Schema
+            </Button>
+          </Link>
+          <Link href="/bizing">
+            <Button variant="outline" className="w-full justify-start gap-3 border-indigo-200 text-indigo-600 hover:bg-indigo-50 dark:border-indigo-900/50 dark:text-indigo-400">
+              <Brain className="h-5 w-5" />
+              Bizing AI
             </Button>
           </Link>
         </nav>

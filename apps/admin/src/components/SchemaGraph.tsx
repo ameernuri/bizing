@@ -102,7 +102,7 @@ export default function SchemaGraph() {
     setSelectedEntity(node.id)
   }, [])
 
-  const selectedEntityData = graphData?.entities.find(e => e.name === selectedEntity)
+  const selectedEntityData = graphData?.entities?.find(e => e.name === selectedEntity)
 
   if (loading) {
     return (

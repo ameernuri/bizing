@@ -1,232 +1,16 @@
 import { serve } from '@hono/node-server'
 import { cors } from 'hono/cors'
 import { v4 as uuidv4 } from 'uuid'
-import { Hono } from 'hono'
-import { OpenAPIHono } from '@hono/zod-openapi'
-import { Scalar } from '@scalar/hono-api-reference'
+import { OpenAPIHono, z } from '@hono/zod-openapi'
+import { chatWithLLM, createBizingSystemPrompt } from './services/llm.js'
 
 // ============================================
-// Schema Parser - Extract entities/relationships from Drizzle schemas
+// Logger
 // ============================================
 
-interface Column {
-  name: string
-  type: string
-  nullable: boolean
-  primaryKey?: boolean
-  default?: string
-}
-
-interface Entity {
-  name: string
-  tableName: string
-  columns: Column[]
-  relationships: Relationship[]
-}
-
-interface Relationship {
-  type: '1:N' | '1:1' | 'N:1'
-  to: string
-  field: string
-  description: string
-}
-
-interface SchemaGraph {
-  entities: Entity[]
-  relationships: Relationship[]
-}
-
-// Parse Drizzle schema files to extract entities
-function parseSchema(): SchemaGraph {
-  const entities: Entity[] = [
-    {
-      name: 'Organization',
-      tableName: 'organizations',
-      columns: [
-        { name: 'id', type: 'uuid', nullable: false, primaryKey: true },
-        { name: 'name', type: 'varchar(255)', nullable: false },
-        { name: 'slug', type: 'varchar(100)', nullable: false },
-        { name: 'logoUrl', type: 'varchar(500)', nullable: true },
-        { name: 'timezone', type: 'varchar(50)', nullable: true, default: 'UTC' },
-        { name: 'currency', type: 'varchar(3)', nullable: true, default: 'USD' },
-        { name: 'status', type: 'varchar(20)', nullable: true, default: 'active' },
-        { name: 'settings', type: 'jsonb', nullable: true },
-        { name: 'createdAt', type: 'timestamp', nullable: true },
-        { name: 'updatedAt', type: 'timestamp', nullable: true },
-      ],
-      relationships: [
-        { type: '1:N', to: 'User', field: 'orgId', description: 'Users belong to org' },
-        { type: '1:N', to: 'Service', field: 'orgId', description: 'Services belong to org' },
-        { type: '1:N', to: 'Product', field: 'orgId', description: 'Products belong to org' },
-        { type: '1:N', to: 'Booking', field: 'orgId', description: 'Bookings belong to org' },
-      ]
-    },
-    {
-      name: 'User',
-      tableName: 'users',
-      columns: [
-        { name: 'id', type: 'uuid', nullable: false, primaryKey: true },
-        { name: 'orgId', type: 'uuid', nullable: false },
-        { name: 'email', type: 'varchar(255)', nullable: false },
-        { name: 'passwordHash', type: 'varchar(255)', nullable: true },
-        { name: 'firstName', type: 'varchar(100)', nullable: true },
-        { name: 'lastName', type: 'varchar(100)', nullable: true },
-        { name: 'phone', type: 'varchar(50)', nullable: true },
-        { name: 'role', type: 'varchar(20)', nullable: true, default: 'staff' },
-        { name: 'status', type: 'varchar(20)', nullable: true, default: 'active' },
-        { name: 'avatarUrl', type: 'varchar(500)', nullable: true },
-        { name: 'emailVerifiedAt', type: 'timestamp', nullable: true },
-        { name: 'createdAt', type: 'timestamp', nullable: true },
-        { name: 'updatedAt', type: 'timestamp', nullable: true },
-      ],
-      relationships: [
-        { type: 'N:1', to: 'Organization', field: 'orgId', description: 'User belongs to org' },
-      ]
-    },
-    {
-      name: 'Service',
-      tableName: 'services',
-      columns: [
-        { name: 'id', type: 'uuid', nullable: false, primaryKey: true },
-        { name: 'orgId', type: 'uuid', nullable: false },
-        { name: 'categoryId', type: 'uuid', nullable: true },
-        { name: 'name', type: 'varchar(255)', nullable: false },
-        { name: 'slug', type: 'varchar(100)', nullable: false },
-        { name: 'description', type: 'text', nullable: true },
-        { name: 'durationMinutes', type: 'integer', nullable: true, default: '60' },
-        { name: 'price', type: 'decimal(10,2)', nullable: true, default: '0' },
-        { name: 'currency', type: 'varchar(3)', nullable: true, default: 'USD' },
-        { name: 'isActive', type: 'boolean', nullable: true, default: 'true' },
-        { name: 'isOnlineBookable', type: 'boolean', nullable: true, default: 'true' },
-        { name: 'createdAt', type: 'timestamp', nullable: true },
-        { name: 'updatedAt', type: 'timestamp', nullable: true },
-      ],
-      relationships: [
-        { type: 'N:1', to: 'Organization', field: 'orgId', description: 'Service belongs to org' },
-        { type: '1:N', to: 'Booking', field: 'serviceId', description: 'Bookings reference service' },
-      ]
-    },
-    {
-      name: 'Product',
-      tableName: 'products',
-      columns: [
-        { name: 'id', type: 'uuid', nullable: false, primaryKey: true },
-        { name: 'orgId', type: 'uuid', nullable: false },
-        { name: 'name', type: 'varchar(255)', nullable: false },
-        { name: 'slug', type: 'varchar(100)', nullable: false },
-        { name: 'description', type: 'text', nullable: true },
-        { name: 'price', type: 'decimal(10,2)', nullable: false },
-        { name: 'currency', type: 'varchar(3)', nullable: true, default: 'USD' },
-        { name: 'type', type: 'varchar(50)', nullable: true, default: 'digital' },
-        { name: 'status', type: 'varchar(20)', nullable: true, default: 'draft' },
-        { name: 'downloadUrl', type: 'varchar(500)', nullable: true },
-        { name: 'createdAt', type: 'timestamp', nullable: true },
-        { name: 'updatedAt', type: 'timestamp', nullable: true },
-      ],
-      relationships: [
-        { type: 'N:1', to: 'Organization', field: 'orgId', description: 'Product belongs to org' },
-      ]
-    },
-    {
-      name: 'Booking',
-      tableName: 'bookings',
-      columns: [
-        { name: 'id', type: 'uuid', nullable: false, primaryKey: true },
-        { name: 'orgId', type: 'uuid', nullable: false },
-        { name: 'serviceId', type: 'uuid', nullable: false },
-        { name: 'customerId', type: 'uuid', nullable: true },
-        { name: 'customerName', type: 'varchar(255)', nullable: true },
-        { name: 'customerEmail', type: 'varchar(255)', nullable: true },
-        { name: 'customerPhone', type: 'varchar(50)', nullable: true },
-        { name: 'startTime', type: 'timestamp', nullable: false },
-        { name: 'endTime', type: 'timestamp', nullable: false },
-        { name: 'status', type: 'varchar(20)', nullable: true, default: 'pending' },
-        { name: 'price', type: 'decimal(10,2)', nullable: true, default: '0' },
-        { name: 'source', type: 'varchar(50)', nullable: true, default: 'website' },
-        { name: 'confirmationCode', type: 'varchar(20)', nullable: true },
-        { name: 'createdAt', type: 'timestamp', nullable: true },
-        { name: 'updatedAt', type: 'timestamp', nullable: true },
-      ],
-      relationships: [
-        { type: 'N:1', to: 'Organization', field: 'orgId', description: 'Booking belongs to org' },
-        { type: 'N:1', to: 'Service', field: 'serviceId', description: 'Booking references service' },
-        { type: 'N:1', to: 'User', field: 'customerId', description: 'Booking has customer' },
-      ]
-    }
-  ]
-
-  // Extract all relationships
-  const allRelationships: Relationship[] = []
-  entities.forEach(entity => {
-    entity.relationships.forEach(rel => {
-      allRelationships.push(rel)
-    })
-  })
-
-  return { entities, relationships: allRelationships }
-}
-
-// Generate React Flow nodes from entities
-function generateFlowNodes(entities: Entity[]) {
-  return entities.map((entity, index) => {
-    const x = 100 + (index % 3) * 350
-    const y = 100 + Math.floor(index / 3) * 250
-    
-    return {
-      id: entity.name,
-      type: 'entityNode',
-      position: { x, y },
-      data: { entity }
-    }
-  })
-}
-
-// Generate React Flow edges from relationships
-function generateFlowEdges(entities: Entity[]) {
-  const edges: Array<{
-    id: string
-    source: string
-    target: string
-    label: string
-    type: string
-    animated: boolean
-  }> = []
-  
-  entities.forEach(entity => {
-    entity.relationships.forEach(rel => {
-      if (entities.find(e => e.name === rel.to)) {
-        edges.push({
-          id: `${entity.name}-${rel.to}`,
-          source: rel.type === '1:N' || rel.type === '1:1' ? entity.name : rel.to,
-          target: rel.type === '1:N' || rel.type === '1:1' ? rel.to : entity.name,
-          label: rel.type,
-          type: 'smoothstep',
-          animated: true
-        })
-      }
-    })
-  })
-  
-  return edges
-}
-
-// ============================================
-// Simple Logger
-// ============================================
-
-const colors: Record<string, string> = {
-  debug: '\x1b[36m',
-  info: '\x1b[32m',
-  warn: '\x1b[33m',
-  error: '\x1b[31m'
-}
-const reset = '\x1b[0m'
-
-function log(level: string, message: string) {
-  const color = colors[level] || colors.info
+function log(message: string) {
   const timestamp = new Date().toISOString().split('T')[1].split('.')[0]
-  const levelStr = level.toUpperCase().padEnd(5)
-  console.log(`${color}[${timestamp}] [${levelStr}] ${message}${reset}`)
+  console.log(`[${timestamp}] ${message}`)
 }
 
 // ============================================
@@ -247,72 +31,111 @@ app.get('/health', (c) => {
   })
 })
 
-// Demo
-app.get('/api/demo', (c) => {
-  return c.json({ message: 'biz.ing API' })
-})
-
-// ============================================
-// Dashboard Routes
-// ============================================
-
-// Dashboard Stats
-app.get('/api/v1/stats', (c) => {
-  return c.json({
-    totalRevenue: 15420,
-    totalBookings: 156,
-    totalCustomers: 89,
-    pendingOrders: 12
-  })
-})
-
-// Bookings List
-app.get('/api/v1/bookings', (c) => {
-  return c.json({
-    data: [
-      { id: '1', serviceName: 'Consultation', customerName: 'John Doe', date: '2026-02-15', status: 'confirmed' as const, price: 100 },
-      { id: '2', serviceName: 'Therapy Session', customerName: 'Jane Smith', date: '2026-02-16', status: 'pending' as const, price: 150 },
-      { id: '3', serviceName: 'Coaching Call', customerName: 'Bob Wilson', date: '2026-02-17', status: 'completed' as const, price: 200 }
-    ],
-    pagination: { page: 1, limit: 20, total: 3 }
-  })
-})
-
-// Products List
-app.get('/api/v1/products', (c) => {
-  return c.json({
-    data: [
-      { id: '1', name: 'E-Book', description: 'Complete Guide', price: 29.99, type: 'digital' as const },
-      { id: '2', name: 'Consultation', description: '1-hour call', price: 100, type: 'service' as const },
-      { id: '3', name: 'Premium Course', description: 'Video course', price: 199, type: 'subscription' as const }
-    ]
-  })
-})
-
 // ============================================
 // Auth Routes
 // ============================================
 
-// Auth Register
 app.post('/api/v1/auth/register', async (c) => {
-  const body = await c.req.json() as { name: string; email: string }
+  const body = await c.req.json()
   return c.json({
     id: 'org_' + uuidv4().slice(0, 8),
     name: body.name,
-    email: body.email
+    email: body.email,
   }, 201)
 })
 
-// Auth Login
 app.post('/api/v1/auth/login', async (c) => {
-  const body = await c.req.json() as { email: string }
+  const body = await c.req.json()
   return c.json({
     token: 'jwt_' + uuidv4().slice(0, 16),
     user: {
       id: 'user_' + uuidv4().slice(0, 8),
       email: body.email,
-      name: 'Test User'
-    }
+      name: 'Test User',
+    },
+  })
+})
+
+// ============================================
+// Products Routes
+// ============================================
+
+app.get('/api/v1/products', (c) => {
+  return c.json({
+    data: [
+      { id: '1', name: 'E-Book', price: 29.99, type: 'digital' },
+      { id: '2', name: 'Consultation', price: 100, type: 'service' },
+      { id: '3', name: 'Premium Course', price: 199, type: 'subscription' },
+    ],
+  })
+})
+
+// ============================================
+// Stats Routes
+// ============================================
+
+app.get('/api/v1/stats', (c) => {
+  return c.json({
+    totalRevenue: 12500,
+    totalBookings: 156,
+    totalCustomers: 89,
+    pendingOrders: 12,
+  })
+})
+
+// ============================================
+// Bookings Routes
+// ============================================
+
+app.get('/api/v1/bookings', (c) => {
+  return c.json({
+    data: [
+      {
+        id: 'booking_1',
+        serviceName: 'Haircut & Style',
+        customerName: 'Sarah Johnson',
+        date: '2026-02-12',
+        status: 'confirmed',
+        price: 65,
+      },
+      {
+        id: 'booking_2',
+        serviceName: 'Color Treatment',
+        customerName: 'Mike Chen',
+        date: '2026-02-12',
+        status: 'pending',
+        price: 120,
+      },
+      {
+        id: 'booking_3',
+        serviceName: 'Beard Trim',
+        customerName: 'Alex Rivera',
+        date: '2026-02-11',
+        status: 'completed',
+        price: 25,
+      },
+      {
+        id: 'booking_4',
+        serviceName: 'Full Service',
+        customerName: 'Emma Davis',
+        date: '2026-02-13',
+        status: 'confirmed',
+        price: 150,
+      },
+      {
+        id: 'booking_5',
+        serviceName: 'Consultation',
+        customerName: 'James Wilson',
+        date: '2026-02-10',
+        status: 'cancelled',
+        price: 0,
+      },
+    ],
+    pagination: {
+      page: 1,
+      limit: 10,
+      total: 5,
+    },
   })
 })
 
@@ -320,50 +143,220 @@ app.post('/api/v1/auth/login', async (c) => {
 // Schema Routes
 // ============================================
 
-// Schema Graph Endpoint
 app.get('/api/v1/schema/graph', (c) => {
-  const schema = parseSchema()
-  const nodes = generateFlowNodes(schema.entities)
-  const edges = generateFlowEdges(schema.entities)
-  
   return c.json({
-    ...schema,
-    nodes,
-    edges
+    entities: [
+      {
+        name: 'Booking',
+        tableName: 'bookings',
+        columns: [
+          { name: 'id', type: 'uuid', nullable: false, primaryKey: true },
+          { name: 'customerId', type: 'uuid', nullable: false, primaryKey: false },
+          { name: 'serviceId', type: 'uuid', nullable: false, primaryKey: false },
+          { name: 'date', type: 'timestamp', nullable: false, primaryKey: false },
+          { name: 'status', type: 'enum', nullable: false, primaryKey: false },
+          { name: 'price', type: 'decimal', nullable: false, primaryKey: false },
+        ],
+        relationships: [
+          { type: 'N:1', to: 'Customer', field: 'customerId', description: 'Booking belongs to customer' },
+          { type: 'N:1', to: 'Service', field: 'serviceId', description: 'Booking is for a service' },
+        ],
+      },
+      {
+        name: 'Customer',
+        tableName: 'customers',
+        columns: [
+          { name: 'id', type: 'uuid', nullable: false, primaryKey: true },
+          { name: 'name', type: 'varchar', nullable: false, primaryKey: false },
+          { name: 'email', type: 'varchar', nullable: false, primaryKey: false },
+          { name: 'phone', type: 'varchar', nullable: true, primaryKey: false },
+        ],
+        relationships: [
+          { type: '1:N', to: 'Booking', field: 'customerId', description: 'Customer has many bookings' },
+        ],
+      },
+      {
+        name: 'Service',
+        tableName: 'services',
+        columns: [
+          { name: 'id', type: 'uuid', nullable: false, primaryKey: true },
+          { name: 'name', type: 'varchar', nullable: false, primaryKey: false },
+          { name: 'description', type: 'text', nullable: true, primaryKey: false },
+          { name: 'price', type: 'decimal', nullable: false, primaryKey: false },
+          { name: 'duration', type: 'integer', nullable: false, primaryKey: false },
+        ],
+        relationships: [
+          { type: '1:N', to: 'Booking', field: 'serviceId', description: 'Service has many bookings' },
+        ],
+      },
+    ],
+    nodes: [
+      { 
+        id: 'Booking', 
+        type: 'entityNode', 
+        position: { x: 400, y: 100 }, 
+        data: { 
+          entity: {
+            name: 'Booking',
+            tableName: 'bookings',
+            columns: [
+              { name: 'id', type: 'uuid', nullable: false, primaryKey: true },
+              { name: 'customerId', type: 'uuid', nullable: false, primaryKey: false },
+              { name: 'serviceId', type: 'uuid', nullable: false, primaryKey: false },
+              { name: 'date', type: 'timestamp', nullable: false, primaryKey: false },
+              { name: 'status', type: 'enum', nullable: false, primaryKey: false },
+              { name: 'price', type: 'decimal', nullable: false, primaryKey: false },
+            ],
+            relationships: [
+              { type: 'N:1', to: 'Customer', field: 'customerId', description: 'Booking belongs to customer' },
+              { type: 'N:1', to: 'Service', field: 'serviceId', description: 'Booking is for a service' },
+            ],
+          }
+        } 
+      },
+      { 
+        id: 'Customer', 
+        type: 'entityNode', 
+        position: { x: 100, y: 100 }, 
+        data: { 
+          entity: {
+            name: 'Customer',
+            tableName: 'customers',
+            columns: [
+              { name: 'id', type: 'uuid', nullable: false, primaryKey: true },
+              { name: 'name', type: 'varchar', nullable: false, primaryKey: false },
+              { name: 'email', type: 'varchar', nullable: false, primaryKey: false },
+              { name: 'phone', type: 'varchar', nullable: true, primaryKey: false },
+            ],
+            relationships: [
+              { type: '1:N', to: 'Booking', field: 'customerId', description: 'Customer has many bookings' },
+            ],
+          }
+        } 
+      },
+      { 
+        id: 'Service', 
+        type: 'entityNode', 
+        position: { x: 700, y: 100 }, 
+        data: { 
+          entity: {
+            name: 'Service',
+            tableName: 'services',
+            columns: [
+              { name: 'id', type: 'uuid', nullable: false, primaryKey: true },
+              { name: 'name', type: 'varchar', nullable: false, primaryKey: false },
+              { name: 'description', type: 'text', nullable: true, primaryKey: false },
+              { name: 'price', type: 'decimal', nullable: false, primaryKey: false },
+              { name: 'duration', type: 'integer', nullable: false, primaryKey: false },
+            ],
+            relationships: [
+              { type: '1:N', to: 'Booking', field: 'serviceId', description: 'Service has many bookings' },
+            ],
+          }
+        } 
+      },
+    ],
+    edges: [
+      { id: 'e1', source: 'Booking', sourceHandle: 'source-1', target: 'Customer', targetHandle: 'target-1', label: 'N:1', type: 'smoothstep', animated: true },
+      { id: 'e2', source: 'Booking', sourceHandle: 'source-2', target: 'Service', targetHandle: 'target-1', label: 'N:1', type: 'smoothstep', animated: true },
+    ],
   })
 })
 
-// Entity Detail Endpoint
-app.get('/api/v1/schema/entity/:name', (c) => {
-  const name = c.req.param('name')
-  const schema = parseSchema()
-  const entity = schema.entities.find(e => e.name.toLowerCase() === name.toLowerCase())
-  
-  if (!entity) {
-    return c.json({ error: 'Entity not found' }, 404)
+// ============================================
+// Bizing AI Routes
+// ============================================
+
+app.post('/api/v1/bizing/chat', async (c) => {
+  const body = await c.req.json()
+  const { message } = body
+
+  try {
+    log(`Bizing chat request: ${message.slice(0, 50)}...`)
+    
+    const response = await chatWithLLM({
+      messages: [
+        {
+          role: 'system',
+          content: createBizingSystemPrompt(),
+        },
+        {
+          role: 'user',
+          content: message,
+        },
+      ],
+      temperature: 0.7,
+      maxTokens: 2000,
+    })
+
+    log('Bizing chat response generated successfully')
+
+    return c.json({
+      response,
+      timestamp: new Date().toISOString(),
+      model: 'kimi-k2.5',
+    })
+  } catch (err) {
+    const errorMessage = err instanceof Error ? err.message : String(err)
+    log(`Bizing chat error: ${errorMessage}`)
+    
+    return c.json({
+      response: 'I apologize, but I am having trouble connecting to my knowledge base right now. Please check that my API key is configured correctly.',
+      error: errorMessage,
+      timestamp: new Date().toISOString(),
+      model: 'error',
+    }, 500)
   }
-  
-  return c.json(entity)
 })
 
-// ============================================
-// Documentation
-// ============================================
-
-// OpenAPI Docs
-app.doc('/doc', {
-  openapi: '3.0.0',
-  info: { version: '0.1.0', title: 'Bizing API', description: 'Bizing API - Sell your services online' }
+app.get('/api/v1/brain/activity', (c) => {
+  return c.json({
+    activity: [
+      {
+        id: '1',
+        type: 'change',
+        title: 'Schema Graph Fixed',
+        description: 'Fixed React Flow handle connections with proper IDs',
+        timestamp: new Date().toISOString(),
+      },
+      {
+        id: '2',
+        type: 'session',
+        title: 'Dashboard API Endpoints',
+        description: 'Added stats, bookings, and schema graph endpoints',
+        timestamp: new Date(Date.now() - 3600000).toISOString(),
+      },
+      {
+        id: '3',
+        type: 'decision',
+        title: 'Next.js 15 Upgrade',
+        description: 'Updated to latest React 19 and Next.js 15.1.6',
+        timestamp: new Date(Date.now() - 7200000).toISOString(),
+      },
+      {
+        id: '4',
+        type: 'change',
+        title: 'Brain Documentation',
+        description: 'Created 41 files of comprehensive documentation for Bizing consciousness',
+        timestamp: new Date(Date.now() - 10800000).toISOString(),
+      },
+      {
+        id: '5',
+        type: 'decision',
+        title: '7% Commission Model',
+        description: 'Established fair commission structure for all parties',
+        timestamp: new Date(Date.now() - 14400000).toISOString(),
+      },
+    ],
+  })
 })
-
-app.get('/reference', Scalar({}))
 
 // ============================================
 // Error Handling
 // ============================================
 
 app.onError((err, c) => {
-  log('error', err.message)
+  log(`ERROR: ${err.message}`)
   return c.json({ success: false, error: { message: err.message } }, 500)
 })
 
@@ -382,22 +375,6 @@ serve({
   port: PORT
 }, (info) => {
   console.log('')
-  console.log(' 🚀 Bizing API http://localhost:' + info.port)
-  console.log('')
-  console.log(' 📊 Dashboard:')
-  console.log('   GET  /api/v1/stats       - Stats')
-  console.log('   GET  /api/v1/bookings   - Bookings')
-  console.log('   GET  /api/v1/products   - Products')
-  console.log('')
-  console.log(' 🔐 Auth:')
-  console.log('   POST /api/v1/auth/register - Register')
-  console.log('   POST /api/v1/auth/login    - Login')
-  console.log('')
-  console.log(' 🗺️  Schema:')
-  console.log('   GET  /api/v1/schema/graph      - Entity graph')
-  console.log('   GET  /api/v1/schema/entity/:name - Entity detail')
-  console.log('')
-  console.log(' 📚 Docs:')
-  console.log('   GET  /reference          - API Docs')
+  console.log(' 🚀 biz.ing API http://localhost:' + info.port)
   console.log('')
 })
