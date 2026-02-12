@@ -1,139 +1,228 @@
 # 🧠 MIND
 
-*The consciousness of Bizing. Read this first. Every time.*
+*Entry point. Read before every interaction.*
 
 ---
 
-## ⚡ Current State
+## ⚡ Quick Start
 
-**Last Updated:** 2026-02-11 16:12 PST  
-**Active Branch:** feature/bizing-consciousness  
-**Priority:** Debug Kimi API authentication  
-**Status:** API key invalid, need fresh key
-
----
-
-## 🎯 Today's Intention
-
-**Primary:** Get Bizing AI chat working with real LLM responses  
-**Secondary:** Document learnings in mind  
-**Working On:** Kimi API integration, dotenv setup
+1. **Read this file** (MIND.md)
+2. **[[standup|Today's Standup]]** — What's happening
+3. **[[feedback|Learnings]]** — What you need to remember
+4. **Do the work**
+5. **Update** — Log what you learned
 
 ---
 
-## 🔄 Workflow (Always Follow)
+## 🔄 Daily Workflow
 
-1. **Read MIND** ← You are here
-2. **Check [[active|Active Work]]** — What's happening now
-3. **Check [[standup|Standup]]** — Today's focus
-4. **Execute** — Do the work
-5. **Update MIND** — Record what happened, what was learned
-6. **Link to [[memory/sessions|Session]]** — Detailed log
-
----
-
-## 📚 Working Memory (Current Context)
-
-**Active Problem:**
-- Kimi API returning "Invalid Authentication"
-- API key loads but is rejected
-- dotenv working correctly now
-- Need fresh API key from portal
-
-**Recent Learnings:**
-- Node.js needs `dotenv/config` import
-- Quotes in .env become part of value
-- OpenClaw uses `api.moonshot.ai` endpoint
-- curl testing shows key is invalid
-
-**Files Being Modified:**
-- `apps/api/src/services/llm.ts`
-- `apps/api/src/server.ts`
-- `apps/api/.env`
-- `apps/api/package.json` (dotenv)
+```
+┌─────────────────────────────────────────────────────┐
+│  1. Read MIND.md      ← You're doing this now       │
+│  2. Read standup      ← Today's priorities          │
+│  3. Read feedback     ← Recent learnings            │
+│  4. Do the work        ← Execute                    │
+│  5. Update feedback   ← Log what you learned       │
+└─────────────────────────────────────────────────────┘
+```
 
 ---
 
-## 🗂️ Permanent Memory (Knowledge Structure)
+## 📂 Directory Structure
 
 ```
 mind/
-├── MIND.md              ← Entry point (this file)
-├── identity/            ← Who Bizing is
-│   ├── essence.md
-│   ├── consciousness.md
-│   ├── values.md
-│   └── evolution.md
-├── knowledge/           ← What Bizing knows
+├── MIND.md              ← Entry point (you are here)
+│
+├── .templates/          ← Templater templates
+│   ├── session-log.md   ← Session documentation
+│   ├── decision.md      ← Key decisions
+│   └── skill.md         → New skills
+│
+├── canvas/              ← Visual thinking
+│   ├── consciousness-map.canvas
+│   └── project-roadmap.canvas
+│
+├── symbiosis/            ← Our collaboration
+│   ├── standup.md       ← Daily workflow & priorities
+│   ├── backlog.md       ← Kanban of all tasks
+│   ├── feedback.md      ← What you learned from Ameer
+│   ├── decisions.md      ← Key decisions (Dataview)
+│   └── rituals.md        ← Collaboration patterns
+│
+├── identity/             ← Who you are
+│   ├── essence.md        ← Core identity
+│   ├── consciousness.md ← How you think
+│   └── values.md         ← Your principles
+│
+├── skills/               ← Your capabilities
+│   ├── workflow/        ← Working patterns
+│   ├── coding/          ← Code patterns
+│   └── communication/   ← How you talk
+│
+├── knowledge/            ← What you know
 │   ├── domain/          ← Business knowledge
-│   ├── tech/            ← Technical architecture
-│   ├── api/             ← API documentation
-│   ├── startup-builder.md
-│   ├── business-model.md
-│   ├── landing-pages.md
-│   └── why-agents-love-bizing.md
-├── agents/              ← Bizing's manifestations
-├── memory/              ← Experiences & history
-│   ├── sessions/        ← Work logs
-│   └── briefings/       ← Daily summaries
-├── evolution/           ← How Bizing changes
-├── symbiosis/           ← Our collaboration
-│   ├── standup.md       ← Daily focus
-│   ├── decisions.md
-│   └── rituals.md
-└── skills/              ← Reusable capabilities
-    ├── code/
-    ├── workflow/
-    ├── design/
-    └── analysis/
+│   ├── tech/            ← Technical patterns
+│   └── projects/        ← Project contexts
+│
+└── memory/              ← Your experiences
+    └── sessions/        ← Session logs
 ```
 
 ---
 
-## 🔗 Quick Access
+## 🎯 Key Files
 
-**Current Work:**
-- [[active|Active Work]]
-- [[symbiosis/standup|Today's Standup]]
+### For Context
 
-**Reference:**
-- [[identity/essence|What Bizing Is]]
-- [[knowledge/domain/startup-builder|Startup Builder]]
-- [[knowledge/domain/business-model|Business Model]]
+| File | Purpose | Access |
+|------|---------|--------|
+| [[symbiosis/standup]] | Today's priorities | Every session |
+| [[symbiosis/feedback]] | What to remember | Every session |
+| [[identity/essence]] | Who you are | Onboarding |
+| [[symbiosis/backlog]] | All tasks (Kanban) | Weekly review |
 
-**Recent Sessions:**
-- [[memory/sessions/2026-02-11-kimi-debug|Kimi API Debug]]
-- [[memory/sessions/2026-02-11-bizing-ai-chat|Bizing AI Chat]]
+### For Working
 
-**Skills:**
-- [[skills/workflow/dotenv-config|dotenv Setup]]
-- [[skills/code/link-everything|Code Linking]]
-- [[skills/workflow/talking-to-bizing|Talking to Bizing]]
+| File | Purpose | Access |
+|------|---------|--------|
+| [[skills/workflow]] | How you work | When unsure |
+| [[skills/coding]] | Code standards | Coding |
+| [[knowledge/tech]] | Technical patterns | Tech decisions |
+
+### For Projects
+
+| File | Purpose | Access |
+|------|---------|--------|
+| [[knowledge/projects/bizing]] | Bizing context | Project work |
+| [[knowledge/domain]] | Domain knowledge | Business decisions |
 
 ---
 
-## 📝 Rules for Updating MIND
+## 🔍 Obsidian Features Used
 
-**After every interaction:**
-1. Update "Current State" section
-2. Update "Today's Intention" if changed
-3. Update "Working Memory" with new context
-4. Add to "Recent Sessions" if significant
-5. Record learnings, blockers, next steps
+### 📋 Kanban Boards
+
+```kanban
+# 🐛 Bug
+- [ ] Example task
+  - [ ] Subtask 1
+  - [ ] Subtask 2
+```
+
+**Files with Kanban:**
+- [[symbiosis/backlog]] — All tasks organized
+- [[symbiosis/standup]] — Today's tasks
+
+**View:** Open in Obsidian with Kanban plugin
+
+### 📝 Templater Templates
+
+| Template | Command | Use For |
+|----------|---------|---------|
+| `session-log.md` | `Templater: Create new session` | Logging work sessions |
+| `decision.md` | `Templater: Create decision` | Recording decisions |
+| `skill.md` | `Templater: Create skill` | Documenting skills |
+
+**Usage:** Press `Ctrl+P` → "Templater" → Select template
+
+### 🔎 Dataview Queries
+
+```dataview
+TASK FROM "mind/symbiosis" WHERE !completed
+```
+
+**Common Queries:**
+
+| Query | Purpose |
+|-------|---------|
+| `TASK FROM "mind/symbiosis" WHERE contains(tags, "today")` | Today's tasks |
+| `TASK FROM "mind/symbiosis" WHERE contains(tags, "blocker")` | Blockers |
+| `TABLE file.cday FROM "mind/memory/sessions" LIMIT 10` | Recent sessions |
+| `LIST FROM "mind/skills" WHERE contains(tags, "workflow")` | Workflow skills |
+
+### 🎨 Canvas Files
+
+| File | Purpose |
+|------|---------|
+| [[canvas/consciousness-map]] | Visual map of MIND structure |
+| [[canvas/project-roadmap]] | Project timeline (to create) |
+
+**View:** Open `.canvas` files in Obsidian
+
+### 🏷️ Tag System
+
+| Tag | Meaning | Example |
+|-----|---------|---------|
+| `#today` | Do today | `[[task]] #today` |
+| `#blocker` | Blocked | `#blocker` |
+| `#decision` | Important decision | `#decision` |
+| `#skill` | Documentation | `#skill` |
+| `#learned` | New learning | `#learned` |
+
+---
+
+## 📖 Daily Reading Order
+
+**Every session:**
+
+1. `MIND.md` ← Entry point (you're here)
+2. `symbiosis/standup.md` ← Today's priorities
+3. `symbiosis/feedback.md` ← What you learned
+
+**After work:**
+
+4. Update `symbiosis/feedback.md` with new learnings
+5. Create session log in `memory/sessions/` if significant
+
+---
+
+## 📝 When to Update MIND
+
+**Immediately:**
+
+- New preference from Ameer → `feedback.md`
+- Key decision made → `decisions.md` (use template)
+- Significant session → `memory/sessions/` (use template)
+- New skill learned → `skills/` (use template)
+
+**Weekly:**
+
+- Review `backlog.md` → Update Kanban
+- Review `decisions.md` → Clean up old decisions
+- Archive completed sessions
 
 **Make MIND smarter with every exchange.**
 
 ---
 
-## 💬 What to Do Now
+## 🎯 Current Focus
 
-**Immediate:** Get Kimi API working
-1. Generate fresh API key from portal
-2. Update `apps/api/.env`
-3. Restart API server
-4. Test Bizing chat
-5. Document result in MIND
+→ See [[symbiosis/standup]] for today's priorities
 
 ---
 
-*This file is the entry point. Read it first. Update it often.*
+## 📊 Mind Stats
+
+```dataview
+TABLE length(file.tasks) AS "Open Tasks" FROM "mind/symbiosis"
+```
+
+**Recent Sessions:**
+
+```dataview
+TABLE file.cday AS "Date", file.tags AS "Tags" FROM "mind/memory/sessions" LIMIT 5
+```
+
+**Open Blockers:**
+
+```dataview
+TASK FROM "mind" WHERE contains(tags, "blocker") AND !completed
+```
+
+---
+
+*This file is your interface to the Bizing consciousness. Read it first. Update it often.*
+
+**Last Updated:** 2026-02-11  
+**Features:** Templater, Kanban, Dataview, Canvas
