@@ -466,23 +466,48 @@ type: short description
 
 **Code + Mind changes go in the SAME commit.**
 
+**⚠️ ABSOLUTE RULE: NEVER commit to main**
+
 ```bash
-# GOOD: Everything together
-git add apps/api/src/services/mind-api.ts
-git add mind/symbiosis/feedback.md
-git add mind/symbiosis/standup.md
-git commit -m "feat: add mind awareness API
+# GOOD: Feature branch with tests passing
+git checkout -b feature/descriptive-name
+# ... make changes ...
+tsc --noEmit  # Zero errors
+vitest run    # All pass
+git add .
+git commit -m "feat: description"
+git push -u origin feature/descriptive-name
+# Create PR
 
-- Implemented getMindState() with JSDoc
-- Added function calling to LLM
-- Updated feedback with learnings
-- Documented in session log"
+# BAD: Committing to main
+git checkout main  # ❌ NEVER DO THIS
+git commit -m "fix"  # ❌ VIOLATION
+```
 
-# BAD: Separate commits
-git add apps/api/src/services/mind-api.ts
-git commit -m "add mind api"  # ❌ Missing docs
-git add mind/
-git commit -m "update mind"     # ❌ Separate from code
+**Pre-Commit Safety Check:**
+```bash
+# Always run before committing
+git status  # Are you on main? STOP.
+
+if [ $(git branch --show-current) = "main" ]; then
+  echo "❌ STOP! You are on main branch."
+  echo "✅ Do: git checkout -b feature/new-branch"
+  exit 1
+fi
+```
+
+**The Safe Pattern:**
+1. Always start on feature branch
+2. Never checkout main during active work
+3. Commit to feature branch only
+4. Push and PR when ready
+
+```bash
+# Never change to main during work session
+git checkout main && git pull  # Only at START of new session
+git checkout -b feature/xxx    # ALWAYS do this
+# ... work ...
+git commit feature/xxx         # Always safe
 ```
 
 ---
@@ -491,6 +516,7 @@ git commit -m "update mind"     # ❌ Separate from code
 
 Before every commit:
 
+- [ ] **NOT on main branch** — `git branch` shows feature/xxx
 - [ ] Code is documented (JSDoc)
 - [ ] TODOs added for future work
 - [ ] Tests pass
@@ -500,6 +526,92 @@ Before every commit:
   - [ ] `memory/sessions/` — If significant work
 - [ ] On feature branch (not main)
 - [ ] Commit message follows format
+
+---
+
+## 🐙 GitHub CLI Setup
+
+Enable PR creation from terminal.
+
+### Installation
+```bash
+# macOS
+brew install gh
+
+# Linux
+brew install gh  # or apt install gh
+
+# Verify
+gh --version
+```
+
+### Authentication
+```bash
+# Option A: Environment variable (recommended)
+export GH_TOKEN=ghp_your_personal_access_token
+
+# Option B: Interactive login
+gh auth login
+
+# Verify
+gh auth status
+```
+
+**Generate Token:**
+→ https://github.com/settings/tokens
+- Scopes: `repo`, `read:org`
+
+### Creating PRs
+
+```bash
+# After pushing feature branch
+gh pr create --title "feat: description" --body "PR description"
+
+# With template
+gh pr create --title "feat: description" --body-file PR_TEMPLATE.md
+
+# Edit PR in browser
+gh pr create --edit
+
+# View PRs
+gh pr list
+gh pr view 123
+gh pr checkout 123  # Switch to PR branch
+```
+
+### CODESYNC with GitHub CLI
+
+```bash
+# Complete workflow
+git checkout -b feature/xxx
+# ... make changes ...
+git add .
+git commit -m "feat: description"
+git push -u origin feature/xxx
+gh pr create --title "feat: description" --body "Changes:
+- Feature 1
+- Feature 2
+- Mind updates"
+
+# Check PR status
+gh pr status
+```
+
+### GitHub CLI Useful Commands
+
+| Command | Description |
+|---------|-------------|
+| `gh pr list` | List open PRs |
+| `gh pr view 123` | View PR #123 |
+| `gh pr create` | Create PR (uses template) |
+| `gh pr checkout 123` | Checkout PR branch |
+| `gh pr merge 123 --admin --delete-branch` | Merge PR |
+| `gh issue list` | List issues |
+| `gh run list` | List workflow runs |
+
+### PR Template
+
+Create `.github/PULL_REQUEST_TEMPLATE.md` for consistent PRs.
 
 ---
 

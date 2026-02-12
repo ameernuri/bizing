@@ -50,6 +50,7 @@ tags: session, log
   - [ ] Mind files: `mind/path/file.md` format
 
 ### Git Workflow
+- [ ] **NOT on main branch** — `git branch` shows feature/xxx
 - [ ] Feature branch created (NEVER commit to main)
 - [ ] Branch named: `feature/description`
 - [ ] Code + mind committed together

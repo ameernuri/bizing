@@ -94,32 +94,52 @@
 | Read feedback | **MANDATORY** |
 | Type check before commit | **MANDATORY** |
 | All tests pass before commit | **MANDATORY** |
+| **NEVER commit to main** | **ABSOLUTE - NO EXCEPTIONS** |
 | Update feedback after | **MANDATORY** |
 | Document code changes | **MANDATORY** |
 | Update standup if changed | Required |
 | Create session log if significant | Required |
 
-**Breaking these rules = working blind. Committing with failing tests = broken code.**
+**Breaking these rules = working blind. Committing with failing tests = broken code.
+Committing to main = VIOLATION.**
 
 ---
 
 ## Git Workflow (CRITICAL)
 
-### NEVER Commit to Main
+### ⚠️ ABSOLUTE RULE: NEVER Commit to Main
 
-**ALWAYS create feature branches:**
+**UNDER NO CIRCUMSTANCES should you ever commit directly to `main`.**
 
+**Why Main Branch is Protected:**
+- Main branch represents production-ready code
+- Direct commits bypass review process
+- Can break CI/CD pipelines
+- No history of changes
+- No peer review
+
+**The Correct Workflow:**
 ```bash
-# Create and switch to feature branch
+# ALWAYS create feature branch FIRST
 git checkout -b feature/descriptive-name
 
 # Make changes + update mind files
+# Test everything (type check, vitest, playwright)
+
+# Commit to feature branch
 git add .
-git commit -m "feat: description + mind updates"
+git commit -m "feat: description"
 
 # Push and create PR
 git push -u origin feature/descriptive-name
+# Create PR on GitHub
 ```
+
+**If You Find Yourself on Main Branch:**
+1. `git status` — Check where you are
+2. `git checkout -b feature/new-branch` — Create feature branch
+3. Cherry-pick or redo changes on new branch
+4. **DO NOT commit while on main**
 
 ### Branch Naming
 
@@ -132,11 +152,11 @@ git push -u origin feature/descriptive-name
 
 | Never Do | Always Do |
 |----------|-----------|
-| ❌ Commit to `main` | ✅ Create feature branch |
-| ❌ Direct push | ✅ PR + review |
+| ❌ Commit to `main` (ABSOLUTE) | ✅ Create feature branch |
+| ❌ Direct push to main | ✅ PR + review |
 | ❌ Mix unrelated changes | ✅ One feature per branch |
 
-**Committing to main breaks the workflow. Don't do it.**
+**COMMITTING TO MAIN IS A VIOLATION. DON'T DO IT.**
 
 ---
 
