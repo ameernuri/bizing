@@ -25,6 +25,7 @@ status: active
 - [2026-02-11] **COMPLETE mind inventory** — Walks entire directory tree to discover ALL 65 files (not just linked ones). Can explore any directory, search all content, find orphaned files
 - [2026-02-11] **MAP.md master index** — Created comprehensive MAP.md linking to EVERYTHING. Now 0 orphaned files. Bizing uses MAP.md as primary navigation guide
 - [2026-02-11] **Conversation memory + file reading** — Bizing now remembers context across messages AND reads actual file contents (not just names). Uses sessionId for memory, getMindFile() for content
+- [2026-02-11] **Semantic search with OpenAI embeddings** — 1019 chunks embedded. AI-powered semantic search finds content by MEANING, not just keywords. Auto-rebuilds when files change (detects mtime) or every hour. Cost: ~$0.01
 
 ---
 

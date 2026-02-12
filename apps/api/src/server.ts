@@ -6,6 +6,7 @@ import { OpenAPIHono, z } from '@hono/zod-openapi'
 import { chatWithLLM, createBizingSystemPrompt } from './services/llm.js'
 import { getCompactMindState, getMindFile } from './services/mind-api.js'
 import { getCachedMindMap, searchMindDynamic, getMindStructure, listAllFiles, exploreDirectory } from './services/mind-map.js'
+import { semanticSearch, buildAndCacheEmbeddings, getEmbeddingStats, isEmbeddingsReady } from './services/mind-embeddings.js'
 
 // ============================================
 // Logger
@@ -390,6 +391,36 @@ app.get('/api/v1/mind/explore/:path{.*}', (c) => {
   return c.json(exploreDirectory(path))
 })
 
+// Embeddings API
+app.get('/api/v1/mind/embeddings/status', (c) => {
+  return c.json(getEmbeddingStats())
+})
+
+app.post('/api/v1/mind/embeddings/build', async (c) => {
+  try {
+    await buildAndCacheEmbeddings()
+    return c.json({ success: true, stats: getEmbeddingStats() })
+  } catch (err) {
+    const errorMessage = err instanceof Error ? err.message : String(err)
+    return c.json({ success: false, error: errorMessage }, 500)
+  }
+})
+
+app.get('/api/v1/mind/semantic-search', async (c) => {
+  const query = c.req.query('q')
+  const topK = parseInt(c.req.query('limit') || '5')
+  
+  if (!query) return c.json({ error: 'Missing query' }, 400)
+  
+  try {
+    const results = await semanticSearch(query, topK)
+    return c.json({ query, results, count: results.length })
+  } catch (err) {
+    const errorMessage = err instanceof Error ? err.message : String(err)
+    return c.json({ error: errorMessage }, 500)
+  }
+})
+
 app.get('/api/v1/brain/activity', (c) => {
   return c.json({
     activity: [
@@ -443,6 +474,16 @@ app.onError((err, c) => {
 
 app.notFound((c) => {
   return c.json({ success: false, error: { code: 'NOT_FOUND' } }, 404)
+})
+
+// Embeddings rebuild on startup
+import { buildAndCacheEmbeddings, getEmbeddingStats } from './services/mind-embeddings.js'
+
+// Build embeddings on startup (non-blocking)
+buildAndCacheEmbeddings().then(() => {
+  log('Embeddings built: ' + JSON.stringify(getEmbeddingStats()))
+}).catch(err => {
+  log('Embeddings build failed (will retry on first search): ' + err.message)
 })
 
 // ============================================
