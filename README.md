@@ -1,4 +1,4 @@
-# biz.ing
+# **Bizing**
 
 **Sell your services and digital products online, easily.**
 
@@ -74,15 +74,16 @@ biz.ing/
 
 The `memory/` folder is an **Obsidian vault** for design exploration and decisions:
 
-| File/Folder | Purpose |
-|-------------|---------|
-| `memory/` | Design exploration and decisions |
-| `memory/WORKFLOW.md` | How work happens |
-| `memory/RULES.md` | Coding standards |
-| `memory/DISTILLATION.md` | Lessons learned with links |
-| `memory/daily/` | Daily notes (YYYY-MM-DD) |
+| File/Folder              | Purpose                          |
+| ------------------------ | -------------------------------- |
+| `memory/`                | Design exploration and decisions |
+| `memory/WORKFLOW.md`     | How work happens                 |
+| `memory/RULES.md`        | Coding standards                 |
+| `memory/DISTILLATION.md` | Lessons learned with links       |
+| `memory/daily/`          | Daily notes (YYYY-MM-DD)         |
 
 **Key Rules:**
+
 - Work on a branch, never touch main directly
 - Never commit without asking for confirmation
 - Never push to main without approval
