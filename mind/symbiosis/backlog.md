@@ -19,11 +19,15 @@ kanban-plugin: board
   - [ ] Add documentation checklist to session template
 
 - [ ] #testing Set up testing infrastructure
-  - [ ] Configure Vitest for unit tests
-  - [ ] Configure Playwright for E2E tests
-  - [ ] Add type check to pre-commit
-  - [ ] Add test run to pre-commit
-  - [ ] Create test documentation
+  - [x] Configure Vitest for unit tests
+  - [x] Configure Playwright for E2E tests
+  - [x] Create vitest.config.ts
+  - [x] Create playwright.config.ts
+  - [x] Create mind-api.test.ts
+  - [x] Create mind-map.test.ts
+  - [x] Create api.spec.ts E2E tests
+  - [ ] Run tests to verify setup
+  - [ ] Add test documentation to mind
 
 ## Urgent
 

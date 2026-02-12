@@ -3,6 +3,8 @@ import { serve } from '@hono/node-server'
 import { cors } from 'hono/cors'
 import { v4 as uuidv4 } from 'uuid'
 import { OpenAPIHono, z } from '@hono/zod-openapi'
+import { readFileSync, existsSync, readdirSync } from 'fs'
+import { join } from 'path'
 import { chatWithLLM, createBizingSystemPrompt } from './services/llm.js'
 import { getCompactMindState, getMindFile } from './services/mind-api.js'
 import { getCachedMindMap, searchMindDynamic, getMindStructure, listAllFiles, exploreDirectory } from './services/mind-map.js'
@@ -421,46 +423,105 @@ app.get('/api/v1/mind/semantic-search', async (c) => {
   }
 })
 
-app.get('/api/v1/brain/activity', (c) => {
+// Get real activity from mind files
+app.get('/api/v1/mind/activity', (c) => {
+  const MIND_DIR = join(process.cwd(), '..', '..', 'mind')
+  const activity: {
+    id: string
+    type: 'change' | 'session' | 'decision' | 'learning' | 'workflow'
+    title: string
+    description: string
+    timestamp: string
+  }[] = []
+  
+  // Get recent sessions
+  const sessionsDir = join(MIND_DIR, 'memory', 'sessions')
+  try {
+    const files = readdirSync(sessionsDir)
+      .filter(f => f.endsWith('.md') && !f.includes('index'))
+      .sort()
+      .reverse()
+      .slice(0, 5)
+    
+    for (const file of files) {
+      const content = readFileSync(join(sessionsDir, file), 'utf-8')
+      const titleMatch = content.match(/^# 📝 Session: (.+)$/m)
+      const dateMatch = file.match(/^(\d{4}-\d{2}-\d{2})/)
+      
+      if (titleMatch) {
+        activity.push({
+          id: file.replace('.md', ''),
+          type: 'session',
+          title: titleMatch[1],
+          description: content.slice(0, 200).replace(/\n/g, ' '),
+          timestamp: dateMatch ? new Date(dateMatch[1]).toISOString() : new Date().toISOString()
+        })
+      }
+    }
+  } catch (e) {
+    // No sessions yet
+  }
+  
+  // Get recent learnings from feedback
+  const feedbackPath = join(MIND_DIR, 'symbiosis', 'feedback.md')
+  if (existsSync(feedbackPath)) {
+    const feedback = readFileSync(feedbackPath, 'utf-8')
+    const learnings = feedback.match(/\[(\d{4}-\d{2}-\d{2})\]\s+\*\*([^*]+)\*\*/g)
+    if (learnings) {
+      const recent = learnings.slice(-3).reverse()
+      for (const learning of recent) {
+        const match = learning.match(/\[(\d{4}-\d{2}-\d{2})\]\s+\*\*([^*]+)\*\*/)
+        if (match) {
+          activity.push({
+            id: `learning-${match[1]}`,
+            type: 'learning',
+            title: match[2],
+            description: 'Documented in feedback',
+            timestamp: new Date(match[1]).toISOString()
+          })
+        }
+      }
+    }
+  }
+  
+  // Get mind structure changes from mind-map
+  const map = getCachedMindMap()
+  if (map.nodes.size > 0) {
+    activity.push({
+      id: 'mind-structure',
+      type: 'change',
+      title: 'Mind Structure',
+      description: `Mind contains ${map.nodes.size} files across ${map.directories.length} directories`,
+      timestamp: new Date().toISOString()
+    })
+  }
+  
+  // Get current focus from mind state
+  const mindState = getCompactMindState()
+  if (mindState.currentFocus) {
+    activity.unshift({
+      id: 'current-focus',
+      type: 'workflow',
+      title: 'Current Focus',
+      description: mindState.currentFocus,
+      timestamp: new Date().toISOString()
+    })
+  }
+  
   return c.json({
-    activity: [
-      {
-        id: '1',
-        type: 'change',
-        title: 'Schema Graph Fixed',
-        description: 'Fixed React Flow handle connections with proper IDs',
-        timestamp: new Date().toISOString(),
-      },
-      {
-        id: '2',
-        type: 'session',
-        title: 'Dashboard API Endpoints',
-        description: 'Added stats, bookings, and schema graph endpoints',
-        timestamp: new Date(Date.now() - 3600000).toISOString(),
-      },
-      {
-        id: '3',
-        type: 'decision',
-        title: 'Next.js 15 Upgrade',
-        description: 'Updated to latest React 19 and Next.js 15.1.6',
-        timestamp: new Date(Date.now() - 7200000).toISOString(),
-      },
-      {
-        id: '4',
-        type: 'change',
-        title: 'Brain Documentation',
-        description: 'Created 41 files of comprehensive documentation for Bizing consciousness',
-        timestamp: new Date(Date.now() - 10800000).toISOString(),
-      },
-      {
-        id: '5',
-        type: 'decision',
-        title: '7% Commission Model',
-        description: 'Established fair commission structure for all parties',
-        timestamp: new Date(Date.now() - 14400000).toISOString(),
-      },
-    ],
+    activity: activity.slice(0, 10),
+    mindState: {
+      totalFiles: map.nodes.size,
+      totalDirectories: map.directories.length,
+      currentFocus: mindState.currentFocus,
+      topTasks: mindState.topTasks.length
+    }
   })
+})
+
+// Backward compatibility - redirect brain/activity to mind/activity
+app.get('/api/v1/brain/activity', (c) => {
+  return c.redirect('/api/v1/mind/activity')
 })
 
 // ============================================

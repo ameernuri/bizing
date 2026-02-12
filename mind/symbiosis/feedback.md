@@ -31,6 +31,7 @@ status: active
 - [2026-02-11] **JSDoc linking standards** — Use `{@link ./file.ts}` for code files, `mind/path/file.md` for mind files. Wiki links `[[file]]` only work in Markdown, not JSDoc. VS Code understands `{@link}` and shows clickable links!
 
 - [2026-02-11] **Testing Requirements** — ALL tests must pass before commit/push. Check type errors after every change. Use Vitest for unit tests, Playwright for E2E. NO commits with failing tests.
+- [2026-02-11] **Mind Activity API** — Renamed brain/activity to mind/activity with real data. Now reads from session logs, feedback learnings, and mind structure. Returns: recent sessions, documented learnings, current focus, file count.
 
 - [2026-02-11] **CODESYNC** — When user says "codesync", perform: type check → run tests → if ALL pass, commit → push to feature branch → create PR. NO commit if tests fail.
 

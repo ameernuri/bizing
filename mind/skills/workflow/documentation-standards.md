@@ -615,57 +615,198 @@ Create `.github/PULL_REQUEST_TEMPLATE.md` for consistent PRs.
 
 ---
 
-## 🧪 Testing Requirements
+## 🧪 Testing Setup Guide
 
-**NO COMMIT OR PUSH if tests fail. PERIOD.**
+### Unit Testing (Vitest)
+
+**Location:** `apps/api/src/services/__tests__/*.test.ts`
+
+**Setup:**
+```bash
+# Install (already installed)
+pnpm add -D vitest@^1.0.0
+
+# Run tests
+pnpm test          # Unit tests
+pnpm test run      # Single run
+pnpm test watch    # Development mode
+```
+
+**Test File Template:**
+```typescript
+/**
+ * @fileoverview [Description]
+ *
+ * @description
+ * What this test file covers...
+ *
+ * @architecture
+ * Tests: src/services/__tests__/file.test.ts
+ * Tests: src/services/file.ts
+ * Used by: ../server.ts
+ *
+ * @created 2026-02-11
+ * @version 1.0.0
+ */
+
+import { describe, it, expect, beforeEach } from 'vitest'
+import { functionToTest } from '../file'
+
+describe('file.ts', () => {
+  beforeEach(() => {
+    // Setup before each test
+  })
+
+  it('should do something', () => {
+    // Test
+  })
+})
+```
+
+**Configuration:** `vitest.config.ts`
+```typescript
+import { defineConfig } from 'vitest/config'
+import viteConfig from './vite.config'
+
+export default defineConfig({
+  test: {
+    globals: true,
+    environment: 'node',
+    include: ['src/**/*.test.{ts,js}'],
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'json', 'html'],
+    },
+  },
+})
+```
+
+### E2E Testing (Playwright)
+
+**Location:** `apps/api/tests/e2e/*.spec.ts`
+
+**Setup:**
+```bash
+# Install
+pnpm add -D @playwright/test
+
+# Install browsers
+npx playwright install
+
+# Run E2E tests
+pnpm test:e2e
+pnpm playwright test --project=chromium
+```
+
+**Test File Template:**
+```typescript
+/**
+ * @fileoverview [Description]
+ *
+ * @description
+ * What this E2E test covers...
+ *
+ * @architecture
+ * Tests: apps/api/tests/e2e/api.spec.ts
+ * Tests: server.ts API endpoints
+ *
+ * @created 2026-02-11
+ * @version 1.0.0
+ */
+
+import { test, expect } from '@playwright/test'
+
+const API_BASE = 'http://localhost:6129'
+
+test.describe('API', () => {
+  test('should return health status', async ({ request }) => {
+    const response = await request.get(`${API_BASE}/health`)
+    expect(response.status()).toBe(200)
+    const body = await response.json()
+    expect(body.status).toBe('ok')
+  })
+})
+```
+
+**Configuration:** `playwright.config.ts`
+```typescript
+import { defineConfig, devices } from '@playwright/test'
+
+export default defineConfig({
+  testDir: './tests/e2e',
+  use: {
+    baseURL: 'http://localhost:6129',
+    trace: 'on-first-retry',
+  },
+  projects: [
+    { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
+    { name: 'api', use: { ...devices['Desktop Chrome'] } },
+  ],
+  webServer: {
+    command: 'pnpm dev',
+    url: 'http://localhost:6129/health',
+    reuseExistingServer: !process.env.CI,
+  },
+})
+```
+
+### Running All Tests
+
+```bash
+# All tests
+pnpm test          # Unit tests (Vitest)
+pnpm test:e2e      # E2E tests (Playwright)
+
+# With coverage
+pnpm vitest run --coverage
+
+# Watch mode (development)
+pnpm vitest watch
+
+# Specific test file
+pnpm vitest run src/services/__tests__/mind-api.test.ts
+```
+
+### Test Files Structure
+
+```
+apps/api/
+├── src/
+│   └── services/
+│       ├── __tests__/           # Unit tests
+│       │   ├── mind-api.test.ts
+│       │   └── mind-map.test.ts
+│       ├── mind-api.ts
+│       ├── mind-map.ts
+│       └── mind-embeddings.ts
+├── tests/
+│   └── e2e/                    # E2E tests
+│       └── api.spec.ts
+├── vitest.config.ts
+├── playwright.config.ts
+└── package.json
+```
 
 ### Required Checks Before Every Commit
 
-1. **Type Checking**
-   ```bash
-   # Check for TypeScript errors
-   pnpm typecheck
-   # or
-   tsc --noEmit
-   ```
-   - [ ] Zero type errors
-   - [ ] Zero type warnings (ideally)
+| Check | Command | Pass Condition |
+|-------|---------|----------------|
+| Type Check | `tsc --noEmit` | Zero errors |
+| Unit Tests | `vitest run` | All pass |
+| E2E Tests | `playwright test` | All pass |
 
-2. **Unit Tests (Vitest)**
-   ```bash
-   # Run all unit tests
-   pnpm test
-   # or
-   vitest run
-   ```
-   - [ ] All tests pass
-   - [ ] No test failures
-   - [ ] Coverage maintained/improved
+**NO COMMIT OR PUSH if tests fail. PERIOD.**
 
-3. **E2E Tests (Playwright)**
-   ```bash
-   # Run end-to-end tests
-   pnpm test:e2e
-   # or
-   playwright test
-   ```
-   - [ ] All E2E tests pass
-   - [ ] No flaky tests
-   - [ ] Screenshots match (if visual testing)
-
-### Pre-Commit Checklist (Updated)
+### Pre-Commit Checklist
 
 Before every commit:
+- [ ] **NOT on main branch** — `git branch` shows feature/xxx
 - [ ] Code is documented (JSDoc)
 - [ ] TODOs added for future work
 - [ ] **Type check passes** — `tsc --noEmit`
-- [ ] **Unit tests pass** — Vitest
-- [ ] **E2E tests pass** — Playwright
-- [ ] Mind files updated:
-  - [ ] `symbiosis/feedback.md` — Learnings
-  - [ ] `symbiosis/standup.md` — Status
-  - [ ] `memory/sessions/` — If significant work
-- [ ] On feature branch (not main)
+- [ ] **Unit tests pass** — `vitest run`
+- [ ] **E2E tests pass** — `playwright test`
+- [ ] Mind files updated
 - [ ] Commit message follows format
 
 ### Test-Driven Workflow
@@ -680,7 +821,7 @@ Write Test → See it Fail → Write Code → See it Pass → Refactor → Commi
 3. **Refactor** — Clean up while tests pass
 4. **Commit** — Only when all green
 
-### Why This Matters
+### Why Testing Matters
 
 - **Type errors** → Runtime crashes, bad UX
 - **Test failures** → Broken features, regressions  
