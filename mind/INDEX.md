@@ -4,6 +4,15 @@
 
 ---
 
+## 🚨 MANDATORY: Mind Framework
+
+**→ [[MIND-FRAMEWORK|READ THE FRAMEWORK FIRST]]** ←  
+**EVERY interaction MUST follow this workflow. NO EXCEPTIONS.**
+
+If you skip this, you work without memory. Don't skip it.
+
+---
+
 ## ⚡ Quick Start
 
 1. **Read this file** (INDEX.md) ← You're here
@@ -159,39 +168,41 @@ TASK FROM "mind/symbiosis" WHERE !completed
 
 ## ⚡ Current State
 
-**Last Updated:** 2026-02-11 17:02 PST  
+**Last Updated:** 2026-02-11 18:20 PST  
 **Active Branch:** feature/bizing-consciousness  
-**Priority:** Debug Kimi API authentication  
-**Status:** API key invalid, need fresh key
+**Priority:** Mind framework enforcement  
+**Status:** OpenAI working ✅, Live brain integration ✅
 
 ---
 
 ## 🎯 Today's Intention
 
-**Primary:** Get Bizing AI chat working with real LLM responses  
-**Secondary:** Build Obsidian-powered MIND  
-**Working On:** Kimi API integration, dotenv setup
+**Primary:** Mind framework enforcement (read/update mind every interaction)  
+**Secondary:** Keep mind synchronized with code reality  
+**Working On:** SOUL.md updates, MIND-FRAMEWORK.md, INDEX.md updates
 
 ---
 
 ## 📚 Working Memory
 
-**Active Problem:**
-- Kimi API returning "Invalid Authentication"
-- API key loads but is rejected
-- dotenv working correctly now
-- Need fresh API key from portal
+**Current State:**
+- ✅ OpenAI integration working (gpt-4o-mini)
+- ✅ Live brain loader built
+- ✅ Dynamic system prompt with brain context
+- 🔄 Mind framework enforcement in progress
+- 🔄 Mind sync with code (fixing drift)
 
 **Recent Learnings:**
-- Node.js needs `dotenv/config` import
-- Quotes in .env become part of value
-- OpenClaw uses `api.moonshot.ai` endpoint
-- Commits require explicit approval first
+- Mind must stay in sync with every code change
+- Kimi API issue resolved by switching to OpenAI
+- Every interaction must read/update mind
 
 **Files Being Modified:**
-- `apps/api/src/services/llm.ts`
-- `apps/api/src/server.ts`
-- `apps/api/.env`
+- `apps/api/src/services/llm.ts` (OpenAI support)
+- `apps/api/src/services/brain-loader.ts` (live brain)
+- `mind/SOUL.md` (framework enforcement)
+- `mind/MIND-FRAMEWORK.md` (new)
+- `mind/index.md` (warning banner)
 
 ---
 

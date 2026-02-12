@@ -33,5 +33,8 @@ When and how to update documentation.
 ### [[kanban-formatting|Kanban Formatting]]
 How to format Kanban boards in Obsidian.
 
+### [[dataview|Dataview]]
+Query and display mind data dynamically.
+
 ### [[briefing-for-11labs|Briefing for 11labs]]
 How to create audio briefs for 11labs Reader.

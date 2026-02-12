@@ -105,7 +105,7 @@ Shall I proceed with these defaults or customize?"
 
 ## 🔗 Quick Links
 
-- [[START|👤 Human Entry]]
+- [[HUMAN|👤 Human Entry]]
 - [[identity/essence|🧬 What Bizing Is]]
 - [[knowledge/api/index|🔌 API Deep Docs]]
 - [[agents/index|🤖 All Agents]]

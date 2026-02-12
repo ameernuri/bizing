@@ -113,7 +113,7 @@ Not AI serves human.
 
 ## Links
 
-- [[../START|START]] — Entry point
+- [[HUMAN|HUMAN]] — Entry point
 - [[../identity/essence|What Bizing Is]]
 - [[../evolution/proposals|Propose Evolution]]
 - [[../memory/briefings/latest|Latest Briefing]]

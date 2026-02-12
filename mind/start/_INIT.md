@@ -8,7 +8,7 @@
 1. [[README]] - Overview and navigation
 2. [[STATUS]] - Current state
 3. [[GOALS]] - What we're working toward
-4. [[START]] - Get running locally
+4. [[HUMAN]] - Get running locally
 
 ## Brain Structure
 

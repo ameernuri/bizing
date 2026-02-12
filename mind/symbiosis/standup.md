@@ -13,46 +13,46 @@ kanban-plugin: board
 
 - [x] Read INDEX.md
 - [x] Review feedback
-- [ ] Execute tasks
+- [x] OpenAI integration working
+- [x] Live brain loader built
+- [ ] Mind framework enforcement
 - [ ] Log learnings
 
-## Today
+## Completed Today
+
+- [x] #feature Switched to OpenAI (gpt-4o-mini)
+- [x] #feature Live brain integration
+- [x] #feature Brain loader service
+- [x] #feature Dynamic system prompt
+
+## In Progress
 
 ### High Priority
 
-- [ ] #critical Generate fresh Kimi API key
-  - Go to Kimi portal
-  - Delete old key
-  - Create new key
-  - Update .env
-  - Restart server
-  - Test Bizing chat
+- [ ] #critical Mind framework enforcement
+  - Update SOUL.md
+  - Create MIND-FRAMEWORK.md
+  - Update INDEX.md
+  - Update feedback
 
-- [ ] #infrastructure Install Obsidian plugins
-  - Install Templater
-  - Install Kanban
-  - Install Dataview
+- [ ] #infrastructure Keep mind in sync with code
+  - Every code change → update mind
+  - Current state reflected in standup
+  - No drift between reality and mind
 
 ### Medium Priority
 
-- [ ] #documentation Document dotenv lesson
+- [ ] #documentation Document mind framework
 - [ ] #documentation Update skills index
-
-- [ ] #visual Create project roadmap canvas
-
-### Low Priority
-
-- [ ] #cleanup Archive old sessions
-- [ ] #cleanup Review backlog
 
 ## Blockers
 
-- [ ] #blocker Kimi API key invalid
+> **None** — OpenAI working, development unblocked
 
 ## Focus
 
-> **Primary:** Get Kimi API working  
-> **Secondary:** Build Obsidian-powered MIND
+> **Primary:** Mind framework enforcement (every interaction reads/updates mind)  
+> **Secondary:** Keep mind synchronized with code reality
 
 ---
 

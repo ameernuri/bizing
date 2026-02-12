@@ -1,64 +1,74 @@
-# 🎯 GOALS
+---
+kanban-plugin: board
+---
 
-*Current objectives and priorities for bizing*
+# 🎯 Goals
+
+*Current objectives and priorities for Bizing*
 
 ---
 
-## Active Goals
+## P0 - Critical
 
-### 1. Complete Foundation
-**Status:** In Progress  
-**Priority:** P0
+- [ ] #foundation Complete Foundation
+  - Real database connection (PostgreSQL)
+  - Better Auth with organization plugin
+  - Environment configuration
+  - Database migrations working
 
-- [ ] Real database connection (PostgreSQL)
-- [ ] Better Auth with organization plugin
-- [ ] Environment configuration
-- [ ] Database migrations working
+- [ ] #booking Core Booking Flow
+  - Create booking endpoint
+  - Availability calculation
+  - Time slot generation
+  - Booking confirmation
 
-### 2. Core Booking Flow
-**Status:** Not Started  
-**Priority:** P0
+---
 
-- [ ] Create booking endpoint
-- [ ] Availability calculation
-- [ ] Time slot generation
-- [ ] Booking confirmation
+## P1 - High
 
-### 3. Payment Integration
-**Status:** Not Started  
-**Priority:** P1
+- [ ] #payment Payment Integration
+  - Stripe Connect setup
+  - Payment intents
+  - Deposit handling
+  - Refund flow
 
-- [ ] Stripe Connect setup
-- [ ] Payment intents
-- [ ] Deposit handling
-- [ ] Refund flow
+---
+
+## P2 - Medium
+
+- [ ] #notifications Email/SMS notifications (Twilio)
+- [ ] #integrations WordPress plugin
+- [ ] #integrations Calendar sync (Google, Outlook)
+
+---
+
+## P3 - Low
+
+- [ ] #mobile Mobile app (React Native)
+- [ ] #analytics Advanced analytics
 
 ---
 
 ## Backlog
 
-*Future goals, not yet prioritized*
+*Future ideas, not yet prioritized*
 
-- Email/SMS notifications (Twilio)
-- WordPress plugin
-- Calendar sync (Google, Outlook)
-- Mobile app (React Native)
-- Advanced analytics
+- [ ] AI-powered booking suggestions
+- [ ] Multi-language support
+- [ ] White-label customization
 
 ---
 
-## Completed Goals
+## Completed
 
-| Goal | Completed | Notes |
-|------|-----------|-------|
-| Project setup | 2026-02-08 | Monorepo, API, admin scaffold |
-| Schema design | 2026-02-08 | Initial Drizzle schemas |
+- [x] #setup Project setup (2026-02-08)
+  - Monorepo, API, admin scaffold
+- [x] #schema Schema design (2026-02-08)
+  - Initial Drizzle schemas
 
 ---
 
 ## Decision Log
-
-*Key decisions that affect goals*
 
 | Date | Decision | Context |
 |------|----------|---------|
@@ -68,11 +78,12 @@
 
 ---
 
-## 🔗 Related
+## Related
 
 - [[STATUS]] - Current project state
 - [[01-design/VISION]] - Long-term vision
-- [[03-operations/WORKFLOW]] - How we achieve goals
+- [[symbiosis/standup]] - Daily priorities
 
 ---
+
 *Last updated: 2026-02-11*
