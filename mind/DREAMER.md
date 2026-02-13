@@ -1,111 +1,118 @@
 # 🌀 DREAMER
 
-_Curiosity engine — Scans mind, finds tensions, adds to DISSONANCE.md_
+*Autonomous Mind Evolver — Scans mind, finds tensions, evolves continuously*
 
 ---
 
-## What It Does
+## What It Actually Does (v2.0)
 
-1. **Reads** all mind/\*.md files
-2. **Scans** for tensions/conflicts/uncertainties
-3. **Generates** questions and curiosities
-4. **Logs** findings to console
-5. **Does NOT** edit or commit
+1. **Scans** all mind/*.md files
+2. **Finds** tensions/conflicts/uncertainties  
+3. **Appends** to [[DISSONANCE]] automatically
+4. **Logs** evolution to [[evolution/YYYY-MM-DD]]
+5. **Runs** every 30 minutes (cron job)
+
+**Real Script:** `scripts/dreamer.mjs`
 
 ## Usage
 
 ```bash
-# Run dreamer
+# Run manually
 node scripts/dreamer.mjs
 
-# Output shows:
-# - Files scanned
-# - Tensions found
-# - Questions generated
-# - Suggestions for DISSONANCE.md
+# Or via cron (every 30 min)
+*/30 * * * * cd ~/projects/bizing && node scripts/dreamer.mjs
+```
+
+## Actual Output
+
+```
+🌀 Dreamer v2.0 — Autonomous Mind Evolver
+=============================================
+[03:41:21] 📈 Evolution: Dreamer Run
+[03:41:21] 📖 Found 87 mind files
+[03:41:21] 🔥 Added D-001 to DISSONANCE.md
+[03:41:21] 🔥 Added D-002 to DISSONANCE.md
+...
+📊 Summary:
+   Files scanned: 87
+   Tensions found: 17
+   Dissonances added: 12
+   Wikilink opportunities: 269
+✨ Mind has evolved.
+🌀 Zzz... dreaming of more improvements...
 ```
 
 ## What It Finds
 
-| Pattern     | Example                      |
-| ----------- | ---------------------------- |
-| Conflicts   | "but", "however", "although" |
-| Tensions    | API vs SDK, local vs cloud   |
-| Questions   | "need to decide", "unclear"  |
-| Uncertainty | "not sure", "uncertain"      |
+| Pattern | Example |
+|---------|---------|
+| Conflicts | "but", "however", "although" |
+| Tensions | API vs SDK, local vs cloud |
+| Questions | "need to decide", "unclear" |
+| Uncertainty | "not sure", "uncertain" |
+| Orphans | Files with < 3 wikilinks |
 
-## Output Example
+## Files Changed
 
-```
-🌀 Dreamer v1.0
-📖 Read DISSONANCE.md
-🔍 Scanned 87 files
-📊 Found 12 tensions
-🔝 Top 3:
-   1. [tension] research/api-first.md:42
-   2. [conflict] research/moR.md:15
-💡 Suggestions:
-   - Add API vs SDK tension to DISSONANCE.md
-   - Draft question about MoR liability
-```
+| File | What Dreamer Does |
+|------|-------------------|
+| [[DISSONANCE]] | Appends new tensions (D-001, D-002, etc.) |
+| [[evolution/YYYY-MM-DD]] | Logs "Dreamer Run" entry |
+| Console | Shows summary, tensions, suggestions |
 
-## Integration
+## No Edit Loop Protection
 
-### Start of Session
-
-```
-1. node scripts/dreamer.mjs
-2. Review tensions
-3. Check DISSONANCE.md
-```
-
-### During Work
-
-```
-Found contradiction?
-→ Note it → Add to DISSONANCE.md later
-```
-
-### Weekly Review
-
-```
-1. Read DISSONANCE.md
-2. Prioritize tensions
-3. Draft questions for Ameer
-4. Resolve when possible
-```
-
-## DISSONANCE.md Format
-
-See `mind/DISSONANCE.md` for template.
-
-Sections:
-
-- **Questions/Curiosities** — AI-generated questions
-- **Active Tensions** — Unresolved conflicts
-- **Resolved** — Clarified tensions
+Dreamer:
+- ✅ Appends to DISSONANCE (adds only)
+- ✅ Logs evolution (adds only)
+- ✅ Never removes content
+- ✅ Never edits existing text
+- ✅ Safe to run repeatedly
 
 ## Key Principles
 
 1. **Curiosity over certainty** — Flag uncertainty, don't guess
-2. **Capture tension** — Write it down, don't forget
-3. **Evolve to clarity** — Tensions become resolved
-4. **No false confidence** — Small model = flag it
+2. **Minimal edits** — Only append, never modify
+3. **Safe automation** — No infinite loops, no chaos
+4. **Human in loop** — Review DISSONANCE, resolve tensions
+
+## Integration with Team
+
+| Who | Role |
+|-----|------|
+| **Dreamer** | Scans, finds, appends, logs |
+| **Bizing AI** | Reads mind, answers queries, uses knowledge |
+| **Pac** | Queries Bizing, updates mind, commits changes |
+| **Ameer** | Resolves tensions, answers questions, guides |
+
+## TEAMSYNC Loop
+
+```
+Dreamer → Scans → Appends tensions → Logs evolution
+    ↓
+Pac → Queries Bizing → Discovers gaps → Updates mind
+    ↓
+Bizing → Reads updated mind → Responds accurately
+    ↓
+Ameer → Reviews DISSONANCE → Resolves → Mind evolves
+    ↓
+Back to Dreamer...
+```
+
+## When to Run
+
+- **Cron:** Every 30 minutes automatically
+- **Manual:** Before deep work, check tensions
+- **After changes:** Let Dreamer find new tensions
 
 ## Files
 
-- **Script:** `scripts/dreamer.mjs` — Node.js scanner
-- **Data:** `mind/DISSONANCE.md` — Tension database
+- **Script:** `scripts/dreamer.mjs` — Node.js evolver
+- **Output:** `mind/DISSONANCE.md` — Tension database
+- **Evolution:** `mind/evolution/YYYY-MM-DD.md` — Change log
 - **Docs:** `mind/DREAMER.md` — This file
-
-## Progress
-
-| Metric          | Description                |
-| --------------- | -------------------------- |
-| Tensions Found  | New dissonances discovered |
-| Questions Asked | Questions for Ameer        |
-| Resolved        | Tensions clarified         |
 
 ---
 
-_Dreamer keeps the mind curious, humble, and honest._
+*Dreamer evolves the mind while we sleep. Curiosity never stops.*
