@@ -31,6 +31,23 @@ status: active
 - [2026-02-11] **JSDoc linking standards** — Use `{@link ./file.ts}` for code files, `mind/path/file.md` for mind files. Wiki links `[[file]]` only work in Markdown, not JSDoc. VS Code understands `{@link}` and shows clickable links!
 
 - [2026-02-11] **Testing Requirements** — ALL tests must pass before commit/push. Check type errors after every change. Use Vitest for unit tests, Playwright for E2E. NO commits with failing tests.
+- [2026-02-11] **Mind Activity API** — Renamed brain/activity to mind/activity with real data. Now reads from session logs, feedback learnings, and mind structure. Returns: recent sessions, documented learnings, current focus, file count.
+- [2026-02-11] **Never Skip Tests** — Installed Playwright, added `pnpm typecheck`, `pnpm test`, `pnpm test:e2e` commands. Updated documentation to NEVER SKIP any check. Type errors or test failures = STOP and FIX first.
+- [2026-02-11] **Admin Dashboard Documentation** — Added extensive JSDoc to bizing/page.tsx with @fileoverview, @description, @architecture, @design-decisions, @dependencies, @todo. Every function needs docs. Critical for understanding and maintenance.
+- [2026-02-11] **Admin Dashboard Tests** — Created __tests__/page.test.tsx with 20+ tests covering: rendering, user interactions, API calls, accessibility. Added vitest.config.ts, vitest.setup.ts, @testing-library/react, jsdom. Tests verify component behavior.
+- [2026-02-11] **Overflow Fixes** — Fixed activity cards and send button overflow. Key fix: add `overflow-hidden` to parent containers AND child elements. Use `min-w-0` on flex children. Use `shrink-0` on fixed-width elements. Test with `data-testid` for verification.
+- [2026-02-11] **Velocity-First Workflow** — For rapid iteration: Ameer adds/updates code WITHOUT tests/docs. Pac finds undocumented code → adds docs + tests → HARD MINDSYNC + CODESYNC. Trade-off: speed now, cleanup later.
+- [2026-02-11] **Research Backlog System** — Created `mind/research/backlog.md` with 80+ research topics organized by category (AI, Business, Architecture, Security, etc.). Includes research methods, sources, and completion checklist. MAP.md updated with research section.
+- [2026-02-12] **API-Complete Philosophy** — API-First means API-Complete: the API is the most important thing, it exposes everything programmatically. UI is just one client (like terminal). Agents, scripts, integrations are other clients. If UI can do it, API can do it. Target: 100% API coverage. Philosophy: Terminal → API → Everything.
+- [2026-02-12] **Briefing Skill v3** — Fixed workflow to properly send MP3 audio to Telegram. Key fix: copy TTS-generated file from temp directory to persistent workspace before sending (temp files get cleaned up). Primary: MP3 audio. Fallback: TTS-optimized TXT. Never fails.
+- [2026-02-12] **Perplexity vs Brave** — Perplexity is better for research (AI-synthesized answers with citations), Brave is cheaper for general search. Perplexity: ~$0.02/query, Brave: $0.003/query. Perplexity worth it for time saved.
+- [2026-02-12] **11labs Configuration** — TTS tool needs API key configured in OpenClaw (`openclaw configure --section tts`). Voice: Nova (warm, conversational). Model: eleven turbo v2.5. File paths are temporary, need to persist before sending.
+- [2026-02-12] **Top 3 Research Completed** —
+  1. Booking Domain Model: State machines, reservation patterns, double-booking prevention with PostgreSQL EXCLUDE constraints
+  2. Event-Driven Architecture: Saga pattern for distributed transactions, webhook integrations, event sourcing
+  3. API-First Design: OpenAPI 3.0 spec, consumer-driven contract testing with Pact, versioning strategies
+  All findings stored in mind/research/findings/. Ready for implementation.
+- [2026-02-11] **Admin Dashboard Fixes** — Fixed duplicate React key error (learning-ID now unique). Added react-markdown for chat responses. Fixed chat layout with fixed input at bottom (Telegram style). Fixed activity card overflow with proper scroll areas.
 
 - [2026-02-11] **CODESYNC** — When user says "codesync", perform: type check → run tests → if ALL pass, commit → push to feature branch → create PR. NO commit if tests fail.
 

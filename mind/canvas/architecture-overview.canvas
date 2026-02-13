@@ -1,0 +1,159 @@
+{
+  "nodes": [
+    {
+      "id": "title",
+      "type": "text",
+      "text": "# Bizing Architecture Overview\n\nComplete system architecture for booking/events/sales engine",
+      "x": -200,
+      "y": -500,
+      "width": 600,
+      "height": 100
+    },
+    {
+      "id": "layer-api",
+      "type": "text",
+      "text": "## API Layer\n\n**OpenAPI 3.0 Spec**\n- REST endpoints\n- JWT/API Key auth\n- Rate limiting\n- Versioning (v1, v2)\n\n**Code Generation:**\n- TypeScript types\n- API client\n- Mock server\n\n**Contract Testing:**\n- Pact (consumer-driven)\n- CI verification\n\n📄 Details: api-first-design.canvas",
+      "x": -600,
+      "y": -250,
+      "width": 350,
+      "height": 280
+    },
+    {
+      "id": "layer-domain",
+      "type": "text",
+      "text": "## Domain Layer\n\n**Booking Entity:**\n- State machine\n- Optimistic locking\n- PostgreSQL EXCLUDE constraints\n\n**Resources:**\n- Rooms, services, products\n- Availability rules\n- Buffer times\n\n**Time Management:**\n- Slots & holds\n- Recurring patterns\n- Timezone handling\n\n📄 Details: booking-domain-architecture.canvas",
+      "x": -100,
+      "y": -250,
+      "width": 350,
+      "height": 280
+    },
+    {
+      "id": "layer-events",
+      "type": "text",
+      "text": "## Event Layer\n\n**Event Store:**\n- PostgreSQL JSONB\n- Append-only log\n\n**Saga Pattern:**\n- Orchestration\n- 5-step booking flow\n- Compensation logic\n\n**Webhooks:**\n- Outgoing (Calendar, Zoom)\n- Incoming (Stripe)\n\n**Projections:**\n- Read models\n- Eventually consistent\n\n📄 Details: event-driven-architecture.canvas",
+      "x": 400,
+      "y": -250,
+      "width": 350,
+      "height": 280
+    },
+    {
+      "id": "data-flow",
+      "type": "text",
+      "text": "## Data Flow\n\n```\n1. Client Request\n   ↓\n2. API Layer (validation, auth)\n   ↓\n3. Domain Layer (business logic)\n   ↓\n4. Event Layer (publish event)\n   ↓\n5. Saga Orchestrator (workflow)\n   ↓\n6. Handlers (side effects)\n   - DB updates\n   - Stripe charges\n   - Email sends\n   - Calendar sync\n```",
+      "x": -600,
+      "y": 100,
+      "width": 350,
+      "height": 320
+    },
+    {
+      "id": "booking-flow",
+      "type": "text",
+      "text": "## Example: Booking Flow\n\n**Step 1: Create Booking**\n- Validate availability\n- Hold time slot\n- Create pending booking\n\n**Step 2: Process Payment**\n- Stripe payment intent\n- Capture charge\n\n**Step 3: Confirm**\n- Update booking status\n- Release hold → confirmed\n\n**Step 4: Side Effects**\n- Send confirmation email\n- Add to Google Calendar\n- Notify agent\n- Update analytics\n\n**Events Published:**\nBookingCreated → InventoryHeld → PaymentReceived → BookingConfirmed → NotificationsSent",
+      "x": -100,
+      "y": 100,
+      "width": 350,
+      "height": 380
+    },
+    {
+      "id": "tech-stack",
+      "type": "text",
+      "text": "## Technology Stack\n\n**Backend:**\n- Node.js + TypeScript\n- Hono (API framework)\n- PostgreSQL (database)\n- Drizzle ORM\n\n**Frontend:**\n- Next.js 15\n- React 19\n- Tailwind CSS\n- shadcn/ui\n\n**Infrastructure:**\n- Event-driven (PostgreSQL)\n- 11labs (TTS)\n- Stripe (payments)\n- OpenAI (AI)\n\n**Testing:**\n- Vitest (unit)\n- Pact (contract)\n- Playwright (E2E)",
+      "x": 400,
+      "y": 100,
+      "width": 350,
+      "height": 320
+    },
+    {
+      "id": "key-decisions",
+      "type": "text",
+      "text": "## Key Architecture Decisions\n\n| Decision | Choice | Why |\n|----------|--------|-----|\n| Double-booking | DB EXCLUDE constraint | Atomic, no race conditions |\n| Locking | Optimistic (versions) | Better concurrency |\n| Transactions | Saga pattern | Distributed, compensatable |\n| API Style | OpenAPI-first | Parallel development |\n| Events | PostgreSQL → Redis | Start simple, scale later |\n| Testing | Contract (Pact) | Catch breaks early |",
+      "x": -600,
+      "y": 500,
+      "width": 350,
+      "height": 280
+    },
+    {
+      "id": "implementation",
+      "type": "text",
+      "text": "## Implementation Order\n\n**Phase 1: Foundation (Week 1)**\n- Database schema\n- Domain entities\n- State machines\n\n**Phase 2: Events (Week 2)**\n- Event store\n- Saga orchestrator\n- Basic handlers\n\n**Phase 3: API (Week 3)**\n- OpenAPI spec\n- Endpoints\n- Contract tests\n\n**Phase 4: Integration (Week 4)**\n- Webhooks\n- External APIs\n- E2E tests\n\n**Phase 5: Polish (Week 5-6)**\n- Optimization\n- Monitoring\n- Documentation",
+      "x": -100,
+      "y": 550,
+      "width": 350,
+      "height": 300
+    },
+    {
+      "id": "files",
+      "type": "text",
+      "text": "## Related Files\n\n**Research:**\n- findings/booking-domain-model.md\n- findings/event-driven-architecture.md\n- findings/api-first-design.md\n\n**Canvas:**\n- canvas/booking-domain-architecture.canvas\n- canvas/event-driven-architecture.canvas\n- canvas/api-first-design.canvas\n\n**Skills:**\n- skills/briefing/SKILL.md\n- skills/workflow/session-logging\n\n**Active:**\n- symbiosis/standup.md\n- PR #14 (open)",
+      "x": 400,
+      "y": 500,
+      "width": 350,
+      "height": 280
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "fromNode": "title",
+      "fromSide": "bottom",
+      "toNode": "layer-api",
+      "toSide": "top"
+    },
+    {
+      "id": "e2",
+      "fromNode": "title",
+      "fromSide": "bottom",
+      "toNode": "layer-domain",
+      "toSide": "top"
+    },
+    {
+      "id": "e3",
+      "fromNode": "title",
+      "fromSide": "bottom",
+      "toNode": "layer-events",
+      "toSide": "top"
+    },
+    {
+      "id": "e4",
+      "fromNode": "layer-api",
+      "fromSide": "bottom",
+      "toNode": "data-flow",
+      "toSide": "top"
+    },
+    {
+      "id": "e5",
+      "fromNode": "layer-domain",
+      "fromSide": "bottom",
+      "toNode": "booking-flow",
+      "toSide": "top"
+    },
+    {
+      "id": "e6",
+      "fromNode": "layer-events",
+      "fromSide": "bottom",
+      "toNode": "tech-stack",
+      "toSide": "top"
+    },
+    {
+      "id": "e7",
+      "fromNode": "data-flow",
+      "fromSide": "bottom",
+      "toNode": "key-decisions",
+      "toSide": "top"
+    },
+    {
+      "id": "e8",
+      "fromNode": "booking-flow",
+      "fromSide": "bottom",
+      "toNode": "implementation",
+      "toSide": "top"
+    },
+    {
+      "id": "e9",
+      "fromNode": "tech-stack",
+      "fromSide": "bottom",
+      "toNode": "files",
+      "toSide": "top"
+    }
+  ]
+}

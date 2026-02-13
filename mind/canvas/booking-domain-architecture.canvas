@@ -1,0 +1,129 @@
+{
+  "nodes": [
+    {
+      "id": "title",
+      "type": "text",
+      "text": "# Booking Domain Architecture\n\nVisual overview of the booking system domain model",
+      "x": -200,
+      "y": -400,
+      "width": 600,
+      "height": 100
+    },
+    {
+      "id": "booking-entity",
+      "type": "text",
+      "text": "## Booking Entity\n\n**Core Fields:**\n- id (UUID)\n- resourceId (what is booked)\n- customerId (who books)\n- agentId (who created it)\n- startTime / endTime\n- timezone\n- status (state machine)\n- paymentStatus\n- totalAmount / currency\n- metadata (JSONB)\n- version (optimistic locking)\n\n**Key Constraint:**\nEXCLUDE constraint prevents\ndouble-booking at DB level",
+      "x": -600,
+      "y": -200,
+      "width": 350,
+      "height": 350
+    },
+    {
+      "id": "state-machine",
+      "type": "text",
+      "text": "## State Machine\n\n```\nDRAFT → PENDING → CONFIRMED → COMPLETED\n  ↓        ↓          ↓\nCANCELLED EXPIRED   NO_SHOW\n```\n\n**Transitions:**\n- DRAFT → PENDING: User submits\n- PENDING → CONFIRMED: Payment received\n- PENDING → EXPIRED: 15min timeout\n- CONFIRMED → CANCELLED: User cancels\n- CONFIRMED → COMPLETED: Event passed\n- CONFIRMED → NO_SHOW: No check-in",
+      "x": -100,
+      "y": -200,
+      "width": 350,
+      "height": 350
+    },
+    {
+      "id": "resource-entity",
+      "type": "text",
+      "text": "## Resource Entity\n\n**What Can Be Booked:**\n- Room (physical space)\n- Event Space (meeting room)\n- Service (consultation)\n- Product (digital)\n\n**Fields:**\n- id, name, type\n- capacity\n- timezone\n- businessId (owner)\n- settings (JSONB)\n  - bufferBefore (minutes)\n  - bufferAfter (minutes)\n  - minAdvanceBooking\n  - maxAdvanceBooking",
+      "x": 400,
+      "y": -200,
+      "width": 300,
+      "height": 300
+    },
+    {
+      "id": "time-slots",
+      "type": "text",
+      "text": "## Time Slot Management\n\n**Availability Table:**\n- resourceId\n- dayOfWeek (0-6)\n- startTime / endTime\n- isAvailable\n\n**Time Slot Holds:**\n- Created when booking starts\n- 15-minute expiration\n- Prevents double-booking\n- Auto-cleanup job\n\n**Recurrence:**\n- Daily, weekly, monthly\n- Generated on-demand\n- Exclude holidays",
+      "x": -600,
+      "y": 200,
+      "width": 300,
+      "height": 280
+    },
+    {
+      "id": "double-booking",
+      "type": "text",
+      "text": "## Double-Booking Prevention\n\n**PostgreSQL EXCLUDE Constraint:**\n```sql\nCONSTRAINT no_double_booking\nEXCLUDE USING gist (\n  resource_id WITH =,\n  tstzrange(start_time, end_time)\n    WITH &&\n) WHERE (status IN \n  ('confirmed', 'completed'))\n```\n\n**How It Works:**\n1. GiST index on resource + time range\n2. Checks overlap (&& operator)\n3. Only applies to confirmed bookings\n4. Pending bookings can overlap\n\n**Benefits:**\n- Database-level guarantee\n- No race conditions\n- Atomic check",
+      "x": -100,
+      "y": 200,
+      "width": 350,
+      "height": 300
+    },
+    {
+      "id": "optimistic-locking",
+      "type": "text",
+      "text": "## Optimistic Locking\n\n**Version Field:**\n- Every booking has 'version' number\n- Incremented on each update\n- Checked before write\n\n**Race Condition Handling:**\n```\n1. Read booking (version=5)\n2. Make changes\n3. UPDATE ... WHERE version=5\n4. If no rows updated → conflict\n5. Retry with fresh data\n```\n\n**vs Pessimistic:**\n- Better concurrency\n- No deadlocks\n- Retry on conflict",
+      "x": 400,
+      "y": 200,
+      "width": 300,
+      "height": 250
+    },
+    {
+      "id": "advanced-patterns",
+      "type": "text",
+      "text": "## Advanced Patterns\n\n**Waitlist:**\n- When fully booked\n- Preferred time + flexibility\n- Auto-offer on cancellation\n\n**Buffer Times:**\n- Cleanup/prep between bookings\n- Configurable per resource\n\n**Multi-Resource:**\n- Package bookings\n- All-or-nothing\n- Simultaneous hold\n\n**Audit Trail:**\n- booking_history table\n- Every state change logged\n- Who, what, when",
+      "x": -600,
+      "y": 550,
+      "width": 300,
+      "height": 280
+    },
+    {
+      "id": "implementation",
+      "type": "text",
+      "text": "## Implementation Roadmap\n\n**Week 1: Core Schema**\n- Create tables\n- Add EXCLUDE constraints\n- State machine logic\n- Time slot holds\n\n**Week 2: Availability**\n- Availability engine\n- Time slot generation\n- Buffer times\n- Recurring patterns\n\n**Week 3: Booking Flow**\n- Checkout process\n- Payment hooks\n- Confirmation\n- Cancellation\n\n**Week 4: Advanced**\n- Waitlist system\n- Multi-resource\n- Audit logging",
+      "x": -100,
+      "y": 550,
+      "width": 350,
+      "height": 280
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge1",
+      "fromNode": "title",
+      "fromSide": "bottom",
+      "toNode": "booking-entity",
+      "toSide": "top"
+    },
+    {
+      "id": "edge2",
+      "fromNode": "title",
+      "fromSide": "bottom",
+      "toNode": "state-machine",
+      "toSide": "top"
+    },
+    {
+      "id": "edge3",
+      "fromNode": "title",
+      "fromSide": "bottom",
+      "toNode": "resource-entity",
+      "toSide": "top"
+    },
+    {
+      "id": "edge4",
+      "fromNode": "booking-entity",
+      "fromSide": "bottom",
+      "toNode": "time-slots",
+      "toSide": "top"
+    },
+    {
+      "id": "edge5",
+      "fromNode": "state-machine",
+      "fromSide": "bottom",
+      "toNode": "double-booking",
+      "toSide": "top"
+    },
+    {
+      "id": "edge6",
+      "fromNode": "resource-entity",
+      "fromSide": "bottom",
+      "toNode": "optimistic-locking",
+      "toSide": "top"
+    }
+  ]
+}
