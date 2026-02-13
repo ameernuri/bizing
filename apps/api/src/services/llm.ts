@@ -33,12 +33,12 @@ interface ChatOptions {
 }
 
 // LLM Provider Configuration
-type Provider = "openai" | "kimi";
+type Provider = "openai" | "kimi" | "ollama";
 
 interface ProviderConfig {
   provider: Provider;
   baseUrl: string;
-  apiKey: string;
+  apiKey?: string;
   model: string;
 }
 
@@ -252,6 +252,14 @@ function getProviderConfig(): ProviderConfig {
     };
   }
 
+  if (provider === "ollama") {
+    return {
+      provider: "ollama",
+      baseUrl: process.env.OLLAMA_URL || "http://localhost:11434",
+      model: process.env.OLLAMA_MODEL || "llama3.1:8b",
+    };
+  }
+
   throw new Error(`Unknown LLM provider: ${provider}`);
 }
 
@@ -352,13 +360,68 @@ async function executeFunctionCall(name: string, args: string): Promise<string> 
   }
 }
 
-export async function chatWithLLM(options: ChatOptions): Promise<string> {
-  const config = getProviderConfig();
+export async function chatWithLLM(options: ChatOptions, preferredProvider?: Provider): Promise<string> {
+  // Use preferred provider if specified, otherwise use environment config
+  const envProvider = (process.env.LLM_PROVIDER as Provider) || "openai";
+  const providerName = preferredProvider || envProvider;
+  
+  // Get config for the provider
+  let config: ProviderConfig;
+  if (providerName === "ollama") {
+    config = {
+      provider: "ollama",
+      baseUrl: process.env.OLLAMA_URL || "http://localhost:11434",
+      model: process.env.OLLAMA_MODEL || "llama3.1:8b",
+    };
+  } else {
+    config = getProviderConfig();
+  }
 
   console.log(`[LLM] Provider: ${config.provider}`);
   console.log(`[LLM] Model: ${config.model}`);
 
   try {
+    // Ollama uses different endpoint and format
+    if (config.provider === "ollama") {
+      const ollamaBody = {
+        model: config.model,
+        messages: options.messages,
+        stream: false,
+        options: {
+          temperature: options.temperature ?? 0.7,
+          num_predict: options.maxTokens ?? 2000,
+        }
+      };
+
+      const response = await fetch(`${config.baseUrl}/api/chat`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(ollamaBody),
+      });
+
+      console.log(`[LLM] Response status: ${response.status}`);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`[LLM] Error response: ${errorText}`);
+        throw new Error(
+          `Ollama API error ${response.status}: ${errorText}`,
+        );
+      }
+
+      const data = await response.json() as {
+        message?: {
+          content?: string;
+        };
+      };
+
+      return data.message?.content ??
+        "I apologize, but I could not generate a response.";
+    }
+
+    // OpenAI/Kimi use standard format
     const requestBody: any = {
       model: config.model,
       messages: options.messages,

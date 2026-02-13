@@ -280,7 +280,7 @@ const MAX_HISTORY = 10 // Keep last 10 messages
 
 app.post('/api/v1/bizing/chat', async (c) => {
   const body = await c.req.json()
-  const { message, sessionId = 'default', enableFunctions = true } = body
+  const { message, sessionId = 'default', enableFunctions = true, provider } = body
 
   try {
     log(`Bizing chat request [${sessionId}]: ${message.slice(0, 50)}...`)
@@ -313,7 +313,7 @@ app.post('/api/v1/bizing/chat', async (c) => {
       temperature: 0.7,
       maxTokens: 2000,
       enableFunctions,
-    })
+    }, provider) // Pass provider to use specific model
 
     // Add assistant response to history
     history.push({
@@ -331,7 +331,7 @@ app.post('/api/v1/bizing/chat', async (c) => {
       sessionId,
       messageCount: history.length,
       timestamp: new Date().toISOString(),
-      model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
+      model: provider || process.env.LLM_PROVIDER || 'openai',
     })
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : String(err)

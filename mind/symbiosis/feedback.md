@@ -40,6 +40,24 @@ status: active
 - [2026-02-11] **Research Backlog System** — Created `mind/research/backlog.md` with 80+ research topics organized by category (AI, Business, Architecture, Security, etc.). Includes research methods, sources, and completion checklist. MAP.md updated with research section.
 - [2026-02-12] **Never Commit Without Explicit Approval** — I committed changes without asking first. BIG mistake. Now requiring explicit "commit approved" before any git commit. Will show all changes and wait for confirmation.
 - [2026-02-12] **Comprehensive Knowledge Base System** — Built complete knowledge base for Bizing AI with automatic extraction of summaries, key points, and tags from all 88 mind files (71,776 words). New functions: `searchKnowledgeBase()`, `getKnowledgeEntry()`, `getEntriesByType()`. AI now retrieves EXACT details from research, decisions, sessions — knows every nook and cranny!
+
+- [2026-02-12] **Three-Way Feedback Loop ♻️** — Ameer, Bizing AI, and Pac form a feedback loop:
+  1. Ameer creates/updates mind files, talks to Bizing AI
+  2. Bizing AI (via /bizing/chat) has consciousness, responds to queries
+  3. Pac (me) reads mind files AND queries Bizing AI to test knowledge
+  4. Pac interrogates: "What do you know about X?" → Discovers gaps
+  5. Pac updates mind files → Fixes gaps → Bizing gets smarter
+  6. Loop continues — all three stay synchronized!
+
+  Dual-model setup:
+  - `/bizing/chat` with `provider: "ollama"` → Local, free, fast (for Pac's queries)
+  - `/bizing/chat` with `provider: "openai"` → High quality, function calling (for users)
+
+  Pac's workflow:
+  - Need info? → Query Bizing AI (local model)
+  - Bizing doesn't know? → Read mind file, discover gap
+  - Fix gap? → Update mind file
+  - Test fix? → Query Bizing again
 - [2026-02-12] **Briefing Skill v3** — Fixed workflow to properly send MP3 audio to Telegram. Key fix: copy TTS-generated file from temp directory to persistent workspace before sending (temp files get cleaned up). Primary: MP3 audio. Fallback: TTS-optimized TXT. Never fails.
 - [2026-02-12] **Perplexity vs Brave** — Perplexity is better for research (AI-synthesized answers with citations), Brave is cheaper for general search. Perplexity: ~$0.02/query, Brave: $0.003/query. Perplexity worth it for time saved.
 - [2026-02-12] **11labs Configuration** — TTS tool needs API key configured in OpenClaw (`openclaw configure --section tts`). Voice: Nova (warm, conversational). Model: eleven turbo v2.5. File paths are temporary, need to persist before sending.
