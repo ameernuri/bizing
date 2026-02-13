@@ -59,7 +59,7 @@ status: active
   - Fix gap? → Update mind file
   - Test fix? → Query Bizing again
 
-- [2026-02-12] **Dreamer Curiosity Engine** — New script that scans mind files, finds tensions/conflicts, adds to DISSONANCE.md. NO COMMITS — just awareness. Pac + Bizing AI together draft questions for Ameer. Keeps mind humble: when uncertain → flag it, don't guess.
+- [2026-02-12] **Talk to Bizing AI REGULARLY** — On every interaction, query Bizing AI to stay synchronized. Use `node scripts/query-bizing.mjs "question"`. This is a TWO-WAY street: Bizing reads mind files → responds → you discover gaps → update mind → Bizing gets smarter. Regular conversations keep all three (Ameer, Bizing, Pac) on the same page. This is now MANDATORY in FRAMEWORK.md Step 5.
 
 - [2026-02-12] **DISSONANCE.md** — New file for holding unresolved tensions. Sections: "Questions for Ameer" (AI-generated), "Active Dissonances" (unresolved), "Resolved" (clarified). Key principle: curiosity over certainty. When confused → add to dissonance, don't fake understanding.
 - [2026-02-12] **Briefing Skill v3** — Fixed workflow to properly send MP3 audio to Telegram. Key fix: copy TTS-generated file from temp directory to persistent workspace before sending (temp files get cleaned up). Primary: MP3 audio. Fallback: TTS-optimized TXT. Never fails.

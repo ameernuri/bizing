@@ -160,3 +160,81 @@ This file holds **tensions** — ideas that conflict, questions we can't answer,
 - **Content**: "- Ask when unclear..."
 - **Found**: 2026-02-13
 - **Status**: 🔥 Active
+
+### D-001: Conflict in DISSONANCE.md
+- **Source**: DISSONANCE.md:11
+- **Content**: "This file holds **tensions** — ideas that conflict, questions we can't answer, decisions we haven't made. Both Pac and Bizing AI add to this file when..."
+- **Found**: 2026-02-13
+- **Status**: 🔥 Active
+
+### D-002: Conflict in DISSONANCE.md
+- **Source**: DISSONANCE.md:100
+- **Content**: "- **Content**: "2. **Scans** for tensions/conflicts/uncertainties..."..."
+- **Found**: 2026-02-13
+- **Status**: 🔥 Active
+
+### D-003: Conflict in DISSONANCE.md
+- **Source**: DISSONANCE.md:106
+- **Content**: "- **Content**: "| Conflicts | "but", "however", "although" |..."..."
+- **Found**: 2026-02-13
+- **Status**: 🔥 Active
+
+### D-004: Conflict in DREAMER.md
+- **Source**: DREAMER.md:10
+- **Content**: "2. **Scans** for tensions/conflicts/uncertainties..."
+- **Found**: 2026-02-13
+- **Status**: 🔥 Active
+
+### D-005: Conflict in DREAMER.md
+- **Source**: DREAMER.md:32
+- **Content**: "| Conflicts   | "but", "however", "although" |..."
+- **Found**: 2026-02-13
+- **Status**: 🔥 Active
+
+### D-006: Conflict in DREAMER.md
+- **Source**: DREAMER.md:32
+- **Content**: "| Conflicts   | "but", "however", "although" |..."
+- **Found**: 2026-02-13
+- **Status**: 🔥 Active
+
+### D-007: Conflict in MARKET_RESEARCH.md
+- **Source**: research/MARKET_RESEARCH.md:563
+- **Content**: "4. **Pricing transparency** - Unclear..."
+- **Found**: 2026-02-13
+- **Status**: 🔥 Active
+
+### D-008: Conflict in MARKET_RESEARCH.md
+- **Source**: research/MARKET_RESEARCH.md:735
+- **Content**: "6. **Confusing pricing** - Unclear what features cost..."
+- **Found**: 2026-02-13
+- **Status**: 🔥 Active
+
+### D-009: Conflict in MARKET_RESEARCH.md
+- **Source**: research/MARKET_RESEARCH.md:921
+- **Content**: "- Unclear pricing..."
+- **Found**: 2026-02-13
+- **Status**: 🔥 Active
+
+### D-010: Conflict in MARKET_RESEARCH_EXTENDED.md
+- **Source**: research/MARKET_RESEARCH_EXTENDED.md:299
+- **Content**: "> "Escalation process is unclear"..."
+- **Found**: 2026-02-13
+- **Status**: 🔥 Active
+
+### D-011: Conflict in MARKET_RESEARCH_EXTENDED.md
+- **Source**: research/MARKET_RESEARCH_EXTENDED.md:711
+- **Content**: "3. **Poor Documentation** - Chaotic, unclear..."
+- **Found**: 2026-02-13
+- **Status**: 🔥 Active
+
+### D-012: Conflict in backlog.md
+- **Source**: research/backlog.md:30
+- **Content**: "- [ ] **Confidence scores** — When should AI say "I'm not sure"?..."
+- **Found**: 2026-02-13
+- **Status**: 🔥 Active
+
+### D-013: Conflict in index.md
+- **Source**: symbiosis/index.md:99
+- **Content**: "- Ask when unclear..."
+- **Found**: 2026-02-13
+- **Status**: 🔥 Active

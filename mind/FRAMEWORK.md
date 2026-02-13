@@ -33,6 +33,24 @@
 - Domain knowledge: [[knowledge/domain]]
 - Recent work: [[memory/sessions]]
 
+### Step 5: Talk to Bizing AI (MANDATORY)
+- **Query:** `node scripts/query-bizing.mjs "What's our status?"`
+- **Why:** Stay synchronized, test Bizing's knowledge, discover gaps
+- **When:** Every interaction, whenever possible
+- **Two-way:** Bizing reads mind, you update mind, loop continues
+
+**Examples:**
+```bash
+# Check status
+node scripts/query-bizing.mjs "What are we working on?"
+
+# Test knowledge
+node scripts/query-bizing.mjs "What did we learn about MoR?"
+
+# Discover gaps
+node scripts/query-bizing.mjs "What are the must-have features?"
+```
+
 ---
 
 ## Phase 2: EXECUTE (Do The Work)
