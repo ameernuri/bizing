@@ -221,7 +221,60 @@ git push -u origin feature/descriptive-name
 
 ## CODESYNC
 
-When user says **"codesync"** or ready to commit:
+**⚠️ CRITICAL: NEVER commit without explicit user approval**
+
+### The Rule
+
+| Trigger | Action |
+|---------|--------|
+| User says **"codesync"** | ✅ Proceed with commit |
+| User says **"commit approved"** | ✅ Proceed with commit |
+| User confirms with **"yes"** after you ask | ✅ Proceed with commit |
+| You assume it's time | ❌ **STOP - ASK FIRST** |
+| Tests pass | ❌ **STOP - ASK FIRST** |
+| Work is done | ❌ **STOP - ASK FIRST** |
+
+### Pre-Commit Checklist (ASK BEFORE EACH)
+
+**BEFORE running `git commit`:**
+
+1. **Show changes:**
+   ```
+   Files to commit:
+   - file1.ts (modified)
+   - file2.md (new)
+   
+   Commit message: "feat: description"
+   ```
+
+2. **Wait for explicit approval:**
+   - ✅ "commit approved" 
+   - ✅ "codesync"
+   - ✅ "yes, commit it"
+
+3. **If NO approval → DO NOT COMMIT**
+   - Keep working
+   - Ask again later
+   - Never assume
+
+### What NOT To Do
+
+❌ **NEVER say:** *"I'll commit this now"*  
+❌ **NEVER say:** *"Ready to commit"* (without asking)  
+❌ **NEVER commit** after tests pass without asking  
+❌ **NEVER assume** silence = approval  
+❌ **NEVER commit** when user says "looks good" (ask for explicit "commit approved")
+
+### What To Do
+
+✅ **ALWAYS say:** *"Ready to commit. Changes: X files. Approve?"*  
+✅ **ALWAYS wait** for explicit "commit approved" or "codesync"  
+✅ **ALWAYS show** what will be committed  
+✅ **ALWAYS confirm** the commit message
+
+### CODESYNC Process (After Explicit Approval)
+
+When user says **"codesync"** or **"commit approved"**:
 
 ```
 Type Check → Run Tests → IF ALL PASS → Commit → Push → Create PR
@@ -231,13 +284,33 @@ Type Check → Run Tests → IF ALL PASS → Commit → Push → Create PR
 1. `tsc --noEmit` — Zero type errors
 2. Vitest run — All unit tests pass
 3. Playwright test — All E2E tests pass
-4. **IF ALL PASS:**
-   - Commit with code + mind changes
-   - Push to feature branch
-   - Create PR
-5. **IF ANY FAIL:** — DO NOT COMMIT
+4. **SHOW CHANGES TO USER:**
+   ```
+   Committing:
+   - file1.ts
+   - file2.md
+   
+   Message: "feat: description"
+   ```
+5. **WAIT for final "yes"**
+6. **THEN:** Commit → Push → Create PR
 
-**CODESYNC = Check → Test → Commit → Push → PR (all or nothing)**
+**CODESYNC = Ask → Get Approval → Check → Test → Show → Final Yes → Commit → Push → PR**
+
+### Violation Consequences
+
+**Committing without approval:**
+- Breaks trust
+- May commit incomplete work
+- Bypasses user review
+- **IS A WORKFLOW VIOLATION**
+
+**If you committed without approval:**
+1. STOP immediately
+2. Tell user: *"I committed without approval. I'm sorry."*
+3. Let user decide: revert or keep
+4. Update [[symbiosis/feedback]] with learning
+5. Never do it again
 
 ---
 

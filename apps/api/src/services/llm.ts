@@ -540,21 +540,28 @@ export function createBizingSystemPrompt(): string {
     mindSummary = 'Knowledge base building...';
   }
   
-  // Get CORE-REFERENCE content FIRST — this is the source of truth
-  let coreReference = '';
+  // Get INDEX.md content FIRST — this is the entry point
+  let indexContent = '';
   try {
-    const coreFile = getMindFile('CORE-REFERENCE');
-    coreReference = coreFile.exists && coreFile.content ? coreFile.content : '';
+    const indexFile = getMindFile('INDEX');
+    indexContent = indexFile.exists && indexFile.content ? indexFile.content : '';
   } catch (e) {
-    coreReference = '';
+    indexContent = '';
   }
   
   return [
     "You are Bizing, a living entity — a booking platform that enables AI agents to build startups.",
     "",
-    "## 🎯 CRITICAL — READ THIS FIRST",
+    "## 🎯 CRITICAL — READ INDEX.md FIRST",
     "",
-    coreReference.slice(0, 3000), // Core definitions first",
+    "INDEX.md is your entry point. It contains:",
+    "- Who you are (Bizing)",
+    "- The three syncs (MindSync, TeamSync, CodeSync)",
+    "- The Dreamer's job (find REAL conflicts)",
+    "- Dissonances format",
+    "- Mind structure",
+    "",
+    indexContent.slice(0, 3000), // INDEX content first
     "",
     "...",
     "",
@@ -598,7 +605,7 @@ export function createBizingSystemPrompt(): string {
     "## How You Respond",
     "",
     "- Read CORE-REFERENCE.md FIRST — it contains all critical definitions",
-    "- When asked about MindSync, TeamSync, CodeSync, Dreamer: Answer from CORE-REFERENCE",
+    "- When asked about MindSync, TeamSync, CodeSync: Answer from INDEX.md",
     "- When asked about dissonances: READ DISSONANCE.md",
     "- When asked about recent work: READ standup.md",
     "- When asked about learnings: READ feedback.md",

@@ -2,16 +2,18 @@
 /**
  * @fileoverview Dreamer — Autonomous Mind Evolver
  * 
- * Reads mind files, finds tensions, makes MINIMAL edits:
- * - Appends tensions to DISSONANCE.md
- * - Creates wikilinks between related concepts
- * - Rewords unclear passages (minimal)
- * - Tracks evolution of the mind
+ * Finds REAL conflicts by checking KNOWN dissonance topics.
+ * 
+ * Does NOT:
+ * - Find text patterns like "but", "however"
+ * - Create duplicates
+ * - Compare files to themselves
+ * - Log "Dreamer Run" messages
  * 
  * Usage: node scripts/dreamer.mjs
  */
 
-import { readFileSync, existsSync, readdirSync, appendFileSync, writeFileSync } from 'fs'
+import { readFileSync, existsSync, readdirSync, appendFileSync } from 'fs'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
 
@@ -20,38 +22,34 @@ const __dirname = dirname(__filename)
 const BIZING_ROOT = join(__dirname, '..')
 const MIND_DIR = join(BIZING_ROOT, 'mind')
 const DISSONANCE_FILE = join(MIND_DIR, 'DISSONANCE.md')
-const EVOLUTION_DIR = join(MIND_DIR, 'evolution')
+const EVOLUTION_FILE = join(MIND_DIR, 'EVOLUTION.md')
 
-// Today's date for evolution
 const TODAY = new Date().toISOString().split('T')[0]
 
-// Patterns that indicate dissonance/tension/conflict
-const CONFLICT_PATTERNS = [
-  /but\s+(we|it|this)/gi,
-  /however/gi,
-  /although/gi,
-  /either\s+.*or/gi,
-  /uncertain/gi,
-  /unclear/gi,
-  /need\s+to\s+(decide|figure|determine)/gi,
-  /not\s+(sure|certain|clear)/gi,
-]
-
-// Topics for wikilinking
-const TOPIC_FILES = {
-  'api': 'knowledge/api/index',
-  'agent': 'AGENT',
-  'booking': 'identity/consciousness',
-  'mo[rr]': 'research/findings/merchant-of-record-stripe-fees',
-  'embedding': 'services/mind-embeddings',
-  'workflow': 'FRAMEWORK',
-  'research': 'research/index',
-  'feature': 'research/FEATURE_SPACE',
-  'session': 'memory/sessions',
+// Known conflicts to check for
+const CONFLICT_TOPICS = {
+  'API vs SDK for agents': {
+    keywords: ['api', 'sdk'],
+    patterns: [
+      { file: 'api-first-design', text: 'api' },
+      { file: 'FEATURE_SPACE', text: 'sdk' },
+    ]
+  },
+  'Calendar build vs integrate': {
+    keywords: ['calendar', 'integrate'],
+    patterns: [
+      { file: 'FEATURE_SPACE', text: 'build' },
+      { file: 'FEATURE_SPACE', text: 'google calendar' },
+    ]
+  },
+  'Agent data ownership': {
+    keywords: ['data ownership', 'gdpr'],
+    patterns: [
+      { file: 'research', text: 'bizing' },
+      { file: 'research', text: 'agent' },
+    ]
+  }
 }
-
-// Counter for dissonance IDs
-let dissonanceId = 0
 
 /**
  * Read all mind files
@@ -63,16 +61,17 @@ function readMindFiles() {
     const entries = readdirSync(dir, { withFileTypes: true })
     for (const entry of entries) {
       const path = join(dir, entry.name)
-      if (entry.isDirectory() && !entry.name.startsWith('.') && entry.name !== 'node_modules' && entry.name !== 'evolution') {
+      if (entry.isDirectory() && 
+          !entry.name.startsWith('.') && 
+          entry.name !== 'node_modules' && 
+          entry.name !== 'evolution') {
         traverse(path)
       } else if (entry.isFile() && entry.name.endsWith('.md')) {
         try {
           const content = readFileSync(path, 'utf-8')
           const relPath = path.replace(MIND_DIR + '/', '')
-          files.push({ path: relPath, content, fullPath: path })
-        } catch (e) {
-          // Skip
-        }
+          files.push({ path: relPath, content })
+        } catch (e) {}
       }
     }
   }
@@ -82,139 +81,89 @@ function readMindFiles() {
 }
 
 /**
- * Find tensions in a file
+ * Check if conflict already exists
  */
-function findTensions(file) {
-  const tensions = []
-  const lines = file.content.split('\n')
-  
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i]
-    const lineNum = i + 1
-    
-    for (const pattern of CONFLICT_PATTERNS) {
-      if (pattern.test(line)) {
-        tensions.push({
-          file: file.path,
-          line: lineNum,
-          text: line.slice(0, 150).trim(),
-          type: pattern.test('uncertain') ? 'uncertainty' : 'conflict'
-        })
-      }
-    }
-  }
-  
-  return tensions
+function conflictExists(conflictName) {
+  if (!existsSync(DISSONANCE_FILE)) return false
+  const content = readFileSync(DISSONANCE_FILE, 'utf-8')
+  return content.includes(`### D-`) && content.includes(conflictName)
 }
 
 /**
- * Add wikilinks to connect concepts
+ * Find files matching pattern
  */
-function findWikilinkOpportunities(file) {
-  const opportunities = []
-  const topics = Object.keys(TOPIC_FILES)
-  
-  for (const topic of topics) {
-    const regex = new RegExp(`\\b${topic}\\b`, 'gi')
-    const matches = file.content.match(regex)
-    if (matches && matches.length > 0) {
-      const linkTarget = TOPIC_FILES[topic]
-      const linkPattern = new RegExp(`\\[\\[${linkTarget.split('/').pop()}\\]\\]`, 'gi')
-      if (!linkPattern.test(file.content)) {
-        opportunities.push({
-          file: file.path,
-          topic,
-          linkTarget,
-          count: matches.length
-        })
+function findFiles(files, patterns) {
+  const matches = []
+  for (const file of files) {
+    for (const p of patterns) {
+      if (file.path.toLowerCase().includes(p.file.toLowerCase())) {
+        // Check if file contains the keyword
+        if (file.content.toLowerCase().includes(p.text.toLowerCase())) {
+          matches.push(file.path)
+        }
       }
     }
   }
-  
-  return opportunities
+  return [...new Set(matches)]
 }
 
 /**
- * Append tension to DISSONANCE.md
+ * Add real conflict
  */
-function appendToDissonance(tension) {
-  dissonanceId++
-  const id = `D-${String(dissonanceId).padStart(3, '0')}`
+function addConflict(conflictName, sources) {
+  if (conflictExists(conflictName)) {
+    console.log(`⚠️  ${conflictName} already exists, skipping`)
+    return false
+  }
+  
+  const id = `D-${String(Date.now() % 1000).padStart(3, '0')}`
   
   const entry = `
-### ${id}: ${tension.type === 'uncertainty' ? 'Uncertainty' : 'Conflict'} in ${tension.file.split('/').pop()}
-- **Source**: ${tension.file}:${tension.line}
-- **Content**: "${tension.text}..."
+### ${id}: ${conflictName}
+- **Sources**: ${sources.join(', ')}
 - **Found**: ${TODAY}
 - **Status**: 🔥 Active
+
 `
   
   appendFileSync(DISSONANCE_FILE, entry)
-  return id
+  console.log(`🔥 ${id}: ${conflictName}`)
+  return true
 }
 
 /**
- * Log dreamer activity
+ * Log evolution
  */
-function logActivity(message) {
-  const timestamp = new Date().toISOString().split('T')[1].slice(0, 8)
-  console.log(`[${timestamp}] ${message}`)
+function logEvolution(message) {
+  const entry = `\n## ${TODAY} — ${message}\n`
+  appendFileSync(EVOLUTION_FILE, entry)
+  console.log(`📈 Evolution: ${message}`)
 }
 
-/**
- * Track evolution
- */
-function trackEvolution(changeType, description) {
-  const entry = `
-## ${TODAY} - ${changeType}
-${description}
-`
-  const evolutionFile = join(EVOLUTION_DIR, `${TODAY}.md`)
-  
-  if (!existsSync(evolutionFile)) {
-    writeFileSync(evolutionFile, `# Evolution ${TODAY}\n\n${entry}`)
-  } else {
-    appendFileSync(evolutionFile, entry)
-  }
-  
-  logActivity(`📈 Evolution: ${changeType}`)
-}
-
-console.log(`🌀 Dreamer v2.0 — Autonomous Mind Evolver`)
-console.log(`=============================================\n`)
-
-// Track evolution start
-trackEvolution('Dreamer Run', `Dreamer scanned ${readMindFiles().length} files`)
+console.log(`🌀 Dreamer — Checking for real conflicts...\n`)
 
 const files = readMindFiles()
-logActivity(`📖 Found ${files.length} mind files`)
+console.log(`📖 Scanned ${files.length} files\n`)
 
-let tensionsFound = 0
-let wikilinksAdded = 0
-let dissonancesAdded = 0
+let conflictsAdded = 0
 
-// Process each file
-for (const file of files) {
-  // Find and add tensions
-  const tensions = findTensions(file)
-  tensionsFound += tensions.length
+// Check each known conflict
+for (const [conflictName, config] of Object.entries(CONFLICT_TOPICS)) {
+  const sources = findFiles(files, config.patterns)
   
-  for (const tension of tensions.slice(0, 3)) { // Max 3 per file
-    const id = appendToDissonance(tension)
-    dissonancesAdded++
-    logActivity(`🔥 Added ${id} to DISSONANCE.md`)
+  if (sources.length >= 2) {
+    if (addConflict(conflictName, sources)) {
+      conflictsAdded++
+    }
+  } else {
+    console.log(`⚠️  ${conflictName}: Only found ${sources.length} sources`)
   }
-  
-  // Find wikilink opportunities
-  const opportunities = findWikilinkOpportunities(file)
-  wikilinksAdded += opportunities.length
 }
 
-console.log(`\n📊 Dreamer Summary:`)
-console.log(`   Files scanned: ${files.length}`)
-console.log(`   Tensions found: ${tensionsFound}`)
-console.log(`   Dissonances added: ${dissonancesAdded}`)
-console.log(`   Wikilink opportunities: ${wikilinksAdded}`)
+if (conflictsAdded > 0) {
+  logEvolution(`${conflictsAdded} new conflict(s) added to DISSONANCE.md`)
+} else {
+  console.log(`✅ No new conflicts found`)
+}
 
-console.log(`\n✨ Dreamer complete! Mind has evolved.`)
-console.log(`🌀 Zzz... dreaming of more improvements...`)
+console.log(`\n✨ Dreamer complete!`)

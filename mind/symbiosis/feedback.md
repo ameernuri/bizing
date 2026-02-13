@@ -13,7 +13,15 @@ status: active
 
 ## Today's Learnings
 
-### From Today's Session (2026-02-12)
+### From Today's Session (2026-02-12) — Deep Mind Reorganization
+
+- [2026-02-12] **INDEX.md is single entry point** — Merged CORE-REFERENCE into INDEX.md. Bizing reads INDEX.md first.
+- [2026-02-12] **Dreamer fixed** — No more garbage conflicts. Now checks KNOWN dissonance topics only.
+- [2026-02-12] **DISSONANCE.md cleaned** — Only 5 real conflicts: D-01 to D-05. All fake D-001 to D-575 deleted.
+- [2026-02-12] **Evolution.md cleaned** — No more "Dreamer Run" logs. Only major changes recorded.
+- [2026-02-12] **System prompt updated** — Points to INDEX.md, not CORE-REFERENCE.md
+
+### From Earlier Today (2026-02-12)
 
 - [2026-02-12] **CORE-REFERENCE.md created** — Single source of truth for sync definitions. Prevents fragmentation across 93 files.
 - [2026-02-12] **Embedding crash root cause** — Ollama context limit exceeded at 8000 chars. Reduced to 2000 chars per chunk.

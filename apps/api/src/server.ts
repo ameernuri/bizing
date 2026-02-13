@@ -10,6 +10,7 @@ import { getCompactMindState, getMindFile } from './services/mind-api.js'
 import { getCachedMindMap, searchMindDynamic, getMindStructure, listAllFiles, exploreDirectory } from './services/mind-map.js'
 import { semanticSearch, buildAndCacheEmbeddings, getEmbeddingStats, isEmbeddingsReady, testProviders } from './services/mind-embeddings.js'
 import { searchKnowledgeBase, getKnowledgeEntry, getEntriesByType, getKnowledgeStats } from './services/mind-knowledge.js'
+import { getFileCatalog, searchCatalog, getCatalogStats } from './services/mind-catalog.js'
 
 // ============================================
 // Constants
@@ -291,6 +292,10 @@ app.post('/api/v1/bizing/chat', async (c) => {
   try {
     log(`Bizing chat request [${sessionId}]: ${message.slice(0, 50)}...`)
     
+    // Default to OpenAI for web interface (reliable function calling)
+    // Use explicit provider if provided (e.g., 'ollama' for local testing)
+    const effectiveProvider = provider || 'openai'
+    
     // Get or create conversation history
     let history = conversations.get(sessionId) || []
     
@@ -319,7 +324,7 @@ app.post('/api/v1/bizing/chat', async (c) => {
       temperature: 0.7,
       maxTokens: 2000,
       enableFunctions,
-    }, provider) // Pass provider to use specific model
+    }, effectiveProvider) // Use effective provider (defaults to openai)
 
     // Add assistant response to history
     history.push({
@@ -337,7 +342,7 @@ app.post('/api/v1/bizing/chat', async (c) => {
       sessionId,
       messageCount: history.length,
       timestamp: new Date().toISOString(),
-      model: provider || process.env.LLM_PROVIDER || 'openai',
+      model: effectiveProvider || 'openai',
     })
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : String(err)
@@ -498,6 +503,29 @@ app.get('/api/v1/mind/knowledge/by-type/:type', (c) => {
       keyPointsCount: e.keyPoints.length
     }))
   })
+})
+
+// File Catalog API - Lightweight file index
+app.get('/api/v1/mind/catalog', (c) => {
+  return c.json(getFileCatalog())
+})
+
+app.get('/api/v1/mind/catalog/search', (c) => {
+  const query = c.req.query('q')
+  const limit = parseInt(c.req.query('limit') || '10')
+  
+  if (!query) return c.json({ error: 'Missing query' }, 400)
+  
+  const results = searchCatalog(query, limit)
+  return c.json({
+    query,
+    count: results.length,
+    results
+  })
+})
+
+app.get('/api/v1/mind/catalog/stats', (c) => {
+  return c.json(getCatalogStats())
 })
 
 // DISSONANCE API - Read specific dissonance entries
