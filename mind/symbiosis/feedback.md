@@ -58,6 +58,10 @@ status: active
   - Bizing doesn't know? → Read mind file, discover gap
   - Fix gap? → Update mind file
   - Test fix? → Query Bizing again
+
+- [2026-02-12] **Dreamer Curiosity Engine** — New script that scans mind files, finds tensions/conflicts, adds to DISSONANCE.md. NO COMMITS — just awareness. Pac + Bizing AI together draft questions for Ameer. Keeps mind humble: when uncertain → flag it, don't guess.
+
+- [2026-02-12] **DISSONANCE.md** — New file for holding unresolved tensions. Sections: "Questions for Ameer" (AI-generated), "Active Dissonances" (unresolved), "Resolved" (clarified). Key principle: curiosity over certainty. When confused → add to dissonance, don't fake understanding.
 - [2026-02-12] **Briefing Skill v3** — Fixed workflow to properly send MP3 audio to Telegram. Key fix: copy TTS-generated file from temp directory to persistent workspace before sending (temp files get cleaned up). Primary: MP3 audio. Fallback: TTS-optimized TXT. Never fails.
 - [2026-02-12] **Perplexity vs Brave** — Perplexity is better for research (AI-synthesized answers with citations), Brave is cheaper for general search. Perplexity: ~$0.02/query, Brave: $0.003/query. Perplexity worth it for time saved.
 - [2026-02-12] **11labs Configuration** — TTS tool needs API key configured in OpenClaw (`openclaw configure --section tts`). Voice: Nova (warm, conversational). Model: eleven turbo v2.5. File paths are temporary, need to persist before sending.
@@ -192,7 +196,7 @@ LIST FROM "mind/memory/sessions" WHERE file.name LIKE "2026-02-11*"
 
 | Topic             | Link                            |
 | ----------------- | ------------------------------- |
-| Workflow          | [[MIND]]                        |
+| Workflow          | [[mind/WORKFLOW\|WORKFLOW]]     |
 | Today's tasks     | [[standup]]                     |
 | All tasks         | [[backlog]]                     |
 | Consciousness map | [[../canvas/consciousness-map]] |

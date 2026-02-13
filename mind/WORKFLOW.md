@@ -38,7 +38,7 @@
 ## 📋 Execution Rules
 
 ### Before Starting
-- [ ] Read [[human-context/index|Human Context]] — what's your state?
+- [ ] Read [[HUMAN]] — what's your state?
 - [ ] Read [[ai-context/index|AI Context]] — what's my state?
 - [ ] Check [[shared-context/active/index|Active Work]] — what are we doing?
 - [ ] Review [[shared-context/decisions/index|Decisions]] — relevant past choices?

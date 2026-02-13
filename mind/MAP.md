@@ -12,7 +12,7 @@
 |------|---------|
 | [[INDEX]] | 🧠 **START HERE** — Daily entry point, current focus, tasks |
 | [[README]] | What Bizing is, the vision, quick start |
-| [[MIND-FRAMEWORK]] | ⚡ **MANDATORY** — Rules for every interaction |
+| [[FRAMEWORK]] | ⚡ **MANDATORY** — Rules for every interaction |
 
 ---
 
@@ -187,7 +187,7 @@
 ## 🔗 Navigation
 
 **By Type:**
-- **Entry Points:** [[INDEX]], [[README]], [[MIND-FRAMEWORK]]
+- **Entry Points:** [[INDEX]], [[README]], [[FRAMEWORK]], [[DREAMER]]
 - **Identity:** [[identity/essence]], [[identity/consciousness]]
 - **Knowledge:** [[knowledge/domain/index]], [[knowledge/tech/index]]
 - **Skills:** [[skills/index]], [[skills/workflow/index]]

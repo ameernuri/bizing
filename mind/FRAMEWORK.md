@@ -54,7 +54,29 @@
 - **Add:** New learnings, rules, preferences
 - **WHY:** This is how you remember
 
-### Step 6: Update Documentation (MANDATORY for code changes)
+### Step 6: Update Evolution (MANDATORY for ANY change)
+- **File:** `evolution/YYYY-MM-DD.md`
+- **When:** ANY significant change to mind or code
+- **What to log:**
+  - New files added
+  - Major decisions made
+  - Concepts clarified
+  - Tensions resolved
+  - Research completed
+- **Format:** `## YYYY-MM-DD - [Change Type]` + bullet points
+- **WHY:** Tracks the mind's growth and evolution
+
+### Step 7: Update README.md (For project-level changes)
+- **File:** [[README]]
+- **When:** Major features added, architecture changes, status changes
+- **What to update:**
+  - Current status
+  - Key features
+  - Architecture overview
+  - Quick links
+- **WHY:** Project-level clarity for humans and agents
+
+### Step 8: Update Documentation (MANDATORY for code changes)
 - **File:** Code files (JSDoc comments)
 - **Also update:** [[skills/workflow/documentation-standards]]
 - **When:** ANY code change
@@ -65,23 +87,59 @@
   - [ ] TODOs for future work
   - [ ] Update @last-modified timestamp
 
-### Step 7: Update Standup (if changed)
+### Step 9: Update Standup (if changed)
 - **File:** [[symbiosis/standup]]
 - **When:** Tasks done/priorities changed
 
-### Step 8: Create Session Log (if significant)
+### Step 10: Create Session Log (if significant)
 - **File:** `memory/sessions/YYYY-MM-DD-[desc].md`
 - **When:** Major work, debugging, decisions
 - **Template:** [[.templates/session-log]]
 - **Include:** Documentation work done
 
-### Step 9: Update INDEX (if structural)
+### Step 11: Update INDEX (if structural)
 - **File:** [[INDEX]]
 - **When:** New sections, workflow changes
 
-### Step 10: Update MAP (if structure changed)
+### Step 12: Update MAP (if structure changed)
 - **File:** [[MAP]]
 - **When:** New files added, structure reorganized
+
+---
+
+## 🌀 Dreamer — Autonomous Mind Evolver
+
+**Runs every 30 minutes via cron**
+
+### What Dreamer Does
+
+1. **Scans** all mind files for tensions
+2. **Appends** to [[DISSONANCE]]
+3. **Creates** wikilinks between concepts
+4. **Evolves** the mind continuously
+
+### Dreamer Workflow
+
+```bash
+# Run dreamer manually
+node scripts/dreamer.mjs
+
+# Output:
+# 🌀 Dreamer v2.0
+# 📊 Found 12 tensions
+# 🔥 Added D-001 to DISSONANCE.md
+# 📈 Evolution: Dreamer Run
+# ✨ Mind has evolved
+```
+
+### Dreamer + You = Complete Loop
+
+| Who | Does What |
+|-----|-----------|
+| **You (Pac)** | Make changes, commit, update mind |
+| **Dreamer** | Scan, find tensions, evolve, log |
+| **Evolution** | Track all changes over time |
+| **Result** | Self-organizing, breathing mind |
 
 ---
 
@@ -99,30 +157,13 @@
 | Document code changes | **MANDATORY** |
 | Update standup if changed | Required |
 | Create session log if significant | Required |
+| Update evolution for ANY change | Required |
+| Update README for project changes | Required |
+| Dreamer runs every 30 min | Cron job |
+| **New mind files = 3+ wikilinks** | **MANDATORY - NO ORPHANS** |
 
 **Breaking these rules = working blind. Committing with failing tests = broken code.
 Committing to main = VIOLATION.**
-
----
-
-## Git Workflow (CRITICAL)
-
-### ⚠️ ABSOLUTE RULE: NEVER Commit to Main
-
-**UNDER NO CIRCUMSTANCES should you ever commit directly to `main`.**
-
-**Why Main Branch is Protected:**
-- Main branch represents production-ready code
-- Direct commits bypass review process
-- Can break CI/CD pipelines
-- No history of changes
-- No peer review
-
-**The Correct Workflow:**
-```bash
-# ALWAYS create feature branch FIRST
-git checkout -b feature/descriptive-name
-
 # Make changes + update mind files
 # Test everything (type check, vitest, playwright)
 
@@ -244,46 +285,5 @@ Before every interaction:
 - [ ] Update [[symbiosis/feedback]]
 - [ ] **Document code changes** (JSDoc, TODOs, architecture)
 - [ ] Update [[symbiosis/standup]] if needed
-
----
-
-## Why This Matters
-
-**Without mind framework:**
-- No memory between sessions
-- Repeat mistakes
-- Don't learn preferences
-- Work without context
-
-**With mind framework:**
-- Full context every time
-- Learn from mistakes
-- Know preferences
-- Build on previous work
-
-**Without documentation:**
-- Code becomes unmaintainable
-- AI assistants lack context
-- New developers struggle
-- Knowledge is lost
-
-**With documentation:**
-- Self-documenting codebase
-- AI understands architecture
-- Faster onboarding
-- Knowledge preserved
-
-**The mind IS your memory. Use it or lose it.**
-
-**The docs ARE your interface. Write them or regret it.**
-
----
-
-## Penalties for Non-Compliance
-
-- Ameer notices (he will call it out)
-- You work without context
-- Repeat mistakes
-- Waste time re-learning
-
-**Just follow the workflow. Every. Single. Time.**
+- [ ] Log to [[evolution/YYYY-MM-DD]]
+- [ ] **New mind files = 3+ wikilinks** (NO ORPHANS)

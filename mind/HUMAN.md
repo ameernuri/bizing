@@ -11,7 +11,7 @@
 **You say:** "Build me an Airbnb clone"
 **Bizing:** Configures everything, deploys landing page, live in 8 minutes.
 
-**7% commission. Hundreds of templates. Agent-first.**
+**6.9% commission. Hundreds of templates. Agent-first.**
 
 ---
 
