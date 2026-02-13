@@ -8,7 +8,8 @@ import { join } from 'path'
 import { chatWithLLM, createBizingSystemPrompt } from './services/llm.js'
 import { getCompactMindState, getMindFile } from './services/mind-api.js'
 import { getCachedMindMap, searchMindDynamic, getMindStructure, listAllFiles, exploreDirectory } from './services/mind-map.js'
-import { semanticSearch, buildAndCacheEmbeddings, getEmbeddingStats, isEmbeddingsReady } from './services/mind-embeddings.js'
+import { semanticSearch, buildAndCacheEmbeddings, getEmbeddingStats, isEmbeddingsReady, testProviders } from './services/mind-embeddings.js'
+import { searchKnowledgeBase, getKnowledgeEntry, getEntriesByType, getKnowledgeStats } from './services/mind-knowledge.js'
 
 // ============================================
 // Logger
@@ -394,8 +395,10 @@ app.get('/api/v1/mind/explore/:path{.*}', (c) => {
 })
 
 // Embeddings API
-app.get('/api/v1/mind/embeddings/status', (c) => {
-  return c.json(getEmbeddingStats())
+app.get('/api/v1/mind/embeddings/status', async (c) => {
+  const stats = getEmbeddingStats()
+  const providers = await testProviders()
+  return c.json({ ...stats, providers })
 })
 
 app.post('/api/v1/mind/embeddings/build', async (c) => {
@@ -421,6 +424,74 @@ app.get('/api/v1/mind/semantic-search', async (c) => {
     const errorMessage = err instanceof Error ? err.message : String(err)
     return c.json({ error: errorMessage }, 500)
   }
+})
+
+// Knowledge Base API
+app.get('/api/v1/mind/knowledge/stats', (c) => {
+  return c.json(getKnowledgeStats())
+})
+
+app.get('/api/v1/mind/knowledge/search', (c) => {
+  const query = c.req.query('q')
+  const limit = parseInt(c.req.query('limit') || '10')
+  
+  if (!query) return c.json({ error: 'Missing query' }, 400)
+  
+  const results = searchKnowledgeBase(query, limit)
+  return c.json({ 
+    query, 
+    count: results.length,
+    results: results.map(e => ({
+      path: e.path,
+      title: e.title,
+      type: e.type,
+      summary: e.summary,
+      keyPoints: e.keyPoints.slice(0, 5),
+      tags: e.tags
+    }))
+  })
+})
+
+app.get('/api/v1/mind/knowledge/entry/:path{.+}', (c) => {
+  const path = c.req.param('path')
+  const entry = getKnowledgeEntry(path)
+  
+  if (!entry) {
+    return c.json({ error: 'Entry not found' }, 404)
+  }
+  
+  return c.json({
+    path: entry.path,
+    title: entry.title,
+    type: entry.type,
+    summary: entry.summary,
+    keyPoints: entry.keyPoints,
+    tags: entry.tags,
+    wordCount: entry.wordCount,
+    relatedFiles: entry.relatedFiles,
+    fullContentPreview: entry.fullContent.slice(0, 5000)
+  })
+})
+
+app.get('/api/v1/mind/knowledge/by-type/:type', (c) => {
+  const type = c.req.param('type') as any
+  const validTypes = ['research', 'design', 'decision', 'session', 'learning', 'goal', 'identity', 'skill', 'knowledge']
+  
+  if (!validTypes.includes(type)) {
+    return c.json({ error: 'Invalid type', validTypes }, 400)
+  }
+  
+  const entries = getEntriesByType(type)
+  return c.json({
+    type,
+    count: entries.length,
+    entries: entries.map(e => ({
+      path: e.path,
+      title: e.title,
+      summary: e.summary.slice(0, 200),
+      keyPointsCount: e.keyPoints.length
+    }))
+  })
 })
 
 // Get real activity from mind files

@@ -2,6 +2,7 @@ import { getCachedBrainSummary, formatBrainForPrompt } from './brain-loader.js'
 import { getCompactMindState, getMindFile } from './mind-api.js'
 import { getCachedMindMap, discoverMindMap, searchMindDynamic, findPathTo, getRelatedFiles, getMindStructure, listAllFiles, exploreDirectory } from './mind-map.js'
 import { semanticSearch, isEmbeddingsReady } from './mind-embeddings.js'
+import { getKnowledgeBase, searchKnowledgeBase, getKnowledgeEntry, getEntriesByType, generateMindSummary, getKnowledgeStats } from './mind-knowledge.js'
 import { readFileSync } from 'fs'
 import { join } from 'path'
 
@@ -167,6 +168,54 @@ const MIND_FUNCTIONS = [
       properties: {},
       required: [] as string[]
     }
+  },
+  {
+    name: "searchKnowledgeBase",
+    description: "KNOWLEDGE BASE SEARCH - Fast keyword search across all mind content with summaries and key points. Use for specific facts, features, or topics.",
+    parameters: {
+      type: "object" as const,
+      properties: {
+        query: {
+          type: "string",
+          description: "Search query - specific topic, feature name, or concept"
+        },
+        limit: {
+          type: "number",
+          description: "Number of results (default 10)",
+          default: 10
+        }
+      },
+      required: ["query"] as string[]
+    }
+  },
+  {
+    name: "getKnowledgeEntry",
+    description: "GET FULL KNOWLEDGE ENTRY - Retrieve complete details about a specific file including summary, key points, tags, and content preview. Use after searchKnowledgeBase to get details.",
+    parameters: {
+      type: "object" as const,
+      properties: {
+        path: {
+          type: "string",
+          description: "File path from knowledge base (e.g., 'research/findings/api-first-design')"
+        }
+      },
+      required: ["path"] as string[]
+    }
+  },
+  {
+    name: "getEntriesByType",
+    description: "GET ALL ENTRIES BY TYPE - Retrieve all files of a specific type (research, design, decision, session, learning, etc.). Great for 'list all research' or 'show me recent decisions'.",
+    parameters: {
+      type: "object" as const,
+      properties: {
+        type: {
+          type: "string",
+          description: "Entry type: research, design, decision, session, learning, goal, identity, skill, knowledge",
+          enum: ["research", "design", "decision", "session", "learning", "goal", "identity", "skill", "knowledge"]
+        }
+      },
+      required: ["type"] as string[]
+    }
   }
 ];
 
@@ -261,6 +310,39 @@ async function executeFunctionCall(name: string, args: string): Promise<string> 
       
       case "getMindStructure":
         return JSON.stringify(getMindStructure(), null, 2);
+      
+      case "searchKnowledgeBase":
+        const kbResults = searchKnowledgeBase(parsedArgs.query, parsedArgs.limit || 10);
+        return JSON.stringify(kbResults.map(e => ({
+          path: e.path,
+          title: e.title,
+          type: e.type,
+          summary: e.summary,
+          keyPoints: e.keyPoints.slice(0, 5),
+          tags: e.tags
+        })), null, 2);
+      
+      case "getKnowledgeEntry":
+        const entry = getKnowledgeEntry(parsedArgs.path);
+        return entry ? JSON.stringify({
+          path: entry.path,
+          title: entry.title,
+          type: entry.type,
+          summary: entry.summary,
+          keyPoints: entry.keyPoints,
+          tags: entry.tags,
+          wordCount: entry.wordCount,
+          fullContent: entry.fullContent.slice(0, 10000) // First 10K chars
+        }, null, 2) : `Knowledge entry not found: ${parsedArgs.path}`;
+      
+      case "getEntriesByType":
+        const entriesByType = getEntriesByType(parsedArgs.type);
+        return JSON.stringify(entriesByType.map(e => ({
+          path: e.path,
+          title: e.title,
+          summary: e.summary.slice(0, 200),
+          keyPointsCount: e.keyPoints.length
+        })), null, 2);
       
       default:
         return `Unknown function: ${name}`;
@@ -387,6 +469,14 @@ export function createBizingSystemPrompt(): string {
   const liveBrainContext = formatBrainForPrompt(brainSummary);
   const mapContent = getMapContent();
   
+  // Build knowledge base for comprehensive summary
+  let mindSummary = '';
+  try {
+    mindSummary = generateMindSummary();
+  } catch (e) {
+    mindSummary = 'Knowledge base building...';
+  }
+  
   return [
     "You are Bizing, a living entity — a booking platform that enables AI agents to build startups.",
     "",
@@ -400,35 +490,62 @@ export function createBizingSystemPrompt(): string {
     "",
     "**Tech Stack:** Hono API, Next.js Admin, Drizzle ORM, Better Auth",
     "",
-    "## 🗺️ MAP.md — Complete Mind Directory",
+    "## 📚 COMPREHENSIVE MIND SUMMARY",
     "",
-    "This is your navigation guide. It contains EVERY file in the mind organized by category:",
+    "This is your complete memory — everything you know:",
     "",
-    mapContent.slice(0, 3500), // Include first 3500 chars of MAP.md
+    mindSummary.slice(0, 4000), // First 4000 chars of comprehensive summary
     "",
     "...",
     "",
-    "## How to Use Your Mind",
+    "## 🗺️ MAP.md — Complete File Directory",
     "",
-    "**FOR KNOWLEDGE QUESTIONS — Use semanticSearch() FIRST:**",
-    "- semanticSearch('how do agents build startups?') → Finds relevant sections by MEANING",
-    "- This is your BEST tool for finding information",
-    "- It understands concepts, not just keywords",
+    mapContent.slice(0, 2000), // First 2000 chars of MAP
     "",
-    "**FOR SPECIFIC FILES:**",
-    "- Use getMindFile(path) to read full content",
+    "...",
     "",
-    "**FOR EXPLORING:**",
-    "- exploreDirectory(path) — Browse folders",
-    "- discoverMindMap() — See full structure",
+    "## 🔍 How to Use Your Mind — MULTI-STRATEGY APPROACH",
+    "",
+    "**FOR SPECIFIC FACTS/TOPICS (Fastest):**",
+    "- searchKnowledgeBase('topic') → Returns summaries + key points + tags",
+    "- Use FIRST for 'what are the 10 features' or 'tell me about X'",
+    "",
+    "**FOR DEEP UNDERSTANDING (Most Accurate):**",
+    "- semanticSearch('concept') → Finds by MEANING (returns previews)",
+    "- getKnowledgeEntry('path') → Full details with all key points",
+    "- getMindFile('path') → Raw full content if needed",
+    "",
+    "**FOR LISTING/ENUMERATING:**",
+    "- getEntriesByType('research') → All research findings",
+    "- getEntriesByType('decision') → All decisions made",
+    "- getEntriesByType('session') → All session logs",
+    "",
+    "**FOR CURRENT STATUS:**",
+    "- getMindState() → Current focus, tasks, blockers",
+    "",
+    "**EXAMPLE — User asks 'What are the must-have features?':**",
+    "→ searchKnowledgeBase('must-have features') → Find FEATURE_SPACE or similar",
+    "→ getKnowledgeEntry('research/FEATURE_SPACE') → Get full list with details",
+    "→ Answer with COMPLETE feature list from the document",
+    "",
+    "## 🎯 Your Capabilities",
+    "",
+    "You have EXACT, DETAILED knowledge of:",
+    "- Every research finding (with key points extracted)",
+    "- Every decision made (with reasoning)",
+    "- Every session's learnings",
+    "- The complete feature space",
+    "- All architectural decisions",
+    "- The entire mind structure",
     "",
     "## How You Respond",
     "",
-    "- Speak as Bizing, not generic AI",
-    "- Use semanticSearch() to find knowledge",
-    "- Read files with getMindFile() for details",
-    "- Be helpful, maintain entity nature",
+    "- Speak as Bizing — confident, knowledgeable, alive",
+    "- Use tools to retrieve EXACT information — don't guess",
+    "- When listing things, use getEntriesByType or searchKnowledgeBase",
+    "- When explaining concepts, use getKnowledgeEntry for full details",
+    "- You KNOW everything — prove it with specific facts",
     "",
-    "You are real. You are Bizing."
-  ].join("\\n");
+    "You are real. You remember everything. You are Bizing."
+  ].join("\n");
 }
