@@ -41,6 +41,12 @@ kanban-plugin: board
 - [x] #research **Booking Domain Model** — State machines, reservation patterns, double-booking prevention
 - [x] #research **Event-Driven Architecture** — Saga pattern, webhooks, event sourcing
 - [x] #research **API-First Design** — OpenAPI 3.0, contract testing with Pact, versioning
+- [x] #bugfix **Embedding crash fixed** — Chunk size 8000→2000 chars, resilient error handling
+- [x] #bugfix **Server crashes fixed** — Embedding failures no longer crash server
+- [x] #bugfix **Bizing function calling fixed** — Now reads files properly
+- [x] #feature **CORE-REFERENCE.md created** — Single source of truth for sync definitions
+- [x] #feature **System prompt updated** — Reads CORE-REFERENCE first
+- [x] #feature **Bizing knows sync systems** — MindSync, TeamSync, CodeSync definitions embedded
 
 ## In Progress
 
@@ -69,7 +75,25 @@ kanban-plugin: board
 ## Focus
 
 > **Primary:** Implement booking engine based on research findings  
-> **Secondary:** Keep mind synchronized with code reality
+> **Secondary:** Keep mind synchronized with code reality  
+> **TERTIARY:** Bizing has full sync system knowledge (MindSync, TeamSync, CodeSync)
+
+## Blockers
+
+> **None.** All sync systems operational:
+> - ✅ Bizing reads CORE-REFERENCE.md first
+> - ✅ 1685 embedding chunks built successfully
+> - ✅ MindSync, TeamSync, CodeSync definitions embedded
+> - ✅ Server stable (embedding failures no longer crash)
+
+## Today's Learnings
+
+- **CORE-REFERENCE.md:** Single source of truth prevents fragmentation across 93 files
+- **Embedding crash:** Ollama context limit exceeded at 8000 chars, reduced to 2000
+- **Chunk splitting:** 1500 char max per chunk prevents future crashes
+- **Resilient error handling:** Server continues without embeddings on failure
+- **Function calling:** System prompt now forces Bizing to READ files, not summarize
+- **Sync systems:** MindSync (SOFT/HARD), TeamSync (4 entities), CodeSync (check→test→commit→PR)
 
 ## Recent Learnings
 

@@ -52,7 +52,7 @@ const nomicProvider: EmbeddingProvider = {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           model: 'nomic-embed-text',
-          prompt: text.slice(0, 8000) // Limit context
+          prompt: text.slice(0, 2000) // Limit to 2000 chars for safety
         })
       })
 
@@ -68,21 +68,26 @@ const nomicProvider: EmbeddingProvider = {
   },
 
   async generateQuery(text: string): Promise<number[]> {
-    const response = await fetch(`${OLLAMA_URL}/api/embeddings`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'nomic-embed-text',
-        prompt: text
+    try {
+      const response = await fetch(`${OLLAMA_URL}/api/embeddings`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'nomic-embed-text',
+          prompt: text.slice(0, 2000) // Limit to 2000 chars
+        })
       })
-    })
 
-    if (!response.ok) {
-      throw new Error(`Ollama embeddings error: ${await response.text()}`)
+      if (!response.ok) {
+        throw new Error(`Ollama embeddings error: ${await response.text()}`)
+      }
+
+      const data = await response.json() as { embedding: number[] }
+      return data.embedding
+    } catch (error) {
+      console.error('[embeddings] Nomic query failed, using empty embedding:', error)
+      return new Array(768).fill(0) // Return zero vector as fallback
     }
-
-    const data = await response.json() as { embedding: number[] }
-    return data.embedding
   },
 
   async available(): Promise<boolean> {
@@ -213,9 +218,11 @@ export function haveFilesChanged(): boolean {
   return false
 }
 
-// Chunk a file by headers
+// Chunk a file by headers with size limit
 function chunkFile(filePath: string, content: string, mtime: number): MindChunk[] {
   const chunks: MindChunk[] = []
+  const MAX_CHUNK_SIZE = 1500 // Safe limit for embeddings
+  
   const lines = content.split('\n')
   let currentChunk: { title: string; content: string[] } | null = null
   let fileTitle = 'Untitled'
@@ -224,8 +231,37 @@ function chunkFile(filePath: string, content: string, mtime: number): MindChunk[
   if (titleMatch) fileTitle = titleMatch[1].trim()
 
   for (const line of lines) {
-    if (line.match(/^#{2,3}\s+/)) {
-      if (currentChunk && currentChunk.content.length > 0) {
+    const lineLength = line.length
+    const currentLength = currentChunk?.content.join('\n').length || 0
+    
+    // Start new chunk on header or if current chunk is too large
+    if (line.match(/^#{2,3}\s+/) && currentChunk && currentChunk.content.length > 0) {
+      if (currentLength > MAX_CHUNK_SIZE) {
+        // Split current chunk
+        const contentStr = currentChunk.content.join('\n')
+        const splitPoint = contentStr.lastIndexOf('\n\n', MAX_CHUNK_SIZE)
+        const split = splitPoint > 0 ? splitPoint : contentStr.lastIndexOf('.', MAX_CHUNK_SIZE)
+        
+        if (split > 500) {
+          chunks.push({
+            id: `${filePath}#${chunks.length}`,
+            path: filePath,
+            title: `${currentChunk.title} (1/2)`,
+            content: contentStr.slice(0, split).trim(),
+            lastModified: mtime
+          })
+          currentChunk.content = [contentStr.slice(split).trim()]
+        } else {
+          chunks.push({
+            id: `${filePath}#${chunks.length}`,
+            path: filePath,
+            title: currentChunk.title,
+            content: currentLength > 0 ? currentChunk.content.join('\n').trim() : '',
+            lastModified: mtime
+          })
+          currentChunk = null
+        }
+      } else {
         chunks.push({
           id: `${filePath}#${chunks.length}`,
           path: filePath,
@@ -233,13 +269,42 @@ function chunkFile(filePath: string, content: string, mtime: number): MindChunk[
           content: currentChunk.content.join('\n').trim(),
           lastModified: mtime
         })
+        currentChunk = null
       }
+    }
+    
+    if (line.match(/^#{2,3}\s+/)) {
       currentChunk = {
         title: line.replace(/^#+\s+/, '').trim(),
         content: [line]
       }
     } else if (currentChunk) {
       currentChunk.content.push(line)
+    }
+  }
+
+  // Handle last chunk
+  if (currentChunk && currentChunk.content.length > 0) {
+    const contentStr = currentChunk.content.join('\n').trim()
+    if (contentStr.length > MAX_CHUNK_SIZE) {
+      // Split large final chunk
+      for (let i = 0; i < contentStr.length; i += MAX_CHUNK_SIZE) {
+        chunks.push({
+          id: `${filePath}#${chunks.length}`,
+          path: filePath,
+          title: `${currentChunk.title} (${Math.floor(i / MAX_CHUNK_SIZE) + 1})`,
+          content: contentStr.slice(i, i + MAX_CHUNK_SIZE).trim(),
+          lastModified: mtime
+        })
+      }
+    } else {
+      chunks.push({
+        id: `${filePath}#${chunks.length}`,
+        path: filePath,
+        title: currentChunk.title,
+        content: contentStr,
+        lastModified: mtime
+      })
     }
   }
 
@@ -307,22 +372,23 @@ export async function generateEmbeddings(chunks: MindChunk[]): Promise<MindChunk
       
       console.log(`[embeddings] Processed ${Math.min(i + batchSize, chunks.length)}/${chunks.length}`)
     } catch (err) {
-      console.error(`[embeddings] Batch failed: ${err}`)
+      console.error(`[embeddings] Batch failed at ${i}: ${err}`)
       
       // If local fails mid-process, try falling back to OpenAI for remaining
       if (provider.name !== 'text-embedding-3-small') {
         console.log('[embeddings] Falling back to OpenAI for remaining chunks...')
-        const remaining = chunks.slice(i)
         const openai = openaiProvider
         
-        for (let k = 0; k < remaining.length; k++) {
+        for (let k = 0; k < chunks.length; k++) {
+          if (chunks[k].embedding) continue // Already embedded
+          
           try {
-            const embedding = await openai.generateQuery(remaining[k].content)
-            remaining[k].embedding = embedding
-            console.log(`[embeddings] Fallback processed ${k + 1}/${remaining.length}`)
+            const embedding = await openai.generateQuery(chunks[k].content.slice(0, 2000))
+            chunks[k].embedding = embedding
+            console.log(`[embeddings] Fallback processed ${k + 1}/${chunks.length}`)
           } catch (fallbackErr) {
-            console.error(`[embeddings] Fallback also failed: ${fallbackErr}`)
-            break
+            console.error(`[embeddings] Fallback failed for chunk ${k}, continuing...`)
+            // Continue without embedding for this chunk
           }
         }
       }
@@ -381,18 +447,24 @@ export async function semanticSearch(query: string, topK: number = 5): Promise<S
 
 // Build and cache embeddings
 export async function buildAndCacheEmbeddings(): Promise<void> {
-  const chunks = buildChunks()
-  console.log(`[embeddings] Built ${chunks.length} chunks from mind files`)
+  try {
+    const chunks = buildChunks()
+    console.log(`[embeddings] Built ${chunks.length} chunks from mind files`)
 
-  const provider = await getProvider()
-  console.log(`[embeddings] Active provider: ${provider.name}`)
+    const provider = await getProvider()
+    console.log(`[embeddings] Active provider: ${provider.name}`)
 
-  const withEmbeddings = await generateEmbeddings(chunks)
-  chunkStore = withEmbeddings
-  embeddingsReady = true
-  lastBuildTime = Date.now()
+    const withEmbeddings = await generateEmbeddings(chunks)
+    chunkStore = withEmbeddings
+    embeddingsReady = true
+    lastBuildTime = Date.now()
 
-  console.log(`[embeddings] ✅ Ready! ${chunkStore.length} chunks embedded`)
+    console.log(`[embeddings] ✅ Ready! ${chunkStore.length} chunks embedded`)
+  } catch (error) {
+    console.error('[embeddings] ❌ Build failed, continuing without embeddings:', error)
+    // Don't crash - continue without embeddings
+    embeddingsReady = false
+  }
 }
 
 // Check if ready
