@@ -12,6 +12,12 @@ import { semanticSearch, buildAndCacheEmbeddings, getEmbeddingStats, isEmbedding
 import { searchKnowledgeBase, getKnowledgeEntry, getEntriesByType, getKnowledgeStats } from './services/mind-knowledge.js'
 
 // ============================================
+// Constants
+// ============================================
+
+const MIND_DIR = join(process.cwd(), '..', '..', 'mind')
+
+// ============================================
 // Logger
 // ============================================
 
@@ -494,9 +500,60 @@ app.get('/api/v1/mind/knowledge/by-type/:type', (c) => {
   })
 })
 
+// DISSONANCE API - Read specific dissonance entries
+app.get('/api/v1/mind/dissonance/:id?', (c) => {
+  const id = c.req.param('id')
+  const dissonancePath = join(MIND_DIR, 'DISSONANCE.md')
+  
+  if (!existsSync(dissonancePath)) {
+    return c.json({ error: 'DISSONANCE.md not found' }, 404)
+  }
+  
+  const content = readFileSync(dissonancePath, 'utf-8')
+  
+  // If no ID specified, return all dissonance entries
+  if (!id) {
+    // Extract all D-XXX entries
+    const entries: { id: string; title: string; source: string; content: string; status: string }[] = []
+    const regex = /### (D-\d+):\s+(.+)\n- \*\*Source\*\*:\s+(.+)\n- \*\*Content\*\*:\s+"(.+)"\n- \*\*Found\*\*:\s+(.+)\n- \*\*Status\*\*:\s+(.+)/g
+    
+    let match
+    while ((match = regex.exec(content)) !== null) {
+      entries.push({
+        id: match[1],
+        title: match[2].trim(),
+        source: match[3].trim(),
+        content: match[4].slice(0, 200),
+        status: match[6].trim()
+      })
+    }
+    
+    return c.json({ 
+      count: entries.length,
+      entries: entries
+    })
+  }
+  
+  // Return specific dissonance entry
+  const entryRegex = new RegExp(`### ${id}:\\s+(.+)\\n- \\*\\*Source\\*\\*:\\s+(.+)\\n- \\*\\*Content\\*\\*:\\s+"(.+)"\\n- \\*\\*Found\\*\\*:\\s+(.+)\\n- \\*\\*Status\\*\\*:\\s+(.+?)(?=\\n###|\\n##|$)`, 's')
+  const match = content.match(entryRegex)
+  
+  if (!match) {
+    return c.json({ error: `Dissonance ${id} not found` }, 404)
+  }
+  
+  return c.json({
+    id,
+    title: match[1].trim(),
+    source: match[2].trim(),
+    content: match[3],
+    found: match[4].trim(),
+    status: match[5].trim()
+  })
+})
+
 // Get real activity from mind files
 app.get('/api/v1/mind/activity', (c) => {
-  const MIND_DIR = join(process.cwd(), '..', '..', 'mind')
   const activity: {
     id: string
     type: 'change' | 'session' | 'decision' | 'learning' | 'workflow'
