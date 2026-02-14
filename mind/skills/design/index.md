@@ -19,4 +19,4 @@ Mobile-first patterns.
 
 ## Links
 
-- [[../index|Skills Home]]
+- [[Skills|Skills Home]]

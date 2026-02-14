@@ -298,4 +298,4 @@ Regular text paragraphs are NOT indexed.
 
 - [[kanban-formatting|Kanban Formatting]] — Visual task boards
 - [[session-logging|Session Logging]] — Document work sessions
-- [[../index|Skills Index]]
+- [[Skills|Skills Index]]

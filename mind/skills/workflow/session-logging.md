@@ -51,4 +51,4 @@ After every significant chunk of work.
 ## Related
 
 - [[decision-recording|Decision Recording]]
-- [[../index|Workflow Skills]]
+- [[Skills|Workflow Skills]]

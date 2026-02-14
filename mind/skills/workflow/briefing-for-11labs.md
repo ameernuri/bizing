@@ -131,4 +131,4 @@ Next: Generate fresh Kimi API key, update .env, restart server, test chat.
 ## Related
 
 - [[session-logging|Session Logging]] — Full session documentation
-- [[../index|Skills Index]]
+- [[Skills|Skills Index]]

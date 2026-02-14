@@ -25,13 +25,13 @@
 
 **Be specific:**
 ```
-Good: "What does the 7% commission model include?"
+Good: "What does the 6.9% commission model include?"
 Bad: "Tell me about pricing"
 ```
 
 **Reference context:**
 ```
-Good: "Looking at the brain architecture, how does evolution work?"
+Good: "Looking at the mind architecture, how does evolution work?"
 Bad: "How does it work?"
 ```
 
@@ -77,4 +77,4 @@ Once Kimi API is integrated:
 
 - [[HUMAN|HUMAN]] — Entry point
 - [[../../knowledge/domain/why-agents-love-bizing|Why Agents Love Bizing]]
-- [[../index|Workflow Skills]]
+- [[Skills|Workflow Skills]]

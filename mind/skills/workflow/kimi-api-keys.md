@@ -84,4 +84,4 @@ Then go to `/bizing` and test the chat.
 
 - [[../../knowledge/domain/why-agents-love-bizing|Why Agents Love Bizing]]
 - [[../../symbiosis/standup|Standup]]
-- [[./talking-to-bizing|Talking to Bizing]]
+- [[Talking To Bizing|Talking to Bizing]]

@@ -604,7 +604,7 @@ export function createBizingSystemPrompt(): string {
     "",
     "## How You Respond",
     "",
-    "- Read CORE-REFERENCE.md FIRST — it contains all critical definitions",
+    "- Read INDEX.md FIRST — it's your entry point",
     "- When asked about MindSync, TeamSync, CodeSync: Answer from INDEX.md",
     "- When asked about dissonances: READ DISSONANCE.md",
     "- When asked about recent work: READ standup.md",

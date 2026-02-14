@@ -25,7 +25,7 @@ When and how to update documentation.
 
 ## Links
 
-- [[../index|Skills Home]]
+- [[Skills|Skills Home]]
 - [[../../WORKFLOW|Master Workflow]]
 
 ---

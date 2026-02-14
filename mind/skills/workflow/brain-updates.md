@@ -24,17 +24,17 @@
 
 ## What to Update
 
-### Standup (`symbiosis/standup.md`)
+### [[mind/memory/RAM|RAM]]
 - Current work
 - Blockers
 - Next steps
 
-### Session Logs (`memory/sessions/`)
+### [[memory/sessions]]
 - Detailed work log
 - Files changed
 - Decisions made
 
-### Knowledge (`knowledge/`)
+### [[mind/knowledge/index|Knowledge]]
 - Domain understanding
 - Technical patterns
 - API documentation
@@ -58,4 +58,4 @@ not the noise of every code change.
 
 - [[session-logging|Session Logging]]
 - [[decision-recording|Decision Recording]]
-- [[../index|Workflow Skills]]
+- [[Skills|Workflow Skills]]

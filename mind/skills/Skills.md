@@ -16,7 +16,7 @@ UI/UX patterns, visual design, user flows.
 How we work — documentation, git, collaboration.
 
 ### [[workflow/dreamer|🌀 Dreamer]]
-Curiosity engine — find tensions, add to COGNITIVE_DISSONANCE.md
+Curiosity engine — find tensions
 
 ### [[analysis/index|📊 Analysis]]
 Research, evaluation, decision-making.

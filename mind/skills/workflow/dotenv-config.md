@@ -84,4 +84,4 @@ node -e "require('dotenv/config'); console.log(process.env.API_KEY)"
 
 - [[session-logging|Session Logging]]
 - [[brain-updates|Brain Updates]]
-- [[../index|Workflow Skills]]
+- [[Skills|Workflow Skills]]

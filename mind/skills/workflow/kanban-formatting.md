@@ -121,5 +121,5 @@ kanban-plugin: board
 
 ## Related
 
-- [[index|Skills Index]]
+- [[mind/skills/workflow/index|Skills Index]]
 - [[../workflow|Obsidian Workflow]]
