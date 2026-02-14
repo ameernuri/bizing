@@ -61,7 +61,8 @@ export function getCompactMindState(): {
 }
 
 export function getMindFile(path: string): { content: string | null; exists: boolean } {
-  const fullPath = join(MIND_DIR, path)
+  // Auto-add .md if not present
+  const fullPath = path.endsWith('.md') ? join(MIND_DIR, path) : join(MIND_DIR, path + '.md')
   const content = readFileSafe(fullPath)
   return { content, exists: content !== null }
 }

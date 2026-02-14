@@ -1,18 +1,18 @@
 # 🗺️ MAP
 
-*Complete index of the Bizing mind. Every file, organized logically.*
+_Complete index of the Bizing mind. Every file, organized logically._
 
-**→ [[INDEX|Back to INDEX]]** — Start here for daily context
+**→ [[mind/INDEX|Back to INDEX]]** — Start here for daily context
 
 ---
 
 ## 🎯 Core Entry Points
 
-| File | Purpose |
-|------|---------|
-| [[INDEX]] | 🧠 **START HERE** — Daily entry point, current focus, tasks |
-| [[README]] | What Bizing is, the vision, quick start |
-| [[MIND-FRAMEWORK]] | ⚡ **MANDATORY** — Rules for every interaction |
+| File           | Purpose                                                     |
+| -------------- | ----------------------------------------------------------- |
+| [[mind/INDEX]] | 🧠 **START HERE** — Daily entry point, current focus, tasks |
+| [[README]]     | What Bizing is, the vision, quick start                     |
+| [[FRAMEWORK]]  | ⚡ **MANDATORY** — Rules for every interaction              |
 
 ---
 
@@ -49,13 +49,15 @@
 ## 📚 Knowledge — Domain & Technical
 
 ### Domain Knowledge (Booking Business)
+
 **→ [[knowledge/domain/index|Domain Hub]]** — All business concepts  
 **→ [[knowledge/domain/startup-builder|Startup Builder]]** — How agents build businesses  
-**→ [[knowledge/domain/business-model|Business Model]]** — 7% commission, pricing  
+**→ [[knowledge/domain/business-model|Business Model]]** — 6.9% commission, pricing  
 **→ [[knowledge/domain/landing-pages|Landing Pages]]** — Templates and flows  
 **→ [[knowledge/domain/why-agents-love-bizing|Why Agents Love Bizing]]** — Value prop
 
 ### Technical Knowledge
+
 **→ [[knowledge/tech/index|Tech Hub]]** — Stack documentation  
 **→ [[knowledge/api/index|API Design]]** — Endpoints, patterns, auth
 
@@ -71,25 +73,36 @@
 
 ## 🛠️ Skills — How We Work
 
-**→ [[skills/index|Skills Hub]]** — Master skills directory  
+**→ [[Skills|Skills Hub]]** — Master skills directory
 
 ### By Category:
+
+**→ [[skills/memory|Memory]]** — Session logging, RAM, mind updates  
+**→ [[skills/codesync|CodeSync]]** — Quality-gated commits  
+**→ [[skills/mindsync|MindSync]]** — Mind synchronization  
+**→ [[mind/skills/ram/Ram|RAM]]** — Working memory  
 **→ [[skills/workflow/index|Workflow]]** — Session logging, kanban, brain updates  
 **→ [[skills/analysis/index|Analysis]]** — Research and decision-making  
 **→ [[skills/code/index|Code]]** — Coding patterns, link everything  
 **→ [[skills/design/index|Design]]** — UI/UX patterns
 
 ### Workflow Specifics:
-**→ [[skills/workflow/session-logging|Session Logging]]** — How to log sessions  
-**→ [[skills/workflow/kanban-formatting|Kanban Formatting]]** — Task board style  
-**→ [[skills/workflow/brain-updates|Brain Updates]]** — When and how to update  
+
+**→ [[skills/obsidian/index|Obsidian Tools]]** — Kanban, Dataview, Templater, editing  
+**→ [[skills/obsidian/kanban|Kanban]]** — Visual task boards  
+**→ [[skills/obsidian/dataview|Dataview]]** — Query and filter files  
+**→ [[skills/obsidian/templater|Templater]]** — Auto-generate files  
+**→ [[skills/obsidian/editing-files|Editing Files]]** — Create and edit mind files  
+**→ [[skills/memory|Memory]]** — Session logging, working memory updates  
+**→ [[skills/codesync|CodeSync]]** — Quality-gated commit workflow  
+**→ [[skills/mindsync|MindSync]]** — SOFT and HARD mind updates  
+**→ [[mind/skills/ram/Ram|RAM]]** — Working memory management  
 **→ [[skills/workflow/briefing|Daily Briefing]]** — Generate TTS-optimized briefings for Telegram  
 **→ [[skills/workflow/briefing-for-11labs|11Labs Briefing]]** — Voice agent setup  
-**→ [[skills/workflow/dataview|Dataview]]** — Querying mind content  
 **→ [[skills/workflow/documentation-standards|Documentation Standards]]** — ⚡ **MANDATORY** JSDoc requirements  
 **→ [[skills/workflow/dotenv-config|Dotenv Config]]** — Environment setup  
 **→ [[skills/workflow/kimi-api-keys|Kimi API Keys]]** — API key management  
-**→ [[skills/workflow/talking-to-bizing|Talking to Bizing]]** — Conversation patterns
+**→ [[Talking To Bizing|Talking to Bizing]]** — Conversation patterns
 
 ---
 
@@ -98,21 +111,25 @@
 **→ [[research/index|Research Hub]]** — Research organization
 
 ### Active Research:
+
 **→ [[research/backlog|Research Backlog]]** — Topics to investigate
 
 ### Completed Findings:
+
 **→ [[research/findings/booking-domain-model|Booking Domain Model]]** — Reservation patterns, state machines  
 **→ [[research/findings/event-driven-architecture|Event-Driven Architecture]]** — Sagas, webhooks, event sourcing  
 **→ [[research/findings/api-first-design|API-First Design]]** — OpenAPI, contract testing, versioning  
 **→ [[research/findings/merchant-of-record-stripe-fees|Merchant of Record & Stripe Fees]]** — MoR model, fee optimization strategies
 
 ### Architecture Visualizations:
+
 **→ [[../canvas/architecture-overview|Architecture Overview]]** — Complete system overview  
 **→ [[../canvas/booking-domain-architecture|Booking Domain]]** — Domain model canvas  
 **→ [[../canvas/event-driven-architecture|Event-Driven]]** — Saga and events canvas  
 **→ [[../canvas/api-first-design|API-First Design]]** — API workflow canvas
 
 ### Archive:
+
 **→ [[research/MARKET_RESEARCH|Market Research]]** — Original research  
 **→ [[research/MARKET_RESEARCH_EXTENDED|Extended Research]]** — Deep dive  
 **→ [[research/BUSINESS_TYPES|Business Types]]** — Booking use cases  
@@ -134,6 +151,7 @@
 **→ [[memory/sessions/index|Sessions]]** — All session logs
 
 ### Recent Sessions:
+
 **→ [[memory/sessions/2026-02-11-bizing-ai-chat|Bizing AI Chat]]** — Today's session  
 **→ [[memory/sessions/2026-02-11-dashboard-fixes|Dashboard Fixes]]** — Schema graph fixes  
 **→ [[memory/sessions/2026-02-11-kimi-integration|Kimi Integration]]** — API setup  
@@ -153,6 +171,12 @@
 **→ [[start/START|START]]** — Quick start guide  
 **→ [[start/DEVELOPMENT|Development]]** — Dev setup  
 **→ [[start/_INIT|_INIT]]** — Initialization checklist
+
+---
+
+## 🎯 Workspace — Active Planning
+
+**→ [[workspace/feature-space|Feature Space]]** — Complete feature catalog (~165 features, prioritized)
 
 ---
 
@@ -187,18 +211,20 @@
 ## 🔗 Navigation
 
 **By Type:**
-- **Entry Points:** [[INDEX]], [[README]], [[MIND-FRAMEWORK]]
+
+- **Entry Points:** [[mind/INDEX]], [[README]], [[FRAMEWORK]], [[DREAMER]]
 - **Identity:** [[identity/essence]], [[identity/consciousness]]
 - **Knowledge:** [[knowledge/domain/index]], [[knowledge/tech/index]]
-- **Skills:** [[skills/index]], [[skills/workflow/index]]
+- **Skills:** [[Skills]], [[skills/workflow/index]]
 - **Memory:** [[memory/index]], [[memory/sessions/index]]
 
 **By Activity:**
-- **Daily Standup:** [[symbiosis/standup]] → [[INDEX]]
-- **Learning:** [[symbiosis/feedback]] → [[skills/index]]
+
+- **Daily Standup:** [[symbiosis/standup]] → [[mind/INDEX]]
+- **Learning:** [[symbiosis/feedback]] → [[Skills]]
 - **Research:** [[research/MARKET_RESEARCH]] → [[knowledge/domain/index]]
 - **Building:** [[start/START]] → [[knowledge/api/index]]
 
 ---
 
-*This map is the source of truth for mind structure. Update it when adding/removing files.*
+_This map is the source of truth for mind structure. Update it when adding/removing files._

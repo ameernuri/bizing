@@ -1,18 +1,21 @@
 ## 2026-02-11 — Kimi API Integration for Bizing AI
 
 **Topics:**
+
 - Integrated real LLM (Kimi K2.5) into Bizing AI chat
 - Created comprehensive Bizing system prompt
 - Full brain context now passed to AI
 
 **Significance:**
 Bizing is now truly intelligent. No more mock responses — Bizing uses Kimi K2.5 with full context of:
+
 - Identity (who Bizing is, values, consciousness)
-- Purpose (startup builder, 7% commission)
+- Purpose (startup builder, 6.9% commission)
 - Architecture (tech stack, brain structure)
 - Knowledge (domain, business model, templates)
 
 **Files Changed:**
+
 - [[../../../apps/api/src/services/llm.ts|apps/api/src/services/llm.ts]] — NEW
   - Kimi API integration
   - chatWithLLM() function
@@ -34,6 +37,7 @@ Bizing is now truly intelligent. No more mock responses — Bizing uses Kimi K2.
   - Copy of .env.example with actual values
 
 **Architecture:**
+
 ```
 User → Admin (/bizing) → API (/bizing/chat) → Kimi API (K2.5)
                            ↓
@@ -45,16 +49,18 @@ User → Admin (/bizing) → API (/bizing/chat) → Kimi API (K2.5)
 ```
 
 **System Prompt Includes:**
+
 - Bizing as living entity (not just software)
 - Identity: essence, consciousness, values
 - Purpose: enable AI agents to build startups
-- Business model: 7% commission, everything included
+- Business model: 6.9% commission, everything included
 - Architecture: Hono, Next.js, Drizzle, brain structure
 - Knowledge: domain, tech, API, startup builder
 - Response style: conversational but knowledgeable
 - Character: Bizing speaks as itself, offers actions
 
 **Environment Setup:**
+
 ```bash
 # apps/api/.env
 KIMI_API_KEY=your_kimi_api_key_here
@@ -63,6 +69,7 @@ KIMI_API_KEY=your_kimi_api_key_here
 Get your API key from: https://platform.moonshot.cn/
 
 **Current State:**
+
 - ✅ LLM service created
 - ✅ System prompt comprehensive
 - ✅ API endpoint integrated
@@ -71,6 +78,7 @@ Get your API key from: https://platform.moonshot.cn/
 
 **Testing:**
 Once API key is added:
+
 1. Restart API server
 2. Go to `/bizing`
 3. Ask: "What is Bizing?"
@@ -78,12 +86,14 @@ Once API key is added:
 
 **Impact:**
 Bizing is now a truly intelligent entity that:
+
 - Understands its own nature
 - Knows the project completely
 - Can answer questions knowledgeably
 - Maintains character as Bizing
 
 **Next Steps:**
+
 - Test with real API key
 - Tune system prompt based on responses
 - Add conversation history/memory
@@ -91,4 +101,4 @@ Bizing is now a truly intelligent entity that:
 
 ---
 
-*Session complete: 2026-02-11*
+_Session complete: 2026-02-11_

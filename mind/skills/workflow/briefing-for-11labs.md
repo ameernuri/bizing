@@ -5,7 +5,7 @@ tags: skill, workflow, 11labs, tts, briefing
 
 # 🎓 Creating Brief.txt for 11labs Reader
 
-*How to create audio briefs for Ameer's phone.*
+> How to create audio briefs for Ameer's phone
 
 ---
 
@@ -130,5 +130,5 @@ Next: Generate fresh Kimi API key, update .env, restart server, test chat.
 
 ## Related
 
-- [[session-logging|Session Logging]] — Full session documentation
-- [[../index|Skills Index]]
+- [[mind/skills/memory|Memory]] — Session logging
+- [[mind/skills/workflow/index|Workflow Skills]]

@@ -48,7 +48,7 @@ User defined critical testing requirements and the MINDSYNC command for extensiv
 - [[skills/]] — Workflow patterns
 - [[MAP]] — Structure updates
 - [[backlog]] — Kanban board
-- [[INDEX]] — Entry point
+- [[mind/memory/sessions/index]] — Entry point
 - Any other relevant files
 
 ### 3. Updated ALL Mind Files (MINDSYNC)

@@ -47,4 +47,4 @@
 ## Related
 
 - [[read-plan-confirm|Read → Plan → Confirm]]
-- [[../index|Code Skills]]
+- [[Skills|Code Skills]]

@@ -25,7 +25,7 @@
  * @version 1.0.0
  */
 
-import { test, expect, beforeAll, afterAll } from '@playwright/test'
+import { test, expect } from '@playwright/test'
 
 const API_BASE = 'http://localhost:6129'
 

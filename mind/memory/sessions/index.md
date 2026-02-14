@@ -4,6 +4,18 @@
 
 ---
 
+## Recent Sessions
+
+- [[./2026-02-13-obsidian-enhancements|Feb 13]] — Obsidian enhancement features (Graph, Canvas, plugins)
+- [[./2026-02-13-merge-redundant-skills|Feb 13]] — Merged 4 redundant skills into obsidian
+- [[./2026-02-13-obsidian-skills|Feb 13]] — Obsidian skills (Kanban, Dataview, Templater)
+- [[./2026-02-13-feature-space-catalog|Feb 13]] — Feature Space catalog created (~165 features)
+- [[./2026-02-13-ram-codesync-skills|Feb 13]] — RAM system, CodeSync/MindSync skills, PR #15
+- [[./2026-02-12-deep-mind-reorg|Feb 12]] — Deep mind reorganization
+- [[./2026-02-12-violation-commit-without-approval|Feb 12]] — Commit workflow violation fix
+
+---
+
 ## 2026-02-11 — Dashboard Fixes & Dependency Updates
 
 **Topics:**

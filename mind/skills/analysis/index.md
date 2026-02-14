@@ -19,4 +19,4 @@ Understanding business domains.
 
 ## Links
 
-- [[../index|Skills Home]]
+- [[Skills|Skills Home]]
