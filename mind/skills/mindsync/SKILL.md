@@ -22,6 +22,7 @@ tags: skill, mindsync, workflow, update
 **What to update:**
 1. [[mind/memory/RAM]] — Add completed items with timestamps
 2. [[symbiosis/feedback]] — Log new learnings, rules, insights
+3. [[mind/memory/sessions/index|Session index]] — Add entry to recent sessions list (if significant work)
 
 **Time:** 2-3 minutes
 
@@ -41,7 +42,8 @@ tags: skill, mindsync, workflow, update
 3. [[mind/memory/sessions/YYYY-MM-DD-description|Session log]] — Full work log
 4. [[mind/evolution/YYYY-MM-DD]] — Major changes
 5. [[mind/MAP]] — If structure changed
-6. Any other relevant files
+6. **Regenerate embeddings** — Rebuild knowledge base for Bizing AI
+7. Any other relevant files
 
 **Time:** 10-15 minutes
 
@@ -65,6 +67,18 @@ Add to [[symbiosis/feedback]]:
 
 ```markdown
 - [2026-02-13] **Embedding crash fixed** — Ollama context limit at 8000 chars, reduced to 2000
+```
+
+### Step 3: Update Session Index (if significant)
+
+If the work is significant enough to remember:
+
+Add to [[mind/memory/sessions/index]]:
+
+```markdown
+## Recent Sessions
+
+- [[./2026-02-13-description|Feb 13]] — Brief description
 ```
 
 ---
@@ -123,17 +137,41 @@ Add completed items with timestamps.
 
 Add key learnings.
 
+### Step 5: Regenerate Embeddings
+
+Rebuild Bizing AI's knowledge base so it has the latest mind content:
+
+```bash
+curl -X POST http://localhost:6129/api/v1/admin/rebuild-knowledge
+```
+
+Or trigger via Bizing API. This ensures Bizing AI can search and retrieve the updated content.
+
+**Why:** Embeddings are cached. After major mind changes, they must be rebuilt or Bizing AI will have stale knowledge.
+
+### Step 6: Restart Server (if cache stale)
+
+If Bizing AI still shows old information after rebuilding:
+
+```bash
+# Kill and restart the dev server
+pkill -f "tsx.*server"
+cd ~/projects/bizing/apps/api && pnpm dev
+```
+
+**Why:** The knowledge base is cached in memory. Deleting the cache file doesn't clear the in-memory cache. Server restart forces a fresh rebuild from disk.
+
 ---
 
 ## When to MindSync
 
 | Situation | Level | Updates |
 |-----------|-------|---------|
-| Bug fix | SOFT | RAM + feedback |
-| Small feature | SOFT | RAM + feedback |
-| Major feature | HARD | All files + session log |
-| Workflow change | HARD | All files + session log |
-| Architecture change | HARD | All files + session log + evolution |
+| Bug fix | SOFT | RAM + feedback (+ session index if notable) |
+| Small feature | SOFT | RAM + feedback (+ session index if notable) |
+| Major feature | HARD | All files + full session log |
+| Workflow change | HARD | All files + full session log |
+| Architecture change | HARD | All files + full session log + evolution |
 
 ---
 
@@ -142,6 +180,7 @@ Add key learnings.
 **SOFT:**
 - [ ] RAM updated with timestamps
 - [ ] Feedback updated with learnings
+- [ ] Session index updated (if significant)
 
 **HARD:**
 - [ ] Session log created
@@ -149,6 +188,7 @@ Add key learnings.
 - [ ] Feedback updated
 - [ ] Evolution updated (if major)
 - [ ] MAP updated (if structure changed)
+- [ ] **Embeddings regenerated** (knowledge base rebuilt)
 
 ---
 
