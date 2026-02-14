@@ -18,7 +18,7 @@ tags: skill, ram, working-memory, workflow
 - **Current focus** — what we're working on
 - **Stale items removed** → archived to [[memory/sessions|long-term memory]] or forgotten/purged
 
-Think of it like a computer's [[RAM]]: fast, active, limited space. When full, move to disk ([[memory/sessions|long-term memory]]) or forget.
+Think of it like a computer's [[mind/skills/ram/Ram]]: fast, active, limited space. When full, move to disk ([[memory/sessions|long-term memory]]) or forget.
 
 ---
 
@@ -181,7 +181,7 @@ Delete the item from [[mind/memory/RAM|RAM.md]].
 - [[symbiosis/feedback]] — Learnings and rules (update after work)
 - [[memory/sessions]] — Long-term memory (archive significant work here)
 - [[mind/INDEX]] — Entry point (read first)
-- [[mind/skills/session-logging]] — How to create session logs
+- [[mind/skills/memory|Memory Skill]] — How to create session logs
 
 **Workflow:**
 ```

@@ -77,6 +77,10 @@ _Complete index of the Bizing mind. Every file, organized logically._
 
 ### By Category:
 
+**→ [[skills/memory|Memory]]** — Session logging, RAM, mind updates  
+**→ [[skills/codesync|CodeSync]]** — Quality-gated commits  
+**→ [[skills/mindsync|MindSync]]** — Mind synchronization  
+**→ [[mind/skills/ram/Ram|RAM]]** — Working memory  
 **→ [[skills/workflow/index|Workflow]]** — Session logging, kanban, brain updates  
 **→ [[skills/analysis/index|Analysis]]** — Research and decision-making  
 **→ [[skills/code/index|Code]]** — Coding patterns, link everything  
@@ -84,12 +88,17 @@ _Complete index of the Bizing mind. Every file, organized logically._
 
 ### Workflow Specifics:
 
-**→ [[skills/workflow/session-logging|Session Logging]]** — How to log sessions  
-**→ [[skills/workflow/kanban-formatting|Kanban Formatting]]** — Task board style  
-**→ [[skills/workflow/brain-updates|Brain Updates]]** — When and how to update  
+**→ [[skills/obsidian/index|Obsidian Tools]]** — Kanban, Dataview, Templater, editing  
+**→ [[skills/obsidian/kanban|Kanban]]** — Visual task boards  
+**→ [[skills/obsidian/dataview|Dataview]]** — Query and filter files  
+**→ [[skills/obsidian/templater|Templater]]** — Auto-generate files  
+**→ [[skills/obsidian/editing-files|Editing Files]]** — Create and edit mind files  
+**→ [[skills/memory|Memory]]** — Session logging, working memory updates  
+**→ [[skills/codesync|CodeSync]]** — Quality-gated commit workflow  
+**→ [[skills/mindsync|MindSync]]** — SOFT and HARD mind updates  
+**→ [[mind/skills/ram/Ram|RAM]]** — Working memory management  
 **→ [[skills/workflow/briefing|Daily Briefing]]** — Generate TTS-optimized briefings for Telegram  
 **→ [[skills/workflow/briefing-for-11labs|11Labs Briefing]]** — Voice agent setup  
-**→ [[skills/workflow/dataview|Dataview]]** — Querying mind content  
 **→ [[skills/workflow/documentation-standards|Documentation Standards]]** — ⚡ **MANDATORY** JSDoc requirements  
 **→ [[skills/workflow/dotenv-config|Dotenv Config]]** — Environment setup  
 **→ [[skills/workflow/kimi-api-keys|Kimi API Keys]]** — API key management  
@@ -162,6 +171,12 @@ _Complete index of the Bizing mind. Every file, organized logically._
 **→ [[start/START|START]]** — Quick start guide  
 **→ [[start/DEVELOPMENT|Development]]** — Dev setup  
 **→ [[start/_INIT|_INIT]]** — Initialization checklist
+
+---
+
+## 🎯 Workspace — Active Planning
+
+**→ [[workspace/feature-space|Feature Space]]** — Complete feature catalog (~165 features, prioritized)
 
 ---
 

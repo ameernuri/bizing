@@ -6,11 +6,20 @@
 
 ## Skill Categories
 
-### [[code/index|💻 Code]]
-Patterns for reading, writing, refactoring code.
+### [[obsidian/index|🎨 Obsidian]]
+Master the tools: Kanban, Dataview, Templater, file editing.
 
-### [[design/index|🎨 Design]]  
-UI/UX patterns, visual design, user flows.
+### [[memory|🧠 Memory]]
+Session logging, working memory (RAM), mind updates.
+
+### [[codesync|💻 CodeSync]]
+Quality-gated commit workflow — test, ask, commit, PR.
+
+### [[mindsync|🔄 MindSync]]
+Keep mind synchronized — SOFT and HARD update processes.
+
+### [[mind/skills/ram/Ram|📋 RAM]]
+Working memory management — timestamps, stale-item archival.
 
 ### [[workflow/index|⚡ Workflow]]
 How we work — documentation, git, collaboration.

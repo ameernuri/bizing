@@ -23,7 +23,7 @@ tags: skill, codesync, workflow, git, commit
 
 ```
 Type Check → Unit Tests → E2E Tests
-IF ALL PASS → Ask for approval → Commit → Push → Create PR
+IF ALL PASS → Commit → Push → Create PR
 IF ANY FAIL → DO NOT COMMIT → Fix issues → Retry
 ```
 
@@ -162,7 +162,7 @@ User says any of:
 
 - [[mind/INDEX]] — Entry point (mentions CodeSync)
 - [[mind/skills/mindsync|MindSync Skill]] — Update mind after code changes
-- [[mind/skills/ram|RAM Skill]] — Working memory
+- [[mind/skills/ram/Ram|RAM Skill]] — Working memory
 
 ---
 

@@ -16,7 +16,7 @@ The standup format has been replaced with [[mind/memory/RAM]] — a working memo
 - Stale items (>48h) are archived to long-term memory
 - Active context stays compact and current
 
-See [[mind/skills/ram]] for the new workflow.
+See [[mind/skills/ram/Ram]] for the new workflow.
 
 ---
 
@@ -55,4 +55,4 @@ See [[mind/skills/ram]] for the new workflow.
 
 ---
 
-*Standup archived 2026-02-13. New system: [[mind/memory/RAM]] + [[mind/skills/ram]]*
+*Standup archived 2026-02-13. New system: [[mind/memory/RAM]] + [[mind/skills/ram/Ram]]*

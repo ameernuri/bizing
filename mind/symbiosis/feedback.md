@@ -13,6 +13,23 @@ status: active
 
 ## Today's Learnings
 
+### From Today's Session (2026-02-13) — RAM System + CodeSync/MindSync Skills
+
+- [2026-02-13] **RAM replaces standup** — Working memory with timestamps. Stale items (>48h) auto-archive to long-term memory. Single source of active context.
+- [2026-02-13] **CodeSync skill** — Quality-gated commit workflow: Type Check → Unit Tests → E2E → Ask approval → Commit → Push → PR
+- [2026-02-13] **Approval triggers** — "codesync", "commit approved", "approve commit and do a PR" all valid
+- [2026-02-13] **MindSync skill** — SOFT (RAM + feedback + session index) vs HARD (full session log + evolution)
+- [2026-02-13] **Memory skill** — Forces session logging after significant work. Prevents knowledge loss.
+- [2026-02-13] **INDEX.md reorganized** — All skills wikilinked. Single entry point with clear navigation.
+- [2026-02-13] **7 redundant files deleted** — SUMMARY, WORKFLOW, FRAMEWORK, DREAMER, HUMAN, GOALS, STATUS consolidated into INDEX
+- [2026-02-13] **Bizing AI has hardcoded dependencies** — Uses hardcoded paths like `symbiosis/standup.md`. Breaks on renames. Needs dynamic discovery.
+- [2026-02-13] **Obsidian enhancement features documented** — Graph view, Canvas, Daily Notes, backlinks, tags, community plugins (Breadcrumbs, Journey, QuickAdd, etc.) in `mind/skills/obsidian/enhancement-features.md`
+- [2026-02-13] **Redundant skills merged** — Deleted `kanban-formatting`, `dataview`, `brain-updates`, `session-logging` from `skills/workflow/`. Content merged into obsidian skills. Updated all references in INDEX, MAP, workflow/index, dotenv-config, briefing-for-11labs, ram/Ram.
+- [2026-02-13] **Obsidian skills created** — Kanban, Dataview, Templater, editing-files skills for mastering Obsidian tools
+- [2026-02-13] **INDEX.md enhanced** — Added #tags, [[wikilinks]], Obsidian skills section, better organization
+- [2026-02-13] **Feature Space created** — Comprehensive catalog of ~165 possible features in `mind/workspace/feature-space.md`. Prioritized by ⭐⭐⭐ Universal → ⭐⭐ Common → ⭐ Occasional → ○ Rare → 🔒 Enterprise. Framework for selecting what to build.
+- [2026-02-13] **PR #15 updated** — Added server restart step to MindSync skill after testing cache fix.
+
 ### From Today's Session (2026-02-12) — Deep Mind Reorganization
 
 - [2026-02-12] **INDEX.md is single entry point** — Merged CORE-REFERENCE into INDEX.md. Bizing reads INDEX.md first.

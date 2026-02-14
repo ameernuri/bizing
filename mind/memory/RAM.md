@@ -13,7 +13,7 @@ tags: ram, working-memory, active
 
 **Primary:** [2026-02-13 17:57 PST] Move [[symbiosis/standup|standup]] → [[mind/memory/RAM|RAM]] working memory system
 - Create [[mind/memory/RAM|RAM.md]] structure
-- Create [[mind/skills/ram|RAM skill]] documentation  
+- Create [[mind/skills/ram/Ram|RAM skill]] documentation  
 - Update all references from [[symbiosis/standup|standup]] → [[mind/memory/RAM|RAM]]
 - Archive old [[symbiosis/standup|standup]] content to [[memory/sessions|memory]]
 
@@ -24,6 +24,14 @@ tags: ram, working-memory, active
 ## ✅ Recent Completed (Last 48h)
 
 ### Feb 13, 2026
+- [2026-02-13 23:16 PST] [[mind/skills/obsidian/enhancement-features|Obsidian enhancements]] — Graph view, Canvas, Daily Notes, community plugins documented
+- [2026-02-13 23:05 PST] [[mind/skills/obsidian/index|Redundant skills merged]] — Deleted kanban-formatting, dataview, brain-updates, session-logging; updated all references
+- [2026-02-13 22:50 PST] [[mind/skills/obsidian/index|Obsidian skills]] — Kanban, Dataview, Templater, editing-files skills created
+- [2026-02-13 22:40 PST] [[mind/workspace/feature-space|Feature Space]] — Created comprehensive feature catalog (~165 features)
+- [2026-02-13 22:35 PST] [[memory/sessions/2026-02-13-ram-codesync-skills|PR updated]] — Server restart step added to MindSync
+- [2026-02-13 22:20 PST] [[memory/sessions/2026-02-13-ram-codesync-skills|HARD MindSync complete]] — Session log, evolution, feedback, MAP, Skills index updated
+- [2026-02-13 20:15 PST] [[memory/sessions/2026-02-13-ram-codesync-skills|CodeSync complete]] — RAM system, skills, PR #15 created
+- [2026-02-13 18:00 PST] Created [[mind/skills/memory|Memory skill]] — session logging system
 - [2026-02-13 12:55 PST] Created [[mind/research/findings/crm-comparison-clay-pipedrive-hubspot|CRM research]] briefing and sent audio summary via [[mind/skills/briefing/audio-briefing|audio briefing]]
 - [2026-02-13 12:38 PST] Split [[mind/skills/briefing|briefing]] into [[mind/skills/briefing/text-briefing|text-briefing]] and [[mind/skills/briefing/audio-briefing|audio-briefing]] skills
 - [2026-02-13 12:24 PST] Updated [[mind/identity/purpose|Bizing definition]] — now "business platform" not just booking
@@ -68,7 +76,7 @@ tags: ram, working-memory, active
 
 - [2026-02-13 17:57 PST] **[[mind/memory/RAM|RAM]] system implementation**
   - Create [[mind/memory/RAM|RAM.md]] structure with timestamps
-  - Create [[mind/skills/ram|RAM skill]] documentation
+  - Create [[mind/skills/ram/Ram|RAM skill]] documentation
   - Update all [[mind/INDEX|INDEX]] references from [[symbiosis/standup|standup]] → [[mind/memory/RAM|RAM]]
   - Archive old [[symbiosis/standup|standup]] content
 
@@ -113,13 +121,13 @@ tags: ram, working-memory, active
 
 ## 📚 Active Research
 
-| Topic | Location | Status | Date |
-|-------|----------|--------|------|
-| [[mind/research/findings/booking-domain-model|Booking Domain Model]] | [[mind/research/findings/booking-domain-model]] | ✅ Complete | [2026-02-12] |
-| [[mind/research/findings/event-driven-architecture|Event-Driven Architecture]] | [[mind/research/findings/event-driven-architecture]] | ✅ Complete | [2026-02-12] |
-| [[mind/research/findings/api-first-design|API-First Design]] | [[mind/research/findings/api-first-design]] | ✅ Complete | [2026-02-12] |
-| [[mind/research/findings/crm-comparison-clay-pipedrive-hubspot|CRM Comparison]] | [[mind/research/findings/crm-comparison-clay-pipedrive-hubspot]] | ✅ Complete | [2026-02-13] |
-| [[mind/research/findings/complementary-features-booking-events-digital|Complementary Features]] | [[mind/research/findings/complementary-features-booking-events-digital]] | ✅ Complete | [2026-02-13] |
+| Topic                                                                  | Location                    | Status                                                                   | Date       |              |
+| ---------------------------------------------------------------------- | --------------------------- | ------------------------------------------------------------------------ | ---------- | ------------ |
+| [[mind/research/findings/booking-domain-model                          | Booking Domain Model]]      | [[mind/research/findings/booking-domain-model]]                          | ✅ Complete | [2026-02-12] |
+| [[mind/research/findings/event-driven-architecture                     | Event-Driven Architecture]] | [[mind/research/findings/event-driven-architecture]]                     | ✅ Complete | [2026-02-12] |
+| [[mind/research/findings/api-first-design                              | API-First Design]]          | [[mind/research/findings/api-first-design]]                              | ✅ Complete | [2026-02-12] |
+| [[mind/research/findings/crm-comparison-clay-pipedrive-hubspot         | CRM Comparison]]            | [[mind/research/findings/crm-comparison-clay-pipedrive-hubspot]]         | ✅ Complete | [2026-02-13] |
+| [[mind/research/findings/complementary-features-booking-events-digital | Complementary Features]]    | [[mind/research/findings/complementary-features-booking-events-digital]] | ✅ Complete | [2026-02-13] |
 
 All findings include:
 - Database schema designs
@@ -131,7 +139,7 @@ All findings include:
 
 ## 📋 Next Actions
 
-- [ ] Complete [[mind/skills/ram|RAM skill]] documentation [2026-02-13]
+- [ ] Complete [[mind/skills/ram/Ram|RAM skill]] documentation [2026-02-13]
 - [ ] Update all references from [[symbiosis/standup|standup]] → [[mind/memory/RAM|RAM]] [2026-02-13]
 - [ ] Archive old [[symbiosis/standup|standup]] content to [[memory/sessions|memory/sessions/]] [2026-02-13]
 - [ ] Implement [[mind/research/findings/booking-domain-model|booking engine schema]] [2026-02-12]

@@ -1,17 +1,17 @@
 ---
-date: 2026-02-11
+date: 2026-02-13
 tags: skill, obsidian, dataview, query
 ---
 
-# 🔍 Dataview
+# 🔍 Dataview Skill
 
-*Query and display your mind data dynamically.*
+> Query and display your mind data dynamically
 
 ---
 
 ## What is Dataview?
 
-Dataview is a **live index and query engine** for your Obsidian vault. It reads metadata from your notes and lets you query, filter, sort, and display that data in real-time.
+[[Dataview plugin]] is a **live index and query engine** for your Obsidian vault. It reads metadata from your notes and lets you query, filter, sort, and display that data in real-time.
 
 **Key capability:** Your queries stay **always up to date** — when you change a file, the query result updates automatically.
 
@@ -38,7 +38,7 @@ Add YAML at top of file:
 ```yaml
 ---
 author: "Ameer"
-date: 2026-02-11
+date: 2026-02-13
 priority: high
 tags: daily, standup
 ---
@@ -47,7 +47,7 @@ tags: daily, standup
 ### Inline Fields
 Add anywhere in content:
 ```markdown
-From [author:: Ameer], created on (date:: 2026-02-11)
+From [author:: Ameer], created on (date:: 2026-02-13)
 
 This is #priority::high work.
 ```
@@ -137,28 +137,28 @@ GROUP BY file.folder
 
 ### Date Functions
 ```dataview
- date(today)           # Current date
- date(now)             # Current datetime
- date(2026-02-11)      # Specific date
- file.ctime.year       # Extract year
- date(now) - file.ctime # Time difference
+date(today)           # Current date
+date(now)             # Current datetime
+date(2026-02-13)      # Specific date
+file.ctime.year       # Extract year
+date(now) - file.ctime # Time difference
 ```
 
 ### String Functions
 ```dataview
- contains(file.tags, "#critical")
- startsWith(file.name, "2026-02")
- endsWith(file.path, "standup.md")
- regexmatch("pattern", file.name)
+contains(file.tags, "#critical")
+startsWith(file.name, "2026-02")
+endsWith(file.path, "standup.md")
+regexmatch("pattern", file.name)
 ```
 
 ### List Operations
 ```dataview
- length(file.tags)              # Count tags
- sum(file.size)                 # Total size
- max(file.ctime)                # Most recent
- min(file.ctime)                # Oldest
- filter(file.tags, (t) => contains(t, "#"))
+length(file.tags)              # Count tags
+sum(file.size)                 # Total size
+max(file.ctime)                # Most recent
+min(file.ctime)                # Oldest
+filter(file.tags, (t) => contains(t, "#"))
 ```
 
 ---
@@ -179,6 +179,15 @@ TABLE file.ctime AS "Date", file.tags AS "Tags"
 FROM "mind/memory/sessions"
 SORT file.ctime DESC
 LIMIT 5
+```
+
+### Orphaned Files (No Links)
+```dataview
+LIST
+FROM "mind"
+WHERE length(file.inlinks) = 0
+AND file.path != "mind/INDEX"
+AND file.path != "mind/MAP"
 ```
 
 ### Blockers
@@ -211,13 +220,12 @@ FROM "mind"
 WHERE !file.tags
 ```
 
-### Learning Archive by Date
+### All Kanban Tasks
 ```dataview
-TABLE date AS "When", learning AS "What"
-FROM "mind/symbiosis/feedback"
-FLATTEN learnings AS learning
-WHERE learning
-SORT date DESC
+TASK
+FROM "mind/workspace"
+WHERE !completed
+SORT priority DESC
 ```
 
 ---
@@ -296,6 +304,12 @@ Regular text paragraphs are NOT indexed.
 
 ## Related
 
-- [[kanban-formatting|Kanban Formatting]] — Visual task boards
-- [[session-logging|Session Logging]] — Document work sessions
-- [[Skills|Skills Index]]
+- [[mind/skills/obsidian/kanban]] — Visual task boards
+- [[mind/skills/obsidian/templater]] — Auto-generate files
+- [[mind/skills/obsidian/editing-files]] — File editing with frontmatter
+- [[mind/INDEX]] — Query tasks and sessions
+- [[mind/workspace/feature-space]] — Query features by priority
+
+---
+
+*Dataview turns your markdown into a queryable database.*

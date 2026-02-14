@@ -1,6 +1,11 @@
+---
+date: 2026-02-13
+tags: skill, workflow, dotenv, environment
+---
+
 # Environment Variables with dotenv
 
-*Loading .env files in Node.js applications.*
+> Loading .env files in Node.js applications
 
 ---
 
@@ -82,6 +87,7 @@ node -e "require('dotenv/config'); console.log(process.env.API_KEY)"
 
 ## Related
 
-- [[session-logging|Session Logging]]
-- [[brain-updates|Brain Updates]]
-- [[Skills|Workflow Skills]]
+- [[mind/skills/obsidian/editing-files|Editing Files]]
+- [[mind/skills/memory|Memory]]
+- [[mind/skills/workflow/index|Workflow Skills]]
+
