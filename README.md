@@ -16,7 +16,7 @@ A modern, API-first business platform for selling services, digital products, an
 
 ```bash
 # Clone and enter directory
-cd biz.ing
+cd bizing
 
 # Install dependencies
 pnpm install

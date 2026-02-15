@@ -14,21 +14,13 @@ tags:
 
 ## 🎯 Active Focus
 
-**Primary:** [2026-02-15 11:20 PST] Session Workflow
-- [[skills/workflow/SessionWorkflow]] — Automatic workflow created
-- [[scripts/workflows/session-start.sh]] — Session start script
-- [[scripts/workflows/pre-commit.sh]] — Pre-commit script
+**Primary:** [2026-02-15 11:50 PST] Talking to Bizing AI
+- [[mind/skills/workflow/TalkingToBizing]] — How to query Bizing AI
+- `node scripts/query-bizing.mjs "Question"` — Query Bizing
+- [[mind/skills/workflow/SessionWorkflow]] — Session workflow documentation
 
 **Secondary:** Dreamer Auto-Scan (every 15 min)
-- Runs autonomously, finds contradictions + curiosities
-
----
-
-## 🚨 Critical
-
-- **TEST BEFORE COMMIT** — Always use pre-commit workflow
-  - Run: `source scripts/workflows/pre-commit.sh`
-  - Tests → Approval → Commit
+- Finds contradictions + curiosities
 
 ---
 
@@ -50,11 +42,11 @@ source scripts/workflows/pre-commit.sh
 
 ---
 
-## ✅ Recent Completed
+## 🚨 Critical
 
-- [2026-02-15 11:20 PST] **Session Workflow Committed** — 715ec3a, 6 files, 378 insertions
-- [2026-02-15 11:15 PST] **Session Workflow Created** — Automatic workflow documentation
-- [2026-02-15 10:00 PST] **Dreamer Fixed** — Tracked pairs, API vs SDK gone
+- **TEST BEFORE COMMIT** — Always use pre-commit workflow
+  - Run: `source scripts/workflows/pre-commit.sh`
+  - Tests → Approval → Commit
 
 ---
 
@@ -62,12 +54,11 @@ source scripts/workflows/pre-commit.sh
 
 | File | Purpose |
 |------|---------|
-| [[skills/workflow/SessionWorkflow]] | Complete workflow docs |
-| [[scripts/workflows/session-start.sh]] | Session start script |
-| [[scripts/workflows/pre-commit.sh]] | Pre-commit script |
-| [[INDEX]] | Entry point |
+| [[INDEX]] | Start here |
 | [[SYNOPSIS]] | Bizing's story |
 | [[DISSONANCE]] | Active contradictions |
+| [[CURIOSITIES]] | Open questions |
+| [[Skills]] | All skills |
 
 ---
 

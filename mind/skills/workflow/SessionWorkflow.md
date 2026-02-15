@@ -35,7 +35,8 @@ Every new context/session starts with this cascade:
 │                                      │
 │     → Follow skills                 │
 │     → Use tools                     │
-│     → Document changes               │
+│     → Talk to Bizing when needed     │
+│       `node scripts/query-bizing.mjs`│
 └─────────────────────────────────────┘
                  ↓
 ┌─────────────────────────────────────┐
