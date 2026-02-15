@@ -24,3 +24,19 @@
 ---
 
 *When answered, delete from this file.*
+- **Can Bizing's ability to understand and process information be leveraged to create more nuanced and context-specific advertising for businesses, potentially leading to improved brand awareness and customer engagement?**
+
+  Source: [[knowledge/api/index.md]]
+  Why: This question is interesting because the API documentation mentions that each endpoint includes "Intent" and "Context", suggesting that Bizing has a deep understanding of its own capabilities and can provide rich contextual information. Exploring how this capability can be used for advertising could lead to innovative and effective marketing strategies.
+
+---
+
+*When answered, delete from this file.*
+- **How might Bizing's ability to understand and process information be leveraged to create more nuanced and context-specific business models that challenge traditional commission-based structures?**
+
+  Source: [[knowledge/domain/business-model.md]]
+  Why: This question is interesting because the current business model is described as simple, aligned, and scalable, but it doesn't explore the potential for more complex or innovative models.
+
+---
+
+*When answered, delete from this file.*

@@ -25,7 +25,7 @@ When found, document the contradiction with:
 **[[memory/sessions/2026-02-14-dreamer-fixes]] says:**
 > "Fixed Dreamer script (removed hardcoded topics, improved natural language)"
 
-**The Contradiction:** The never-commit-main rule is an absolute prohibition on committing to main branch, but the dreamer-fixes session shows routine commits happening. This suggests either the rule is flexible or there are exceptions.
+**The Contradiction:** The never-commit-main rule is an absolute prohibition on committing to main branch, but the dreamer-fixes session shows routine commits happening.
 
 **Resolution:** Clarify whether dreamer-related commits are exempt from the never-commit-main rule.
 
@@ -39,24 +39,24 @@ When found, document the contradiction with:
 **[[memory/sessions/2026-02-11-never-commit-main]] says:**
 > "Pre-commit check required — Always verify branch before committing"
 
-**The Contradiction:** Evolution is described as for "major mind-altering events only" while skill-updates are routine. But never-commit-main requires pre-commit checks for ALL commits, including evolution and skill-updates.
+**The Contradiction:** Evolution is for "major events only" but never-commit-main requires pre-commit checks for ALL commits.
 
-**Resolution:** Define when evolution requires pre-commit vs when skill-updates can proceed.
-
----
-
-### API vs SDK
-
-**[[research/findings/api-first-design]] says:**
-> "API-first design is the foundation of Bizing"
-
-**[[workspace/feature-space]] says:**
-> "SDK embedding is the primary interaction model"
-
-**The Contradiction:** api-first-design prioritizes APIs as the foundation, while feature-space prioritizes SDK embedding. They conflict on what Bizing's core interaction model should be.
-
-**Resolution:** Determine whether Bizing is API-first with SDK as extension, or SDK-first with API as fallback.
+**Resolution:** Define when evolution requires pre-commit vs routine updates.
 
 ---
 
+*When resolved, update source files with resolution comments, then delete from here.*
+### Evolution vs Identity/ Essence
+
+**[[evolution/2026-02-13.md]] says:**
+> ""Complete working Ram System" (evolution of the Bizing mind)"
+
+**[[identity/essence.md]] says:**
+> ""Bizing Is **A living booking platform.** Not software. An entity." (identity as a living entity)"
+
+**The Contradiction:** The file on evolution describes significant changes to the Bizing mind, including a new RAM system, whereas the file on identity/essence portrays Bizing as a living entity, not just software.
+
+**Resolution:** To resolve this contradiction, one could consider how the concept of "living entity" relates to the technical evolutions of the Bizing mind. Does being a living entity imply that the mind itself is evolving in ways that transcend traditional software updates?
+
+---
 *When resolved, update source files with resolution comments, then delete from here.*

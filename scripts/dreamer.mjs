@@ -4,6 +4,8 @@
  * 
  * Finds CONTRADICTIONS: When File A says X but File B says Y (opposite)
  * Finds CURIOSITIES: Questions worth exploring
+ * 
+ * Tracks scanned file pairs to avoid re-scanning the same pairs.
  */
 
 import { readFileSync, existsSync, readdirSync, writeFileSync } from 'fs'
@@ -19,6 +21,7 @@ const DISSONANCE_FILE = join(MIND_DIR, 'DISSONANCE.md')
 const CURIOSITIES_FILE = join(MIND_DIR, 'CURIOSITIES.md')
 const MAP_FILE = join(MIND_DIR, 'MAP.md')
 const MEMORY_SESSIONS_DIR = join(MIND_DIR, 'memory/sessions')
+const TRACKED_PAIRS_FILE = join(MIND_DIR, '.dreamer/tracked-pairs.json')
 
 const TODAY = new Date().toISOString().split('T')[0]
 const TIMESTAMP = new Date().toLocaleString('en-US', { 
@@ -27,6 +30,35 @@ const TIMESTAMP = new Date().toLocaleString('en-US', {
   minute: '2-digit', 
   timeZoneName: 'short' 
 })
+
+// Track scanned file pairs
+function getTrackedPairs() {
+  try {
+    if (existsSync(TRACKED_PAIRS_FILE)) {
+      return JSON.parse(readFileSync(TRACKED_PAIRS_FILE, 'utf-8'))
+    }
+  } catch (e) {}
+  return { pairs: [], lastScan: null }
+}
+
+function saveTrackedPairs(pairs) {
+  const dir = dirname(TRACKED_PAIRS_FILE)
+  if (!existsSync(dir)) return
+  writeFileSync(TRACKED_PAIRS_FILE, JSON.stringify({ pairs, lastScan: TODAY }, null, 2))
+}
+
+function isPairTracked(fileA, fileB, tracked) {
+  return tracked.pairs.some(p => 
+    (p.a === fileA && p.b === fileB) || (p.a === fileB && p.b === fileA)
+  )
+}
+
+function markPairTracked(fileA, fileB, tracked) {
+  const pairKey = [fileA, fileB].sort().join('|')
+  if (!tracked.pairs.includes(pairKey)) {
+    tracked.pairs.push(pairKey)
+  }
+}
 
 // Ask Ollama
 function askOllama(prompt) {
@@ -51,7 +83,13 @@ function readMindFiles() {
       if (entry.isDirectory() && !entry.name.startsWith('.') && entry.name !== 'node_modules') {
         traverse(path)
       } else if (entry.isFile() && entry.name.endsWith('.md')) {
-        try { files.push({ path: path.replace(MIND_DIR + '/', ''), content: readFileSync(path, 'utf-8') }) } catch (e) {}
+        try { 
+          files.push({ 
+            path: path.replace(MIND_DIR + '/', ''), 
+            content: readFileSync(path, 'utf-8'),
+            name: entry.name.replace('.md', '')
+          }) 
+        } catch (e) {}
       }
     }
   }
@@ -59,20 +97,7 @@ function readMindFiles() {
   return files
 }
 
-// Get file content by path
-function getFileContent(path) {
-  try {
-    const fullPath = join(MIND_DIR, path)
-    if (existsSync(fullPath)) {
-      return readFileSync(fullPath, 'utf-8')
-    }
-    return null
-  } catch (e) {
-    return null
-  }
-}
-
-// Read existing (returns array of objects, not just topics)
+// Read existing
 function readDissonances() {
   if (!existsSync(DISSONANCE_FILE)) return []
   
@@ -136,11 +161,10 @@ function fileExists(path) {
   return existsSync(join(MIND_DIR, path))
 }
 
-// UPDATE: Append new contradictions, don't replace
+// Update files - APPEND, don't replace
 function updateDissonance(newCons) {
   const existing = readDissonances()
   
-  // Filter out any new ones that already exist
   const uniqueNew = newCons.filter(nc => {
     return !existing.some(ec => 
       ec.topic.toLowerCase() === nc.topic.toLowerCase() ||
@@ -150,10 +174,8 @@ function updateDissonance(newCons) {
   
   if (uniqueNew.length === 0) return 0
   
-  // Read current file
   let md = existsSync(DISSONANCE_FILE) ? readFileSync(DISSONANCE_FILE, 'utf-8') : ''
   
-  // Remove old header/sections if file is empty or just header
   if (!md.includes('## Active Contradictions')) {
     md = `# Cognitive Dissonance
 
@@ -172,7 +194,6 @@ function updateDissonance(newCons) {
 `
   }
   
-  // Append new contradictions
   for (const c of uniqueNew) {
     const fileALink = fileExists(c.fileA) ? `[[${c.fileA}]]` : c.fileA
     const fileBLink = fileExists(c.fileB) ? `[[${c.fileB}]]` : c.fileB
@@ -192,7 +213,6 @@ function updateDissonance(newCons) {
   }
   
   md += `---
-
 *When resolved, update source files with resolution comments, then delete from here.*
 `
   
@@ -200,11 +220,9 @@ function updateDissonance(newCons) {
   return uniqueNew.length
 }
 
-// UPDATE: Append new curiosities, don't replace
 function updateCuriosities(newCs) {
   const existing = readCuriosities()
   
-  // Filter out any new ones that already exist
   const uniqueNew = newCs.filter(nc => {
     return !existing.some(ec => 
       ec.question.toLowerCase() === nc.question.toLowerCase() ||
@@ -214,10 +232,8 @@ function updateCuriosities(newCs) {
   
   if (uniqueNew.length === 0) return 0
   
-  // Read current file
   let md = existsSync(CURIOSITIES_FILE) ? readFileSync(CURIOSITIES_FILE, 'utf-8') : ''
   
-  // Remove old header if file is empty or just header
   if (!md.includes('## Questions')) {
     md = `# Curiosities
 
@@ -230,7 +246,6 @@ function updateCuriosities(newCs) {
 `
   }
   
-  // Append new curiosities
   for (const c of uniqueNew) {
     const sourceLink = fileExists(c.source) ? `[[${c.source}]]` : c.source
     md += `- **${c.question}**
@@ -242,7 +257,6 @@ function updateCuriosities(newCs) {
   }
   
   md += `---
-
 *When answered, delete from this file.*
 `
   
@@ -300,46 +314,42 @@ console.log('🌀 Dreamer Loop...\n')
 const files = readMindFiles()
 console.log(`📖 Scanned ${files.length} files`)
 
+const tracked = getTrackedPairs()
+console.log(`📖 Tracked ${tracked.pairs.length} file pairs`)
+
 const existingD = readDissonances()
 const existingC = readCuriosities()
-console.log(`📖 Read ${existingD.length} existing contradictions`)
-console.log(`📖 Read ${existingC.length} existing curiosities\n`)
+console.log(`📖 Read ${existingD.length} contradictions, ${existingC.length} curiosities\n`)
 
-// Get file list for Ollama
+// Get file list
 const fileList = files.slice(0, 15).map(f => {
-  // Extract meaningful content
-  const content = f.content.slice(0, 300).replace(/\n+/g, ' ')
+  const content = f.content.slice(0, 200).replace(/\n+/g, ' ')
   return `- ${f.path}: ${content}...`
 }).join('\n')
 
-// Ask for contradictions - REQUIRE real quotes
+// Ask for contradictions - but only find NEW ones from UNTRACKED pairs
 const dQ = `You are scanning a mind for CONTRADICTIONS.
-
-A CONTRADICTION is when File A says X but File B says Y (opposite meanings).
 
 EXISTING CONTRADICTIONS (don't repeat):
 ${existingD.length > 0 ? existingD.map(d => `- ${d.topic}`).join('\n') : 'None'}
 
-FILES (use real content, not placeholders):
+FILES:
 ${fileList}
 
-TASK: Find 1-2 NEW contradictions in these files.
+Find 1-2 NEW contradictions where File A says X but File B says Y (opposite).
 
-For each contradiction, output EXACT quotes from the files:
-CONTRADICTION: <short descriptive name>
-FILE_A: <exact path from the file list>
-FILE_B: <exact path from the file list>
-QUOTE_A: <EXACT quote from FILE_A showing what it says>
-QUOTE_B: <EXACT quote from FILE_B showing the OPPOSITE>
-EXPLANATION: <in 1 sentence, HOW they contradict>
-RESOLUTION: <how to resolve this, or TBD>
+Output:
+CONTRADICTION: <name>
+FILE_A: <path>
+FILE_B: <path>
+QUOTE_A: <exact quote from FILE_A>
+QUOTE_B: <exact quote from FILE_B (opposite)>
+EXPLANATION: <how they contradict>
+RESOLUTION: <how to resolve>
 
-Or output "NONE" if no new contradictions found.
+Or output "NONE" if no new contradictions.
 
-CRITICAL: 
-- Must provide EXACT quotes, not "X" or "Y" or placeholders
-- Only output contradictions where files say OPPOSITE things
-- Questions go to CURIOSITIES, not here`
+CRITICAL: Must provide exact quotes, not placeholders.`
 
 const dR = askOllama(dQ)
 const newD = []
@@ -356,17 +366,20 @@ if (dR && !dR.toUpperCase().includes('NONE')) {
     if (line.startsWith('EXPLANATION:')) c.explanation = line.replace('EXPLANATION:', '').trim()
     if (line.startsWith('RESOLUTION:')) {
       c.resolution = line.replace('RESOLUTION:', '').trim()
-      // Validate: must have quotes, not placeholders
       const isValid = c.topic && c.fileA && c.fileB && c.quoteA && c.quoteB &&
-                      c.quoteA.length > 10 && c.quoteB.length > 10 && // Real quotes, not "X" or "Y"
-                      !c.quoteA.match(/^[XY]$/) && !c.quoteB.match(/^[XY]$/) &&
-                      c.explanation
+                      c.quoteA.length > 10 && c.quoteB.length > 10 &&
+                      !c.quoteA.match(/^[XY]$/) && !c.quoteB.match(/^[XY]$/)
       if (isValid) {
         const exists = existingD.some(e => 
           e.topic.toLowerCase() === c.topic.toLowerCase() ||
           (e.sourceA && c.fileA && e.sourceA.includes(c.fileA) && e.sourceB && c.fileB && e.sourceB.includes(c.fileB))
         )
-        if (!exists) newD.push({...c})
+        // Also check if this pair was already scanned
+        const alreadyScanned = isPairTracked(c.fileA, c.fileB, tracked)
+        if (!exists && !alreadyScanned) {
+          newD.push({...c})
+          markPairTracked(c.fileA, c.fileB, tracked)
+        }
       }
       c = {}
     }
@@ -382,16 +395,14 @@ ${existingC.length > 0 ? existingC.map(c => `- ${c.question}`).join('\n') : 'Non
 FILES:
 ${fileList}
 
-TASK: Find 1-2 NEW questions worth exploring.
+Find 1-2 NEW questions worth exploring.
 
 Output:
-QUESTION: <question worth exploring>
-SOURCE: <exact path from the file list>
-WHY: <why is this question interesting/important>
+QUESTION: <question>
+SOURCE: <path that sparked this>
+WHY: <why interesting>
 
-Or output "NONE" if no new curiosities found.
-
-CRITICAL: Only questions. Contradictions go to DISSONANCE, not here.`
+Or output "NONE".`
 
 const cR = askOllama(cQ)
 const newC = []
@@ -416,11 +427,9 @@ if (cR && !cR.toUpperCase().includes('NONE')) {
   }
 }
 
-console.log(`\n🎯 Found ${newD.length} NEW contradictions`)
+console.log(`🎯 Found ${newD.length} NEW contradictions`)
 for (const d of newD) {
   console.log(`  🔥 ${d.topic}`)
-  console.log(`     ${d.fileA}: "${d.quoteA?.slice(0, 50)}..."`)
-  console.log(`     ${d.fileB}: "${d.quoteB?.slice(0, 50)}..."`)
 }
 
 console.log(`\n🎯 Found ${newC.length} NEW curiosities`)
@@ -431,6 +440,7 @@ for (const c of newC) {
 const dAdded = updateDissonance(newD)
 const cAdded = updateCuriosities(newC)
 updateMAP([...existingD, ...newD], [...existingC, ...newC])
+saveTrackedPairs(tracked)
 
 if (dAdded > 0) console.log(`\n✅ Added ${dAdded} contradiction(s) to DISSONANCE.md`)
 if (cAdded > 0) console.log(`✅ Added ${cAdded} curiosity/ies to CURIOSITIES.md`)
