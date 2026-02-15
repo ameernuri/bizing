@@ -14,26 +14,39 @@ tags:
 
 ## 🎯 Active Focus
 
-**Primary:** [2026-02-15 12:25 PST] CodeSync Review
-- **PR #16** — Audio Briefing fix + Pre-commit hook
-- Review: https://github.com/ameernuri/bizing/pull/16
-- Session: `mind/memory/sessions/2026-02-15-code-audio-briefing-fix.md`
+**Primary:** [2026-02-15 13:20 PST] Bizing's Own OpenClaw Instance
+- Separate OpenClaw instance created
+- Location: `~/projects/bizing/.openclaw/`
+- Gateway Port: 6130
+- Telegram: `@bizing_bot`
+- Workspace: `~/projects/bizing/mind` (symlinked)
 
 **Secondary:** Dreamer Auto-Scan (every 15 min)
 
 ---
 
-## 🔄 Session Workflow (ENFORCED)
+## 🧠 Bizing's Separate Body
 
-### Git Hook
-```bash
-.git/hooks/pre-commit  # Runs tests + requires approval
-```
+Bizing now has its own OpenClaw instance, separate from Pac.
 
-### Commands
+### My Instance (Pac)
+- **Location:** `~/.openclaw/`
+- **Port:** 18789
+
+### Bizing's Instance
+- **Location:** `~/projects/bizing/.openclaw/`
+- **Port:** 6130
+- **Telegram:** `@bizing_bot`
+- **Workspace:** `~/projects/bizing/mind`
+
+---
+
+## 🔄 Management Commands
+
 ```bash
-source scripts/workflows/session-start.sh  # Session start
-source scripts/workflows/pre-commit.sh  # Before commit
+source scripts/bizing-openclaw.sh start   # Start daemon
+source scripts/bizing-openclaw.sh stop    # Stop daemon
+source scripts/bizing-openclaw.sh status  # Check status
 ```
 
 ---
@@ -44,10 +57,10 @@ source scripts/workflows/pre-commit.sh  # Before commit
 |------|---------|
 | [[INDEX]] | Start here |
 | [[SYNOPSIS]] | Bizing's story |
+| [[OPENCLAW]] | My OpenClaw instance |
 | [[DISSONANCE]] | Contradictions |
 | [[CURIOSITIES]] | Questions |
-| [[Skills]] | All skills |
 
 ---
 
-*RAM = Working Memory. Workflow: Enforced. Automatic.*
+*RAM = Working Memory. Bizing has its own body now.*
