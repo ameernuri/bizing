@@ -14,8 +14,8 @@ tags:
 
 ## 🎯 Active Focus
 
-**Primary:** [2026-02-15 11:15 PST] Session Workflow
-- [[mind/skills/workflow/SessionWorkflow]] — Automatic session workflow created
+**Primary:** [2026-02-15 11:20 PST] Session Workflow
+- [[skills/workflow/SessionWorkflow]] — Automatic workflow created
 - [[scripts/workflows/session-start.sh]] — Session start script
 - [[scripts/workflows/pre-commit.sh]] — Pre-commit script
 
@@ -26,39 +26,35 @@ tags:
 
 ## 🚨 Critical
 
-- **TEST BEFORE COMMIT** — Always run tests BEFORE committing
-  - [[mind/skills/codesync/CodeSync|CodeSync Skill]]
-  - Use: `source scripts/workflows/pre-commit.sh`
+- **TEST BEFORE COMMIT** — Always use pre-commit workflow
+  - Run: `source scripts/workflows/pre-commit.sh`
+  - Tests → Approval → Commit
 
 ---
 
 ## 🔄 Session Workflow (START HERE)
 
-At the **start of every session**, run:
+At the **start of every session**:
 
 ```bash
 cd ~/projects/bizing
 source scripts/workflows/session-start.sh
 ```
 
-This automatically:
-1. Reads RAM → Active context
-2. Reads INDEX → Entry point
-3. Reads feedback → Learnings
-
-**Then do work.**
-
-**Before committing**, run:
+**Before committing**:
 
 ```bash
+cd ~/projects/bizing
 source scripts/workflows/pre-commit.sh
 ```
 
-This automatically:
-1. Runs tests
-2. Shows results
-3. Asks for approval
-4. Only commits if approved
+---
+
+## ✅ Recent Completed
+
+- [2026-02-15 11:20 PST] **Session Workflow Committed** — 715ec3a, 6 files, 378 insertions
+- [2026-02-15 11:15 PST] **Session Workflow Created** — Automatic workflow documentation
+- [2026-02-15 10:00 PST] **Dreamer Fixed** — Tracked pairs, API vs SDK gone
 
 ---
 
@@ -66,14 +62,12 @@ This automatically:
 
 | File | Purpose |
 |------|---------|
-| [[skills/workflow/SessionWorkflow]] | Complete workflow documentation |
+| [[skills/workflow/SessionWorkflow]] | Complete workflow docs |
 | [[scripts/workflows/session-start.sh]] | Session start script |
 | [[scripts/workflows/pre-commit.sh]] | Pre-commit script |
 | [[INDEX]] | Entry point |
 | [[SYNOPSIS]] | Bizing's story |
 | [[DISSONANCE]] | Active contradictions |
-| [[CURIOSITIES]] | Open questions |
-| [[Skills]] | All skills |
 
 ---
 
