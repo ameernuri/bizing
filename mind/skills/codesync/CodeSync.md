@@ -14,9 +14,9 @@ tags:
 
 ---
 
-## ⚠️ THE GOLDEN RULE: TEST BEFORE COMMIT
+## ⚠️ NEVER COMMIT WITHOUT EXPLICIT APPROVAL
 
-**CRITICAL: Tests MUST pass BEFORE committing, not after.**
+**CRITICAL: Tests MUST pass BEFORE committing.**
 
 ```
 1. Run tests → 2. Verify pass → 3. Ask approval → 4. Commit
@@ -31,7 +31,7 @@ tags:
 
 ## What Is CodeSync?
 
-**CodeSync** ensures code quality before any commit. All checks must pass.
+**CodeSync** ensures code quality before any commit. All checks must pass. After all checks pass, we commit on a branch and do a PR
 
 ---
 
@@ -215,9 +215,9 @@ User says any of:
 ## Related
 
 - [[mind/INDEX]] — Entry point (mentions CodeSync)
-- [[mind/skills/mindsync|MindSync Skill]] — Update mind after code changes
-- [[mind/skills/ram|Ram Skill]] — Working memory
-- [[mind/skills/creating-files|Creating Files Skill]] — File creation guidelines
+- [[Mindsync|MindSync Skill]] — Update mind after code changes
+- [[mind/skills/ram/Ram|Ram Skill]] — Working memory
+- [[CreatingFiles|Creating Files Skill]] — File creation guidelines
 
 ---
 

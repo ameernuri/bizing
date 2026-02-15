@@ -217,3 +217,58 @@ source scripts/workflows/pre-commit.sh
 ---
 
 *Session Workflow: Automatic, Reliable, Cascading.*
+
+---
+
+## 🚨 Enforcement
+
+### Git Pre-Commit Hook
+
+A git hook automatically runs tests BEFORE any commit:
+
+```bash
+# .git/hooks/pre-commit
+# Runs automatically before any git commit
+```
+
+**This means:**
+- You CANNOT commit without running tests
+- The hook blocks commits if tests fail
+- No bypassing allowed
+
+### How Bypassing Happens
+
+**WRONG:**
+```bash
+git add -A && git commit -m "..."  # BYPASSES workflow
+```
+
+**RIGHT:**
+```bash
+source scripts/workflows/pre-commit.sh  # Tests → Approval → Commit
+```
+
+### Session Enforcement
+
+At the **start of every session**, you MUST:
+1. Run `source scripts/workflows/session-start.sh`
+2. Read RAM, INDEX, feedback
+3. THEN do work
+
+**No exceptions. No bypassing.**
+
+---
+
+## Why This Works
+
+| Method | What It Does |
+|--------|---------------|
+| `session-start.sh` | Loads context automatically |
+| `pre-commit.sh` | Tests + approval required |
+| Git hook | Blocks commits without tests |
+
+**Together:** Reliabile, cascading, un-bypassable workflow
+
+---
+
+*Session Workflow: Automatic. Reliable. Enforced.*
