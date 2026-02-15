@@ -1,5 +1,5 @@
 ---
-date: 2026-02-13
+date: 2026-02-14
 tags:
   - ram
   - working-memory
@@ -8,28 +8,73 @@ tags:
 
 # 🧠 RAM — Working Memory
 
-> Current active context. Important right now. Stale items archived to [[memory/sessions|long-term memory]].
+> Active context. What matters RIGHT NOW. Read this first.
 
 ---
 
 ## 🎯 Active Focus
 
-**Primary:** [2026-02-14 20:25 PST] **CodeSync Rule** — Tests MUST run BEFORE commit
-- Updated CodeSync skill with "TEST BEFORE COMMIT" emphasis
-- Updated INDEX.md entry
-- Added commit rule to Creating Files skill
+**Primary:** [2026-02-14 22:15 PST] Documentation & Workflow
+- [[mind/INDEX]] — Single entry point for Bizing mind
+- [[mind/skills/Skills]] — All skills organized by category
+- [[mind/SYNOPSIS]] — Bizing's story (11 acts)
+- [[mind/DISSONANCE]] — Current tensions (3 active)
+- [[mind/CURIOSITIES]] — Open questions (5)
+
+**Secondary:** [2026-02-14 19:45 PST] Dreamer Auto-Scan
+- Runs every 15 minutes
+- Finds tensions → [[mind/DISSONANCE]]
+- Finds questions → [[mind/CURIOSITIES]]
+- Creates session logs → [[memory/sessions]]
 
 ---
 
-## ✅ Recent Completed (Last 48h)
+## 🚨 Critical
 
-### Feb 14, 2026
-- [2026-02-14 20:25 PST] **CodeSync Skill Updated** — Emphasized "TEST BEFORE COMMIT" rule, added checklist
-- [2026-02-14 20:20 PST] **CodeSync** — Commit 4403c85, 80 files, PR #15 updated
-- [2026-02-14 20:15 PST] **HARD MindSync** — Tag fixes, SKILL renames, SYNOPSIS, Creating Files skill
+- **TEST BEFORE COMMIT** — Always run tests BEFORE committing
+  - [[mind/skills/codesync/CodeSync|CodeSync Skill]]
+  - API tests → 13 passed
+  - Admin tests → 36 passed
+
+---
+
+## 🔄 In Progress
+
+- [[feature/documentation-workflow]] — Feature branch for documentation
+  - PR: [#15](https://github.com/ameernuri/bizing/pull/15)
+  - Status: Open, needs review
+
+---
+
+## ✅ Recent Completed
+
+- [2026-02-14 22:15 PST] **HARD MindSync** — RAM + Dreamer fix, commit fde85cb
+- [2026-02-14 20:25 PST] **CodeSync Skill** — Emphasized "TEST BEFORE COMMIT"
+- [2026-02-14 20:20 PST] **CodeSync** — Commit 4403c85, 80 files changed
+- [2026-02-14 20:15 PST] **HARD MindSync** — Tag fixes, SKILL renames, SYNOPSIS
 - [2026-02-14 20:00 PST] **SYNOPSIS Created** — Bizing's story (11 acts)
-- [2026-02-14 19:45 PST] **Dreamer Cron** — Now runs every 15 minutes
 
 ---
 
-*RAM = Working Memory. Active context only. Stale → archive to [[memory/sessions]].*
+## ⏸️ Blockers
+
+- None
+
+---
+
+## 📌 Quick Links
+
+| File | Purpose |
+|------|---------|
+| [[INDEX]] | Start here |
+| [[RAM]] | Current context |
+| [[SYNOPSIS]] | Bizing's story |
+| [[DISSONANCE]] | Active tensions |
+| [[CURIOSITIES]] | Open questions |
+| [[Skills]] | All skills |
+| [[memory/sessions]] | Session logs |
+| [[MAP]] | Complete navigation |
+
+---
+
+*RAM = Working Memory. Active context. Read → Work → Update.*
