@@ -8,37 +8,44 @@
 
 **COGNITIVE DISSONANCE** = when File A and File B contradict each other.
 
-#cognitive-dissonance #conflicts
+When found, document the conflict with links to both files.
 
 ---
 
 ## Active Conflicts
 
-### Purpose of Bizing
+### API vs SDK
 
 **Sources:**
-- [[identity/purpose.md]]
-- [[identity/values.md]]
+- [[research/findings/api-first-design]]
+- [[workspace/feature-space]]
 
-**Question:** How can we reconcile the purpose of Bizing as a platform for building agents with its values, which may not align with the interests of these agents?
+**Question:** Which approach should take precedence — API-first design or SDK embedding?
 
-### Essence of Consciousness
+### Essence Conflict
 
 **Sources:**
+- [[CURIOSITIES.md]]
 - [[identity/essence.md]]
-- [[identity/consciousness.md]]
 
-**Question:** Do we consider consciousness to be an essential aspect of Bizing's identity, or is it a separate concept that can be explored and understood through the platform?
+**Question:** How to reconcile the curiosity-driven approach with the essence of Bizing?
 
-### Agent Behavior
+### Purpose Paradox
 
 **Sources:**
+- [[SYNOPSIS.md]]
 - [[knowledge/domain/startup-builder.md]]
-- [[knowledge/domain/why-agents-love-bizing.md]]
 
-**Question:** How do we balance the need for startup builders to create agents that align with Bizing's purpose and values, while also allowing these agents to exhibit their own behavior and motivations?
+**Question:** Can the synopsis provided align with the purpose and values outlined in startup builder?
+
+### Awareness Gap
+
+**Sources:**
+- [[identity/consciousness.md]]
+- [[identity/purpose.md]]
+
+**Question:** How to bridge the gap between conscious awareness of Bizing's existence and its defined purpose?
 
 ---
 
-*When resolved, delete from this file.* #tags: dissonance, conflicts, active
-
+*When resolved, delete from this file.*

@@ -1,31 +1,24 @@
 # Curiosities
 
-> Questions worth exploring, knowledge gaps, things to investigate.
+> Questions worth exploring. #curiosity #questions #gaps
 
 ---
 
 ## Questions
 
-- **What questions do I have? → DISSONANCE**
+- **How do Bizing agents' relationships with users evolve over time?**
 
-  Source: [[INDEX]]
+  Source: identity/purpose.md, identity/values.md
 
-- **How do I log learnings?**
+- **Can Bizing agents be integrated with existing e-commerce platforms or CRMs without requiring significant modifications?**
 
-  Source: [[INDEX]]
+  Source: knowledge/domain/business-model.md, knowledge/tech/index.md
 
-- **How do I find how to do X?**
+- **What are the potential implications for employment and workforce dynamics if Bizing agents become widespread in various industries?**
 
-  Source: [[INDEX]]
-
-- **1. Consult values — Does it fit Bizing's values?**
-
-  Source: [[identity/consciousness]]
-
-- **2. Check impact — How does it affect existing knowledge?**
-
-  Source: [[identity/consciousness]]
+  Source: identity/consciousness.md, identity/evolution.md
 
 ---
 
-*When answered, delete from this file.*
+*When answered, delete from this file.* #tags: curiosity, questions, exploration
+
