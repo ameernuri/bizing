@@ -80,8 +80,7 @@ Pipedrive. Visual pipeline.
 ### Step 3: Generate Audio
 
 **TTS Settings:**
-- **Voice:** Nova (warm
-  - conversational)
+- **Voice:** Nova (warm, conversational)
 - **Model:** eleven turbo v2.5
 - **Speed:** 1.5x (Ameer's preference for faster consumption)
 
@@ -89,17 +88,61 @@ Generate audio via TTS tool.
 
 ### Step 4: Send Both Files
 
-**Send to Telegram:**
-1. **MP3 audio** — Primary delivery
-2. **Text file** — Reference (send immediately after audio)
+**Send to Telegram - USE MEDIA PARAMETER:**
+
+1. **First audio:** Send as media attachment
+2. **Subsequent audios:** Send each as separate media attachments
+3. **Text file:** Reference message after all audios
+
+**❌ WRONG (what I did):**
+```
+Here's the audio: /path/to/file.mp3
+```
+This sends text, not audio.
+
+**✅ RIGHT (correct way):**
+```javascript
+// Send audio as media
+message({
+  action: "send",
+  channel: "telegram",
+  media: "/path/to/audio.mp3"
+})
+```
+
+**Example workflow for multi-part briefing:**
+```javascript
+// Part 1
+message({
+  action: "send",
+  channel: "telegram",
+  media: "/path/to/part1.mp3"
+})
+
+// Part 2
+message({
+  action: "send",
+  channel: "telegram",
+  media: "/path/to/part2.mp3"
+})
+
+// Part 3
+message({
+  action: "send",
+  channel: "telegram",
+  media: "/path/to/part3.mp3"
+})
+```
 
 **Message format:**
 ```
-🎙️ [Topic] Briefing
+🎧 [Topic] Briefing
 
-[Audio file]
+[Audio 1 - sent as media attachment]
+[Audio 2 - sent as media attachment]
+[Audio 3 - sent as media attachment]
 
-📄 Text version attached for reference
+📄 Text version: [filename]
 ```
 
 ### Step 5: Cleanup
@@ -143,12 +186,8 @@ $ → dollars
 ```
 
 ### Numbers
-- Keep as digits: 40
-  - 100
-  - 2026
-- TTS reads correctly: "forty"
-  - "one hundred"
-  - "two thousand twenty-six"
+- Keep as digits: 40, 100, 2026
+- TTS reads correctly: "forty", "one hundred", "two thousand twenty-six"
 
 ### Abbreviations
 ```
@@ -201,8 +240,7 @@ Why faster?
 - Users want to consume quickly
 - 1.5x is efficient while remaining understandable
 
-**Ameer's Preference:** 1.5x speed (requested Feb 14
-  - 2026)
+**Ameer's Preference:** 1.5x speed (requested Feb 14, 2026)
 
 **Adjust if needed:**
 - Normal speed: 1.0x
@@ -215,18 +253,13 @@ Why faster?
 2. **Text immediately after** — Reference and search
 
 ### Why Both?
-- **Audio:** Listen while driving
-  - walking
-  - doing other tasks
-- **Text:** Search for specific details
-  - copy-paste
-  - reference later
+- **Audio:** Listen while driving, walking, doing other tasks
+- **Text:** Search for specific details, copy-paste, reference later
 
 ### Target
 Send to the source of the request:
 - Group request → Send to group
-- DM request → Ask where to send
-  - default to DM
+- DM request → Ask where to send, default to DM
 
 ## Error Handling
 
@@ -235,14 +268,14 @@ Send to the source of the request:
 - Send text file only
 - Notify: "Audio generation failed. Text version attached."
 
-**Audio Upload Fails:**
+**Audio Upload Fails (wrong format):**
+- Make sure to use `media` parameter, not `message` with file path
 - Retry once
-- If still fails
-  - send text only
+- If still fails, send text only
 - Log error
 
 **File Too Large:**
-- Split into multiple briefings
+- Split into multiple briefings (each under 4096 chars for TTS)
 - Or send text only
 
 ## Integration
@@ -257,6 +290,4 @@ Send to the source of the request:
 
 ---
 
-*Audio Briefing: Convert text to audio
-  - send both
-  - cleanup after.*
+*Audio Briefing: Convert text to audio, send both, cleanup after.*
