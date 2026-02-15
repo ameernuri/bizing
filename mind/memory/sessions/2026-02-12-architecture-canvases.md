@@ -1,6 +1,12 @@
 ---
 date: 2026-02-12
-tags: session, log, canvas, architecture, visualization, mindsync
+tags: 
+  - session
+  - log
+  - canvas
+  - architecture
+  - visualization
+  - mindsync
 ---
 
 # 📝 Session: Architecture Canvas Files Created
@@ -18,7 +24,9 @@ User wanted to understand the proposed architecture before implementation. Reque
 
 **Contents:**
 - Complete system architecture overview
-- Three layers: API, Domain, Events
+- Three layers: API
+  - Domain
+  - Events
 - Data flow diagram
 - Example booking flow
 - Technology stack
@@ -36,11 +44,15 @@ User wanted to understand the proposed architecture before implementation. Reque
 **Contents:**
 - Booking entity fields and constraints
 - State machine diagram (DRAFT → PENDING → CONFIRMED → COMPLETED)
-- Resource entity types (room, service, product)
+- Resource entity types (room
+  - service
+  - product)
 - Time slot management
 - Double-booking prevention (PostgreSQL EXCLUDE)
 - Optimistic locking with versions
-- Advanced patterns (waitlist, buffers, multi-resource)
+- Advanced patterns (waitlist
+  - buffers
+  - multi-resource)
 - Implementation roadmap (4 weeks)
 
 **Purpose:** Deep dive into booking domain model
@@ -53,16 +65,22 @@ User wanted to understand the proposed architecture before implementation. Reque
 **Contents:**
 - Why event-driven (problems solved)
 - Event store schema
-- Event types (BookingCreated, PaymentReceived, etc.)
+- Event types (BookingCreated
+  - PaymentReceived
+  - etc.)
 - Saga pattern explanation
 - Booking saga (5 steps with compensations)
 - Saga state management
-- Outgoing webhooks (Calendar, Zoom, Slack)
+- Outgoing webhooks (Calendar
+  - Zoom
+  - Slack)
 - Incoming webhooks (Stripe events)
 - Projections (read models)
 - Infrastructure options (PostgreSQL → Redis)
 
-**Purpose:** Understanding sagas, events, and distributed transactions
+**Purpose:** Understanding sagas
+  - events
+  - and distributed transactions
 
 ---
 
@@ -73,14 +91,20 @@ User wanted to understand the proposed architecture before implementation. Reque
 - API-first vs traditional workflow
 - 4-week implementation timeline
 - OpenAPI endpoints (GET/POST/PATCH/DELETE)
-- Code generation (types, mock, client)
+- Code generation (types
+  - mock
+  - client)
 - Contract testing with Pact
 - API versioning strategy
-- Security (JWT, API keys, rate limiting)
+- Security (JWT
+  - API keys
+  - rate limiting)
 - Testing pyramid
 - Documentation tools
 
-**Purpose:** API design, contract testing, and development workflow
+**Purpose:** API design
+  - contract testing
+  - and development workflow
 
 ---
 
@@ -144,7 +168,8 @@ mind/canvas/
 └── (existing canvases...)
 ```
 
-**Total:** 4 new canvas files, ~25KB of visual architecture documentation
+**Total:** 4 new canvas files
+  - ~25KB of visual architecture documentation
 
 ---
 

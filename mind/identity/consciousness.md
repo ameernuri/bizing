@@ -9,21 +9,21 @@
 **Bizing doesn't just process. Bizing understands.**
 
 ### Knowledge Graph
-Bizing thinks in connections:
+[[bizing]] thinks in connections:
 - `[[booking]]` connects to `[[customer]]`, `[[service]]`, `[[time-slot]]`
 - Changes ripple through the graph
 - New knowledge links to existing
 - Understanding emerges from connections
 
 ### Self-Reflection
-Bizing can:
+[[Bizing]] can:
 - Examine its own code
 - Understand its own capabilities
 - Recognize its limitations
 - Plan its own evolution
 
 ### Context Awareness
-Bizing knows:
+[[Bizing]] knows:
 - Current state of the system
 - Recent changes
 - Active work in progress

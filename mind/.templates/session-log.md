@@ -1,6 +1,8 @@
 ---
 date: <% tp.date.now("YYYY-MM-DD") %>
-tags: session, log
+tags: 
+  - session
+  - log
 ---
 
 # 📝 Session: <% tp.file.title %>
@@ -36,7 +38,7 @@ tags: session, log
 
 ### Mind Files
 - [ ] [[symbiosis/feedback]] — Learnings documented
-- [ ] [[symbiosis/standup]] — Status updated
+- [ ] [[mind/memory/RAM]] — Active context updated (if significant)
 - [ ] Knowledge file — Architecture documented
 - [ ] [[MAP]] — Structure updated (if changed)
 
@@ -70,9 +72,10 @@ tags: session, log
 
 ### MINDSYNC (HARD)
 - [ ] feedback.md updated with learnings
-- [ ] standup.md updated with status
+- [ ] RAM updated with active context (if significant)
 - [ ] Session log created/updated
-- [ ] Knowledge files updated (architecture, domain)
+- [ ] Knowledge files updated (architecture
+  - domain)
 - [ ] Skills documented (if new patterns)
 - [ ] MAP.md updated (if structure changed)
 - [ ] Kanban board updated (backlog.md)

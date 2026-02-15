@@ -1,0 +1,224 @@
+---
+date: 2026-02-14
+tags:
+  - skill
+  - codesync
+  - workflow
+  - git
+  - commit
+---
+
+# 💻 CodeSync Skill
+
+> Quality gate before committing code
+
+---
+
+## ⚠️ NEVER COMMIT WITHOUT EXPLICIT APPROVAL
+
+**CRITICAL: Tests MUST pass BEFORE committing.**
+
+```
+1. Run tests → 2. Verify pass → 3. Ask approval → 4. Commit
+                ↑
+                |
+        MUST happen FIRST
+```
+
+**Never commit and then run tests. Always test FIRST, then commit.**
+
+---
+
+## What Is CodeSync?
+
+**CodeSync** ensures code quality before any commit. All checks must pass. After all checks pass, we commit on a branch and do a PR
+
+---
+
+## The Process
+
+```
+Type Check → Unit Tests → E2E Tests → ASK APPROVAL → IF ALL PASS → Commit → Push → Create PR
+```
+
+---
+
+## Step-by-Step
+
+### Step 1: Type Check
+
+```bash
+cd ~/projects/bizing
+pnpm tsc --noEmit
+```
+
+**Must show:** No errors (empty output = success)
+
+---
+
+### Step 2: Unit Tests
+
+```bash
+cd ~/projects/bizing/apps/api
+pnpm vitest run --exclude 'tests/e2e/**'
+```
+
+**Must show:** All tests passing
+
+Example:
+```
+Test Files  2 passed (2)
+Tests       13 passed (13)
+```
+
+---
+
+### Step 3: E2E Tests
+
+```bash
+cd ~/projects/bizing/apps/api
+pnpm playwright test
+```
+
+**Must show:** All tests passing
+
+Example:
+```
+40 passed (15s)
+```
+
+---
+
+### Step 4: Verify Results
+
+**IMPORTANT:** You MUST see and verify the test results BEFORE asking for approval.
+
+```
+✅ API Tests: 13 passed
+✅ Admin Tests: 36 passed
+✅ Total: 49 tests passed
+```
+
+**Only proceed if ALL tests pass.**
+
+---
+
+### Step 5: Ask for Approval
+
+Show user what will be committed:
+
+```
+Files to commit:
+- apps/api/src/services/llm.ts (modified)
+- mind/INDEX.md (modified)
+- mind/memory/RAM.md (new)
+
+Commit message: "feat: description"
+
+Tests: ✅ All passed (13 API + 36 Admin = 49 tests)
+
+Approve commit and do a PR? (yes/no)
+```
+
+**Wait for explicit approval:** "yes" or "approve commit and do a PR"
+
+---
+
+### Step 6: Commit
+
+```bash
+git add [files]
+git commit -m "type: description"
+```
+
+**Types:**
+- `feat:` — New feature
+- `fix:` — Bug fix
+- `docs:` — Documentation
+- `refactor:` — Code restructuring
+- `test:` — Tests only
+
+---
+
+### Step 7: Push
+
+```bash
+git push -u origin feature/description
+```
+
+---
+
+### Step 8: Create PR
+
+```bash
+gh pr create --title "type: description" --body "summary"
+```
+
+---
+
+## Critical Rules
+
+| Never | Always |
+|-------|--------|
+| ❌ Run tests AFTER commit | ✅ Run tests BEFORE commit |
+| ❌ Commit without asking | ✅ Ask "Approve commit and do a PR?" |
+| ❌ Commit to main | ✅ Feature branch only |
+| ❌ Commit with failing tests | ✅ All tests pass first |
+| ❌ Mix unrelated changes | ✅ One feature per commit |
+| ❌ Assume tests passed | ✅ See and verify test results |
+
+---
+
+## The CodeSync Checklist
+
+Before asking for approval:
+
+- [ ] Type check passed
+- [ ] Unit tests passed (see results)
+- [ ] E2E tests passed (see results)
+- [ ] All test files shown to user
+- [ ] Explicit approval received
+- [ ] Commit message formatted correctly
+
+---
+
+## If Tests Fail
+
+**STOP. Do not commit.**
+
+1. Fix the issues
+2. Run CodeSync again
+3. Only commit when all pass
+
+---
+
+## Why Test Before Commit?
+
+1. **Catch issues early** — Find bugs before they reach the branch
+2. **Prevent broken builds** — Don't break CI/CD
+3. **Maintain quality** — Every commit should be shippable
+4. **Build trust** — Tests passing = ready for review
+
+---
+
+## Triggers
+
+User says any of:
+- **"codesync"**
+- **"commit approved"**
+- **"commit"** (ask for approval first)
+
+→ Run all checks → Verify results → Ask for approval → Commit if approved
+
+---
+
+## Related
+
+- [[mind/INDEX]] — Entry point (mentions CodeSync)
+- [[Mindsync|MindSync Skill]] — Update mind after code changes
+- [[mind/skills/ram/Ram|Ram Skill]] — Working memory
+- [[CreatingFiles|Creating Files Skill]] — File creation guidelines
+
+---
+
+*CodeSync: Test → Verify → Ask → Commit → Push → PR*

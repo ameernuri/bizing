@@ -35,5 +35,5 @@ Document patterns we use repeatedly:
 
 ## Links
 
-- [[../index|Skills Home]]
+- [[Skills|Skills Home]]
 - [[../../ai-context/WORKFLOW|AI Workflow]]

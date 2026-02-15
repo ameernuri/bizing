@@ -8,7 +8,15 @@ import { join } from 'path'
 import { chatWithLLM, createBizingSystemPrompt } from './services/llm.js'
 import { getCompactMindState, getMindFile } from './services/mind-api.js'
 import { getCachedMindMap, searchMindDynamic, getMindStructure, listAllFiles, exploreDirectory } from './services/mind-map.js'
-import { semanticSearch, buildAndCacheEmbeddings, getEmbeddingStats, isEmbeddingsReady } from './services/mind-embeddings.js'
+import { semanticSearch, buildAndCacheEmbeddings, getEmbeddingStats, isEmbeddingsReady, testProviders } from './services/mind-embeddings.js'
+import { searchKnowledgeBase, getKnowledgeEntry, getEntriesByType, getKnowledgeStats } from './services/mind-knowledge.js'
+import { getFileCatalog, searchCatalog, getCatalogStats } from './services/mind-catalog.js'
+
+// ============================================
+// Constants
+// ============================================
+
+const MIND_DIR = join(process.cwd(), '..', '..', 'mind')
 
 // ============================================
 // Logger
@@ -279,10 +287,14 @@ const MAX_HISTORY = 10 // Keep last 10 messages
 
 app.post('/api/v1/bizing/chat', async (c) => {
   const body = await c.req.json()
-  const { message, sessionId = 'default', enableFunctions = true } = body
+  const { message, sessionId = 'default', enableFunctions = true, provider } = body
 
   try {
     log(`Bizing chat request [${sessionId}]: ${message.slice(0, 50)}...`)
+    
+    // Default to OpenAI for web interface (reliable function calling)
+    // Use explicit provider if provided (e.g., 'ollama' for local testing)
+    const effectiveProvider = provider || 'openai'
     
     // Get or create conversation history
     let history = conversations.get(sessionId) || []
@@ -312,7 +324,7 @@ app.post('/api/v1/bizing/chat', async (c) => {
       temperature: 0.7,
       maxTokens: 2000,
       enableFunctions,
-    })
+    }, effectiveProvider) // Use effective provider (defaults to openai)
 
     // Add assistant response to history
     history.push({
@@ -330,7 +342,7 @@ app.post('/api/v1/bizing/chat', async (c) => {
       sessionId,
       messageCount: history.length,
       timestamp: new Date().toISOString(),
-      model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
+      model: effectiveProvider || 'openai',
     })
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : String(err)
@@ -394,8 +406,10 @@ app.get('/api/v1/mind/explore/:path{.*}', (c) => {
 })
 
 // Embeddings API
-app.get('/api/v1/mind/embeddings/status', (c) => {
-  return c.json(getEmbeddingStats())
+app.get('/api/v1/mind/embeddings/status', async (c) => {
+  const stats = getEmbeddingStats()
+  const providers = await testProviders()
+  return c.json({ ...stats, providers })
 })
 
 app.post('/api/v1/mind/embeddings/build', async (c) => {
@@ -423,9 +437,151 @@ app.get('/api/v1/mind/semantic-search', async (c) => {
   }
 })
 
+// Knowledge Base API
+app.get('/api/v1/mind/knowledge/stats', (c) => {
+  return c.json(getKnowledgeStats())
+})
+
+app.get('/api/v1/mind/knowledge/search', (c) => {
+  const query = c.req.query('q')
+  const limit = parseInt(c.req.query('limit') || '10')
+  
+  if (!query) return c.json({ error: 'Missing query' }, 400)
+  
+  const results = searchKnowledgeBase(query, limit)
+  return c.json({ 
+    query, 
+    count: results.length,
+    results: results.map(e => ({
+      path: e.path,
+      title: e.title,
+      type: e.type,
+      summary: e.summary,
+      keyPoints: e.keyPoints.slice(0, 5),
+      tags: e.tags
+    }))
+  })
+})
+
+app.get('/api/v1/mind/knowledge/entry/:path{.+}', (c) => {
+  const path = c.req.param('path')
+  const entry = getKnowledgeEntry(path)
+  
+  if (!entry) {
+    return c.json({ error: 'Entry not found' }, 404)
+  }
+  
+  return c.json({
+    path: entry.path,
+    title: entry.title,
+    type: entry.type,
+    summary: entry.summary,
+    keyPoints: entry.keyPoints,
+    tags: entry.tags,
+    wordCount: entry.wordCount,
+    relatedFiles: entry.relatedFiles,
+    fullContentPreview: entry.fullContent.slice(0, 5000)
+  })
+})
+
+app.get('/api/v1/mind/knowledge/by-type/:type', (c) => {
+  const type = c.req.param('type') as any
+  const validTypes = ['research', 'design', 'decision', 'session', 'learning', 'goal', 'identity', 'skill', 'knowledge']
+  
+  if (!validTypes.includes(type)) {
+    return c.json({ error: 'Invalid type', validTypes }, 400)
+  }
+  
+  const entries = getEntriesByType(type)
+  return c.json({
+    type,
+    count: entries.length,
+    entries: entries.map(e => ({
+      path: e.path,
+      title: e.title,
+      summary: e.summary.slice(0, 200),
+      keyPointsCount: e.keyPoints.length
+    }))
+  })
+})
+
+// File Catalog API - Lightweight file index
+app.get('/api/v1/mind/catalog', (c) => {
+  return c.json(getFileCatalog())
+})
+
+app.get('/api/v1/mind/catalog/search', (c) => {
+  const query = c.req.query('q')
+  const limit = parseInt(c.req.query('limit') || '10')
+  
+  if (!query) return c.json({ error: 'Missing query' }, 400)
+  
+  const results = searchCatalog(query, limit)
+  return c.json({
+    query,
+    count: results.length,
+    results
+  })
+})
+
+app.get('/api/v1/mind/catalog/stats', (c) => {
+  return c.json(getCatalogStats())
+})
+
+// DISSONANCE API - Read specific dissonance entries
+app.get('/api/v1/mind/dissonance/:id?', (c) => {
+  const id = c.req.param('id')
+  const dissonancePath = join(MIND_DIR, 'DISSONANCE.md')
+  
+  if (!existsSync(dissonancePath)) {
+    return c.json({ error: 'DISSONANCE.md not found' }, 404)
+  }
+  
+  const content = readFileSync(dissonancePath, 'utf-8')
+  
+  // If no ID specified, return all dissonance entries
+  if (!id) {
+    // Extract all D-XXX entries
+    const entries: { id: string; title: string; source: string; content: string; status: string }[] = []
+    const regex = /### (D-\d+):\s+(.+)\n- \*\*Source\*\*:\s+(.+)\n- \*\*Content\*\*:\s+"(.+)"\n- \*\*Found\*\*:\s+(.+)\n- \*\*Status\*\*:\s+(.+)/g
+    
+    let match
+    while ((match = regex.exec(content)) !== null) {
+      entries.push({
+        id: match[1],
+        title: match[2].trim(),
+        source: match[3].trim(),
+        content: match[4].slice(0, 200),
+        status: match[6].trim()
+      })
+    }
+    
+    return c.json({ 
+      count: entries.length,
+      entries: entries
+    })
+  }
+  
+  // Return specific dissonance entry
+  const entryRegex = new RegExp(`### ${id}:\\s+(.+)\\n- \\*\\*Source\\*\\*:\\s+(.+)\\n- \\*\\*Content\\*\\*:\\s+"(.+)"\\n- \\*\\*Found\\*\\*:\\s+(.+)\\n- \\*\\*Status\\*\\*:\\s+(.+?)(?=\\n###|\\n##|$)`, 's')
+  const match = content.match(entryRegex)
+  
+  if (!match) {
+    return c.json({ error: `Dissonance ${id} not found` }, 404)
+  }
+  
+  return c.json({
+    id,
+    title: match[1].trim(),
+    source: match[2].trim(),
+    content: match[3],
+    found: match[4].trim(),
+    status: match[5].trim()
+  })
+})
+
 // Get real activity from mind files
 app.get('/api/v1/mind/activity', (c) => {
-  const MIND_DIR = join(process.cwd(), '..', '..', 'mind')
   const activity: {
     id: string
     type: 'change' | 'session' | 'decision' | 'learning' | 'workflow'

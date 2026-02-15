@@ -1,6 +1,11 @@
 ---
 date: 2026-02-11
-tags: session, log, mindsync, hard-mindsync, testing
+tags: 
+  - session
+  - log
+  - mindsync
+  - hard-mindsync
+  - testing
 ---
 
 # 📝 Session: Testing Infrastructure Setup — Vitest + Playwright
@@ -22,17 +27,21 @@ Setting up comprehensive testing infrastructure with Vitest (unit tests) and Pla
 
 #### vitest.config.ts
 ```typescript
-import { defineConfig, mergeConfig } from 'vitest/config'
+import { defineConfig
+  - mergeConfig } from 'vitest/config'
 import viteConfig from './vite.config'
 
-export default mergeConfig(viteConfig, defineConfig({
+export default mergeConfig(viteConfig
+  - defineConfig({
   test: {
     globals: true,
     environment: 'node',
     include: ['src/**/*.test.{ts,js}'],
     coverage: {
       provider: 'v8',
-      reporter: ['text', 'json', 'html'],
+      reporter: ['text'
+  - 'json'
+  - 'html'],
     },
   },
 }))
@@ -45,10 +54,14 @@ export default mergeConfig(viteConfig, defineConfig({
 - getMindFile() tests
 - queryMindTasks() tests
 - Tests with mocked file system
-- Tests for edge cases (empty files, missing files, tags)
+- Tests for edge cases (empty files
+  - missing files
+  - tags)
 
 **mind-map.test.ts** — Tests for mind-map.ts
-- extractLinks() tests (wiki links, markdown links, deduplication)
+- extractLinks() tests (wiki links
+  - markdown links
+  - deduplication)
 - buildCompleteMindMap() tests
 - searchMindDynamic() tests
 - Back-link tracking tests
@@ -57,7 +70,8 @@ export default mergeConfig(viteConfig, defineConfig({
 
 #### playwright.config.ts
 ```typescript
-import { defineConfig, devices } from '@playwright/test'
+import { defineConfig
+  - devices } from '@playwright/test'
 
 export default defineConfig({
   testDir: './tests/e2e',
@@ -66,8 +80,10 @@ export default defineConfig({
     trace: 'on-first-retry',
   },
   projects: [
-    { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
-    { name: 'api', use: { ...devices['Desktop Chrome'] } },
+    { name: 'chromium'
+  - use: { ...devices['Desktop Chrome'] } },
+    { name: 'api'
+  - use: { ...devices['Desktop Chrome'] } },
   ],
   webServer: {
     command: 'pnpm dev',
@@ -81,8 +97,13 @@ export default defineConfig({
 
 **api.spec.ts** — API endpoint tests
 - Health check endpoint
-- Mind API endpoints (structure, state, files, search)
-- Bizing Chat (messages, context, semantic search)
+- Mind API endpoints (structure
+  - state
+  - files
+  - search)
+- Bizing Chat (messages
+  - context
+  - semantic search)
 - Stats API
 - Schema Graph API
 
@@ -104,16 +125,21 @@ export default defineConfig({
 
 ## Decisions Made
 
-1. **Mock file system for unit tests** — Deterministic, fast tests
+1. **Mock file system for unit tests** — Deterministic
+  - fast tests
 2. **E2E tests hit actual server** — Tests real behavior
 3. **Test files next to implementation** — Easy to find and maintain
-4. **Coverage with v8 provider** — Fast, accurate coverage
-5. **Multiple browser support** — Chromium, Firefox, WebKit
+4. **Coverage with v8 provider** — Fast
+  - accurate coverage
+5. **Multiple browser support** — Chromium
+  - Firefox
+  - WebKit
 
 ## Learnings
 
 - Vitest integrates well with Vite
-- Mocking fs module enables fast, deterministic tests
+- Mocking fs module enables fast
+  - deterministic tests
 - Playwright's webServer option auto-starts server
 - E2E tests should test actual HTTP responses
 
@@ -143,7 +169,10 @@ export default defineConfig({
 
 ## 💡 Key Insight
 
-**Testing infrastructure is the foundation of code quality. With Vitest for unit tests and Playwright for E2E tests, we can catch bugs early, prevent regressions, and refactor with confidence.**
+**Testing infrastructure is the foundation of code quality. With Vitest for unit tests and Playwright for E2E tests
+  - we can catch bugs early
+  - prevent regressions
+  - and refactor with confidence.**
 
 ---
 

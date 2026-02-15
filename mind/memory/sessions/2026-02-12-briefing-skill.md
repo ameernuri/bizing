@@ -1,6 +1,12 @@
 ---
 date: 2026-02-12
-tags: session, log, skill, briefing, tts, telegram
+tags: 
+  - session
+  - log
+  - skill
+  - briefing
+  - tts
+  - telegram
 ---
 
 # 📝 Session: Briefing Skill Created
@@ -10,7 +16,7 @@ tags: session, log, skill, briefing, tts, telegram
 ## What Was Created
 
 ### 1. Briefing Skill
-**File:** `mind/skills/briefing/SKILL.md`
+**File:** `mind/skills/Briefing//.md`
 
 Complete skill documentation including:
 - Trigger phrases: "Send briefing" or "Daily briefing"
@@ -23,9 +29,15 @@ Complete skill documentation including:
 **File:** `mind/skills/briefing/template.txt`
 
 Reusable template with placeholders for:
-- Date, focus, activity
-- Projects, learnings, blockers
-- Priorities, commands, metrics
+- Date
+  - focus
+  - activity
+- Projects
+  - learnings
+  - blockers
+- Priorities
+  - commands
+  - metrics
 
 ### 3. TTS Optimization Rules
 
@@ -57,7 +69,9 @@ Reusable template with placeholders for:
 ## Example Output Format
 
 ```
-BIZING DAILY BRIEFING — Thursday, February 12, 2026
+BIZING DAILY BRIEFING — Thursday
+  - February 12
+  - 2026
 
 TODAYS FOCUS
 Primary: Mind framework enforcement
@@ -88,7 +102,10 @@ END OF BRIEFING
 
 1. **Trigger:** Say "Send briefing" or "Daily briefing"
 2. **Process:**
-   - Read INDEX, standup, feedback, sessions
+   - Read INDEX
+  - standup
+  - feedback
+  - sessions
    - Check git status
    - Generate TTS-optimized text
    - Send to Telegram group as file
@@ -96,7 +113,7 @@ END OF BRIEFING
 
 ## Files Changed
 
-- `mind/skills/briefing/SKILL.md` — New skill
+- `mind/skills/Briefing//.md` — New skill
 - `mind/skills/briefing/template.txt` — Template
 - `mind/skills/workflow/index.md` — Added to index
 - `mind/MAP.md` — Updated navigation

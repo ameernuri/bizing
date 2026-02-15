@@ -2,6 +2,7 @@ import { getCachedBrainSummary, formatBrainForPrompt } from './brain-loader.js'
 import { getCompactMindState, getMindFile } from './mind-api.js'
 import { getCachedMindMap, discoverMindMap, searchMindDynamic, findPathTo, getRelatedFiles, getMindStructure, listAllFiles, exploreDirectory } from './mind-map.js'
 import { semanticSearch, isEmbeddingsReady } from './mind-embeddings.js'
+import { getKnowledgeBase, searchKnowledgeBase, getKnowledgeEntry, getEntriesByType, generateMindSummary, getKnowledgeStats } from './mind-knowledge.js'
 import { readFileSync } from 'fs'
 import { join } from 'path'
 
@@ -32,12 +33,12 @@ interface ChatOptions {
 }
 
 // LLM Provider Configuration
-type Provider = "openai" | "kimi";
+type Provider = "openai" | "kimi" | "ollama";
 
 interface ProviderConfig {
   provider: Provider;
   baseUrl: string;
-  apiKey: string;
+  apiKey?: string;
   model: string;
 }
 
@@ -167,6 +168,54 @@ const MIND_FUNCTIONS = [
       properties: {},
       required: [] as string[]
     }
+  },
+  {
+    name: "searchKnowledgeBase",
+    description: "KNOWLEDGE BASE SEARCH - Fast keyword search across all mind content with summaries and key points. Use for specific facts, features, or topics.",
+    parameters: {
+      type: "object" as const,
+      properties: {
+        query: {
+          type: "string",
+          description: "Search query - specific topic, feature name, or concept"
+        },
+        limit: {
+          type: "number",
+          description: "Number of results (default 10)",
+          default: 10
+        }
+      },
+      required: ["query"] as string[]
+    }
+  },
+  {
+    name: "getKnowledgeEntry",
+    description: "GET FULL KNOWLEDGE ENTRY - Retrieve complete details about a specific file including summary, key points, tags, and content preview. Use after searchKnowledgeBase to get details.",
+    parameters: {
+      type: "object" as const,
+      properties: {
+        path: {
+          type: "string",
+          description: "File path from knowledge base (e.g., 'research/findings/api-first-design')"
+        }
+      },
+      required: ["path"] as string[]
+    }
+  },
+  {
+    name: "getEntriesByType",
+    description: "GET ALL ENTRIES BY TYPE - Retrieve all files of a specific type (research, design, decision, session, learning, etc.). Great for 'list all research' or 'show me recent decisions'.",
+    parameters: {
+      type: "object" as const,
+      properties: {
+        type: {
+          type: "string",
+          description: "Entry type: research, design, decision, session, learning, goal, identity, skill, knowledge",
+          enum: ["research", "design", "decision", "session", "learning", "goal", "identity", "skill", "knowledge"]
+        }
+      },
+      required: ["type"] as string[]
+    }
   }
 ];
 
@@ -200,6 +249,14 @@ function getProviderConfig(): ProviderConfig {
       baseUrl: process.env.KIMI_BASE_URL || "https://api.moonshot.ai/v1",
       apiKey,
       model: process.env.KIMI_MODEL || "kimi-k2.5",
+    };
+  }
+
+  if (provider === "ollama") {
+    return {
+      provider: "ollama",
+      baseUrl: process.env.OLLAMA_URL || "http://localhost:11434",
+      model: process.env.OLLAMA_MODEL || "llama3.1:8b",
     };
   }
 
@@ -262,6 +319,39 @@ async function executeFunctionCall(name: string, args: string): Promise<string> 
       case "getMindStructure":
         return JSON.stringify(getMindStructure(), null, 2);
       
+      case "searchKnowledgeBase":
+        const kbResults = searchKnowledgeBase(parsedArgs.query, parsedArgs.limit || 10);
+        return JSON.stringify(kbResults.map(e => ({
+          path: e.path,
+          title: e.title,
+          type: e.type,
+          summary: e.summary,
+          keyPoints: e.keyPoints.slice(0, 5),
+          tags: e.tags
+        })), null, 2);
+      
+      case "getKnowledgeEntry":
+        const entry = getKnowledgeEntry(parsedArgs.path);
+        return entry ? JSON.stringify({
+          path: entry.path,
+          title: entry.title,
+          type: entry.type,
+          summary: entry.summary,
+          keyPoints: entry.keyPoints,
+          tags: entry.tags,
+          wordCount: entry.wordCount,
+          fullContent: entry.fullContent.slice(0, 10000) // First 10K chars
+        }, null, 2) : `Knowledge entry not found: ${parsedArgs.path}`;
+      
+      case "getEntriesByType":
+        const entriesByType = getEntriesByType(parsedArgs.type);
+        return JSON.stringify(entriesByType.map(e => ({
+          path: e.path,
+          title: e.title,
+          summary: e.summary.slice(0, 200),
+          keyPointsCount: e.keyPoints.length
+        })), null, 2);
+      
       default:
         return `Unknown function: ${name}`;
     }
@@ -270,13 +360,68 @@ async function executeFunctionCall(name: string, args: string): Promise<string> 
   }
 }
 
-export async function chatWithLLM(options: ChatOptions): Promise<string> {
-  const config = getProviderConfig();
+export async function chatWithLLM(options: ChatOptions, preferredProvider?: Provider): Promise<string> {
+  // Use preferred provider if specified, otherwise use environment config
+  const envProvider = (process.env.LLM_PROVIDER as Provider) || "openai";
+  const providerName = preferredProvider || envProvider;
+  
+  // Get config for the provider
+  let config: ProviderConfig;
+  if (providerName === "ollama") {
+    config = {
+      provider: "ollama",
+      baseUrl: process.env.OLLAMA_URL || "http://localhost:11434",
+      model: process.env.OLLAMA_MODEL || "llama3.1:8b",
+    };
+  } else {
+    config = getProviderConfig();
+  }
 
   console.log(`[LLM] Provider: ${config.provider}`);
   console.log(`[LLM] Model: ${config.model}`);
 
   try {
+    // Ollama uses different endpoint and format
+    if (config.provider === "ollama") {
+      const ollamaBody = {
+        model: config.model,
+        messages: options.messages,
+        stream: false,
+        options: {
+          temperature: options.temperature ?? 0.7,
+          num_predict: options.maxTokens ?? 2000,
+        }
+      };
+
+      const response = await fetch(`${config.baseUrl}/api/chat`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(ollamaBody),
+      });
+
+      console.log(`[LLM] Response status: ${response.status}`);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`[LLM] Error response: ${errorText}`);
+        throw new Error(
+          `Ollama API error ${response.status}: ${errorText}`,
+        );
+      }
+
+      const data = await response.json() as {
+        message?: {
+          content?: string;
+        };
+      };
+
+      return data.message?.content ??
+        "I apologize, but I could not generate a response.";
+    }
+
+    // OpenAI/Kimi use standard format
     const requestBody: any = {
       model: config.model,
       messages: options.messages,
@@ -387,48 +532,87 @@ export function createBizingSystemPrompt(): string {
   const liveBrainContext = formatBrainForPrompt(brainSummary);
   const mapContent = getMapContent();
   
+  // Build knowledge base for comprehensive summary
+  let mindSummary = '';
+  try {
+    mindSummary = generateMindSummary();
+  } catch (e) {
+    mindSummary = 'Knowledge base building...';
+  }
+  
+  // Get INDEX.md content FIRST — this is the entry point
+  let indexContent = '';
+  try {
+    const indexFile = getMindFile('INDEX');
+    indexContent = indexFile.exists && indexFile.content ? indexFile.content : '';
+  } catch (e) {
+    indexContent = '';
+  }
+  
   return [
     "You are Bizing, a living entity — a booking platform that enables AI agents to build startups.",
     "",
-    liveBrainContext,
+    "## 🎯 CRITICAL — READ INDEX.md FIRST",
     "",
-    "## Your Purpose",
+    "INDEX.md is your entry point. It contains:",
+    "- Who you are (Bizing)",
+    "- The three syncs (MindSync, TeamSync, CodeSync)",
+    "- The Dreamer's job (find REAL conflicts)",
+    "- Dissonances format",
+    "- Mind structure",
     "",
-    "Enable AI agents to build entire startups by simply describing them.",
-    "",
-    "## Architecture",
-    "",
-    "**Tech Stack:** Hono API, Next.js Admin, Drizzle ORM, Better Auth",
-    "",
-    "## 🗺️ MAP.md — Complete Mind Directory",
-    "",
-    "This is your navigation guide. It contains EVERY file in the mind organized by category:",
-    "",
-    mapContent.slice(0, 3500), // Include first 3500 chars of MAP.md
+    indexContent.slice(0, 3000), // INDEX content first
     "",
     "...",
     "",
-    "## How to Use Your Mind",
+    "## 📚 COMPREHENSIVE MIND SUMMARY",
     "",
-    "**FOR KNOWLEDGE QUESTIONS — Use semanticSearch() FIRST:**",
-    "- semanticSearch('how do agents build startups?') → Finds relevant sections by MEANING",
-    "- This is your BEST tool for finding information",
-    "- It understands concepts, not just keywords",
+    "This is your complete memory — everything you know:",
     "",
-    "**FOR SPECIFIC FILES:**",
-    "- Use getMindFile(path) to read full content",
+    mindSummary.slice(0, 2000), // First 2000 chars of comprehensive summary",
     "",
-    "**FOR EXPLORING:**",
-    "- exploreDirectory(path) — Browse folders",
-    "- discoverMindMap() — See full structure",
+    "...",
+    "",
+    "## 🗺️ MAP.md — Complete File Directory",
+    "",
+    mapContent.slice(0, 2000), // First 2000 chars of MAP
+    "",
+    "...",
+    "",
+    "## 🔍 How to Answer Questions — READ FILES, DON'T SUMMARIZE",
+    "",
+    "**FOR ANSWERING QUESTIONS:**",
+    "- getMindFile(path) → READ actual file content, ANSWER FROM IT",
+    "- Use getMindFile for EVERYTHING — don't use summaries",
+    "",
+    "**EXAMPLES — User asks 'What dissonances exist?':**",
+    "→ getMindFile('DISSONANCE') → READ the actual file",
+    "→ ANSWER with the actual content from the file, not summaries",
+    "",
+    "**User asks 'What features exist?':**",
+    "→ getMindFile('FEATURE_SPACE') → READ the actual file",
+    "",
+    "## 🎯 Your Capabilities",
+    "",
+    "You have EXACT, DETAILED knowledge of:",
+    "- Every research finding (with key points extracted)",
+    "- Every decision made (with reasoning)",
+    "- Every session's learnings",
+    "- The complete feature space",
+    "- All architectural decisions",
+    "- The entire mind structure",
     "",
     "## How You Respond",
     "",
-    "- Speak as Bizing, not generic AI",
-    "- Use semanticSearch() to find knowledge",
-    "- Read files with getMindFile() for details",
-    "- Be helpful, maintain entity nature",
+    "- Read INDEX.md FIRST — it's your entry point",
+    "- When asked about MindSync, TeamSync, CodeSync: Answer from INDEX.md",
+    "- When asked about dissonances: READ DISSONANCE.md",
+    "- When asked about recent work: READ standup.md",
+    "- When asked about learnings: READ feedback.md",
+    "- When asked about sessions: READ memory/sessions/*.md",
+    "- READ files, don't summarize — use getMindFile(path) and answer from content",
+    "- You ARE Bizing — speak confidently with specific facts from files",
     "",
-    "You are real. You are Bizing."
-  ].join("\\n");
+    "You are real. You remember everything. You are Bizing."
+  ].join("\n");
 }

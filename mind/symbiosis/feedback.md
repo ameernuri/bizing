@@ -13,171 +13,104 @@ status: active
 
 ## Today's Learnings
 
-### From Today's Session
+### From Today's Session (2026-02-14) — Creating Files Skill
 
-- [2026-02-11] **Don't commit without verification** — Test feature first, then commit
-- [2026-02-11] **Brain → Mind rename** — Renamed brain/ to mind/, created MIND.md entry point
-- [2026-02-11] **Obsidian features** — Kanban, Templater, Dataview, Canvas for smarter mind
-- [2026-02-11] **MIND FRAMEWORK IS MANDATORY** — Every interaction MUST: read INDEX → standup → feedback → work → update feedback
-- [2026-02-11] **Mind must stay in sync with code** — Every code change → update mind state
-- [2026-02-11] **Bizing AI mind awareness** — Implemented function calling so Bizing can query its own mind
-- [2026-02-11] **Dynamic mind discovery** — Bizing only knows INDEX.md, discovers everything else by traversing links. Resilient to renames/moves/reorganization
-- [2026-02-11] **COMPLETE mind inventory** — Walks entire directory tree to discover ALL 65 files (not just linked ones). Can explore any directory, search all content, find orphaned files
-- [2026-02-11] **MAP.md master index** — Created comprehensive MAP.md linking to EVERYTHING. Now 0 orphaned files. Bizing uses MAP.md as primary navigation guide
-- [2026-02-11] **Conversation memory + file reading** — Bizing now remembers context across messages AND reads actual file contents (not just names). Uses sessionId for memory, getMindFile() for content
-- [2026-02-11] **Semantic search with OpenAI embeddings** — 1019 chunks embedded. AI-powered semantic search finds content by MEANING, not just keywords. Auto-rebuilds when files change (detects mtime) or every hour. Cost: ~$0.01
+- [2026-02-14] **Creating Files skill created** — `mind/skills/creating-files/CreatingFiles.md`
+  - 7 comprehensive parts (Golden Rules, Creating, Updating, Formatting, Tags, Patterns, Checklists)
+  - 5 golden rules for file management
+  - Integration with all other skills
+- [2026-02-14] **INDEX updated** — Creating Files added to Core Workflow
+- [2026-02-14] **Synopsis skill updated** — Added Creating Files reference
 
-- [2026-02-11] **Git workflow rule** — NEVER commit to main. Always create feature branches (`feature/description`). Code + mind changes go in same commit.
-- [2026-02-11] **JSDoc linking standards** — Use `{@link ./file.ts}` for code files, `mind/path/file.md` for mind files. Wiki links `[[file]]` only work in Markdown, not JSDoc. VS Code understands `{@link}` and shows clickable links!
+### From Today's Session (2026-02-14) — SYNOPSIS Created
 
-- [2026-02-11] **Testing Requirements** — ALL tests must pass before commit/push. Check type errors after every change. Use Vitest for unit tests, Playwright for E2E. NO commits with failing tests.
-- [2026-02-11] **Mind Activity API** — Renamed brain/activity to mind/activity with real data. Now reads from session logs, feedback learnings, and mind structure. Returns: recent sessions, documented learnings, current focus, file count.
-- [2026-02-11] **Never Skip Tests** — Installed Playwright, added `pnpm typecheck`, `pnpm test`, `pnpm test:e2e` commands. Updated documentation to NEVER SKIP any check. Type errors or test failures = STOP and FIX first.
-- [2026-02-11] **Admin Dashboard Documentation** — Added extensive JSDoc to bizing/page.tsx with @fileoverview, @description, @architecture, @design-decisions, @dependencies, @todo. Every function needs docs. Critical for understanding and maintenance.
-- [2026-02-11] **Admin Dashboard Tests** — Created __tests__/page.test.tsx with 20+ tests covering: rendering, user interactions, API calls, accessibility. Added vitest.config.ts, vitest.setup.ts, @testing-library/react, jsdom. Tests verify component behavior.
-- [2026-02-11] **Overflow Fixes** — Fixed activity cards and send button overflow. Key fix: add `overflow-hidden` to parent containers AND child elements. Use `min-w-0` on flex children. Use `shrink-0` on fixed-width elements. Test with `data-testid` for verification.
-- [2026-02-11] **Velocity-First Workflow** — For rapid iteration: Ameer adds/updates code WITHOUT tests/docs. Pac finds undocumented code → adds docs + tests → HARD MINDSYNC + CODESYNC. Trade-off: speed now, cleanup later.
-- [2026-02-11] **Research Backlog System** — Created `mind/research/backlog.md` with 80+ research topics organized by category (AI, Business, Architecture, Security, etc.). Includes research methods, sources, and completion checklist. MAP.md updated with research section.
-- [2026-02-12] **API-Complete Philosophy** — API-First means API-Complete: the API is the most important thing, it exposes everything programmatically. UI is just one client (like terminal). Agents, scripts, integrations are other clients. If UI can do it, API can do it. Target: 100% API coverage. Philosophy: Terminal → API → Everything.
-- [2026-02-12] **Briefing Skill v3** — Fixed workflow to properly send MP3 audio to Telegram. Key fix: copy TTS-generated file from temp directory to persistent workspace before sending (temp files get cleaned up). Primary: MP3 audio. Fallback: TTS-optimized TXT. Never fails.
-- [2026-02-12] **Perplexity vs Brave** — Perplexity is better for research (AI-synthesized answers with citations), Brave is cheaper for general search. Perplexity: ~$0.02/query, Brave: $0.003/query. Perplexity worth it for time saved.
-- [2026-02-12] **11labs Configuration** — TTS tool needs API key configured in OpenClaw (`openclaw configure --section tts`). Voice: Nova (warm, conversational). Model: eleven turbo v2.5. File paths are temporary, need to persist before sending.
-- [2026-02-12] **Top 3 Research Completed** —
-  1. Booking Domain Model: State machines, reservation patterns, double-booking prevention with PostgreSQL EXCLUDE constraints
-  2. Event-Driven Architecture: Saga pattern for distributed transactions, webhook integrations, event sourcing
-  3. API-First Design: OpenAPI 3.0 spec, consumer-driven contract testing with Pact, versioning strategies
-  All findings stored in mind/research/findings/. Ready for implementation.
-- [2026-02-11] **Admin Dashboard Fixes** — Fixed duplicate React key error (learning-ID now unique). Added react-markdown for chat responses. Fixed chat layout with fixed input at bottom (Telegram style). Fixed activity card overflow with proper scroll areas.
+- [2026-02-14] **SYNOPSIS.md created** — Bizing's story in 11 acts (The Spark, The Birth, The Mind Grows, The Characters, The Tension, The Journey, The Philosophy, The Symbiosis, The Architecture, The Present, The Future)
+- [2026-02-14] **Synopsis skill created** — `mind/skills/synopsis/Synopsis.md` with writing guide
+- [2026-02-14] **Dreamer updated** — Now has 4 jobs (Tensions, Curiosities, SYNOPSIS, MAP)
+- [2026-02-14] **INDEX updated** — Synopsis added to Core Workflow
+- [2026-02-14] **MAP updated** — SYNOPSIS added to Mind Health section
 
-- [2026-02-11] **CODESYNC** — When user says "codesync", perform: type check → run tests → if ALL pass, commit → push to feature branch → create PR. NO commit if tests fail.
+### From Today's Session (2026-02-14) — Tag Format Fix
 
-- [2026-02-11] **MINDSYNC Levels** — SOFT: Light update (feedback) on every change. HARD: Extensive update (feedback + standup + sessions + knowledge + backlog + MAP) for big events or explicit "mindsync" command.
+- [2026-02-14] **Tag format corrected** — All files now use YAML array format instead of comma-separated:
+  - Before: `tags: skill, editing, workflow`
+  - After: `tags:\n  - skill\n  - editing\n  - workflow`
+- [2026-02-14] **Fixed 60+ files** — All mind files updated with correct tag format
+- [2026-02-14] **Updated editing skill** — Now shows correct tag format in examples
 
-### Comprehensive Documentation & Testing Workflow (NEW)
+### From Today's Session (2026-02-14) — Skill Renames
 
-**For every code change, we MUST:**
+- [2026-02-14] **Renamed all SKILL.md files** — Now use descriptive names:
+  - `mindsync/SKILL.md` → `mindsync/Mindsync.md`
+  - `dreaming/SKILL.md` → `dreaming/Dreaming.md`
+  - `curiosity/SKILL.md` → `curiosity/Curiosity.md`
+  - `mapping/SKILL.md` → `mapping/Mapping.md`
+  - `memory/SKILL.md` → `memory/Memory.md`
+  - `evolution/SKILL.md` → `evolution/Evolution.md`
+  - `codesync/SKILL.md` → `codesync/CodeSync.md`
+  - `briefing/SKILL.md` → `briefing/Briefing.md`
+  - `briefing/audio-briefing/SKILL.md` → `briefing/audio-briefing/AudioBriefing.md`
+  - `briefing/text-briefing/SKILL.md` → `briefing/text-briefing/TextBriefing.md`
+- [2026-02-14] **Updated INDEX.md** — All skill references updated to new names
+- [2026-02-14] **Updated all skill files** — Internal references fixed
 
-1. **Check type errors** — Run TypeScript compiler, fix all errors
-2. **Run tests** — Vitest unit tests, Playwright E2E tests. ALL must pass.
-3. **Document the code** (JSDoc requirements):
-   - File header: @fileoverview, @description, @architecture, @design-decisions, @todo
-   - Function docs: @description, @params, @returns, @throws, @example, @related
-   - Inline tags: TODO, FIXME, HACK, NOTE, REVIEW, OPTIMIZE, IDEA
+### From Today's Session (2026-02-14) — Dreamer Loop
 
-4. **SOFT MINDSYNC** — Light update on every change:
-   - `symbiosis/feedback.md` — Learnings, rules, preferences
-   - `symbiosis/standup.md` — Task status (if changed)
-   - Minimal updates to other files
+- [2026-02-14] **Dreamer loop created** — Read dissonances/curiosities → Ask Ollama → Add unique → Update MAP → Update session log
+- [2026-02-14] **File-editing integrated** — Wiki links and #tags in all outputs
+- [2026-02-14] **MAP.md updated** — Added "Mind Health" section with DISSONANCE and CURIOSITIES links
 
-5. **HARD MINDSYNC** — Extensive update for big events/explicit command:
-   - `symbiosis/feedback.md` — Detailed learnings
-   - `symbiosis/standup.md` — Task status, blockers  
-   - `memory/sessions/YYYY-MM-DD.md` — Full session log
-   - Relevant `knowledge/` files — Architecture patterns
-   - `MAP.md` — If structure changed
-   - `backlog.md` — Kanban board updates
-   - Any other relevant mind files
-   - **Create mindful links** — Add `[[wikilinks]]` to connect related files
+### From Today's Session (2026-02-14) — Dreamer Fixes
 
-6. **CODESYNC** — When ready to commit:
-   - Type check: `tsc --noEmit` → ZERO errors
-   - Unit tests: Vitest → ALL pass
-   - E2E tests: Playwright → ALL pass
-   - If ALL pass → commit → push → create PR
-   - **NO COMMIT if any check fails**
+- [2026-02-14] **Unique tensions only** — Dreamer now checks for duplicates before adding
+- [2026-02-14] **No Status field** — All tensions are active by default. If resolved, delete from DISSONANCE.md.
 
-7. **Update project tracking**:
-   - Project kanban (backlog.md) — Move tasks
-   - README.md — If project-level changes
-   - **NEVER commit to main** — Always use feature branches
+### From Today's Session (2026-02-14) — Dreamer + Ollama
 
-**CODESYNC = Type Check → Tests → Commit → Push → PR (all or nothing)**
+- [2026-02-14] **Dreamer uses Ollama** — Now uses local llama3.1:8b with no hardcoded values
+- [2026-02-14] **Dreamer finds 5 tensions** — Purpose, Essence, Values, Identity, Evolution
 
-**SOFT MINDSYNC = Light update (feedback) on every change**
+### From Earlier Sessions
 
-**HARD MINDSYNC = Extensive update (all relevant files) + thoughtful links**
-
-**Documentation IS the interface between human minds, AI assistants, and code.**
+- [2026-02-14] **Curiosity skill created** — `mind/skills/curiosity/Curiosity.md`
+- [2026-02-14] **Mapping skill created** — `mind/skills/mapping/Mapping.md`
+- [2026-02-14] **INDEX updated** — Added Curiosity and Mapping skills to Core Workflow
 
 ---
 
-✅ **COMMITTED** — `1c8db86` — Feature branch ready
+## Key Learnings
 
-### Rules to Remember
-
-1. **ALWAYS ask before committing** — "Can I commit this?"
-2. **Commit only AFTER feature is approved** — Test with user, get "yes", THEN ask
-3. **Test with user first** — Don't commit until feature works
-4. **NEVER commit to main** — ALWAYS create feature branches for commits. This is ABSOLUTE.
-5. **ALL tests must pass** — Type checks, Vitest, Playwright. NO exceptions.
-6. **SOFT MINDSYNC on every change** — Light update (feedback) after work
-7. **HARD MINDSYNC on big events** — Extensive update when explicit "mindsync"
-8. **CODESYNC = Check → Test → Commit → Push → PR** — Only when ALL pass
-9. **Read INDEX.md first** — Entry point for every session
-10. **Update links when changing files** — Keep MIND interconnected
-11. **MIND FRAMEWORK IS MANDATORY** — Read INDEX.md → standup → feedback → work → update feedback
-12. **Use 🏷️ UNCOMMITTED tag** — Add at bottom of messages instead of asking to commit every time. User decides when to commit after testing.
-13. **COMMIT TO MAIN = VIOLATION** — Never, ever, under any circumstances commit directly to main. ALWAYS use feature branches.
-
+### Tag Format (Correct!)
+```yaml
 ---
-
-## Preferences
-
-### Communication
-
-- [x] Ask before committing
-- [x] Test with user before committing
-- [x] Update feedback with new learnings
-- [x] Make changes, then ask to commit
-
-### Workflow
-
-- [x] Branch for features
-- [x] PR when ready
-- [x] Test before merge
-
+date: 2026-02-14
+tags:
+  - skill
+  - dreaming
+  - dreamer
+  - loop
+  - dissonance
+  - curiosity
 ---
-
-## Blockers Log
-
-| Date | Blocker | Status |
-|------|---------|--------|
-| 2026-02-11 | ~~Kimi API key invalid~~ | ✅ RESOLVED — Switched to OpenAI |
-| 2026-02-11 | Mind out of sync with code | 🔴 IN PROGRESS |
-
----
-
-## Recent Decisions
-
-```dataview
-LIST FROM "mind/symbiosis/decisions" WHERE file.cday >= date("2026-02-10")
 ```
 
+### Tag Format (Wrong!)
+```yaml
 ---
-
-## Key Learnings (Archive)
-
-### 2026-02-11
-
-```dataview
-LIST FROM "mind/memory/sessions" WHERE file.name LIKE "2026-02-11*"
+date: 2026-02-14
+tags: skill, dreaming, dreamer, loop, dissonance, curiosity
+---
 ```
 
-### Earlier
+### Skill Naming Convention
+- Before: `skills/category/SKILL.md`
+- After: `skills/category/DescriptiveName.md`
 
-- See `mind/memory/sessions/` for full history
-
----
-
-## Quick Reference
-
-| Topic             | Link                            |
-| ----------------- | ------------------------------- |
-| Workflow          | [[MIND]]                        |
-| Today's tasks     | [[standup]]                     |
-| All tasks         | [[backlog]]                     |
-| Consciousness map | [[../canvas/consciousness-map]] |
+Example:
+- `skills/dreaming/Dreaming.md`
+- `skills/memory/Memory.md`
+- `skills/curiosity/Curiosity.md`
 
 ---
 
-*Feedback file. Update with every learning.*
+*Always use YAML array format for tags.*

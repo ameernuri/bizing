@@ -1,6 +1,8 @@
 ---
 date: <% tp.date.now("YYYY-MM-DD") %>
-tags: skill, workflow
+tags: 
+  - skill
+  - workflow
 ---
 
 # 🎓 <% tp.file.title %>

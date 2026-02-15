@@ -1,11 +1,16 @@
 ---
 date: 2026-02-11
-tags: skill, workflow, 11labs, tts, briefing
+tags: 
+  - skill
+  - workflow
+  - 11labs
+  - tts
+  - briefing
 ---
 
 # 🎓 Creating Brief.txt for 11labs Reader
 
-*How to create audio briefs for Ameer's phone.*
+> How to create audio briefs for Ameer's phone
 
 ---
 
@@ -103,7 +108,10 @@ a fresh key from the Kimi portal.
 We created MIND entry point with Obsidian features. Kanban boards are
 working now. Templates are ready for session logging and decisions.
 
-Next: Generate fresh Kimi API key, update .env, restart server, test chat.
+Next: Generate fresh Kimi API key
+  - update .env
+  - restart server
+  - test chat.
 ```
 
 ---
@@ -130,5 +138,5 @@ Next: Generate fresh Kimi API key, update .env, restart server, test chat.
 
 ## Related
 
-- [[session-logging|Session Logging]] — Full session documentation
-- [[../index|Skills Index]]
+- [[mind/skills/memory|Memory]] — Session logging
+- [[mind/skills/workflow/index|Workflow Skills]]

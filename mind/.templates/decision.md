@@ -1,6 +1,8 @@
 ---
 date: <% tp.date.now("YYYY-MM-DD") %>
-tags: decision, important
+tags: 
+  - decision
+  - important
 status: proposed
 ---
 
@@ -41,7 +43,8 @@ status: proposed
 ## Related
 
 ```dataview
-LIST FROM [[mind]] WHERE contains(file.outlinks, this.file.link) AND file.name != this.file.name
+LIST FROM [[mind]] WHERE contains(file.outlinks
+  - this.file.link) AND file.name != this.file.name
 ```
 
 ## Implementation

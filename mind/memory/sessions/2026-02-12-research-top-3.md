@@ -1,11 +1,21 @@
 ---
 date: 2026-02-12
-tags: session, log, mindsync, hard-mindsync, research, api, booking, architecture
+tags: 
+  - session
+  - log
+  - mindsync
+  - hard-mindsync
+  - research
+  - api
+  - booking
+  - architecture
 ---
 
 # 📝 Session: HARD MINDSYNC — Top 3 Research Topics Completed
 
-> *Completed comprehensive research on booking domain, event-driven architecture, and API-first design*
+> *Completed comprehensive research on booking domain
+  - event-driven architecture
+  - and API-first design*
 
 ## Summary
 
@@ -37,8 +47,10 @@ tags: session, log, mindsync, hard-mindsync, research, api, booking, architectur
 -- Key constraint prevents overlapping confirmed bookings
 CONSTRAINT no_double_booking EXCLUDE USING gist (
   resource_id WITH =,
-  tstzrange(start_time, end_time) WITH &&
-) WHERE (status IN ('confirmed', 'completed'))
+  tstzrange(start_time
+  - end_time) WITH &&
+) WHERE (status IN ('confirmed'
+  - 'completed'))
 ```
 
 ### Advanced Patterns
@@ -63,7 +75,9 @@ CONSTRAINT no_double_booking EXCLUDE USING gist (
 ### Why Event-Driven?
 - Decoupled services (don't need to know about each other)
 - Complete audit trail of all state changes
-- Easy to add new integrations (Calendar, Zoom, Slack)
+- Easy to add new integrations (Calendar
+  - Zoom
+  - Slack)
 - Resilient with retry logic and dead letter queues
 
 ### Saga Pattern for Distributed Transactions
@@ -84,7 +98,8 @@ class BookingSagaOrchestrator {
       try {
         await step.action();
       } catch (error) {
-        await this.compensate(saga, state); // Rollback
+        await this.compensate(saga
+  - state); // Rollback
         throw error;
       }
     }
@@ -93,7 +108,9 @@ class BookingSagaOrchestrator {
 ```
 
 ### Webhook Integrations
-- **Outgoing:** Notify external systems (Google Calendar, Zoom, Slack)
+- **Outgoing:** Notify external systems (Google Calendar
+  - Zoom
+  - Slack)
 - **Incoming:** Receive from Stripe (payment events)
 - **Security:** HMAC signature verification
 
@@ -101,10 +118,16 @@ class BookingSagaOrchestrator {
 ```sql
 CREATE TABLE events (
   id UUID PRIMARY KEY,
-  type TEXT NOT NULL,           -- 'BookingCreated', 'PaymentReceived'
-  aggregate_id UUID NOT NULL,   -- booking ID
+  type TEXT NOT NULL
+  -           -- 'BookingCreated'
+  - 'PaymentReceived'
+  aggregate_id UUID NOT NULL
+  -   -- booking ID
   payload JSONB NOT NULL,
-  metadata JSONB NOT NULL,      -- correlationId, causationId, timestamp
+  metadata JSONB NOT NULL
+  -      -- correlationId
+  - causationId
+  - timestamp
   sequence_number BIGSERIAL,
   created_at TIMESTAMPTZ
 );
@@ -118,7 +141,8 @@ CREATE TABLE events (
 | RabbitMQ | Enterprise |
 | Kafka | Large scale |
 
-**Recommendation:** Start with PostgreSQL, migrate to Redis/Bull when needed
+**Recommendation:** Start with PostgreSQL
+  - migrate to Redis/Bull when needed
 
 ---
 
@@ -158,10 +182,12 @@ Week 4: Integration + Contract testing
 provider.addInteraction({
   state: 'bookings exist',
   uponReceiving: 'request for bookings',
-  withRequest: { method: 'GET', path: '/api/v1/bookings' },
+  withRequest: { method: 'GET'
+  - path: '/api/v1/bookings' },
   willRespondWith: {
     status: 200,
-    body: { data: eachLike({ id: uuid(), status: 'confirmed' }) }
+    body: { data: eachLike({ id: uuid()
+  - status: 'confirmed' }) }
   }
 });
 ```
@@ -176,7 +202,8 @@ new Verifier({
 ```
 
 ### API Versioning
-**Strategy:** URL versioning (`/api/v1/`, `/api/v2/`)
+**Strategy:** URL versioning (`/api/v1/`
+  - `/api/v2/`)
 
 **Policy:**
 - Support N and N-1 versions
@@ -203,15 +230,22 @@ openapi-generator-cli generate -i openapi.yaml -g typescript-fetch -o apps/admin
 ### Research Findings Created
 | File | Size | Contents |
 |------|------|----------|
-| `mind/research/findings/booking-domain-model.md` | 13.7KB | State machines, schema, double-booking prevention |
-| `mind/research/findings/event-driven-architecture.md` | 18.9KB | Sagas, webhooks, event sourcing |
-| `mind/research/findings/api-first-design.md` | 28.4KB | OpenAPI spec, contract testing, versioning |
+| `mind/research/findings/booking-domain-model.md` | 13.7KB | State machines
+  - schema
+  - double-booking prevention |
+| `mind/research/findings/event-driven-architecture.md` | 18.9KB | Sagas
+  - webhooks
+  - event sourcing |
+| `mind/research/findings/api-first-design.md` | 28.4KB | OpenAPI spec
+  - contract testing
+  - versioning |
 
 ### Mind Files Updated
 | File | Changes |
 |------|---------|
 | `mind/research/backlog.md` | Marked 3 topics as complete ✅ |
-| `mind/symbiosis/standup.md` | Updated with research completion, new focus on implementation |
+| `mind/symbiosis/standup.md` | Updated with research completion
+  - new focus on implementation |
 | `mind/symbiosis/feedback.md` | Added research findings summary |
 | `mind/memory/sessions/2026-02-12-research-top-3.md` | This session log |
 
@@ -225,7 +259,9 @@ openapi-generator-cli generate -i openapi.yaml -g typescript-fetch -o apps/admin
 ## Implementation Roadmap (From Findings)
 
 ### Phase 1: Database Schema (Week 1)
-- [ ] Create bookings, resources, availability tables
+- [ ] Create bookings
+  - resources
+  - availability tables
 - [ ] Add EXCLUDE constraints for double-booking prevention
 - [ ] Implement state machine
 - [ ] Create time slot hold mechanism
@@ -254,12 +290,20 @@ openapi-generator-cli generate -i openapi.yaml -g typescript-fetch -o apps/admin
 
 | Topic | Decision | Rationale |
 |-------|----------|-----------|
-| Double-booking prevention | PostgreSQL EXCLUDE constraint | Database-level guarantee, no race conditions |
-| Saga pattern | Orchestration (central coordinator) | Better visibility, easier debugging |
-| Message queue | PostgreSQL → Redis/Bull | Start simple, scale when needed |
-| API versioning | URL versioning (/v1/, /v2/) | Clear, cache-friendly, easy to route |
-| Contract testing | Pact | Mature, good CI/CD integration |
-| Event store | PostgreSQL JSONB | ACID compliance, easy queries |
+| Double-booking prevention | PostgreSQL EXCLUDE constraint | Database-level guarantee
+  - no race conditions |
+| Saga pattern | Orchestration (central coordinator) | Better visibility
+  - easier debugging |
+| Message queue | PostgreSQL → Redis/Bull | Start simple
+  - scale when needed |
+| API versioning | URL versioning (/v1/
+  - /v2/) | Clear
+  - cache-friendly
+  - easy to route |
+| Contract testing | Pact | Mature
+  - good CI/CD integration |
+| Event store | PostgreSQL JSONB | ACID compliance
+  - easy queries |
 
 ---
 

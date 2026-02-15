@@ -1,276 +1,177 @@
-# 🧠 MIND
+# 🧠 INDEX — The Bizing Mind
 
-*The consciousness of Bizing. Read this first. Every time.*
-
----
-
-## 🚨 MANDATORY: Mind Framework
-
-**→ [[MIND-FRAMEWORK|READ THE FRAMEWORK FIRST]]** ←  
-**→ [[MAP|🗺️ VIEW COMPLETE MAP]]** ← *Every file, organized*
-
-**EVERY interaction MUST follow this workflow. NO EXCEPTIONS.**
-
-If you skip this, you work without memory. Don't skip it.
+> Entry point. START HERE. Daily context, current focus, tasks.
 
 ---
 
-## ⚡ Quick Start
+## Quick Links
 
-1. **Read this file** (INDEX.md) ← You're here
-2. **[[symbiosis/standup|Today's Standup]]** — What's happening
-3. **[[symbiosis/feedback|Feedback]]** — What you need to remember
-4. **Do the work**
-5. **Update** — Log what you learned
+**→ [[mind/INDEX|Back to INDEX]]** — You are here
 
----
+**→ [[README]]** — What Bizing is
 
-## 🔄 Daily Workflow
-
-```
-┌─────────────────────────────────────────────────────┐
-│  1. Read INDEX.md      ← You're doing this now      │
-│  2. Read standup       ← Today's priorities        │
-│  3. Read feedback       ← Recent learnings          │
-│  4. Do the work         ← Execute                  │
-│  5. Update feedback     ← Log what you learned     │
-└─────────────────────────────────────────────────────┘
-```
+**→ [[FRAMEWORK]]** — Rules for every interaction
 
 ---
 
-## 📂 Directory Structure
+## 🎯 Active Context — START HERE
 
-```
-mind/
-├── INDEX.md              ← Entry point (this file)
-│
-├── .templates/          ← Templater templates
-│   ├── session-log.md   ← Session documentation
-│   ├── decision.md      ← Key decisions
-│   └── skill.md         ← New skills
-│
-├── canvas/              ← Visual thinking
-│   └── consciousness-map.canvas
-│
-├── identity/            ← Who Bizing is
-│   ├── essence.md
-│   ├── consciousness.md
-│   ├── values.md
-│   └── evolution.md
-│
-├── symbiosis/            ← Our collaboration
-│   ├── standup.md       ← Daily workflow & priorities
-│   ├── backlog.md       ← Kanban of all tasks
-│   ├── feedback.md      ← What you learned from Ameer
-│   ├── decisions.md     ← Key decisions
-│   └── rituals.md       ← Collaboration patterns
-│
-├── skills/              ← Your capabilities
-│   ├── workflow/        ← Working patterns
-│   ├── coding/          ← Code patterns
-│   └── communication/   ← How you talk
-│
-├── knowledge/           ← What you know
-│   ├── domain/          ← Business knowledge
-│   ├── tech/            ← Technical patterns
-│   ├── api/             ← API documentation
-│   └── projects/        ← Project contexts
-│
-└── memory/              ← Your experiences
-    └── sessions/        ← Session logs
-```
+**Read this first:** [[mind/memory/RAM]]
+
+RAM = Working Memory. What matters RIGHT NOW.
+
+| Quick Links |
+|-------------|
+| [[mind/memory/RAM]] — Active context |
+| [[mind/skills/Skills]] — All skills |
+| [[mind/SYNOPSIS]] — Bizing's story |
+| [[mind/DISSONANCE]] — Current tensions |
+| [[mind/CURIOSITIES]] — Open questions |
 
 ---
 
-## 🎯 Key Files
+## 💡 What Is RAM?
 
-### For Context
+**RAM** = Working Memory — what matters RIGHT NOW.
 
-| File | Purpose | Access |
-|------|---------|--------|
-| [[symbiosis/standup|standup]] | Today's priorities | Every session |
-| [[symbiosis/feedback|feedback]] | What to remember | Every session |
-| [[identity/essence|essence]] | Who you are | Onboarding |
-| [[symbiosis/backlog|backlog]] | All tasks (Kanban) | Weekly review |
+| RAM Contains | RAM Does NOT Contain |
+|--------------|---------------------|
+| Active focus | Everything |
+| Current context | Routine tasks |
+| Urgent items | Old completed work |
+| Recent completions | Logs |
+| Current blockers | Changelogs |
 
-### For Working
+**Size:** Fits on one screen
+**Timestamps:** Always with `[YYYY-MM-DD HH:MM PST]`
 
-| File | Purpose | Access |
-|------|---------|--------|
-| [[skills/workflow|workflow]] | How you work | When unsure |
-| [[skills/coding|coding]] | Code standards | Coding |
-| [[knowledge/tech|tech]] | Technical patterns | Tech decisions |
-
-### For Projects
-
-| File | Purpose | Access |
-|------|---------|--------|
-| [[knowledge/projects/bizing|bizing]] | Bizing context | Project work |
-| [[knowledge/domain|domain]] | Domain knowledge | Business decisions |
+**See:** [[mind/skills/ram/Ram|RAM Skill]] for how to use it
 
 ---
 
-## 🔍 Obsidian Features Used
+## 🎯 How Bizing Thinks
 
-### 📋 Kanban Boards
+### Booking Core
+- **Booking** → One-time appointments
+- **Subscription** → Recurring services
+- **Class** → Group sessions with registration
+- **Rental** → Time-based resource booking
 
-```kanban
-# 🐛 Bug
-- [ ] Example task
-  - [ ] Subtask 1
-  - [ ] Subtask 2
-```
+### Domain Concepts
+- **Entities** → Businesses, users, agents
+- **Services** → What businesses sell
+- **Availability** → When services can be booked
 
-**Files with Kanban:**
-- [[symbiosis/backlog|backlog]] — All tasks organized
-- [[symbiosis/standup|standup]] — Today's tasks
-
-### 📝 Templater Templates
-
-| Template | Use For |
-|----------|---------|
-| `.templates/session-log.md` | Logging work sessions |
-| `.templates/decision.md` | Recording decisions |
-| `.templates/skill.md` | Documenting skills |
-
-**Usage:** `Ctrl+P` → Templater → Select template
-
-### 🔎 Dataview Queries
-
-```dataview
-TASK FROM "mind/symbiosis" WHERE !completed
-```
-
-**Common Queries:**
-
-| Query | Purpose |
-|-------|---------|
-| `TASK FROM "mind" WHERE contains(tags, "today")` | Today's tasks |
-| `TASK FROM "mind" WHERE contains(tags, "blocker")` | Blockers |
-| `TABLE file.cday FROM "mind/memory/sessions" LIMIT 5` | Recent sessions |
-
-### 🎨 Canvas Files
-
-| File | Purpose |
-|------|---------|
-| [[canvas/consciousness-map]] | Visual map of MIND structure |
-
-### 🏷️ Tag System
-
-| Tag | Meaning | Example |
-|-----|---------|---------|
-| `#today` | Do today | `[[task]] #today` |
-| `#blocker` | Blocked | `#blocker` |
-| `#decision` | Decision | `#decision` |
-| `#skill` | Documentation | `#skill` |
-| `#learned` | New learning | `#learned` |
+### Data Model
+- **Services** → What businesses offer
+- **Bookings** → Customer commitments
+- **Customers** → Who books
+- **Staff** → Who delivers services
 
 ---
 
-## ⚡ Current State
+## 🛠️ Skills (How To Do Things)
 
-**Last Updated:** 2026-02-11 18:20 PST  
-**Active Branch:** feature/bizing-consciousness  
-**Priority:** Mind framework enforcement  
-**Status:** OpenAI working ✅, Live brain integration ✅
+Skills are step-by-step guides. Check [[mind/skills/Skills]] directory:
 
----
+### Core Workflow
+- [[mind/skills/dreaming/Dreaming|Dreaming]] — Dreamer autonomous mind scanner #dreamer #tension
+- [[mind/skills/evolution/Evolution|Evolution]] — Major mind alterations (epochs) #evolution #epochs
+- [[mind/skills/curiosity/Curiosity|Curiosity]] — Record questions, gaps, things to explore #curiosity #questions
+- [[mind/skills/mapping/Mapping|Mapping]] — Maintain mind structure and navigation #mapping #structure
+- [[mind/skills/memory/Memory|Memory]] — Log work sessions to long-term memory #session #logging
+- [[mind/skills/synopsis/Synopsis|Synopsis]] — Bizing's story and narrative #story #narrative
+- [[mind/skills/codesync/CodeSync|CodeSync]] — Quality gate **TEST BEFORE COMMIT** #git #commit
+- [[mind/skills/mindsync/Mindsync|Mindsync]] — Update mind after every change  #sync #update
+- [[mind/skills/ram/Ram|Ram]] — Working memory management (RAM) #ram #memory
+- [[mind/skills/creating-files/CreatingFiles|Creating Files]] — Complete guide to creating and updating files #files #creation #documentation
 
-## 🎯 Today's Intention
+### Obsidian Tools
+- [[mind/skills/obsidian/kanban|Kanban]] — Visual task boards with Kanban plugin #kanban #obsidian
+- [[mind/skills/obsidian/dataview|Dataview]] — Query your mind with Dataview #dataview #query
+- [[mind/skills/obsidian/templater|Templater]] — Auto-generate files with Templater #template #automation
+- [[mind/skills/obsidian/editing-files|Editing Files]] — Create and edit mind files #editing #files
+- [[mind/skills/obsidian/enhancement-features|Enhancement Features]] — Graph view, Canvas, Daily Notes, plugins #graph #canvas
 
-**Primary:** Mind framework enforcement (read/update mind every interaction)  
-**Secondary:** Keep mind synchronized with code reality  
-**Working On:** SOUL.md updates, MIND-FRAMEWORK.md, INDEX.md updates
+### Communication
+- [[mind/skills/briefing/text-briefing/TextBriefing|Text Briefing]] — Write research summaries #briefing #writing
+- [[mind/skills/briefing/audio-briefing/AudioBriefing|Audio Briefing]] — Convert to audio, sends both files #tts #audio
+- [[mind/skills/workflow/documentation-standards|Documentation Standards]] — Document code properly #docs #jsdoc
 
----
-
-## 📚 Working Memory
-
-**Current State:**
-- ✅ OpenAI integration working (gpt-4o-mini)
-- ✅ Live brain loader built
-- ✅ Dynamic system prompt with brain context
-- 🔄 Mind framework enforcement in progress
-- 🔄 Mind sync with code (fixing drift)
-
-**Recent Learnings:**
-- Mind must stay in sync with every code change
-- Kimi API issue resolved by switching to OpenAI
-- Every interaction must read/update mind
-
-**Files Being Modified:**
-- `apps/api/src/services/llm.ts` (OpenAI support)
-- `apps/api/src/services/brain-loader.ts` (live brain)
-- `mind/SOUL.md` (framework enforcement)
-- `mind/MIND-FRAMEWORK.md` (new)
-- `mind/index.md` (warning banner)
+**Rule:** If you're doing something, check if a skill exists. Use it. #skills
 
 ---
 
-## 📖 Daily Reading Order
+## 🧠 Dreamer
 
-**Every session:**
+The Dreamer runs continuously with four jobs:
 
-1. `INDEX.md` ← Entry point (you're here)
-2. `symbiosis/standup.md` ← Today's priorities
-3. `symbiosis/feedback.md` ← What you learned
+1. **Find Tensions** — Contradicting ideas in the mind → adds to [[mind/DISSONANCE]] with a question
+2. **Find Curiosities** — Questions and gaps → adds to [[mind/CURIOSITIES]]
+3. **Update SYNOPSIS** — Keeps Bizing's story current #story
+4. **Update MAP** — Keeps [[mind/MAP]] current
 
-**After work:**
-
-4. Update `symbiosis/feedback.md` with new learnings
-5. Create session log in `memory/sessions/` if significant
+**See:** [[mind/skills/dreaming/Dreaming|Dreaming Skill]] for full workflow
 
 ---
 
-## 📝 Rules for Updating MIND
+## 📋 Dissonances
 
-### Core Rules
+When the mind contradicts itself:
+- File A says "use HTTP API"
+- File B says "embed SDK"  
+- → Real conflict in [[mind/DISSONANCE]]
 
-1. **ALWAYS ask before committing** — "Can I commit this?"
-2. **Commit only AFTER feature is approved** — Test with user first
-3. **Read INDEX.md first** — Entry point for every session
-4. **Update links when changing files** — Keep mind interconnected
-5. **Update feedback with every learning** — Log new rules/preferences
-
-### Link Updates
-
-**When you change a file:**
-- Update any links pointing to that file
-- Check [[symbiosis/standup|standup]] for broken links
-- Check INDEX.md links are current
-- Verify [[symbiosis/feedback|feedback]] references are correct
-
-**Keep MIND interconnected. Broken links weaken the mind.**
+**Related:**
+- [[mind/skills/dreaming/Dreaming|Dreaming]] — How dreamer finds tensions
+- [[mind/skills/curiosity/Curiosity|Curiosity]] — Questions and gaps (not tensions)
+- [[mind/skills/mapping/Mapping|Mapping]] — Maintaining structure
 
 ---
 
-## 📊 Mind Stats
+## 🎯 Active Tasks
 
-```dataview
-TABLE length(file.tasks) AS "Tasks" FROM "mind/symbiosis"
-```
+### Today (Feb 13)
 
-**Open Blockers:**
+**Completed:**
+- RAM system implementation
+- Session logging skill
+- CodeSync skill
+- MindSync skill
+- Obsidian enhancements
 
-```dataview
-TASK FROM "mind" WHERE contains(tags, "blocker") AND !completed
-```
+**In Progress:**
+- Moving standup → RAM
+- Creating documentation
 
----
-
-## 💬 What to Do Now
-
-**Immediate:** Get Kimi API working
-1. Generate fresh API key from portal
-2. Update `apps/api/.env`
-3. Restart API server
-4. Test Bizing chat
-5. Document result in feedback.md
+**Next:**
+- Test RAM system
+- Document workflows
 
 ---
 
-*This file is the entry point. Read it first. Update it often.*
+## 📚 Knowledge Base
 
-**Last Updated:** 2026-02-11  
-**Features:** Templater, Kanban, Dataview, Canvas
+### Domain Knowledge
+- [[knowledge/domain/index|Domain Hub]] — All business concepts
+- [[knowledge/domain/business-model|Business Model]] — 6.9% commission
+- [[knowledge/domain/landing-pages|Landing Pages]] — Templates
+
+### Technical
+- [[knowledge/api/index|API Design]] — Endpoints, patterns, auth
+- [[knowledge/tech/index|Tech Hub]] — Stack documentation
+
+---
+
+## 🔗 Navigation
+
+**By Activity:**
+
+- **Daily Standup:** → [[memory/RAM]]
+- **Learning:** → [[symbiosis/feedback]] → [[skills/Skills]]
+- **Research:** → [[research/index]]
+- **Building:** → [[start/START]]
+
+---
+
+**Key:** Everything connects. Every file needs wikilinks and #tags

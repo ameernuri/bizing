@@ -1,6 +1,10 @@
 ---
 date: 2026-02-11
-tags: session, log, mindsync, hard-mindsync
+tags: 
+  - session
+  - log
+  - mindsync
+  - hard-mindsync
 ---
 
 # 📝 Session: CODESYNC & MINDSYNC Levels Definition
@@ -43,7 +47,8 @@ Type Check → Run Tests → IF ALL PASS → Commit → Push → Create PR
 
 #### SOFT MINDSYNC (Every Change)
 Light update after every work session:
-- [[symbiosis/feedback]] — Learnings, rules
+- [[symbiosis/feedback]] — Learnings
+  - rules
 - [[symbiosis/standup]] — Status if changed
 - Brief notes if significant
 
@@ -56,7 +61,8 @@ Extensive update for:
 
 **Includes:**
 - [[symbiosis/feedback]] — Detailed learnings
-- [[symbiosis/standup]] — Task status, blockers
+- [[symbiosis/standup]] — Task status
+  - blockers
 - [[memory/sessions/YYYY-MM-DD]] — Full session log
 - [[knowledge/]] files — Architecture patterns
 - [[MAP]] — If structure changed
@@ -115,7 +121,9 @@ Extensive update for:
 - [x] MINDSYNC levels defined (SOFT/HARD)
 - [x] Pre-commit checklist updated
 - [x] Cross-references added
-- [x] **Mindful links created** — Connected CODESYNC to [[MIND-FRAMEWORK]], [[skills/workflow/documentation-standards]], [[.templates/session-log]]
+- [x] **Mindful links created** — Connected CODESYNC to [[MIND-FRAMEWORK]]
+  - [[skills/workflow/documentation-standards]]
+  - [[.templates/session-log]]
 
 ### Link Strategy Applied
 - CODESYNC linked to [[MIND-FRAMEWORK]] — Workflow context

@@ -1,6 +1,12 @@
 ---
 date: 2026-02-12
-tags: session, log, briefing, 11labs, telegram, tts
+tags: 
+  - session
+  - log
+  - briefing
+  - 11labs
+  - telegram
+  - tts
 ---
 
 # 📝 Session: Briefing Skill Updated — 11labs + Telegram Fallback
@@ -10,10 +16,13 @@ tags: session, log, briefing, 11labs, telegram, tts
 ## Changes Made
 
 ### 1. Updated Briefing Skill
-**File:** `mind/skills/briefing/SKILL.md`
+**File:** `mind/skills/Briefing//.md`
 
 **New Workflow:**
-1. Gather information (INDEX, standup, feedback, sessions)
+1. Gather information (INDEX
+  - standup
+  - feedback
+  - sessions)
 2. Generate TTS-optimized briefing content
 3. **Try 11labs TTS first** — Convert to audio
 4. **If 11labs succeeds:** Send audio to Telegram group
@@ -23,7 +32,8 @@ tags: session, log, briefing, 11labs, telegram, tts
 ### 2. Key Features
 
 **Primary Delivery (11labs):**
-- Voice: Nova (warm, conversational)
+- Voice: Nova (warm
+  - conversational)
 - Model: Eleven Turbo v2.5
 - Format: MP3 audio
 - Channel: Bizing Telegram group
@@ -79,15 +89,18 @@ tags: session, log, briefing, 11labs, telegram, tts
 - ✅ Telegram — For messaging
 
 **Tools Updated:**
-- `mind/skills/briefing/SKILL.md` — New workflow
+- `mind/skills/Briefing//.md` — New workflow
 - `mind/symbiosis/feedback.md` — Learning logged
 
 ## Learnings
 
-1. **Always have fallback** — Temp directories get cleaned up, plan for it
-2. **Test the full flow** — Generation is only half, delivery matters
+1. **Always have fallback** — Temp directories get cleaned up
+  - plan for it
+2. **Test the full flow** — Generation is only half
+  - delivery matters
 3. **File persistence** — Move files to workspace before sending
-4. **TTS timing** — Audio generation is fast (<5s), but file paths are temporary
+4. **TTS timing** — Audio generation is fast (<5s)
+  - but file paths are temporary
 
 ## Next Steps
 
@@ -97,4 +110,5 @@ tags: session, log, briefing, 11labs, telegram, tts
 
 ---
 
-*Briefing skill: 11labs primary, Telegram fallback. Tested and working.*
+*Briefing skill: 11labs primary
+  - Telegram fallback. Tested and working.*
