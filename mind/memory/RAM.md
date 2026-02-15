@@ -14,16 +14,16 @@ tags:
 
 ## 🎯 Active Focus
 
-**Primary:** [2026-02-15 09:45 PST] Documentation & Workflow
+**Primary:** [2026-02-15 09:50 PST] Documentation & Workflow
 - [[mind/INDEX]] — Single entry point
 - [[mind/skills/Skills]] — All skills organized
 - [[mind/SYNOPSIS]] — Bizing's story (11 acts)
-- [[mind/DISSONANCE]] — 6 active contradictions
-- [[mind/CURIOSITIES]] — 6 questions
+- [[mind/DISSONANCE]] — 3 contradictions (API vs SDK, Never Commit, Evolution)
+- [[mind/CURIOSITIES]] — 3 questions (living entity, business models, personalization)
 
 **Secondary:** Dreamer Auto-Scan (every 15 min)
-- Runs autonomously, finds contradictions + curiosities
-- Last run: 09:45 PST
+- Finds contradictions + curiosities
+- Last run: 09:50 PST
 
 ---
 
@@ -42,10 +42,9 @@ tags:
 
 ## ✅ Recent Completed (48h)
 
-- [2026-02-15 09:45 PST] **Dreamer Found Contradictions** — 2 new (Core vs Essence, Evolution vs Skill-Update)
-- [2026-02-15 09:40 PST] **Dreamer Found Curiosities** — 3 new (agent learning, transparency, marketing)
+- [2026-02-15 09:50 PST] **Dreamer Fixed** — Append logic, real quotes, no placeholders
+- [2026-02-15 09:45 PST] **Dreamer Found Contradictions** — 2 new
 - [2026-02-14 22:25 PST] **RAM Skill Emphasized** — Use every time
-- [2026-02-14 22:20 PST] **RAM Updated** — Active context
 
 ---
 
