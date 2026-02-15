@@ -1,6 +1,9 @@
 #!/usr/bin/env node
 /**
- * @fileoverview Dreamer — Autonomous Mind Scanner with Loop
+ * Dreamer — Autonomous Mind Scanner
+ * 
+ * Finds CONTRADICTIONS: When File A says X but File B says Y (opposite)
+ * Finds CURIOSITIES: Questions worth exploring
  */
 
 import { readFileSync, existsSync, readdirSync, writeFileSync } from 'fs'
@@ -15,15 +18,31 @@ const MIND_DIR = join(BIZING_ROOT, 'mind')
 const DISSONANCE_FILE = join(MIND_DIR, 'DISSONANCE.md')
 const CURIOSITIES_FILE = join(MIND_DIR, 'CURIOSITIES.md')
 const MAP_FILE = join(MIND_DIR, 'MAP.md')
-const RAM_FILE = join(MIND_DIR, 'memory/RAM.md')
 const MEMORY_SESSIONS_DIR = join(MIND_DIR, 'memory/sessions')
 
 const TODAY = new Date().toISOString().split('T')[0]
-const TIMESTAMP = new Date().toLocaleString('en-US', { timeZone: 'America/Los_Angeles', hour: '2-digit', minute: '2-digit', timeZoneName: 'short' })
+const TIMESTAMP = new Date().toLocaleString('en-US', { 
+  timeZone: 'America/Los_Angeles', 
+  hour: '2-digit', 
+  minute: '2-digit', 
+  timeZoneName: 'short' 
+})
 
-// Skip words that are too short or common
-const SKIP_WORDS = new Set(['api', 'sdk', 'tension', 'cognitive', 'dissonance', 'ideas', 'unresolved', 'questions', 'tensions', 'updated', 'answer', 'decisions', 'conflicts', 'write', 'active', 'scope', 'bizing', 'merchant', 'record', 'happens', 'agent', 'commits', 'index', 'entry', 'point', 'start', 'every', 'workflow', 'remove', 'surgical', 'there', 'business', 'platform', 'businesses', 'services', 'identity', 'living', 'project', 'means', 'itself', 'works', 'evolving', 'consciousness', 'complete', 'organized', 'context', 'purpose', 'current', 'focus', 'tasks', 'readme', 'vision', 'quick', 'framework', 'rules', 'entity', 'nature', 'booking', 'definition', 'major', 'element', 'picture', 'enables', 'selling', 'primary', 'supports', 'commerce', 'experience', 'cases', 'provider', 'consultant', 'trainer', 'therapist', 'coach', 'sells', 'access', 'multi', 'thinks', 'everything', 'architecture', 'process', 'knowledge', 'customer', 'changes', 'existing', 'understanding', 'capabilities', 'symbiosis', 'capability', 'evolution', 'document', 'reference', 'values', 'features', 'systems', 'documentation', 'patterns', 'connected', 'categories', 'startup', 'domain', 'completed', 'template', 'before', 'review', 'development', 'quality', 'platforms', 'overview', 'working', 'important', 'sessions', 'standup', 'structure', 'skills', 'research', 'different', 'feedback', 'server', 'covers', 'solutions', 'management', 'requirements', 'design', 'comprehensive', 'february'])
+// Ask Ollama
+function askOllama(prompt) {
+  try {
+    const r = spawnSync('bash', ['-lc', `printf '%s\\n' "${prompt.replace(/"/g, '\\"')}" | ollama run llama3.1:8b`], { 
+      encoding: 'utf-8', 
+      timeout: 120000 
+    })
+    return r.stdout?.replace(/\x1B\[[0-9;]*[mG]/g, '').replace(/\n+/g, '\n').trim() || null
+  } catch (e) { 
+    console.log('Ollama error:', e.message)
+    return null 
+  }
+}
 
+// Read all mind files
 function readMindFiles() {
   const files = []
   function traverse(dir) {
@@ -41,97 +60,34 @@ function readMindFiles() {
   return files
 }
 
-function askOllama(q) {
-  try {
-    const r = spawnSync('bash', ['-c', `echo "${q.replace(/"/g, '\\"')}" | ollama run llama3.1:8b 2>/dev/null`], { encoding: 'utf-8', timeout: 180000 })
-    return r.stdout?.replace(/[\x1B\x9B].*?[mG]/g, '').replace(/\n+/g, '\n').trim() || null
-  } catch (e) { return null }
-}
-
+// Read existing
 function readDissonances() {
   if (!existsSync(DISSONANCE_FILE)) return []
   const content = readFileSync(DISSONANCE_FILE, 'utf-8')
   const topics = []
-  const lines = content.split('\n')
-  let current = ''
-  for (const line of lines) {
-    if (line.startsWith('## ')) {
-      if (current) topics.push(current)
-      current = line.replace('## ', '').trim()
-    }
+  for (const line of content.split('\n')) {
+    if (line.startsWith('### ')) topics.push(line.replace('### ', '').trim())
   }
-  if (current) topics.push(current)
   return topics
 }
 
 function readCuriosities() {
   if (!existsSync(CURIOSITIES_FILE)) return []
   const content = readFileSync(CURIOSITIES_FILE, 'utf-8')
-  const questions = []
-  const lines = content.split('\n')
-  for (const line of lines) {
-    if (line.startsWith('- **')) {
-      questions.push(line.replace('- **', '').replace('**', '').trim())
-    }
+  const qs = []
+  for (const line of content.split('\n')) {
+    if (line.startsWith('- **')) qs.push(line.replace('- **', '').replace('**', '').trim())
   }
-  return questions
-}
-
-function dissonanceExists(topic) {
-  return readDissonances().some(e => e.toLowerCase().includes(topic.toLowerCase()))
-}
-
-function curiosityExists(question) {
-  return readCuriosities().some(e => e.toLowerCase().includes(question.toLowerCase().substring(0, 50)))
+  return qs
 }
 
 function fileExists(path) {
   return existsSync(join(MIND_DIR, path))
 }
 
-function isValidTopic(topic) {
-  // Skip single words and common words
-  if (topic.length < 8) return false
-  if (SKIP_WORDS.has(topic.toLowerCase())) return false
-  return true
-}
-
-function updateMAP(newDissonances, newCuriosities) {
-  if (!existsSync(MAP_FILE)) return
-  
-  let content = readFileSync(MAP_FILE, 'utf-8')
-  let updated = false
-  
-  if (newDissonances.length > 0 && !content.includes('[[mind/DISSONANCE]]')) {
-    const opsIndex = content.indexOf('## Operations')
-    if (opsIndex !== -1) {
-      const before = content.slice(0, opsIndex)
-      const after = content.slice(opsIndex)
-      content = before + '**→ [[mind/DISSONANCE|Cognitive Dissonance]]** — Real conflicts between files #dissonance\n\n' + after
-      updated = true
-      console.log('📍 Added DISSONANCE link to MAP.md')
-    }
-  }
-  
-  if (newCuriosities.length > 0 && !content.includes('[[mind/CURIOSITIES]]')) {
-    const opsIndex = content.indexOf('## Operations')
-    if (opsIndex !== -1) {
-      const before = content.slice(0, opsIndex)
-      const after = content.slice(opsIndex)
-      content = before + '**→ [[mind/CURIOSITIES|Curiosities]]** — Questions worth exploring #curiosity\n\n' + after
-      updated = true
-      console.log('📍 Added CURIOSITIES link to MAP.md')
-    }
-  }
-  
-  if (updated) {
-    writeFileSync(MAP_FILE, content)
-  }
-}
-
-function updateDissonance(dissonances) {
-  if (dissonances.length === 0) return 0
-  
+// Update files
+function updateDissonance(cons) {
+  if (cons.length === 0) return 0
   let md = `# Cognitive Dissonance
 
 > Real conflicts where different files say different things. #dissonance #conflict
@@ -140,191 +96,212 @@ function updateDissonance(dissonances) {
 
 ## What Is This File?
 
-**COGNITIVE DISSONANCE** = when File A and File B contradict each other.
-
-#cognitive-dissonance #conflicts
+**COGNITIVE DISSONANCE** = when File A and File B **contradict** each other.
 
 ---
 
-## Active Conflicts
+## Active Contradictions
 
 `
-  for (const d of dissonances) {
-    const fileALink = fileExists(d.fileA) ? `[[${d.fileA}]]` : d.fileA
-    const fileBLink = fileExists(d.fileB) ? `[[${d.fileB}]]` : d.fileB
-    md += `### ${d.topic}
+  for (const c of cons) {
+    const a = fileExists(c.fileA) ? `[[${c.fileA}]]` : c.fileA
+    const b = fileExists(c.fileB) ? `[[${c.fileB}]]` : c.fileB
+    md += `### ${c.topic}
 
-**Sources:**
-- ${fileALink}
-- ${fileBLink}
+**${a} says:**
+> "${c.quoteA || 'X'}"
 
-**Question:** ${d.question}
+**${b} says:**
+> "${c.quoteB || 'Y'}"
+
+**The Contradiction:** ${c.explanation}
+
+**Resolution:** ${c.resolution || 'TBD'}
 
 `
   }
-  
   md += `---
-
-*When resolved, delete from this file.* #tags: dissonance, conflicts, active
-
+*When resolved, update source files with resolution, then delete from here.*
 `
-  
   writeFileSync(DISSONANCE_FILE, md)
-  return dissonances.length
+  return cons.length
 }
 
-function updateCuriositiesFile(curiosities) {
-  if (curiosities.length === 0) return 0
-  
+function updateCuriosities(cs) {
+  if (cs.length === 0) return 0
   let md = `# Curiosities
 
-> Questions worth exploring. #curiosity #questions #gaps
+> Questions worth exploring. #curiosity #questions
 
 ---
 
 ## Questions
 
 `
-  for (const c of curiosities) {
-    const sourceLink = fileExists(c.source) ? `[[${c.source}]]` : c.source
+  for (const c of cs) {
+    const s = fileExists(c.source) ? `[[${c.source}]]` : c.source
     md += `- **${c.question}**
 
-  Source: ${sourceLink}
+  Source: ${s}
+  Why: ${c.why}
 
 `
   }
-  
   md += `---
-
-*When answered, delete from this file.* #tags: curiosity, questions, exploration
-
+*When answered, delete from this file.*
 `
-  
   writeFileSync(CURIOSITIES_FILE, md)
-  return curiosities.length
+  return cs.length
 }
 
-function createSessionLog(dissonances, curiosities) {
+function updateMAP(cons, cs) {
+  if (!existsSync(MAP_FILE)) return
+  let content = readFileSync(MAP_FILE, 'utf-8')
+  const section = `## 🧠 Mind Health
+
+**→ [[mind/DISSONANCE|Cognitive Dissonance]]** — ${cons.length} contradictions #dissonance
+**→ [[mind/CURIOSITIES|Curiosities]]** — ${cs.length} questions #curiosity
+
+`
+  if (content.includes('## 🧠 Mind Health')) {
+    const i = content.indexOf('## 🧠 Mind Health')
+    const j = content.indexOf('## ', i + 10)
+    content = content.slice(0, i) + section + content.slice(j)
+  }
+  writeFileSync(MAP_FILE, content)
+}
+
+function createSessionLog(cons, cs) {
   const file = join(MEMORY_SESSIONS_DIR, `${TODAY}-dreamer.md`)
   const log = `---
 date: ${TODAY}
-tags: session, dreamer
+tags:
+  - session
+  - dreamer
 type: dreamer
 ---
 
 # Dreamer Scan — ${TODAY}
 
-**Dissonances:** ${dissonances.length}
-${dissonances.map(d => `- ${d.topic}`).join('\n') || 'None'}
+**Contradictions:** ${cons.length}
+${cons.map(c => `- ${c.topic}: ${c.fileA} vs ${c.fileB}`).join('\n') || 'None'}
 
-**Curiosities:** ${curiosities.length}
-${curiosities.map(c => `- ${c.question.substring(0, 50)}...`).join('\n') || 'None'}
+**Curiosities:** ${cs.length}
+${cs.map(c => `- ${c.question.slice(0, 50)}...`).join('\n') || 'None'}
 
 ---
-*Dreamer session: ${TODAY}*
+*Dreamer: ${TODAY} ${TIMESTAMP}*
 `
   writeFileSync(file, log)
 }
 
+// MAIN
 console.log('🌀 Dreamer Loop...\n')
 
-const existingDissonances = readDissonances()
-const existingCuriosities = readCuriosities()
-console.log(`📖 Read ${existingDissonances.length} dissonances, ${existingCuriosities.length} curiosities\n`)
-
 const files = readMindFiles()
-console.log(`📖 Scanned ${files.length} files\n`)
+console.log(`📖 Scanned ${files.length} files`)
 
-const fileList = files.slice(0, 20).map(f => f.path).join(', ')
+const existingD = readDissonances()
+const existingC = readCuriosities()
+console.log(`📖 Read ${existingD.length} contradictions, ${existingC.length} curiosities\n`)
 
-console.log('🤖 Finding NEW dissonances...')
-const dissonanceQ = `Find NEW conflicts where File A and File B contradict. EXISTING: ${existingDissonances.join(' | ') || 'None'}
+// Get file list for Ollama
+const fileList = files.slice(0, 20).map(f => `- ${f.path}: ${f.content.slice(0, 150)}...`).join('\n')
 
-Output (max 3, NEW only, NO single words like "tension", "dissonance", etc.):
-TENSION: <name>
+// Ask for contradictions
+const dQ = `You are scanning a mind for CONTRADICTIONS.
+
+A CONTRADICTION is when File A says X but File B says Y (opposite).
+
+EXISTING: ${existingD.join(' | ') || 'NONE'}
+
+FILES:
+${fileList}
+
+Find 1-2 NEW contradictions. Output:
+CONTRADICTION: <name>
 FILE_A: <path>
 FILE_B: <path>
-QUESTION: <how to resolve?>
+QUOTE_A: <what file A says>
+QUOTE_B: <what file B says (opposite)>
+EXPLANATION: <how they contradict>
+RESOLUTION: <how to resolve>
 
-Or NONE
+Or output "NONE" if none found.`
 
-Files: ${fileList}`
+const dR = askOllama(dQ)
+const newD = []
 
-const dissonanceResponse = askOllama(dissonanceQ)
-const newDissonances = []
-
-if (dissonanceResponse && !dissonanceResponse.toUpperCase().includes('NONE')) {
-  const lines = dissonanceResponse.split('\n')
-  let current = {}
+if (dR && !dR.toUpperCase().includes('NONE')) {
+  const lines = dR.split('\n')
+  let c = {}
   for (const line of lines) {
-    if (line.startsWith('TENSION:')) current.topic = line.replace('TENSION:', '').trim()
-    if (line.startsWith('FILE_A:')) current.fileA = line.replace('FILE_A:', '').trim()
-    if (line.startsWith('FILE_B:')) current.fileB = line.replace('FILE_B:', '').trim()
-    if (line.startsWith('QUESTION:')) {
-      current.question = line.replace('QUESTION:', '').trim()
-      if (current.topic && current.fileA && current.fileB && !dissonanceExists(current.topic) && isValidTopic(current.topic)) {
-        newDissonances.push({...current})
+    if (line.startsWith('CONTRADICTION:')) c.topic = line.replace('CONTRADICTION:', '').trim()
+    if (line.startsWith('FILE_A:')) c.fileA = line.replace('FILE_A:', '').trim()
+    if (line.startsWith('FILE_B:')) c.fileB = line.replace('FILE_B:', '').trim()
+    if (line.startsWith('QUOTE_A:')) c.quoteA = line.replace('QUOTE_A:', '').trim()
+    if (line.startsWith('QUOTE_B:')) c.quoteB = line.replace('QUOTE_B:', '').trim()
+    if (line.startsWith('EXPLANATION:')) c.explanation = line.replace('EXPLANATION:', '').trim()
+    if (line.startsWith('RESOLUTION:')) {
+      c.resolution = line.replace('RESOLUTION:', '').trim()
+      if (c.topic && c.fileA && c.fileB && c.explanation) {
+        const exists = existingD.some(e => e.toLowerCase().includes(c.topic.toLowerCase()))
+        if (!exists) newD.push({...c})
       }
-      current = {}
+      c = {}
     }
   }
 }
 
-console.log(`🎯 Found ${newDissonances.length} NEW dissonances\n`)
+// Ask for curiosities
+const cQ = `You are scanning a mind for CURIOSITIES (questions worth exploring, NOT contradictions).
 
-console.log('🤖 Finding NEW curiosities...')
-const curiosityQ = `Find NEW questions worth exploring. EXISTING: ${existingCuriosities.join(' | ') || 'None'}
+EXISTING: ${existingC.join(' | ') || 'NONE'}
 
-Output (max 3, NEW only):
+FILES:
+${fileList}
+
+Find 1-2 NEW questions. Output:
 QUESTION: <question>
-SOURCE: <path>
-CONTEXT: <why interesting>
+SOURCE: <path that sparked this>
+WHY: <why interesting>
 
-Or NONE
+Or output "NONE" if none found.`
 
-Files: ${fileList}`
+const cR = askOllama(cQ)
+const newC = []
 
-const curiosityResponse = askOllama(curiosityQ)
-const newCuriosities = []
-
-if (curiosityResponse && !curiosityResponse.toUpperCase().includes('NONE')) {
-  const lines = curiosityResponse.split('\n')
-  let current = {}
+if (cR && !cR.toUpperCase().includes('NONE')) {
+  const lines = cR.split('\n')
+  let q = {}
   for (const line of lines) {
-    if (line.startsWith('QUESTION:')) current.question = line.replace('QUESTION:', '').trim()
-    if (line.startsWith('SOURCE:')) current.source = line.replace('SOURCE:', '').trim()
-    if (line.startsWith('CONTEXT:')) {
-      current.context = line.replace('CONTEXT:', '').trim()
-      if (current.question && current.source && !curiosityExists(current.question)) {
-        newCuriosities.push({...current})
+    if (line.startsWith('QUESTION:')) q.question = line.replace('QUESTION:', '').trim()
+    if (line.startsWith('SOURCE:')) q.source = line.replace('SOURCE:', '').trim()
+    if (line.startsWith('WHY:')) {
+      q.why = line.replace('WHY:', '').trim()
+      if (q.question && q.source) {
+        const exists = existingC.some(e => e.toLowerCase().includes(q.question.toLowerCase()))
+        if (!exists) newC.push({...q})
       }
-      current = {}
+      q = {}
     }
   }
 }
 
-console.log(`🎯 Found ${newCuriosities.length} NEW curiosities\n`)
+console.log(`🎯 Found ${newD.length} NEW contradictions`)
+for (const d of newD) console.log(`  🔥 ${d.topic}: ${d.fileA} vs ${d.fileB}`)
 
-const dAdded = updateDissonance(newDissonances)
-const cAdded = updateCuriositiesFile(newCuriosities)
-updateMAP(newDissonances, newCuriosities)
+console.log(`\n🎯 Found ${newC.length} NEW curiosities`)
+for (const c of newC) console.log(`  ❓ ${c.question.slice(0, 50)}...`)
 
-if (dAdded > 0) {
-  console.log(`✅ Updated DISSONANCE.md with ${dAdded} dissonance(s)`)
-  newDissonances.forEach(d => console.log(`  🔥 ${d.topic}`))
-}
+const dAdded = updateDissonance(newD)
+const cAdded = updateCuriosities(newC)
+updateMAP(newD, newC)
 
-if (cAdded > 0) {
-  console.log(`✅ Updated CURIOSITIES.md with ${cAdded} curiosity/ies`)
-  newCuriosities.forEach(c => console.log(`  ❓ ${c.question.substring(0, 50)}...`))
-}
+if (dAdded > 0) console.log(`\n✅ Updated DISSONANCE.md with ${dAdded}`)
+if (cAdded > 0) console.log(`✅ Updated CURIOSITIES.md with ${cAdded}`)
 
-if (dAdded === 0 && cAdded === 0) {
-  console.log('✅ No new dissonances or curiosities found')
-}
+if (dAdded === 0 && cAdded === 0) console.log('\n✅ No new found')
 
-// RAM is for active context, not automated system logs
-// Dreamer findings are logged to session files, not RAM
-createSessionLog(newDissonances, newCuriosities)
-
+createSessionLog(newD, newC)
 console.log('\n✨ Dreamer complete!')

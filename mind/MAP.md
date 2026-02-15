@@ -8,11 +8,8 @@ _Complete index of the Bizing mind. Every file, organized logically._
 
 ## 🧠 Mind Health
 
-**→ [[mind/DISSONANCE|Cognitive Dissonance]]** — Real conflicts between files #dissonance
-**→ [[mind/CURIOSITIES|Curiosities]]** — Questions worth exploring #curiosity
-**→ [[mind/SYNOPSIS|Story]]** — Bizing's narrative journey #story
-
----
+**→ [[mind/DISSONANCE|Cognitive Dissonance]]** — 0 contradictions #dissonance
+**→ [[mind/CURIOSITIES|Curiosities]]** — 0 questions #curiosity
 
 ## 🎯 Core Entry Points
 
