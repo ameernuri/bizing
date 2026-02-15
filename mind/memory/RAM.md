@@ -54,6 +54,7 @@ tags:
 - [2026-02-14 20:15 PST] **HARD MindSync** — Tag fixes, SKILL renames, SYNOPSIS
 - [2026-02-14 20:00 PST] **SYNOPSIS Created** — Bizing's story (11 acts)
 - [2026-02-14 22:20 PST] **RAM Updated** — Active context with wiki links, timestamps, tags
+- [2026-02-14 22:25 PST] **RAM Skill Emphasized** — Use every time, INDEX points to RAM first
 
 ---
 

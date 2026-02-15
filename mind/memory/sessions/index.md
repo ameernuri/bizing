@@ -7,6 +7,7 @@
 - [[./2026-02-15-dreamer|Feb 15]] — Dreamer: tensions
 ## Recent Sessions
 
+- [[./2026-02-14-ram-skill|Feb 14]] — RAM Skill Emphasized: Use every time, INDEX points to RAM first
 - [[./2026-02-14-ram-update|Feb 14]] — RAM Updated: Active context with wiki links, timestamps, tags
 - [[./2026-02-14-mindsync|Feb 14]] — HARD MindSync: RAM + Dreamer fix, tests passed
 - [[./2026-02-14-ram-dreamer-fix|Feb 14]] — RAM + Dreamer Fix: Stopped Dreamer from logging to RAM
