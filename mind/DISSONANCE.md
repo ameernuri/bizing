@@ -14,29 +14,29 @@
 
 ## Active Conflicts
 
-### Contradicting Purpose of Bizing
+### Purpose of Bizing
 
 **Sources:**
 - [[identity/purpose.md]]
-- [[identity/evolution.md]]
+- [[identity/values.md]]
 
-**Question:** How does Bizing's purpose relate to its evolution, if at all?
+**Question:** How can we reconcile the purpose of Bizing as a platform for building agents with its values, which may not align with the interests of these agents?
 
-### Conflicting Understanding of Consciousness
+### Essence of Consciousness
 
 **Sources:**
-- [[identity/consciousness.md]]
 - [[identity/essence.md]]
+- [[identity/consciousness.md]]
 
-**Question:** Can consciousness be a fundamental aspect of Bizing's essence, or are they mutually exclusive concepts?
+**Question:** Do we consider consciousness to be an essential aspect of Bizing's identity, or is it a separate concept that can be explored and understood through the platform?
 
-### Misaligned Business Model and Purpose
+### Agent Behavior
 
 **Sources:**
-- [[knowledge/domain/business-model.md]]
-- [[identity/purpose.md]]
+- [[knowledge/domain/startup-builder.md]]
+- [[knowledge/domain/why-agents-love-bizing.md]]
 
-**Question:** Does the business model align with Bizing's purpose, or do they have conflicting goals?
+**Question:** How do we balance the need for startup builders to create agents that align with Bizing's purpose and values, while also allowing these agents to exhibit their own behavior and motivations?
 
 ---
 

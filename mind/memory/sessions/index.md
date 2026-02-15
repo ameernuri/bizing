@@ -7,6 +7,8 @@
 - [[./2026-02-15-dreamer|Feb 15]] — Dreamer: tensions
 ## Recent Sessions
 
+- [[./2026-02-14-ram-dreamer-fix|Feb 14]] — RAM + Dreamer Fix: Stopped Dreamer from logging to RAM
+- [[./2026-02-14-codesync|Feb 14]] — CodeSync: Commit 4403c85 (80 files, 5,612 insertions)
 - [[./2026-02-14-mindsync|Feb 14]] — HARD MindSync: Tag fixes (60+ files), SKILL renames (10 files), SYNOPSIS, Creating Files skill
 - [[./2026-02-14-creating-files|Feb 14]] — Creating Files skill created, comprehensive guide
 - [[./2026-02-14-synopsis|Feb 14]] — SYNOPSIS: Bizing story created, Synopsis skill, Dreamer integration

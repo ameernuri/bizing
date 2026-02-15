@@ -24,7 +24,7 @@ The **Dreamer** is an autonomous agent that runs in a **loop**:
 3. Add unique entries with wiki links and #tags
 4. Update SYNOPSIS.md with narrative #story
 5. Update MAP.md with links
-6. Update RAM and create session log
+6. Create session log (NOT RAM)
 
 ---
 
@@ -125,12 +125,6 @@ node scripts/dreamer.mjs
 
   Source: [[apps/api/src/services/mind-embeddings]]
 
-```
-
-### RAM Entry
-
-```markdown
-- [2026-02-14 19:00 PST] **Dreamer found 2 dissonance(s), 1 curiosity**
 ```
 
 ### Session Log

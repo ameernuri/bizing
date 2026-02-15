@@ -1,31 +1,47 @@
 ---
-date: 2026-02-13
-tags: 
+date: 2026-02-14
+tags:
   - skill
   - ram
   - working-memory
-  - workflow
+  - active
+  - context
 ---
 
-# 🧠 RAM Skill — Working Memory Management
+# 🧠 RAM Skill — Working Memory
 
-> How to use and maintain the [[mind/memory/RAM|mind's working memory]]
+> How to use and maintain the [[mind/memory/RAM|Bizing's working memory]]
 
 ---
 
 ## What Is RAM?
 
-[[mind/memory/RAM|RAM]] is the **Working Memory** for the [[Bizing]] [[mind/INDEX|mind]]
+**RAM = Working Memory** — the active, immediate context of the mind.
 
-- **Active context** — what's important right now
-- **Recent activity** — what happened recently... no specific time frames 
-- **Current focus** — what we're working on
-- **Stale items removed** → archived to [[memory/sessions|long-term memory]] or forgotten/purged
+Think of it like a computer's RAM:
+- **Fast access** — What's important right now
+- **Active processes** — What we're working on now
+- **Limited space** — Keep it tight, focused
+- **Temporary** — When done, archive or purge
 
-Think of it like a computer's [[mind/skills/ram/Ram]]: fast
-  - active
-  - limited space. When full
-  - move to disk ([[memory/sessions|long-term memory]]) or forget.
+**RAM is NOT:**
+- ❌ A log (use `memory/sessions/` for logs)
+- ❌ A changelog (use `evolution/` for that)
+- ❌ A dump of everything
+
+**RAM IS:**
+- ✅ Active focus — What we're working on NOW
+- ✅ Current context — What matters RIGHT NOW
+- ✅ Urgent items — What needs attention NOW
+- ✅ Recent completed — What we just finished (keep brief)
+
+---
+
+## The Rule
+
+> RAM contains only what matters **right now**.
+> 
+> If it's not actively being worked on or important in this moment, it doesn't belong in RAM.
 
 ---
 
@@ -33,185 +49,148 @@ Think of it like a computer's [[mind/skills/ram/Ram]]: fast
 
 ```
 [[mind/memory/RAM|RAM.md]]
-├── Active Focus      ← What we're working on right now
-└── Urgencies         ← Urgent items that need attention
-├── Recent Completed  ← max 10-20 recently completed items
-├── In Progress       ← Currently doing
-├── Blockers          ← What's blocking us
-  - what are we stuck on
-├── Recent Learnings  ← Key insights (last 24h)
-└── Next Actions      ← Immediate todos
+├── ## 🎯 Active Focus      ← What we're working on RIGHT NOW
+│   └── Primary task
+│       └── Subtasks
+├── ## 🚨 Urgencies         ← Needs immediate attention
+├── ## ✅ Recent Completed   ← Just finished (keep brief, 48h max)
+├── ## 🔄 In Progress       ← Currently doing
+└── ## ⏸️ Blockers         ← Stuck on something
 ```
-
-Every item has a **timestamp**: [YYYY-MM-DD HH:MM PST]
 
 ---
 
-## Rules
+## Usage
 
-### 1. Add with Timestamp
+### When to Write to RAM
 
-Every entry gets a timestamp:
-```
-- [2026-02-13 17:57 PST] Moving [[symbiosis/standup|standup]] → [[mind/memory/RAM|RAM]] system
-```
+**Add when:**
+- Starting new work that matters NOW
+- Something needs urgent attention
+- Just completed something important (keep brief)
+- Blockers that are slowing work NOW
+- Context that must not be lost
 
-### 2. Remove When Stale
+**Don't add:**
+- Routine tasks
+- Completed work from >48h ago
+- Things that can be looked up elsewhere
+- Everything — be selective
 
-Keep each item category max 10-20 items → consider forgetting or saving to [[memory|memory]]
+### When to Remove from RAM
 
-Before removing
-  - ask: "Does this need [[memory|long-term memory]]?"
+**Remove when:**
+- Task is complete → archive if significant
+- Item is >48h old
+- Context is no longer relevant
+- Blockers are resolved
 
-**If yes →** Create a [[memory/sessions|memory session]] using the [[mind/skills/session-logging|session logging skill]]
-**If no →** Purge the item
-
-### 3. Keep It Tight
-
-[[mind/memory/RAM|RAM]] should fit on one screen. If it's getting long
-  - archive old items.
-
-### 4. Check RAM Every Session
-
-Part of the [[mind/INDEX|workflow]]:
-1. Read [[mind/INDEX]]
-2. Read [[mind/memory/RAM]] ← Current context
-3. Read [[symbiosis/feedback]] ← Learnings
-4. Do work
-5. Update [[mind/memory/RAM]] and [[symbiosis/feedback]]
+**Rule:** RAM should fit on one screen. If it's getting long, archive.
 
 ---
 
-## Workflow: Adding to RAM
+## Format
 
-### New Focus Item
+### Active Focus
+
 ```markdown
 ## 🎯 Active Focus
 
-**Primary:** [2026-02-13 10:00 PST] Building [[mind/research/findings/booking-domain-model|booking engine schema]]
-- Task 1
-- Task 2
+**Primary:** [2026-02-14 10:00 PST] Building feature X
+- [ ] Task 1
+- [ ] Task 2
+- [ ] Task 3
+
+**Secondary:** [2026-02-14 09:00 PST] Bug Y
+- Investigating cause
 ```
 
-### Completed Work
+### Urgencies
+
+```markdown
+## 🚨 Urgencies
+
+- [2026-02-14 11:00 PST] Production bug — payments failing
+```
+
+### Recent Completed
+
 ```markdown
 ## ✅ Recent Completed
 
-- [2026-02-13 09:30 PST] Fixed [[embedding]] crash in [[apps/api/src/services/mind-embeddings.ts|mind-embeddings.ts]]
-- [2026-02-13 09:45 PST] Updated [[system prompt]] in [[apps/api/src/services/llm.ts|llm.ts]]
+- [2026-02-14 08:00 PST] Fixed login bug
 ```
 
-### Learning
-```markdown
-## 💡 Recent Learnings
+### Blockers
 
-- [2026-02-13 14:00 PST] Chunk size of 2000 chars prevents [[Ollama]] crashes
+```markdown
+## ⏸️ Blockers
+
+- [2026-02-14 12:00 PST] Waiting on API key from vendor
 ```
 
 ---
 
-## Workflow: Archiving from RAM
+## Workflow
 
-### Step 1: Check if Stale
+### Reading RAM (Every Session)
 
-Item is >48h old? Time to evaluate.
+1. Read [[mind/INDEX]] — Entry point
+2. Read [[mind/memory/RAM]] ← Active context
+3. Read [[symbiosis/feedback]] — Learnings
+4. Do work
+5. Update RAM if context changed
 
-### Step 2: Decide Fate
+### Writing to RAM
 
-**Is this significant work?**
-- Yes → Create [[memory/sessions|session log]]
-- No → Delete
-
-### Step 3: Create Session Log (if significant)
-
-Create file: [[mind/memory/sessions/2026-02-13-embedding-crash-fix|mind/memory/sessions/2026-02-13-embedding-crash-fix.md]]
-
+**When starting something:**
 ```markdown
----
-date: 2026-02-13
-tags: 
-  - session
-  - log
-  - bugfix
----
-
-# Session: Fixed Embedding Crash
-
-## What We Did
-- Reduced chunk size from 8000 → 2000 chars in [[apps/api/src/services/mind-embeddings.ts|mind-embeddings.ts]]
-- Added resilient error handling
-- Tests passing
-
-## Key Learning
-[[Ollama]] context limit is ~4096 tokens. 8000 chars ≈ 1500 tokens
-  - but with overhead it crashes. 2000 chars is safe.
-
-## Files Changed
-- [[apps/api/src/services/mind-embeddings.ts|apps/api/src/services/mind-embeddings.ts]]
+**Primary:** [2026-02-14 10:00 PST] Working on X
+- Task A
+- Task B
 ```
 
-### Step 4: Remove from RAM
+**When completing:**
+- Brief note in Recent Completed
+- Archive to `memory/sessions/` if significant
+- Remove from RAM
 
-Delete the item from [[mind/memory/RAM|RAM.md]].
-
----
-
-## Examples
-
-### Good RAM Entry
-```markdown
-- [2026-02-13 17:57 PST] Moving [[symbiosis/standup|standup]] → [[mind/memory/RAM|RAM]] system
-  - Created [[mind/memory/RAM|RAM.md]]
-  - Creating [[mind/skills/ram|RAM skill]]
-  - Updating all references
-```
-
-### Archive-Worthy Entry
-```markdown
-## ✅ Recent Completed
-
-- [2026-02-12 22:30 PST] Deep [[mind/memory/sessions/2026-02-12-deep-mind-reorg|mind reorganization]] complete
-  - [[mind/INDEX|INDEX.md]] single entry point
-  - [[Dreamer]] fixed
-  - [[DISSONANCE]] cleaned
-  - 7 redundant files deleted
-```
-
-→ **Archive to:** [[mind/memory/sessions/2026-02-12-deep-mind-reorg|mind/memory/sessions/2026-02-12-deep-mind-reorg.md]]
-
-### Delete-Worthy Entry
-```markdown
-- [2026-02-13 09:00 PST] Checked email
-```
-
-→ **Delete** (not significant enough for [[memory|long-term memory]])
+**When context changes:**
+- Update Active Focus
+- Remove old context
+- Add new context
 
 ---
 
 ## Integration
 
 **Related Files:**
-- [[mind/memory/RAM]] — Working memory (this is where you read/write)
-- [[symbiosis/feedback]] — Learnings and rules (update after work)
-- [[memory/sessions]] — Long-term memory (archive significant work here)
-- [[mind/INDEX]] — Entry point (read first)
-- [[mind/skills/memory|Memory Skill]] — How to create session logs
+- [[mind/INDEX]] — Entry point
+- [[memory/sessions]] — Long-term memory (archive here)
+- [[symbiosis/feedback]] — Learnings from Ameer
+- [[mind/skills/memory|Memory Skill]] — Session logging
 
-**Workflow:**
+**Read Order:**
 ```
-Read [[mind/INDEX]] → Read [[mind/memory/RAM]] → Read [[symbiosis/feedback]] → Work → Update [[mind/memory/RAM]] + [[symbiosis/feedback]]
+INDEX → RAM → feedback → Work → Update RAM/feedback
 ```
 
 ---
 
-## Quick Checklist
+## Quick Reference
 
-- [ ] Every entry has timestamp
-- [ ] Significant work → [[memory/sessions|memory/sessions/]]
-- [ ] Trivial items → deleted
-- [ ] [[mind/memory/RAM|RAM]] stays compact (one screen)
-- [ ] Every mention [[wikilinked|wikilinked]] to source files
+| RAM Contains | RAM Does NOT Contain |
+|--------------|---------------------|
+| Active focus | Everything |
+| Current context | Routine tasks |
+| Urgent items | Old completed work |
+| Recent completions | Logs |
+| Current blockers | Changelogs |
+
+**Size:** Fits on one screen
+**Timestamps:** Always with `[YYYY-MM-DD HH:MM PST]`
+**Links:** All wikilinked to source files
 
 ---
 
-*[[mind/memory/RAM|RAM]] = Working memory. Active context. Stale → [[memory/sessions|archive]].*
+*RAM = Working Memory. Active context. Important right now.*

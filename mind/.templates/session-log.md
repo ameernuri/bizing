@@ -38,7 +38,7 @@ tags:
 
 ### Mind Files
 - [ ] [[symbiosis/feedback]] — Learnings documented
-- [ ] [[symbiosis/standup]] — Status updated
+- [ ] [[mind/memory/RAM]] — Active context updated (if significant)
 - [ ] Knowledge file — Architecture documented
 - [ ] [[MAP]] — Structure updated (if changed)
 
@@ -72,7 +72,7 @@ tags:
 
 ### MINDSYNC (HARD)
 - [ ] feedback.md updated with learnings
-- [ ] standup.md updated with status
+- [ ] RAM updated with active context (if significant)
 - [ ] Session log created/updated
 - [ ] Knowledge files updated (architecture
   - domain)

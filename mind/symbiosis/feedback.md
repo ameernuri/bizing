@@ -56,7 +56,7 @@ status: active
 
 ### From Today's Session (2026-02-14) — Dreamer Loop
 
-- [2026-02-14] **Dreamer loop created** — Read dissonances/curiosities → Ask Ollama → Add unique → Update MAP → Update RAM
+- [2026-02-14] **Dreamer loop created** — Read dissonances/curiosities → Ask Ollama → Add unique → Update MAP → Update session log
 - [2026-02-14] **File-editing integrated** — Wiki links and #tags in all outputs
 - [2026-02-14] **MAP.md updated** — Added "Mind Health" section with DISSONANCE and CURIOSITIES links
 

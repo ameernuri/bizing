@@ -1,6 +1,6 @@
 ---
-date: 2026-02-13
-tags: 
+date: 2026-02-14
+tags:
   - skill
   - codesync
   - workflow
@@ -12,24 +12,33 @@ tags:
 
 > Quality gate before committing code
 
+---
+
+## ⚠️ THE GOLDEN RULE: TEST BEFORE COMMIT
+
+**CRITICAL: Tests MUST pass BEFORE committing, not after.**
+
+```
+1. Run tests → 2. Verify pass → 3. Ask approval → 4. Commit
+                ↑
+                |
+        MUST happen FIRST
+```
+
+**Never commit and then run tests. Always test FIRST, then commit.**
+
+---
+
 ## What Is CodeSync?
 
 **CodeSync** ensures code quality before any commit. All checks must pass.
 
 ---
 
-## The Main Rule
-
-**ALWAYS ask before committing.** Never commit without explicit approval.
-
----
-
 ## The Process
 
 ```
-Type Check → Unit Tests → E2E Tests
-IF ALL PASS → Commit → Push → Create PR
-IF ANY FAIL → DO NOT COMMIT → Fix issues → Retry
+Type Check → Unit Tests → E2E Tests → ASK APPROVAL → IF ALL PASS → Commit → Push → Create PR
 ```
 
 ---
@@ -80,7 +89,21 @@ Example:
 
 ---
 
-### Step 4: Ask for Approval
+### Step 4: Verify Results
+
+**IMPORTANT:** You MUST see and verify the test results BEFORE asking for approval.
+
+```
+✅ API Tests: 13 passed
+✅ Admin Tests: 36 passed
+✅ Total: 49 tests passed
+```
+
+**Only proceed if ALL tests pass.**
+
+---
+
+### Step 5: Ask for Approval
 
 Show user what will be committed:
 
@@ -92,17 +115,16 @@ Files to commit:
 
 Commit message: "feat: description"
 
+Tests: ✅ All passed (13 API + 36 Admin = 49 tests)
+
 Approve commit and do a PR? (yes/no)
 ```
 
-**Wait for explicit:** "yes"
-  - "commit approved"
-  - "approve commit and do a PR"
-  - or "codesync"
+**Wait for explicit approval:** "yes" or "approve commit and do a PR"
 
 ---
 
-### Step 5: Commit
+### Step 6: Commit
 
 ```bash
 git add [files]
@@ -118,7 +140,7 @@ git commit -m "type: description"
 
 ---
 
-### Step 6: Push
+### Step 7: Push
 
 ```bash
 git push -u origin feature/description
@@ -126,7 +148,7 @@ git push -u origin feature/description
 
 ---
 
-### Step 7: Create PR
+### Step 8: Create PR
 
 ```bash
 gh pr create --title "type: description" --body "summary"
@@ -138,10 +160,25 @@ gh pr create --title "type: description" --body "summary"
 
 | Never | Always |
 |-------|--------|
+| ❌ Run tests AFTER commit | ✅ Run tests BEFORE commit |
 | ❌ Commit without asking | ✅ Ask "Approve commit and do a PR?" |
 | ❌ Commit to main | ✅ Feature branch only |
 | ❌ Commit with failing tests | ✅ All tests pass first |
 | ❌ Mix unrelated changes | ✅ One feature per commit |
+| ❌ Assume tests passed | ✅ See and verify test results |
+
+---
+
+## The CodeSync Checklist
+
+Before asking for approval:
+
+- [ ] Type check passed
+- [ ] Unit tests passed (see results)
+- [ ] E2E tests passed (see results)
+- [ ] All test files shown to user
+- [ ] Explicit approval received
+- [ ] Commit message formatted correctly
 
 ---
 
@@ -155,6 +192,15 @@ gh pr create --title "type: description" --body "summary"
 
 ---
 
+## Why Test Before Commit?
+
+1. **Catch issues early** — Find bugs before they reach the branch
+2. **Prevent broken builds** — Don't break CI/CD
+3. **Maintain quality** — Every commit should be shippable
+4. **Build trust** — Tests passing = ready for review
+
+---
+
 ## Triggers
 
 User says any of:
@@ -162,7 +208,7 @@ User says any of:
 - **"commit approved"**
 - **"commit"** (ask for approval first)
 
-→ Run all checks → Ask for approval → Commit if approved
+→ Run all checks → Verify results → Ask for approval → Commit if approved
 
 ---
 
@@ -170,8 +216,9 @@ User says any of:
 
 - [[mind/INDEX]] — Entry point (mentions CodeSync)
 - [[mind/skills/mindsync|MindSync Skill]] — Update mind after code changes
-- [[mind/skills/ram/Ram|RAM Skill]] — Working memory
+- [[mind/skills/ram|Ram Skill]] — Working memory
+- [[mind/skills/creating-files|Creating Files Skill]] — File creation guidelines
 
 ---
 
-*CodeSync: Check → Test → Ask → Commit → Push → PR*
+*CodeSync: Test → Verify → Ask → Commit → Push → PR*

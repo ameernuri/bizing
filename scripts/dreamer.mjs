@@ -204,17 +204,6 @@ function updateCuriositiesFile(curiosities) {
   return curiosities.length
 }
 
-function updateRAM(dissonances, curiosities) {
-  if (!existsSync(RAM_FILE)) return
-  let content = readFileSync(RAM_FILE, 'utf-8')
-  const entry = `\n- [${TODAY} ${TIMESTAMP}] **Dreamer found ${dissonances.length} dissonance(s), ${curiosities.length} curiosity/ies**`
-  const i = content.indexOf('## ✅ Recent Completed')
-  if (i !== -1) {
-    content = content.slice(0, i) + entry + content.slice(i)
-    writeFileSync(RAM_FILE, content)
-  }
-}
-
 function createSessionLog(dissonances, curiosities) {
   const file = join(MEMORY_SESSIONS_DIR, `${TODAY}-dreamer.md`)
   const log = `---
@@ -334,7 +323,8 @@ if (dAdded === 0 && cAdded === 0) {
   console.log('✅ No new dissonances or curiosities found')
 }
 
-updateRAM(newDissonances, newCuriosities)
+// RAM is for active context, not automated system logs
+// Dreamer findings are logged to session files, not RAM
 createSessionLog(newDissonances, newCuriosities)
 
 console.log('\n✨ Dreamer complete!')

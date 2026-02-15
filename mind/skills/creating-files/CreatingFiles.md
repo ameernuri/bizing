@@ -119,10 +119,12 @@ Logged to [[memory/sessions/2026-02-14-synopsis]].
 - [[./2026-02-14-new-session|Feb 14]] — What happened
 ```
 
-**To RAM:**
+**To RAM (Active Context Only):**
 ```markdown
-- [2026-02-14 20:00 PST] **Task** — Description
+- [2026-02-14 20:00 PST] **Active Task** — What we're working on NOW
 ```
+
+RAM = Working Memory. Only add if it's important RIGHT NOW.
 
 **To tables:**
 ```markdown
@@ -368,6 +370,23 @@ When updating a file:
 ### Follow [[skills/mapping/Mapping]]
 - MAP.md updates
 - Structure maintenance
+
+---
+
+## The Commit Rule
+
+**IMPORTANT: Always use CodeSync for commits.**
+
+Before committing any code or documentation changes:
+
+1. **Run tests FIRST** — `npm test`
+2. **Verify results** — See all test output
+3. **Ask for approval** — "Approve commit and do a PR?"
+4. **Only then commit** — After explicit approval
+
+**NEVER:** Commit without running tests first.
+
+**Related:** [[skills/codesync/CodeSync|CodeSync Skill]]
 
 ---
 

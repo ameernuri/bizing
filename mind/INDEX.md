@@ -28,15 +28,20 @@ Moving from daily standup to RAM (Working Memory) with timestamps.
 
 ## 💡 What Is RAM?
 
-**RAM** = Working Memory with timestamps.
+**RAM** = Working Memory — what matters RIGHT NOW.
 
-Replaces daily standup with:
-- Active context with timestamps
-- 48-hour expiration
-- Auto-archive to long-term memory
-- Single source of truth
+| RAM Contains | RAM Does NOT Contain |
+|--------------|---------------------|
+| Active focus | Everything |
+| Current context | Routine tasks |
+| Urgent items | Old completed work |
+| Recent completions | Logs |
+| Current blockers | Changelogs |
 
-**See:** [[mind/skills/ram/Ram]] for full skill
+**Size:** Fits on one screen
+**Timestamps:** Always with `[YYYY-MM-DD HH:MM PST]`
+
+**See:** [[mind/skills/ram/Ram|RAM Skill]] for how to use it
 
 ---
 
@@ -72,7 +77,7 @@ Skills are step-by-step guides. Check [[mind/skills/Skills]] directory:
 - [[mind/skills/mapping/Mapping|Mapping]] — Maintain mind structure and navigation #mapping #structure
 - [[mind/skills/memory/Memory|Memory]] — Log work sessions to long-term memory #session #logging
 - [[mind/skills/synopsis/Synopsis|Synopsis]] — Bizing's story and narrative #story #narrative
-- [[mind/skills/codesync/CodeSync|CodeSync]] — Quality gate before committing code #git #commit
+- [[mind/skills/codesync/CodeSync|CodeSync]] — Quality gate **TEST BEFORE COMMIT** #git #commit
 - [[mind/skills/mindsync/Mindsync|Mindsync]] — Update mind after every change  #sync #update
 - [[mind/skills/ram/Ram|Ram]] — Working memory management (RAM) #ram #memory
 - [[mind/skills/creating-files/CreatingFiles|Creating Files]] — Complete guide to creating and updating files #files #creation #documentation
