@@ -1,6 +1,10 @@
 ---
 date: 2026-02-13
-tags: skill, obsidian, features, enhancement
+tags: 
+  - skill
+  - obsidian
+  - features
+  - enhancement
 ---
 
 # 🔮 Obsidian Enhancement Features
@@ -13,7 +17,8 @@ tags: skill, obsidian, features, enhancement
 
 ### 1. **Graph View** — Visual Connection Explorer
 
-**What it does:** Shows all notes as nodes, links as edges
+**What it does:** Shows all notes as nodes
+  - links as edges
 
 **Use for Bizing:**
 - See orphaned files (disconnected nodes)
@@ -37,7 +42,9 @@ Filter: tag:#session      # Show only sessions
 
 ### 2. **Canvas** — Infinite Visual Whiteboard
 
-**What it does:** Place notes, images, cards on a freeform canvas
+**What it does:** Place notes
+  - images
+  - cards on a freeform canvas
 
 **Use for Bizing:**
 - [[mind/canvas/architecture-overview|Architecture diagrams]]
@@ -75,7 +82,8 @@ Double-click → Add card
 ```markdown
 ---
 date: <% tp.date.now("YYYY-MM-DD") %>
-tags: daily
+tags: 
+  - daily
 ---
 
 # <% tp.date.now("YYYY-MM-DD dddd") %>
@@ -170,9 +178,11 @@ Cmd+Click → Follow link
 **What it does:** Save window arrangements
 
 **Use for Bizing:**
-- "Development" layout: Code on left, mind on right
+- "Development" layout: Code on left
+  - mind on right
 - "Planning" layout: Kanban + Graph view
-- "Writing" layout: Editor only, focus mode
+- "Writing" layout: Editor only
+  - focus mode
 
 **Save:** Cmd+P → "Workspaces: Save layout"
 
@@ -352,7 +362,9 @@ Use Canvas for decisions:
 
 Use Dataview for dashboard:
 ```dataview
-TABLE date, type, status
+TABLE date
+  - type
+  - status
 FROM "mind/memory/sessions"
 WHERE date > date(today) - dur(7 days)
 SORT date DESC
@@ -372,7 +384,9 @@ Monthly graph review:
 
 ### Immediate (Add Now)
 1. **Graph View** — Use daily to find orphans
-2. **Bookmarks** — Pin INDEX, RAM, MAP
+2. **Bookmarks** — Pin INDEX
+  - RAM
+  - MAP
 3. **Tags** — Add to all existing files
 4. **Admonitions** — Highlight key sections
 

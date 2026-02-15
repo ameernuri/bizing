@@ -1,6 +1,13 @@
 ---
 date: 2026-02-12
-tags: research, findings, api-first, api-complete, openapi, contract-testing, design
+tags: 
+  - research
+  - findings
+  - api-first
+  - api-complete
+  - openapi
+  - contract-testing
+  - design
 status: completed
 ---
 
@@ -12,14 +19,23 @@ status: completed
 
 **API-First = API-Complete**
 
-The API is the **most important** part of the system. It exposes **everything** — every feature, every capability, every action — programmatically. The UI is simply one client that consumes the API. Agents, scripts, integrations, and third-party apps can all build on top of the comprehensive API.
+The API is the **most important** part of the system. It exposes **everything** — every feature
+  - every capability
+  - every action — programmatically. The UI is simply one client that consumes the API. Agents
+  - scripts
+  - integrations
+  - and third-party apps can all build on top of the comprehensive API.
 
 **Philosophy:**
 - Terminal/command line can do everything → API can do everything
 - UI is just a pretty wrapper around API calls
-- If you can do it in the UI, you can do it via API
-- If you can do it via API, you might not be able to do it in UI (yet)
-- API completeness enables automation, integrations, and agent ecosystems
+- If you can do it in the UI
+  - you can do it via API
+- If you can do it via API
+  - you might not be able to do it in UI (yet)
+- API completeness enables automation
+  - integrations
+  - and agent ecosystems
 
 ---
 
@@ -31,7 +47,9 @@ The API is the **most important** part of the system. It exposes **everything** 
 1. Build backend with core features
 2. Build frontend with subset of features
 3. API exposes only what frontend needs
-4. Missing: programmatic access, automation, integrations
+4. Missing: programmatic access
+  - automation
+  - integrations
 
 **API-Complete Approach:**
 1. Design comprehensive API (every possible action)
@@ -45,13 +63,17 @@ Terminal/CLI → Can do everything
     ↓
    API → Exposes everything programmatically
     ↓
-   UI → One client, pretty interface
+   UI → One client
+  - pretty interface
     ↓
- Agents → Another client, automated
+ Agents → Another client
+  - automated
     ↓
-Scripts → Another client, batch operations
+Scripts → Another client
+  - batch operations
     ↓
-Integrations → Another client, external systems
+Integrations → Another client
+  - external systems
 ```
 
 ### 1.2 API-Complete Principles for Bizing
@@ -59,7 +81,8 @@ Integrations → Another client, external systems
 **Principle 1: Everything is an API**
 - Every feature has an API endpoint
 - No "UI-only" functionality
-- If it exists, it's programmatically accessible
+- If it exists
+  - it's programmatically accessible
 
 **Principle 2: UI is a Client**
 - UI calls the same API as everyone else
@@ -73,13 +96,17 @@ Integrations → Another client, external systems
 
 **Principle 4: Agents are First-Class**
 - Agents can do everything humans can do
-- Agents can do things humans can't (batch, automate)
+- Agents can do things humans can't (batch
+  - automate)
 - API designed for both human and agent consumption
 
 ### 1.3 What "API-First" Really Means Here
 
-**Not:** Design API first, then implement
-**Yes:** API is the primary interface — complete, comprehensive, everything exposed
+**Not:** Design API first
+  - then implement
+**Yes:** API is the primary interface — complete
+  - comprehensive
+  - everything exposed
 
 **Bizing's Definition:**
 > "API-First means the API is the most important thing. It needs to cover everything. We need to be able to do everything through the API."
@@ -107,13 +134,17 @@ Integrations → Another client, external systems
 - **Clear contracts:** No ambiguity about expected behavior
 - **Documentation:** Spec = living documentation
 - **Testing:** Generate tests from spec
-- **Code generation:** Generate types, clients, servers
+- **Code generation:** Generate types
+  - clients
+  - servers
 
 ### 2.2 API-First Workflow for Bizing
 
 ```
 Week 1: Design
-├── Define resources (bookings, events, products)
+├── Define resources (bookings
+  - events
+  - products)
 ├── Write OpenAPI 3.0 spec
 ├── Review with team
 └── Generate mock server
@@ -145,7 +176,9 @@ openapi: 3.0.3
 info:
   title: Bizing Booking API
   description: |
-    API for managing bookings, events, and digital product sales.
+    API for managing bookings
+  - events
+  - and digital product sales.
     Supports programmatic access for users and agents.
   version: 1.0.0
   contact:
@@ -169,7 +202,10 @@ paths:
       summary: List bookings
       description: |
         Retrieve bookings with filtering and pagination.
-        Supports filtering by date range, status, resource, customer.
+        Supports filtering by date range
+  - status
+  - resource
+  - customer.
       operationId: listBookings
       tags:
         - Bookings
@@ -178,7 +214,11 @@ paths:
           in: query
           schema:
             type: string
-            enum: [draft, pending, confirmed, completed, cancelled]
+            enum: [draft
+  - pending
+  - confirmed
+  - completed
+  - cancelled]
         - name: resourceId
           in: query
           schema:
@@ -286,7 +326,8 @@ paths:
     
     patch:
       summary: Update booking
-      description: Update booking details (notes, metadata)
+      description: Update booking details (notes
+  - metadata)
       operationId: updateBooking
       tags:
         - Bookings
@@ -375,7 +416,10 @@ paths:
           in: query
           schema:
             type: string
-            enum: [room, event_space, service, product]
+            enum: [room
+  - event_space
+  - service
+  - product]
       responses:
         '200':
           description: List of resources
@@ -552,10 +596,20 @@ components:
           default: UTC
         status:
           type: string
-          enum: [draft, pending, confirmed, completed, cancelled, expired, no_show]
+          enum: [draft
+  - pending
+  - confirmed
+  - completed
+  - cancelled
+  - expired
+  - no_show]
         paymentStatus:
           type: string
-          enum: [pending, held, captured, refunded, failed]
+          enum: [pending
+  - held
+  - captured
+  - refunded
+  - failed]
         totalAmount:
           type: number
           format: decimal
@@ -623,7 +677,10 @@ components:
           type: string
         type:
           type: string
-          enum: [room, event_space, service, product]
+          enum: [room
+  - event_space
+  - service
+  - product]
         capacity:
           type: integer
         timezone:
@@ -645,7 +702,10 @@ components:
           description: Duration in minutes
         status:
           type: string
-          enum: [available, held, booked, blocked]
+          enum: [available
+  - held
+  - booked
+  - blocked]
     
     Event:
       type: object
@@ -858,7 +918,8 @@ Accept: application/vnd.bizing.v1+json
 **Solution:**
 - Consumer (frontend) defines expected contract
 - Provider (backend) verifies it can fulfill contract
-- Fast, isolated tests
+- Fast
+  - isolated tests
 - Catches breaking changes early
 
 ### 4.2 Pact Implementation
@@ -873,16 +934,21 @@ const provider = new Pact({
   consumer: 'bizing-admin',
   provider: 'bizing-api',
   port: 1234,
-  log: path.resolve(process.cwd(), 'logs', 'pact.log'),
-  dir: path.resolve(process.cwd(), 'pacts'),
+  log: path.resolve(process.cwd()
+  - 'logs'
+  - 'pact.log'),
+  dir: path.resolve(process.cwd()
+  - 'pacts'),
 });
 
-describe('Booking API Contract', () => {
+describe('Booking API Contract'
+  - () => {
   beforeAll(() => provider.setup());
   afterEach(() => provider.finalize());
   afterAll(() => provider.verify());
 
-  describe('GET /bookings', () => {
+  describe('GET /bookings'
+  - () => {
     beforeEach(() => {
       return provider.addInteraction({
         state: 'bookings exist',
@@ -919,7 +985,8 @@ describe('Booking API Contract', () => {
       });
     });
 
-    it('returns list of bookings', async () => {
+    it('returns list of bookings'
+  - async () => {
       const api = new BookingAPI('http://localhost:1234');
       const bookings = await api.listBookings({ status: 'confirmed' });
       
@@ -928,7 +995,8 @@ describe('Booking API Contract', () => {
     });
   });
 
-  describe('POST /bookings', () => {
+  describe('POST /bookings'
+  - () => {
     beforeEach(() => {
       return provider.addInteraction({
         state: 'resource is available',
@@ -961,7 +1029,8 @@ describe('Booking API Contract', () => {
       });
     });
 
-    it('creates a pending booking', async () => {
+    it('creates a pending booking'
+  - async () => {
       const api = new BookingAPI('http://localhost:1234');
       const booking = await api.createBooking({
         resourceId: '123e4567-e89b-12d3-a456-426614174000',
@@ -984,13 +1053,16 @@ describe('Booking API Contract', () => {
 
 import { Verifier } from '@pact-foundation/pact';
 
-describe('Pact Verification', () => {
-  it('validates the expectations', async () => {
+describe('Pact Verification'
+  - () => {
+  it('validates the expectations'
+  - async () => {
     await new Verifier({
       provider: 'bizing-api',
       providerBaseUrl: 'http://localhost:6129',
       pactUrls: [
-        path.resolve(__dirname, '../../../pacts/bizing-admin-bizing-api.json')
+        path.resolve(__dirname
+  - '../../../pacts/bizing-admin-bizing-api.json')
       ],
       stateHandlers: {
         'bookings exist': async () => {
@@ -1011,7 +1083,8 @@ describe('Pact Verification', () => {
 # .github/workflows/contract-tests.yml
 name: Contract Tests
 
-on: [push, pull_request]
+on: [push
+  - pull_request]
 
 jobs:
   consumer:
@@ -1074,8 +1147,11 @@ import { parse } from 'url';
 
 const bookings = new Map();
 
-const server = createServer((req, res) => {
-  const { pathname, query } = parse(req.url, true);
+const server = createServer((req
+  - res) => {
+  const { pathname
+  - query } = parse(req.url
+  - true);
   
   if (pathname === '/api/v1/bookings' && req.method === 'GET') {
     const results = Array.from(bookings.values());
@@ -1086,7 +1162,8 @@ const server = createServer((req, res) => {
       return true;
     });
     
-    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.writeHead(200
+  - { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({
       data: filtered,
       pagination: {
@@ -1100,8 +1177,10 @@ const server = createServer((req, res) => {
   
   if (pathname === '/api/v1/bookings' && req.method === 'POST') {
     let body = '';
-    req.on('data', chunk => body += chunk);
-    req.on('end', () => {
+    req.on('data'
+  - chunk => body += chunk);
+    req.on('end'
+  - () => {
       const data = JSON.parse(body);
       const booking = {
         id: randomUUID(),
@@ -1110,15 +1189,18 @@ const server = createServer((req, res) => {
         expiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
         createdAt: new Date().toISOString()
       };
-      bookings.set(booking.id, booking);
+      bookings.set(booking.id
+  - booking);
       
-      res.writeHead(201, { 'Content-Type': 'application/json' });
+      res.writeHead(201
+  - { 'Content-Type': 'application/json' });
       res.end(JSON.stringify(booking));
     });
   }
 });
 
-server.listen(4010, () => {
+server.listen(4010
+  - () => {
   console.log('Mock server running on http://localhost:4010');
 });
 ```
@@ -1159,13 +1241,16 @@ server.listen(4010, () => {
 import request from 'supertest';
 import { app } from '../app';
 
-describe('POST /api/v1/bookings', () => {
-  it('creates booking and holds inventory', async () => {
+describe('POST /api/v1/bookings'
+  - () => {
+  it('creates booking and holds inventory'
+  - async () => {
     const resource = await createTestResource();
     
     const response = await request(app)
       .post('/api/v1/bookings')
-      .set('Authorization', `Bearer ${authToken}`)
+      .set('Authorization'
+  - `Bearer ${authToken}`)
       .send({
         resourceId: resource.id,
         startTime: '2026-03-15T10:00:00Z',
@@ -1183,7 +1268,8 @@ describe('POST /api/v1/bookings', () => {
     expect(hold).toBeDefined();
   });
   
-  it('returns 409 for double booking', async () => {
+  it('returns 409 for double booking'
+  - async () => {
     const resource = await createTestResource();
     const existing = await createTestBooking({
       resourceId: resource.id,
@@ -1194,7 +1280,8 @@ describe('POST /api/v1/bookings', () => {
     
     await request(app)
       .post('/api/v1/bookings')
-      .set('Authorization', `Bearer ${authToken}`)
+      .set('Authorization'
+  - `Bearer ${authToken}`)
       .send({
         resourceId: resource.id,
         startTime: '2026-03-15T10:30:00Z',
@@ -1238,11 +1325,19 @@ describe('POST /api/v1/bookings', () => {
 
 **Every Feature Has an Endpoint:**
 ```
-✅ CRUD operations (Create, Read, Update, Delete)
-✅ List with filtering, sorting, pagination
-✅ Bulk operations (batch create, update, delete)
+✅ CRUD operations (Create
+  - Read
+  - Update
+  - Delete)
+✅ List with filtering
+  - sorting
+  - pagination
+✅ Bulk operations (batch create
+  - update
+  - delete)
 ✅ Search across all fields
-✅ Export data (CSV, JSON)
+✅ Export data (CSV
+  - JSON)
 ✅ Import data
 ✅ Webhooks for real-time updates
 ✅ Audit log access
@@ -1251,18 +1346,27 @@ describe('POST /api/v1/bookings', () => {
 **Every Action is Exposed:**
 ```
 ✅ User actions (what humans do in UI)
-✅ Admin actions (configuration, settings)
-✅ System actions (background jobs, cleanup)
-✅ Reporting actions (analytics, exports)
-✅ Integration actions (sync, webhooks)
+✅ Admin actions (configuration
+  - settings)
+✅ System actions (background jobs
+  - cleanup)
+✅ Reporting actions (analytics
+  - exports)
+✅ Integration actions (sync
+  - webhooks)
 ```
 
 **Every Entity is Accessible:**
 ```
-✅ Core entities (bookings, users, agents)
-✅ Secondary entities (payments, notifications)
-✅ System entities (logs, audit trails)
-✅ Config entities (settings, preferences)
+✅ Core entities (bookings
+  - users
+  - agents)
+✅ Secondary entities (payments
+  - notifications)
+✅ System entities (logs
+  - audit trails)
+✅ Config entities (settings
+  - preferences)
 ✅ Relationship traversal (nested resources)
 ```
 
@@ -1272,15 +1376,25 @@ describe('POST /api/v1/bookings', () => {
 - [ ] All booking operations (CRUD + search + bulk)
 - [ ] All user operations (CRUD + auth + permissions)
 - [ ] All agent operations (CRUD + onboarding + payouts)
-- [ ] All payment operations (charge, refund, payout, reconcile)
-- [ ] All notification operations (send, template, history)
-- [ ] All reporting operations (analytics, exports, dashboards)
-- [ ] All configuration operations (settings, feature flags)
-- [ ] All admin operations (user management, moderation)
+- [ ] All payment operations (charge
+  - refund
+  - payout
+  - reconcile)
+- [ ] All notification operations (send
+  - template
+  - history)
+- [ ] All reporting operations (analytics
+  - exports
+  - dashboards)
+- [ ] All configuration operations (settings
+  - feature flags)
+- [ ] All admin operations (user management
+  - moderation)
 
 **Should Have:**
 - [ ] Batch operations for efficiency
-- [ ] Advanced search (faceted, fuzzy)
+- [ ] Advanced search (faceted
+  - fuzzy)
 - [ ] Real-time subscriptions (WebSockets/SSE)
 - [ ] Import/export for all entities
 - [ ] Audit log for all mutations
@@ -1317,7 +1431,9 @@ Agents will automate everything
 Scripts will batch process
 Integrations will sync data
 
-Design for: scale, automation, unexpected use cases
+Design for: scale
+  - automation
+  - unexpected use cases
 ```
 
 **Principle 3: Consistency is King**
@@ -1328,7 +1444,8 @@ Same pagination style
 Same filtering syntax
 Same authentication
 
-If /users supports filtering, /bookings must too
+If /users supports filtering
+  - /bookings must too
 ```
 
 **Principle 4: Document Everything**
@@ -1409,11 +1526,17 @@ For every button in UI:
 | Decision | Choice | Rationale |
 |----------|--------|-----------|
 | API Philosophy | **API-Complete** | API exposes everything — UI is just one client |
-| API spec format | OpenAPI 3.0 | Industry standard, tooling support |
-| Versioning | URL (/v1/, /v2/) | Clear, cache-friendly, easy to route |
-| Contract testing | Pact | Mature, good CI/CD integration |
+| API spec format | OpenAPI 3.0 | Industry standard
+  - tooling support |
+| Versioning | URL (/v1/
+  - /v2/) | Clear
+  - cache-friendly
+  - easy to route |
+| Contract testing | Pact | Mature
+  - good CI/CD integration |
 | Mock server | Prism | Auto-generated from spec |
-| Code generation | openapi-typescript | Type-safe, maintained |
+| Code generation | openapi-typescript | Type-safe
+  - maintained |
 
 ---
 

@@ -1,6 +1,10 @@
 ---
 date: 2026-02-13
-tags: skill, obsidian, dataview, query
+tags: 
+  - skill
+  - obsidian
+  - dataview
+  - query
 ---
 
 # 🔍 Dataview Skill
@@ -11,9 +15,13 @@ tags: skill, obsidian, dataview, query
 
 ## What is Dataview?
 
-[[Dataview plugin]] is a **live index and query engine** for your Obsidian vault. It reads metadata from your notes and lets you query, filter, sort, and display that data in real-time.
+[[Dataview plugin]] is a **live index and query engine** for your Obsidian vault. It reads metadata from your notes and lets you query
+  - filter
+  - sort
+  - and display that data in real-time.
 
-**Key capability:** Your queries stay **always up to date** — when you change a file, the query result updates automatically.
+**Key capability:** Your queries stay **always up to date** — when you change a file
+  - the query result updates automatically.
 
 ---
 
@@ -40,14 +48,17 @@ Add YAML at top of file:
 author: "Ameer"
 date: 2026-02-13
 priority: high
-tags: daily, standup
+tags: 
+  - daily
+  - standup
 ---
 ```
 
 ### Inline Fields
 Add anywhere in content:
 ```markdown
-From [author:: Ameer], created on (date:: 2026-02-13)
+From [author:: Ameer]
+  - created on (date:: 2026-02-13)
 
 This is #priority::high work.
 ```
@@ -65,7 +76,8 @@ WHERE file.tags
 
 ### 2. TABLE — Columns of data
 ```dataview
-TABLE file.ctime AS "Created", file.tags AS "Tags"
+TABLE file.ctime AS "Created"
+  - file.tags AS "Tags"
 FROM "mind/memory/sessions"
 SORT file.ctime DESC
 LIMIT 10
@@ -102,7 +114,8 @@ FROM "mind" AND #task             # Combined
 ```dataview
 LIST
 FROM "mind"
-WHERE file.tags AND contains(file.tags, "#critical")
+WHERE file.tags AND contains(file.tags
+  - "#critical")
 WHERE date = date(today)
 WHERE priority = "high"
 WHERE !completed
@@ -146,10 +159,14 @@ date(now) - file.ctime # Time difference
 
 ### String Functions
 ```dataview
-contains(file.tags, "#critical")
-startsWith(file.name, "2026-02")
-endsWith(file.path, "standup.md")
-regexmatch("pattern", file.name)
+contains(file.tags
+  - "#critical")
+startsWith(file.name
+  - "2026-02")
+endsWith(file.path
+  - "standup.md")
+regexmatch("pattern"
+  - file.name)
 ```
 
 ### List Operations
@@ -158,7 +175,9 @@ length(file.tags)              # Count tags
 sum(file.size)                 # Total size
 max(file.ctime)                # Most recent
 min(file.ctime)                # Oldest
-filter(file.tags, (t) => contains(t, "#"))
+filter(file.tags
+  - (t) => contains(t
+  - "#"))
 ```
 
 ---
@@ -169,13 +188,15 @@ filter(file.tags, (t) => contains(t, "#"))
 ```dataview
 TASK
 FROM "mind/symbiosis"
-WHERE contains(tags, "#today") AND !completed
+WHERE contains(tags
+  - "#today") AND !completed
 SORT priority ASC
 ```
 
 ### Recent Sessions
 ```dataview
-TABLE file.ctime AS "Date", file.tags AS "Tags"
+TABLE file.ctime AS "Date"
+  - file.tags AS "Tags"
 FROM "mind/memory/sessions"
 SORT file.ctime DESC
 LIMIT 5
@@ -194,7 +215,8 @@ AND file.path != "mind/MAP"
 ```dataview
 TASK
 FROM "mind"
-WHERE contains(tags, "#blocker") AND !completed
+WHERE contains(tags
+  - "#blocker") AND !completed
 ```
 
 ### Open Tasks by Priority
@@ -235,11 +257,13 @@ SORT priority DESC
 For single values anywhere in text:
 
 ```markdown
-Total open tasks: `= length(filter(file.tasks, (t) => !t.completed))`
+Total open tasks: `= length(filter(file.tasks
+  - (t) => !t.completed))`
 
 Today is: `= date(today)`
 
-Files updated today: `= length(filter(this.file.inlinks, (f) => f.mtime >= date(today)))`
+Files updated today: `= length(filter(this.file.inlinks
+  - (f) => f.mtime >= date(today)))`
 ```
 
 ---
@@ -249,7 +273,10 @@ Files updated today: `= length(filter(this.file.inlinks, (f) => f.mtime >= date(
 ### 1. Use Tags for Categories
 ```yaml
 ---
-tags: task, critical, api
+tags: 
+  - task
+  - critical
+  - api
 ---
 ```
 
@@ -275,7 +302,9 @@ FROM ""                   # Slow on large vaults
 Dataview only sees:
 - Frontmatter YAML
 - Inline [key:: value] fields
-- Implicit fields (file.*, tags, tasks)
+- Implicit fields (file.*
+  - tags
+  - tasks)
 
 Regular text paragraphs are NOT indexed.
 

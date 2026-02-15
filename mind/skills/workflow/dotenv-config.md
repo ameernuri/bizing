@@ -1,6 +1,10 @@
 ---
 date: 2026-02-13
-tags: skill, workflow, dotenv, environment
+tags: 
+  - skill
+  - workflow
+  - dotenv
+  - environment
 ---
 
 # Environment Variables with dotenv

@@ -4,8 +4,21 @@
 
 ---
 
+- [[./2026-02-15-dreamer|Feb 15]] — Dreamer: tensions
 ## Recent Sessions
 
+- [[./2026-02-14-mindsync|Feb 14]] — HARD MindSync: Tag fixes (60+ files), SKILL renames (10 files), SYNOPSIS, Creating Files skill
+- [[./2026-02-14-creating-files|Feb 14]] — Creating Files skill created, comprehensive guide
+- [[./2026-02-14-synopsis|Feb 14]] — SYNOPSIS: Bizing story created, Synopsis skill, Dreamer integration
+- [[./2026-02-14-dissonance-fix|Feb 14]] — DISSONANCE: unique tensions, no Status field
+- [[./2026-02-14-dreamer-ollama|Feb 14]] — Dreamer now uses Ollama (no hardcoded values)
+- [[./2026-02-14-skills-fully-dynamic|Feb 14]] — Dreamer fully dynamic + Curiosity + Mapping skills
+- [[./2026-02-14-dreamer-fixes|Feb 14]] — Dreamer fixes + Evolution skill
+- [[./2026-02-14-hard-mindsync|Feb 14]] — HARD MindSync: Dreamer 15min + Tag fix
+- [[./2026-02-14-dreaming-skill|Feb 14]] — Dreaming skill + Dreamer enhancement
+
+- [[./2026-02-14-soft-mindsync|Feb 14]] — SOFT MindSync: Audio briefing at 1.5x
+- [[./2026-02-13-codesync-final|Feb 13]] — Final CodeSync: PR #15 complete (34 files)
 - [[./2026-02-13-obsidian-enhancements|Feb 13]] — Obsidian enhancement features (Graph, Canvas, plugins)
 - [[./2026-02-13-merge-redundant-skills|Feb 13]] — Merged 4 redundant skills into obsidian
 - [[./2026-02-13-obsidian-skills|Feb 13]] — Obsidian skills (Kanban, Dataview, Templater)

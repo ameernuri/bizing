@@ -1,16 +1,26 @@
 ---
 date: 2026-02-12
-tags: research, findings, booking, domain-model, reservations
+tags: 
+  - research
+  - findings
+  - booking
+  - domain-model
+  - reservations
 status: completed
 ---
 
 # 📚 Research Findings: Booking Domain Model & Reservation Patterns
 
-> *Comprehensive research on booking system architecture, reservation patterns, and domain modeling*
+> *Comprehensive research on booking system architecture
+  - reservation patterns
+  - and domain modeling*
 
 ## Executive Summary
 
-This research covers the core domain model for Bizing's booking engine, including reservation state machines, inventory management, and prevention of double-booking. Key findings inform the database schema and API design.
+This research covers the core domain model for Bizing's booking engine
+  - including reservation state machines
+  - inventory management
+  - and prevention of double-booking. Key findings inform the database schema and API design.
 
 ---
 
@@ -40,19 +50,23 @@ CANCELLED  EXPIRED   NO_SHOW
 **Pattern A: Pessimistic Locking**
 - Lock time slot when user starts booking
 - Prevents double-booking at database level
-- Con: Reduces concurrency, abandoned locks
+- Con: Reduces concurrency
+  - abandoned locks
 
 **Pattern B: Optimistic Locking (Versioning)**
 - Check availability at submission time
 - Use version numbers for conflict detection
-- Pro: Better concurrency, handles race conditions
+- Pro: Better concurrency
+  - handles race conditions
 - **Recommendation: Use for Bizing**
 
 **Pattern C: Event Sourcing**
 - Store all inventory changes as events
 - Rebuild current state from event log
-- Pro: Complete audit trail, time-travel queries
-- Con: Complexity, requires CQRS
+- Pro: Complete audit trail
+  - time-travel queries
+- Con: Complexity
+  - requires CQRS
 
 ### 1.3 Time Slot Management
 
@@ -71,10 +85,13 @@ interface TimeSlot {
 ```
 
 **Recurrence Patterns:**
-- Daily, weekly, monthly repeats
+- Daily
+  - weekly
+  - monthly repeats
 - End after N occurrences or end date
 - Exclude specific dates (holidays)
-- **Implementation:** Generate instances on-demand, don't store all
+- **Implementation:** Generate instances on-demand
+  - don't store all
 
 ---
 
@@ -87,7 +104,10 @@ interface TimeSlot {
 CREATE TABLE resources (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name TEXT NOT NULL,
-  type TEXT CHECK (type IN ('room', 'event_space', 'service', 'product')),
+  type TEXT CHECK (type IN ('room'
+  - 'event_space'
+  - 'service'
+  - 'product')),
   capacity INTEGER,
   timezone TEXT DEFAULT 'UTC',
   business_id UUID REFERENCES businesses(id),
@@ -110,7 +130,8 @@ CREATE TABLE bookings (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   resource_id UUID REFERENCES resources(id),
   customer_id UUID REFERENCES users(id),
-  agent_id UUID REFERENCES agents(id),  -- Who made the booking
+  agent_id UUID REFERENCES agents(id)
+  -  -- Who made the booking
   
   -- Timing
   start_time TIMESTAMPTZ NOT NULL,
@@ -119,8 +140,14 @@ CREATE TABLE bookings (
   
   -- State machine
   status TEXT CHECK (status IN (
-    'draft', 'pending', 'confirmed', 'completed', 
-    'cancelled', 'expired', 'no_show'
+    'draft'
+  - 'pending'
+  - 'confirmed'
+  - 'completed'
+  - 
+    'cancelled'
+  - 'expired'
+  - 'no_show'
   )),
   
   -- Versioning for optimistic locking
@@ -128,9 +155,14 @@ CREATE TABLE bookings (
   
   -- Payment/Transaction
   payment_status TEXT CHECK (payment_status IN (
-    'pending', 'held', 'captured', 'refunded', 'failed'
+    'pending'
+  - 'held'
+  - 'captured'
+  - 'refunded'
+  - 'failed'
   )),
-  payment_intent_id TEXT,  -- Stripe reference
+  payment_intent_id TEXT
+  -  -- Stripe reference
   total_amount DECIMAL(12,2),
   currency TEXT DEFAULT 'USD',
   
@@ -148,8 +180,10 @@ CREATE TABLE bookings (
   CONSTRAINT valid_time_range CHECK (end_time > start_time),
   CONSTRAINT no_double_booking EXCLUDE USING gist (
     resource_id WITH =,
-    tstzrange(start_time, end_time) WITH &&
-  ) WHERE (status IN ('confirmed', 'completed'))
+    tstzrange(start_time
+  - end_time) WITH &&
+  ) WHERE (status IN ('confirmed'
+  - 'completed'))
 );
 
 -- Booking History (audit log)
@@ -182,21 +216,28 @@ CREATE TABLE time_slot_holds (
 ```sql
 -- Fast availability lookups
 CREATE INDEX idx_bookings_resource_time 
-ON bookings(resource_id, start_time, end_time) 
-WHERE status IN ('confirmed', 'completed');
+ON bookings(resource_id
+  - start_time
+  - end_time) 
+WHERE status IN ('confirmed'
+  - 'completed');
 
 -- Customer bookings
 CREATE INDEX idx_bookings_customer 
-ON bookings(customer_id, start_time DESC);
+ON bookings(customer_id
+  - start_time DESC);
 
 -- Agent bookings
 CREATE INDEX idx_bookings_agent 
-ON bookings(agent_id, created_at DESC);
+ON bookings(agent_id
+  - created_at DESC);
 
 -- Status queries
 CREATE INDEX idx_bookings_status_time 
-ON bookings(status, start_time) 
-WHERE status IN ('pending', 'confirmed');
+ON bookings(status
+  - start_time) 
+WHERE status IN ('pending'
+  - 'confirmed');
 ```
 
 ---
@@ -211,9 +252,11 @@ WHERE status IN ('pending', 'confirmed');
 ALTER TABLE bookings ADD CONSTRAINT no_overlap
 EXCLUDE USING gist (
   resource_id WITH =,
-  tstzrange(start_time, end_time) WITH &&
+  tstzrange(start_time
+  - end_time) WITH &&
 )
-WHERE (status IN ('confirmed', 'completed'));
+WHERE (status IN ('confirmed'
+  - 'completed'));
 ```
 
 **How it works:**
@@ -266,7 +309,8 @@ async function createBooking(data: BookingInput) {
 
 **Mechanism:**
 - When user starts booking: Create hold for 15 minutes
-- Hold expires: Release slot, mark booking as expired
+- Hold expires: Release slot
+  - mark booking as expired
 - Payment received: Convert hold to confirmed booking
 - User abandons: Background job cleans up expired holds
 
@@ -287,7 +331,8 @@ async function releaseExpiredHolds() {
 
 ### 4.1 Waitlist Pattern
 
-When fully booked, allow waitlist:
+When fully booked
+  - allow waitlist:
 ```typescript
 interface WaitlistEntry {
   id: string
@@ -316,7 +361,8 @@ async function offerToWaitlist(cancelledBooking: Booking) {
   });
   
   for (const waiter of waiters) {
-    await notifyWaitlistOffer(waiter, cancelledBooking);
+    await notifyWaitlistOffer(waiter
+  - cancelledBooking);
   }
 }
 ```
@@ -333,7 +379,8 @@ interface ResourceSettings {
 }
 
 // When checking availability
-function getEffectiveDuration(booking: Booking, settings: ResourceSettings) {
+function getEffectiveDuration(booking: Booking
+  - settings: ResourceSettings) {
   return {
     blockedStart: booking.startTime - settings.bufferBefore * MINUTES,
     blockedEnd: booking.endTime + settings.bufferAfter * MINUTES
@@ -351,7 +398,8 @@ interface PackageBooking {
   status: BookingStatus
   bookings: Booking[]  // Linked bookings
   totalAmount: Decimal
-  // All-or-nothing: if one fails, all fail
+  // All-or-nothing: if one fails
+  - all fail
 }
 ```
 
@@ -373,7 +421,9 @@ Body: {
   endTime: ISOString
   customerId: string
 }
-Response: { bookingId, status: 'pending', expiresAt }
+Response: { bookingId
+  - status: 'pending'
+  - expiresAt }
 
 // Confirm booking (after payment)
 POST /api/v1/bookings/:id/confirm
@@ -413,22 +463,28 @@ const bookingRules = {
 ### 6.1 Unit Tests
 
 ```typescript
-describe('Booking State Machine', () => {
-  it('should transition from pending to confirmed on payment', () => {
+describe('Booking State Machine'
+  - () => {
+  it('should transition from pending to confirmed on payment'
+  - () => {
     const booking = createBooking({ status: 'pending' });
     booking.confirm(paymentIntent);
     expect(booking.status).toBe('confirmed');
   });
   
-  it('should expire pending booking after timeout', () => {
-    const booking = createBooking({ status: 'pending', expiresAt: past() });
+  it('should expire pending booking after timeout'
+  - () => {
+    const booking = createBooking({ status: 'pending'
+  - expiresAt: past() });
     booking.checkExpiration();
     expect(booking.status).toBe('expired');
   });
 });
 
-describe('Double Booking Prevention', () => {
-  it('should prevent overlapping confirmed bookings', async () => {
+describe('Double Booking Prevention'
+  - () => {
+  it('should prevent overlapping confirmed bookings'
+  - async () => {
     // Create confirmed booking
     await createBooking({ 
       resourceId: 'room-a',
@@ -451,12 +507,15 @@ describe('Double Booking Prevention', () => {
 ### 6.2 Integration Tests
 
 ```typescript
-describe('Concurrent Booking Race Condition', () => {
-  it('should handle 10 simultaneous bookings for last slot', async () => {
+describe('Concurrent Booking Race Condition'
+  - () => {
+  it('should handle 10 simultaneous bookings for last slot'
+  - async () => {
     const attempts = Array(10).fill(null).map(() => 
       request(app)
         .post('/api/v1/bookings')
-        .send({ resourceId: 'single-room', ... })
+        .send({ resourceId: 'single-room'
+  - ... })
     );
     
     const results = await Promise.allSettled(attempts);
@@ -472,7 +531,9 @@ describe('Concurrent Booking Race Condition', () => {
 ## 7. Implementation Roadmap
 
 ### Phase 1: Core Schema (Week 1)
-- [ ] Create database tables (resources, bookings, availability)
+- [ ] Create database tables (resources
+  - bookings
+  - availability)
 - [ ] Implement state machine
 - [ ] Add exclusion constraints
 - [ ] Basic CRUD API endpoints
@@ -501,9 +562,12 @@ describe('Concurrent Booking Race Condition', () => {
 
 | Decision | Choice | Rationale |
 |----------|--------|-----------|
-| Double-booking prevention | PostgreSQL EXCLUDE constraint | Database-level guarantee, no race conditions |
+| Double-booking prevention | PostgreSQL EXCLUDE constraint | Database-level guarantee
+  - no race conditions |
 | Locking strategy | Optimistic (versioning) | Better concurrency than pessimistic locks |
-| State management | State machine | Clear transitions, audit trail, business rules |
+| State management | State machine | Clear transitions
+  - audit trail
+  - business rules |
 | Checkout holds | 15-minute timeout | Balance between UX and inventory availability |
 | Recurring bookings | Generate on-demand | Don't store infinite future instances |
 

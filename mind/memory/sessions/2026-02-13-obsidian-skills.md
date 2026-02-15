@@ -1,13 +1,20 @@
 ---
 date: 2026-02-13
-tags: session, obsidian, skills, tools
+tags: 
+  - session
+  - obsidian
+  - skills
+  - tools
 type: skill-creation
 ---
 
 # Session: Obsidian Skills + INDEX Enhancement
 
 ## Summary
-Created four new Obsidian skills (Kanban, Dataview, Templater, Editing Files) and enhanced INDEX.md with extensive #tags and [[wikilinks]] throughout.
+Created four new Obsidian skills (Kanban
+  - Dataview
+  - Templater
+  - Editing Files) and enhanced INDEX.md with extensive #tags and [[wikilinks]] throughout.
 
 ## Work Done
 - [x] Created [[mind/skills/obsidian/kanban|kanban skill]] — Visual task boards
@@ -61,13 +68,20 @@ Created four new Obsidian skills (Kanban, Dataview, Templater, Editing Files) an
 ### Skills Section
 ```
 Core Workflow
-- memory, codesync, mindsync, ram
+- memory
+  - codesync
+  - mindsync
+  - ram
 
 Obsidian Tools
-- kanban, dataview, templater, editing-files
+- kanban
+  - dataview
+  - templater
+  - editing-files
 
 Communication
-- briefing, docs
+- briefing
+  - docs
 ```
 
 ### Standards Section

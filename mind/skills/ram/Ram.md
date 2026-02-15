@@ -1,6 +1,10 @@
 ---
 date: 2026-02-13
-tags: skill, ram, working-memory, workflow
+tags: 
+  - skill
+  - ram
+  - working-memory
+  - workflow
 ---
 
 # 🧠 RAM Skill — Working Memory Management
@@ -18,7 +22,10 @@ tags: skill, ram, working-memory, workflow
 - **Current focus** — what we're working on
 - **Stale items removed** → archived to [[memory/sessions|long-term memory]] or forgotten/purged
 
-Think of it like a computer's [[mind/skills/ram/Ram]]: fast, active, limited space. When full, move to disk ([[memory/sessions|long-term memory]]) or forget.
+Think of it like a computer's [[mind/skills/ram/Ram]]: fast
+  - active
+  - limited space. When full
+  - move to disk ([[memory/sessions|long-term memory]]) or forget.
 
 ---
 
@@ -30,7 +37,8 @@ Think of it like a computer's [[mind/skills/ram/Ram]]: fast, active, limited spa
 └── Urgencies         ← Urgent items that need attention
 ├── Recent Completed  ← max 10-20 recently completed items
 ├── In Progress       ← Currently doing
-├── Blockers          ← What's blocking us, what are we stuck on
+├── Blockers          ← What's blocking us
+  - what are we stuck on
 ├── Recent Learnings  ← Key insights (last 24h)
 └── Next Actions      ← Immediate todos
 ```
@@ -52,14 +60,16 @@ Every entry gets a timestamp:
 
 Keep each item category max 10-20 items → consider forgetting or saving to [[memory|memory]]
 
-Before removing, ask: "Does this need [[memory|long-term memory]]?"
+Before removing
+  - ask: "Does this need [[memory|long-term memory]]?"
 
 **If yes →** Create a [[memory/sessions|memory session]] using the [[mind/skills/session-logging|session logging skill]]
 **If no →** Purge the item
 
 ### 3. Keep It Tight
 
-[[mind/memory/RAM|RAM]] should fit on one screen. If it's getting long, archive old items.
+[[mind/memory/RAM|RAM]] should fit on one screen. If it's getting long
+  - archive old items.
 
 ### 4. Check RAM Every Session
 
@@ -119,7 +129,10 @@ Create file: [[mind/memory/sessions/2026-02-13-embedding-crash-fix|mind/memory/s
 ```markdown
 ---
 date: 2026-02-13
-tags: session, log, bugfix
+tags: 
+  - session
+  - log
+  - bugfix
 ---
 
 # Session: Fixed Embedding Crash
@@ -130,7 +143,8 @@ tags: session, log, bugfix
 - Tests passing
 
 ## Key Learning
-[[Ollama]] context limit is ~4096 tokens. 8000 chars ≈ 1500 tokens, but with overhead it crashes. 2000 chars is safe.
+[[Ollama]] context limit is ~4096 tokens. 8000 chars ≈ 1500 tokens
+  - but with overhead it crashes. 2000 chars is safe.
 
 ## Files Changed
 - [[apps/api/src/services/mind-embeddings.ts|apps/api/src/services/mind-embeddings.ts]]
@@ -193,7 +207,6 @@ Read [[mind/INDEX]] → Read [[mind/memory/RAM]] → Read [[symbiosis/feedback]]
 ## Quick Checklist
 
 - [ ] Every entry has timestamp
-- [ ] Items >48h old evaluated for archiving
 - [ ] Significant work → [[memory/sessions|memory/sessions/]]
 - [ ] Trivial items → deleted
 - [ ] [[mind/memory/RAM|RAM]] stays compact (one screen)

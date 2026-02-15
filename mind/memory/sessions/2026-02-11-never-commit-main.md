@@ -1,6 +1,10 @@
 ---
 date: 2026-02-11
-tags: session, log, mindsync, hard-mindsync
+tags: 
+  - session
+  - log
+  - mindsync
+  - hard-mindsync
 ---
 
 # 📝 Session: Never Commit to Main — Hard Rule Enforced
@@ -72,9 +76,14 @@ fi
 
 ## Decisions Made
 
-1. **Never commit to main is absolute** — No exceptions, no excuses
-2. **Multiple enforcement points** — Checklist, warnings, procedures
-3. **If on main, create feature branch** — Cherry-pick or redo, never commit
+1. **Never commit to main is absolute** — No exceptions
+  - no excuses
+2. **Multiple enforcement points** — Checklist
+  - warnings
+  - procedures
+3. **If on main
+  - create feature branch** — Cherry-pick or redo
+  - never commit
 4. **Pre-commit check required** — Always verify branch before committing
 
 ## Learnings
@@ -82,7 +91,8 @@ fi
 - Habit of committing to main is dangerous
 - Multiple enforcement points prevent violations
 - Clear procedures help when accidentally on main
-- This is a hard rule, not a guideline
+- This is a hard rule
+  - not a guideline
 
 ## Files Changed
 
@@ -101,7 +111,9 @@ fi
 
 ## 💡 Key Insight
 
-**"Never commit to main" is not a preference — it's a hard rule with enforcement. The penalty for violation is broken workflow, lost history, and bypassed review. Multiple checkpoints prevent accidents.**
+**"Never commit to main" is not a preference — it's a hard rule with enforcement. The penalty for violation is broken workflow
+  - lost history
+  - and bypassed review. Multiple checkpoints prevent accidents.**
 
 ---
 

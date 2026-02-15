@@ -6,6 +6,14 @@ _Complete index of the Bizing mind. Every file, organized logically._
 
 ---
 
+## 🧠 Mind Health
+
+**→ [[mind/DISSONANCE|Cognitive Dissonance]]** — Real conflicts between files #dissonance
+**→ [[mind/CURIOSITIES|Curiosities]]** — Questions worth exploring #curiosity
+**→ [[mind/SYNOPSIS|Story]]** — Bizing's narrative journey #story
+
+---
+
 ## 🎯 Core Entry Points
 
 | File           | Purpose                                                     |
@@ -78,6 +86,7 @@ _Complete index of the Bizing mind. Every file, organized logically._
 ### By Category:
 
 **→ [[skills/memory|Memory]]** — Session logging, RAM, mind updates  
+**→ [[skills/creating-files|Creating Files]]** — Complete guide to creating and updating files  
 **→ [[skills/codesync|CodeSync]]** — Quality-gated commits  
 **→ [[skills/mindsync|MindSync]]** — Mind synchronization  
 **→ [[mind/skills/ram/Ram|RAM]]** — Working memory  

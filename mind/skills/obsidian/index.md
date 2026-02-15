@@ -1,6 +1,10 @@
 ---
 date: 2026-02-13
-tags: skill, obsidian, plugins, workflow
+tags: 
+  - skill
+  - obsidian
+  - plugins
+  - workflow
 ---
 
 # 🎨 Obsidian Skills
@@ -12,19 +16,31 @@ tags: skill, obsidian, plugins, workflow
 ## Core Skills
 
 ### [[kanban|📋 Kanban]] — Visual Task Management
-Create draggable task boards for features, bugs, and work tracking.
+Create draggable task boards for features
+  - bugs
+  - and work tracking.
 
 ### [[dataview|🔍 Dataview]] — Query Your Mind
-Search, filter, and display mind data dynamically.
+Search
+  - filter
+  - and display mind data dynamically.
 
 ### [[templater|📄 Templater]] — Auto-Generate Files
-Create templates for sessions, skills, and decisions.
+Create templates for sessions
+  - skills
+  - and decisions.
 
 ### [[editing-files|📝 Editing Files]] — File Management
-Conventions for frontmatter, wikilinks, and organization.
+Conventions for frontmatter
+  - wikilinks
+  - and organization.
 
 ### [[enhancement-features|🔮 Enhancement Features]] — Advanced Tools
-Graph view, Canvas, Daily Notes, community plugins, and more.
+Graph view
+  - Canvas
+  - Daily Notes
+  - community plugins
+  - and more.
 
 ---
 
@@ -75,4 +91,5 @@ SORT date DESC
 
 ---
 
-*Obsidian is our second brain. Master the tools, master the mind.*
+*Obsidian is our second brain. Master the tools
+  - master the mind.*

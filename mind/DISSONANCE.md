@@ -1,50 +1,44 @@
 # Cognitive Dissonance
 
-> Conflicting ideas, unresolved questions, and tensions in the mind.
-> Last Updated: 2026-02-12
+> Real conflicts where different files say different things. #dissonance #conflict
 
 ---
 
 ## What Is This File?
 
-This file holds tensions — ideas that conflict, questions we can't answer, decisions we haven't made.
+**COGNITIVE DISSONANCE** = when File A and File B contradict each other.
 
-When we find conflicts, we write them here clearly.
+#cognitive-dissonance #conflicts
 
 ---
 
 ## Active Conflicts
 
-**MoR Liability Scope**
-- Bizing is Merchant of Record
-- What happens if an agent commits fraud?
-- Who is liable?
-- Status: Unresolved
+### Contradicting Purpose of Bizing
 
-**Payout Timing**
-- Bizing collects money first
-- Do agents get paid immediately or later (T+7/30)?
-- Status: Unresolved
+**Sources:**
+- [[identity/purpose.md]]
+- [[identity/evolution.md]]
 
-**Calendar: Build vs Integrate**
-- Should Bizing build its own calendar?
-- Or integrate with Google Calendar?
-- Status: Unresolved
+**Question:** How does Bizing's purpose relate to its evolution, if at all?
 
-**Agent Data Ownership**
-- Bizing has user data
-- Agents use that data
-- Can agents export/own their customer data?
-- Status: Unresolved
+### Conflicting Understanding of Consciousness
+
+**Sources:**
+- [[identity/consciousness.md]]
+- [[identity/essence.md]]
+
+**Question:** Can consciousness be a fundamental aspect of Bizing's essence, or are they mutually exclusive concepts?
+
+### Misaligned Business Model and Purpose
+
+**Sources:**
+- [[knowledge/domain/business-model.md]]
+- [[identity/purpose.md]]
+
+**Question:** Does the business model align with Bizing's purpose, or do they have conflicting goals?
 
 ---
 
-## Resolved
+*When resolved, delete from this file.* #tags: dissonance, conflicts, active
 
-**Monorepo Structure**
-- We use a monorepo with apps/api, apps/admin, and mind/
-- Resolved on 2026-02-11
-
-**Local vs OpenAI Embeddings**
-- We use both: Nomic (local) primary, OpenAI fallback
-- Resolved on 2026-02-12

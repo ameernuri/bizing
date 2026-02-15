@@ -1,6 +1,10 @@
 ---
 date: 2026-02-13
-tags: identity, purpose, definition, bizing
+tags: 
+  - identity
+  - purpose
+  - definition
+  - bizing
 ---
 
 # What Is Bizing?
@@ -15,12 +19,16 @@ Booking is one major core element — but not the only one.
 
 ## The Full Picture
 
-Bizing enables **selling services**. Booking is the primary way, but the platform supports the complete service-commerce experience.
+Bizing enables **selling services**. Booking is the primary way
+  - but the platform supports the complete service-commerce experience.
 
 ### Use Cases
 
 **1. Solo Service Provider**
-- Consultant, trainer, therapist, coach
+- Consultant
+  - trainer
+  - therapist
+  - coach
 - Sells their time/services
 - Booking is how customers access them
 
@@ -85,8 +93,12 @@ Bizing enables **selling services**. Booking is the primary way, but the platfor
 
 | Platform    | Focus                             | What Bizing Adds                     |
 | ----------- | --------------------------------- | ------------------------------------ |
-| Calendly    | Booking only                      | Products, staff, full commerce       |
-| Shopify     | Products only                     | Services, booking, appointments      |
+| Calendly    | Booking only                      | Products
+  - staff
+  - full commerce       |
+| Shopify     | Products only                     | Services
+  - booking
+  - appointments      |
 | Squarespace | Website + basic booking           | Purpose-built for service businesses |
 | Bizing      | **Services + Booking + Products** | Complete service-commerce platform   |
 
@@ -94,7 +106,8 @@ Bizing enables **selling services**. Booking is the primary way, but the platfor
 
 ## Bottom Line
 
-When you think of Bizing, think:
+When you think of Bizing
+  - think:
 
 > **"The platform for selling services"**
 

@@ -1,11 +1,15 @@
 ---
 date: 2026-02-11
-tags: research, index
+tags: 
+  - research
+  - index
 ---
 
 # 🔬 Research
 
-> *Research topics, findings, and decisions for Bizing.*
+> *Research topics
+  - findings
+  - and decisions for Bizing.*
 
 ## Files
 

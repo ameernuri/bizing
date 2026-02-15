@@ -1,6 +1,11 @@
 ---
 date: 2026-02-13
-tags: skill, memory, sessions, logging, workflow
+tags: 
+  - skill
+  - memory
+  - sessions
+  - logging
+  - workflow
 ---
 
 # 📝 Memory Skill
@@ -24,7 +29,8 @@ The **Memory Skill** ensures important work is recorded in `mind/memory/sessions
 - ✅ Workflow changes
 - ✅ User says: "log this" or "create session"
 
-**NEED:** If work took >30 min or has learnings/decisions, LOG IT.
+**NEED:** If work took >30 min or has learnings/decisions
+  - LOG IT.
 
 ---
 
@@ -45,7 +51,8 @@ The **Memory Skill** ensures important work is recorded in `mind/memory/sessions
 **Path:** `mind/memory/sessions/YYYY-MM-DD-brief-description.md`
 
 **Filename rules:**
-- Lowercase, hyphen-separated
+- Lowercase
+  - hyphen-separated
 - Brief but descriptive
 - Include date prefix
 
@@ -61,7 +68,10 @@ Examples:
 ```markdown
 ---
 date: YYYY-MM-DD
-tags: session, type, topic
+tags: 
+  - session
+  - type
+  - topic
 type: codesync|research|bugfix|decision|violation
 ---
 
@@ -88,7 +98,9 @@ One paragraph: What we did and why.
 
 ## Output/Deliverables
 - What was produced
-- Links to PRs, docs, etc.
+- Links to PRs
+  - docs
+  - etc.
 
 ## Next Steps
 - [ ] Action item 1
@@ -102,7 +114,8 @@ Add session to `mind/memory/sessions/index.md`:
 ```markdown
 ## Recent Sessions
 
-- [[2026-02-13-ram-system|Feb 13]] — RAM system, CodeSync skills
+- [[2026-02-13-ram-system|Feb 13]] — RAM system
+  - CodeSync skills
 - [[2026-02-12-embedding-fix|Feb 12]] — Embedding crash fixed
 ```
 
@@ -123,7 +136,10 @@ Add to `mind/memory/RAM.md` under Recent Completed:
 ```markdown
 ---
 date: 2026-02-13
-tags: session, codesync, skills
+tags: 
+  - session
+  - codesync
+  - skills
 type: codesync
 ---
 
@@ -149,8 +165,8 @@ Implemented RAM working memory system and created CodeSync/MindSync skills for q
 
 ## Files Changed
 - [[mind/memory/RAM]] — New working memory
-- [[mind/skills/codesync/SKILL.md]] — New skill
-- [[mind/skills/mindsync/SKILL.md]] — New skill
+- [[mind/skills/CodeSync//.md]] — New skill
+- [[mind/skills/Mindsync//.md]] — New skill
 - [[mind/INDEX]] — Reorganized with wikilinks
 
 ## Output
@@ -165,7 +181,9 @@ Implemented RAM working memory system and created CodeSync/MindSync skills for q
 ## Quick Checklist
 
 - [ ] File created at `memory/sessions/YYYY-MM-DD-description.md`
-- [ ] YAML frontmatter with date, tags, type
+- [ ] YAML frontmatter with date
+  - tags
+  - type
 - [ ] All file references use [[wikilinks]]
 - [ ] Added to `memory/sessions/index.md`
 - [ ] Added to `memory/RAM.md` under Recent Completed

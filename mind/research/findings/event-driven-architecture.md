@@ -1,16 +1,28 @@
 ---
 date: 2026-02-12
-tags: research, findings, event-driven, architecture, workflows, saga
+tags: 
+  - research
+  - findings
+  - event-driven
+  - architecture
+  - workflows
+  - saga
 status: completed
 ---
 
 # 📚 Research Findings: Event-Driven Architecture for Booking Workflows
 
-> *Event-driven patterns for booking lifecycle management, webhook integrations, and distributed transactions*
+> *Event-driven patterns for booking lifecycle management
+  - webhook integrations
+  - and distributed transactions*
 
 ## Executive Summary
 
-This research covers event-driven architecture patterns for Bizing's booking workflows, including state machines, saga patterns for distributed transactions, webhook integrations, and audit trails. Key findings inform the workflow engine and async processing design.
+This research covers event-driven architecture patterns for Bizing's booking workflows
+  - including state machines
+  - saga patterns for distributed transactions
+  - webhook integrations
+  - and audit trails. Key findings inform the workflow engine and async processing design.
 
 ---
 
@@ -22,8 +34,11 @@ This research covers event-driven architecture patterns for Bizing's booking wor
 - **Decoupling:** Services don't need to know about each other
 - **Scalability:** Process events asynchronously
 - **Audit Trail:** Complete history of all state changes
-- **Extensibility:** Easy to add new integrations (Calendar, Zoom, Slack)
-- **Resilience:** Retry failed operations, dead letter queues
+- **Extensibility:** Easy to add new integrations (Calendar
+  - Zoom
+  - Slack)
+- **Resilience:** Retry failed operations
+  - dead letter queues
 
 **Booking Workflow Complexity:**
 ```
@@ -41,10 +56,12 @@ Each step can fail independently and needs retries.
 // Event
 interface DomainEvent {
   id: string                    // UUID v4
-  type: string                  // booking.created, payment.received
+  type: string                  // booking.created
+  - payment.received
   aggregateId: string           // booking ID
   aggregateType: string         // 'booking'
-  payload: Record<string, any>  // Event data
+  payload: Record<string
+  - any>  // Event data
   metadata: {
     correlationId: string       // Trace across services
     causationId: string         // Previous event (chain)
@@ -57,7 +74,8 @@ interface DomainEvent {
 // Event Bus
 interface EventBus {
   publish(event: DomainEvent): Promise<void>
-  subscribe(eventType: string, handler: EventHandler): void
+  subscribe(eventType: string
+  - handler: EventHandler): void
 }
 ```
 
@@ -71,15 +89,31 @@ Every state change is an event:
 
 ```typescript
 type BookingEvent =
-  | { type: 'BookingCreated', payload: { resourceId, customerId, timeRange } }
-  | { type: 'InventoryHeld', payload: { holdId, expiresAt } }
-  | { type: 'PaymentRequested', payload: { amount, stripeIntentId } }
-  | { type: 'PaymentReceived', payload: { stripeChargeId } }
-  | { type: 'BookingConfirmed', payload: { confirmedAt } }
-  | { type: 'NotificationSent', payload: { channel, recipient } }
-  | { type: 'CalendarSynced', payload: { provider, eventId } }
-  | { type: 'BookingCancelled', payload: { reason, refundAmount } }
-  | { type: 'InventoryReleased', payload: { holdId } }
+  | { type: 'BookingCreated'
+  - payload: { resourceId
+  - customerId
+  - timeRange } }
+  | { type: 'InventoryHeld'
+  - payload: { holdId
+  - expiresAt } }
+  | { type: 'PaymentRequested'
+  - payload: { amount
+  - stripeIntentId } }
+  | { type: 'PaymentReceived'
+  - payload: { stripeChargeId } }
+  | { type: 'BookingConfirmed'
+  - payload: { confirmedAt } }
+  | { type: 'NotificationSent'
+  - payload: { channel
+  - recipient } }
+  | { type: 'CalendarSynced'
+  - payload: { provider
+  - eventId } }
+  | { type: 'BookingCancelled'
+  - payload: { reason
+  - refundAmount } }
+  | { type: 'InventoryReleased'
+  - payload: { holdId } }
 ```
 
 ### 2.2 Event Handlers
@@ -123,15 +157,19 @@ CREATE TABLE events (
   sequence_number BIGSERIAL NOT NULL,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   
-  UNIQUE(aggregate_id, sequence_number)
+  UNIQUE(aggregate_id
+  - sequence_number)
 );
 
 -- Indexes for replay
 CREATE INDEX idx_events_aggregate 
-ON events(aggregate_type, aggregate_id, sequence_number);
+ON events(aggregate_type
+  - aggregate_id
+  - sequence_number);
 
 CREATE INDEX idx_events_type_time 
-ON events(type, created_at);
+ON events(type
+  - created_at);
 
 -- Projections (read models)
 CREATE TABLE booking_projections (
@@ -141,7 +179,8 @@ CREATE TABLE booking_projections (
   status TEXT,
   start_time TIMESTAMPTZ,
   end_time TIMESTAMPTZ,
-  version INTEGER,  -- Last sequence_number applied
+  version INTEGER
+  -  -- Last sequence_number applied
   updated_at TIMESTAMPTZ
 );
 ```
@@ -197,7 +236,8 @@ const bookingSaga: SagaStep[] = [
       await db.bookings.update({ stripeIntentId: intent.id });
     },
     compensation: async () => {
-      // Nothing to undo, intent auto-expires
+      // Nothing to undo
+  - intent auto-expires
     }
   },
   {
@@ -228,7 +268,8 @@ const bookingSaga: SagaStep[] = [
       await sms.sendReminder(booking);
     },
     compensation: async () => {
-      // Can't unsend email, but can send cancellation
+      // Can't unsend email
+  - but can send cancellation
       await email.sendCancellation(booking);
     }
   }
@@ -242,21 +283,26 @@ class BookingSagaOrchestrator {
     
     try {
       for (const step of bookingSaga) {
-        await this.executeStep(step, state);
+        await this.executeStep(step
+  - state);
       }
       await this.markSagaComplete(state);
     } catch (error) {
-      await this.compensate(saga, state);
+      await this.compensate(saga
+  - state);
       throw error;
     }
   }
   
-  private async executeStep(step: SagaStep, state: SagaState) {
+  private async executeStep(step: SagaStep
+  - state: SagaState) {
     await step.action();
-    await sagaStateRepository.addCompletedStep(state.id, step.name);
+    await sagaStateRepository.addCompletedStep(state.id
+  - step.name);
   }
   
-  private async compensate(saga: Saga, state: SagaState) {
+  private async compensate(saga: Saga
+  - state: SagaState) {
     const completedSteps = state.completedSteps.reverse();
     
     for (const stepName of completedSteps) {
@@ -265,7 +311,9 @@ class BookingSagaOrchestrator {
         await step.compensation();
       } catch (compError) {
         // Log for manual intervention
-        await alertOpsTeam(state.id, stepName, compError);
+        await alertOpsTeam(state.id
+  - stepName
+  - compError);
       }
     }
   }
@@ -277,10 +325,16 @@ class BookingSagaOrchestrator {
 ```sql
 CREATE TABLE saga_instances (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  saga_type TEXT NOT NULL,           -- 'booking_confirmation'
-  aggregate_id UUID NOT NULL,        -- booking ID
+  saga_type TEXT NOT NULL
+  -           -- 'booking_confirmation'
+  aggregate_id UUID NOT NULL
+  -        -- booking ID
   status TEXT CHECK (status IN (
-    'running', 'completed', 'failed', 'compensating', 'compensated'
+    'running'
+  - 'completed'
+  - 'failed'
+  - 'compensating'
+  - 'compensated'
   )),
   current_step TEXT,
   completed_steps TEXT[],
@@ -305,7 +359,8 @@ interface WebhookSubscription {
   id: string;
   businessId: string;
   url: string;
-  events: string[];  // ['booking.confirmed', 'booking.cancelled']
+  events: string[];  // ['booking.confirmed'
+  - 'booking.cancelled']
   secret: string;    // For HMAC signature
   active: boolean;
   retryConfig: {
@@ -316,12 +371,15 @@ interface WebhookSubscription {
 
 // Webhook Delivery
 class WebhookService {
-  async deliver(event: DomainEvent, subscription: WebhookSubscription) {
+  async deliver(event: DomainEvent
+  - subscription: WebhookSubscription) {
     const payload = this.buildPayload(event);
-    const signature = this.sign(payload, subscription.secret);
+    const signature = this.sign(payload
+  - subscription.secret);
     
     try {
-      await fetch(subscription.url, {
+      await fetch(subscription.url
+  - {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -331,13 +389,16 @@ class WebhookService {
         body: JSON.stringify(payload)
       });
     } catch (error) {
-      await this.scheduleRetry(event, subscription);
+      await this.scheduleRetry(event
+  - subscription);
     }
   }
   
-  private sign(payload: object, secret: string): string {
+  private sign(payload: object
+  - secret: string): string {
     return crypto
-      .createHmac('sha256', secret)
+      .createHmac('sha256'
+  - secret)
       .update(JSON.stringify(payload))
       .digest('hex');
   }
@@ -346,11 +407,15 @@ class WebhookService {
 
 ### 4.2 Incoming Webhooks (External → Bizing)
 
-Receive events from Stripe, Zoom, etc.:
+Receive events from Stripe
+  - Zoom
+  - etc.:
 
 ```typescript
 // Stripe webhook handler
-app.post('/webhooks/stripe', async (req, res) => {
+app.post('/webhooks/stripe'
+  - async (req
+  - res) => {
   const signature = req.headers['stripe-signature'];
   
   // Verify signature
@@ -399,10 +464,13 @@ const stripeEventMapper = {
 
 | Service | Webhook Type | Events |
 |---------|-------------|--------|
-| **Stripe** | Incoming | payment_intent.succeeded, payment_intent.payment_failed |
-| **Google Calendar** | Outgoing | booking.confirmed, booking.cancelled |
+| **Stripe** | Incoming | payment_intent.succeeded
+  - payment_intent.payment_failed |
+| **Google Calendar** | Outgoing | booking.confirmed
+  - booking.cancelled |
 | **Zoom** | Outgoing | booking.confirmed (create meeting) |
-| **Slack** | Outgoing | booking.confirmed, payment.received |
+| **Slack** | Outgoing | booking.confirmed
+  - payment.received |
 | **Twilio** | Outgoing | booking.confirmed (SMS) |
 
 ---
@@ -492,12 +560,18 @@ async function rebuildProjections() {
 
 | Option | Pros | Cons | Best For |
 |--------|------|------|----------|
-| **Redis + Bull** | Simple, fast, built-in retries | Single point of failure | Small-medium scale |
-| **RabbitMQ** | Mature, flexible routing | Complex setup | Enterprise |
-| **Kafka** | High throughput, persistence | Heavy infrastructure | Large scale |
-| **PostgreSQL** | Already using it, ACID | Not designed for queues | Start simple |
+| **Redis + Bull** | Simple
+  - fast
+  - built-in retries | Single point of failure | Small-medium scale |
+| **RabbitMQ** | Mature
+  - flexible routing | Complex setup | Enterprise |
+| **Kafka** | High throughput
+  - persistence | Heavy infrastructure | Large scale |
+| **PostgreSQL** | Already using it
+  - ACID | Not designed for queues | Start simple |
 
-**Recommendation: Start with PostgreSQL, migrate to Redis/Bull when needed**
+**Recommendation: Start with PostgreSQL
+  - migrate to Redis/Bull when needed**
 
 ### 6.2 PostgreSQL Event Queue
 
@@ -507,7 +581,10 @@ CREATE TABLE event_queue (
   id BIGSERIAL PRIMARY KEY,
   type TEXT NOT NULL,
   payload JSONB NOT NULL,
-  status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'processing', 'completed', 'failed')),
+  status TEXT DEFAULT 'pending' CHECK (status IN ('pending'
+  - 'processing'
+  - 'completed'
+  - 'failed')),
   attempts INTEGER DEFAULT 0,
   error TEXT,
   process_after TIMESTAMPTZ DEFAULT NOW(),
@@ -517,7 +594,8 @@ CREATE TABLE event_queue (
 
 -- Worker polls for pending events
 CREATE INDEX idx_event_queue_pending 
-ON event_queue(status, process_after) 
+ON event_queue(status
+  - process_after) 
 WHERE status = 'pending';
 ```
 
@@ -550,11 +628,13 @@ class EventWorker {
         data: { status: 'completed' }
       });
     } catch (error) {
-      await this.handleFailure(queuedEvent, error);
+      await this.handleFailure(queuedEvent
+  - error);
     }
   }
   
-  async handleFailure(event: QueuedEvent, error: Error) {
+  async handleFailure(event: QueuedEvent
+  - error: Error) {
     const attempts = event.attempts + 1;
     const maxRetries = 3;
     
@@ -567,10 +647,14 @@ class EventWorker {
           attempts
         }
       });
-      await alertOpsTeam(event, error);
+      await alertOpsTeam(event
+  - error);
     } else {
       // Exponential backoff
-      const delay = Math.pow(2, attempts) * 1000; // 2s, 4s, 8s
+      const delay = Math.pow(2
+  - attempts) * 1000; // 2s
+  - 4s
+  - 8s
       await db.eventQueue.update({
         where: { id: event.id },
         data: {
@@ -591,9 +675,12 @@ class EventWorker {
 ### 7.1 Unit Testing Handlers
 
 ```typescript
-describe('BookingConfirmedHandler', () => {
-  it('should send confirmation email', async () => {
-    const event = createEvent('BookingConfirmed', {
+describe('BookingConfirmedHandler'
+  - () => {
+  it('should send confirmation email'
+  - async () => {
+    const event = createEvent('BookingConfirmed'
+  - {
       bookingId: '123',
       customerEmail: 'test@example.com'
     });
@@ -613,8 +700,10 @@ describe('BookingConfirmedHandler', () => {
 ### 7.2 Integration Testing Saga
 
 ```typescript
-describe('Booking Saga', () => {
-  it('should complete full booking workflow', async () => {
+describe('Booking Saga'
+  - () => {
+  it('should complete full booking workflow'
+  - async () => {
     const booking = await createBooking({ status: 'draft' });
     
     // Execute saga
@@ -630,7 +719,8 @@ describe('Booking Saga', () => {
     expect(emailService.sendConfirmation).toHaveBeenCalled();
   });
   
-  it('should compensate on payment failure', async () => {
+  it('should compensate on payment failure'
+  - async () => {
     stripe.paymentIntents.capture.mockRejectedValue(new Error('Card declined'));
     
     const booking = await createBooking({ status: 'draft' });
@@ -680,11 +770,15 @@ describe('Booking Saga', () => {
 
 | Decision | Choice | Rationale |
 |----------|--------|-----------|
-| Saga pattern | Orchestration | Better visibility, centralized error handling |
-| Message queue | PostgreSQL → Redis/Bull | Start simple, scale when needed |
-| Event store | PostgreSQL JSONB | ACID compliance, easy queries |
+| Saga pattern | Orchestration | Better visibility
+  - centralized error handling |
+| Message queue | PostgreSQL → Redis/Bull | Start simple
+  - scale when needed |
+| Event store | PostgreSQL JSONB | ACID compliance
+  - easy queries |
 | Webhook delivery | At-least-once + idempotency | Reliability over complexity |
-| Projections | Async + eventual consistency | Read performance, decoupled writes |
+| Projections | Async + eventual consistency | Read performance
+  - decoupled writes |
 
 ---
 

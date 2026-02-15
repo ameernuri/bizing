@@ -1,9 +1,18 @@
 ---
 date: 2026-02-12
-tags: session, log, mindsync, hard-mindsync, apis, briefing, research
+tags: 
+  - session
+  - log
+  - mindsync
+  - hard-mindsync
+  - apis
+  - briefing
+  - research
 ---
 
-# 📝 Session: HARD MINDSYNC — APIs Configured, Briefing v2, Research Ready
+# 📝 Session: HARD MINDSYNC — APIs Configured
+  - Briefing v2
+  - Research Ready
 
 > *Comprehensive mind update after API configuration and briefing workflow update*
 
@@ -42,14 +51,16 @@ tags: session, log, mindsync, hard-mindsync, apis, briefing, research
 **Purpose:** Text-to-speech for audio briefings
 
 **Configuration:**
-- Voice: Nova (warm, conversational)
+- Voice: Nova (warm
+  - conversational)
 - Model: eleven turbo v2.5
 - Format: MP3
 
 **Issue Discovered:** TTS tool needs API key in OpenClaw config
 **Workaround:** TTS-optimized text ready for manual 11labs use
 
-**Status:** ✅ Configured, needs OpenClaw integration
+**Status:** ✅ Configured
+  - needs OpenClaw integration
 
 ---
 
@@ -62,7 +73,10 @@ tags: session, log, mindsync, hard-mindsync, apis, briefing, research
 **New:** 11labs TTS primary + Telegram TXT fallback
 
 **Flow:**
-1. Gather information (INDEX, standup, feedback, sessions)
+1. Gather information (INDEX
+  - standup
+  - feedback
+  - sessions)
 2. Generate TTS-optimized content
 3. Try 11labs TTS (audio)
 4. If success: Send audio to Telegram
@@ -87,7 +101,7 @@ tags: session, log, mindsync, hard-mindsync, apis, briefing, research
 
 ### Files Updated
 
-- `mind/skills/briefing/SKILL.md` — Complete workflow documentation
+- `mind/skills/Briefing//.md` — Complete workflow documentation
 - `mind/skills/briefing/template.txt` — Reusable template
 
 ---
@@ -98,9 +112,12 @@ tags: session, log, mindsync, hard-mindsync, apis, briefing, research
 
 | File | Changes |
 |------|---------|
-| `mind/symbiosis/standup.md` | Updated with today's work, Feb 12 focus, recent learnings |
-| `mind/symbiosis/feedback.md` | Added Perplexity vs Brave learning, 11labs configuration notes |
-| `mind/skills/briefing/SKILL.md` | Complete v2 workflow with 11labs + fallback |
+| `mind/symbiosis/standup.md` | Updated with today's work
+  - Feb 12 focus
+  - recent learnings |
+| `mind/symbiosis/feedback.md` | Added Perplexity vs Brave learning
+  - 11labs configuration notes |
+| `mind/skills/Briefing//.md` | Complete v2 workflow with 11labs + fallback |
 | `mind/memory/sessions/2026-02-12-briefing-11labs-update.md` | Session log created |
 
 ### Mind Links Created
@@ -135,20 +152,27 @@ tags: session, log, mindsync, hard-mindsync, apis, briefing, research
 ### Technical
 - Perplexity better for research than Brave (synthesized answers)
 - 11labs TTS needs OpenClaw config integration
-- Temp file paths get cleaned up, persist files before sending
+- Temp file paths get cleaned up
+  - persist files before sending
 - TTS optimization requires symbol replacement
 
 ### Workflow
-- HARD MINDSYNC includes: feedback, standup, sessions, MAP if structure changed
-- Velocity-first: Build fast, document/test after (with cleanup)
-- Briefing: Always deliver (11labs or TXT, never fail)
+- HARD MINDSYNC includes: feedback
+  - standup
+  - sessions
+  - MAP if structure changed
+- Velocity-first: Build fast
+  - document/test after (with cleanup)
+- Briefing: Always deliver (11labs or TXT
+  - never fail)
 
 ---
 
 ## Metrics
 
 **Mind Health:**
-- Total files: 77+ (added briefing skill, session logs)
+- Total files: 77+ (added briefing skill
+  - session logs)
 - Orphaned files: 0
 - Recent sessions: 11+ (including today's)
 - Active PRs: 1 (PR #14)

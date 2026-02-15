@@ -1,16 +1,29 @@
 ---
 date: 2026-02-12
-tags: research, findings, payments, stripe, merchant-of-record, fees, marketplace
+tags: 
+  - research
+  - findings
+  - payments
+  - stripe
+  - merchant-of-record
+  - fees
+  - marketplace
 status: completed
 ---
 
 # 📚 Research Findings: Merchant of Record & Stripe Fee Optimization
 
-> _Understanding MoR responsibilities, Stripe fee structures, and strategies to minimize transaction costs_
+> _Understanding MoR responsibilities
+  - Stripe fee structures
+  - and strategies to minimize transaction costs_
 
 ## Executive Summary
 
-This research covers the Merchant of Record (MoR) model, when Bizing should become an MoR vs using Stripe Connect, and strategies to minimize payment processing fees. Key findings include fee structures, tax implications, and cost-saving approaches.
+This research covers the Merchant of Record (MoR) model
+  - when Bizing should become an MoR vs using Stripe Connect
+  - and strategies to minimize payment processing fees. Key findings include fee structures
+  - tax implications
+  - and cost-saving approaches.
 
 ---
 
@@ -23,7 +36,9 @@ This research covers the Merchant of Record (MoR) model, when Bizing should beco
 - Sells goods/services to the end customer
 - Collects payment from the customer
 - Bears liability for the transaction
-- Handles taxes, refunds, chargebacks
+- Handles taxes
+  - refunds
+  - chargebacks
 - Owns the relationship with payment processor
 
 ### 1.2 MoR Responsibilities
@@ -31,12 +46,16 @@ This research covers the Merchant of Record (MoR) model, when Bizing should beco
 | Responsibility         | Description                                          |
 | ---------------------- | ---------------------------------------------------- |
 | **Payment Processing** | Collecting customer payments                         |
-| **Tax Collection**     | Calculating, collecting, remitting sales tax/VAT/GST |
+| **Tax Collection**     | Calculating
+  - collecting
+  - remitting sales tax/VAT/GST |
 | **Fraud Prevention**   | Handling fraudulent transactions                     |
 | **Chargebacks**        | Managing disputes and refunds                        |
-| **Compliance**         | PCI-DSS, data privacy laws                           |
+| **Compliance**         | PCI-DSS
+  - data privacy laws                           |
 | **Payouts**            | Paying vendors/agents their share                    |
-| **Reporting**          | 1099s, tax documents for sellers                     |
+| **Reporting**          | 1099s
+  - tax documents for sellers                     |
 
 ### 1.3 MoR vs Platform
 
@@ -45,14 +64,17 @@ This research covers the Merchant of Record (MoR) model, when Bizing should beco
 - Connects buyers and sellers
 - Seller is the MoR
 - Platform takes commission
-- Example: Etsy (sellers are MoR), eBay
+- Example: Etsy (sellers are MoR)
+  - eBay
 
 **Marketplace as MoR:**
 
 - Marketplace is the legal seller
 - Collects all payments
 - Pays suppliers/vendors after
-- Example: Amazon, Uber, Airbnb
+- Example: Amazon
+  - Uber
+  - Airbnb
 
 ---
 
@@ -260,7 +282,8 @@ const paymentIntent = await stripe.paymentIntents.create({
   currency: "usd",
   customer: customerId,
   payment_method: paymentMethodId,
-  off_session: true, // ← Key for lower rates
+  off_session: true
+  - // ← Key for lower rates
   confirm: true,
 });
 ```
@@ -276,8 +299,12 @@ const paymentIntent = await stripe.paymentIntents.create({
 const currency = detectCurrency(customer.country);
 
 const paymentIntent = await stripe.paymentIntents.create({
-  amount: convertToLocal(amount, currency),
-  currency: currency, // EUR, GBP, etc.
+  amount: convertToLocal(amount
+  - currency),
+  currency: currency
+  - // EUR
+  - GBP
+  - etc.
 });
 ```
 
@@ -303,7 +330,15 @@ const paymentIntent = await stripe.paymentIntents.create({
 
 **Where Legal:**
 
-- US: Varies by state (CA, CO, CT, FL, KS, ME, MA, OK, TX = NO)
+- US: Varies by state (CA
+  - CO
+  - CT
+  - FL
+  - KS
+  - ME
+  - MA
+  - OK
+  - TX = NO)
 - EU: Generally allowed with disclosure
 - UK: Allowed with disclosure
 
@@ -347,11 +382,14 @@ Do:
 // Multiple bookings from wallet
 
 // Funding transaction (one fee)
-await fundWallet(customerId, 1000);
+await fundWallet(customerId
+  - 1000);
 
 // Wallet bookings (no fees)
-await bookFromWallet(customerId, booking1); // $0 fee
-await bookFromWallet(customerId, booking2); // $0 fee
+await bookFromWallet(customerId
+  - booking1); // $0 fee
+await bookFromWallet(customerId
+  - booking2); // $0 fee
 ```
 
 ---
@@ -362,7 +400,8 @@ await bookFromWallet(customerId, booking2); // $0 fee
 
 | Processor        | Fee                        | Notes                   |
 | ---------------- | -------------------------- | ----------------------- |
-| **Stripe**       | 2.9% + $0.30               | Best features, easy API |
+| **Stripe**       | 2.9% + $0.30               | Best features
+  - easy API |
 | **Square**       | 2.9% + $0.30               | Similar to Stripe       |
 | **PayPal**       | 2.9% + $0.30               | Consumer trust          |
 | **Adyen**        | 2.9% + $0.11               | Lower per-transaction   |
@@ -419,7 +458,8 @@ await bookFromWallet(customerId, booking2); // $0 fee
 
 ### 6.1 Sales Tax Responsibilities
 
-**As MoR, Bizing must:**
+**As MoR
+  - Bizing must:**
 
 - Calculate tax based on customer location
 - Collect tax at checkout
@@ -449,7 +489,8 @@ $100 booking:
 **Automation:**
 
 - Stripe Connect handles 1099s
-- Or use Track1099, Tax1099
+- Or use Track1099
+  - Tax1099
 
 ---
 
@@ -527,11 +568,15 @@ $1M annual volume
 
 | Decision              | Recommendation            | Rationale                            |
 | --------------------- | ------------------------- | ------------------------------------ |
-| MoR or Platform       | **Bizing as MoR**         | Unified brand, fee optimization      |
-| Stripe plan           | **Connect Express**       | Platform controls, simple for agents |
+| MoR or Platform       | **Bizing as MoR**         | Unified brand
+  - fee optimization      |
+| Stripe plan           | **Connect Express**       | Platform controls
+  - simple for agents |
 | ACH offering          | **Enable for $200+**      | 73% fee reduction on large bookings  |
-| Fee passing           | **Absorb for B2C**        | Better UX, simpler                   |
-| Tax handling          | **Stripe Tax initially**  | Easy setup, scale to Avalara         |
+| Fee passing           | **Absorb for B2C**        | Better UX
+  - simpler                   |
+| Tax handling          | **Stripe Tax initially**  | Easy setup
+  - scale to Avalara         |
 | 1099s                 | **Stripe Connect auto**   | Zero effort                          |
 | Volume discount       | **Negotiate at $100K/mo** | Typical 0.2% reduction               |
 | Alternative processor | **Evaluate at $1M/yr**    | Migration cost vs savings            |

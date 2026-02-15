@@ -1,6 +1,13 @@
 ---
 date: 2026-02-11
-tags: session, log, mindsync, hard-mindsync, admin, documentation, testing
+tags: 
+  - session
+  - log
+  - mindsync
+  - hard-mindsync
+  - admin
+  - documentation
+  - testing
 ---
 
 # 📝 Session: Admin Dashboard - Documentation & Tests
@@ -17,7 +24,10 @@ Added comprehensive documentation to `bizing/page.tsx`:
 /**
  * @fileoverview Bizing Entity Page - Main chat interface...
  * @description Full component description
- * @architecture Component location, API, Tests, Related
+ * @architecture Component location
+  - API
+  - Tests
+  - Related
  * @design-decisions Why we made specific choices
  * @dependencies External libraries
  * @known-issues Tracked issues
@@ -87,7 +97,8 @@ Added comprehensive documentation to `bizing/page.tsx`:
 
 **Example Test:**
 ```typescript
-it('should render without crashing', () => {
+it('should render without crashing'
+  - () => {
   render(<BizingEntityPage />)
   expect(screen.getByTestId('bizing-page')).toBeInTheDocument()
 })
@@ -117,9 +128,14 @@ it('should render without crashing', () => {
 ## Learnings
 
 ### Documentation Standards
-1. **Every file needs header** - @fileoverview, @description, @architecture
-2. **Every function needs docs** - @description, @params, @returns
-3. **Use @design-decisions** - Explain WHY, not just WHAT
+1. **Every file needs header** - @fileoverview
+  - @description
+  - @architecture
+2. **Every function needs docs** - @description
+  - @params
+  - @returns
+3. **Use @design-decisions** - Explain WHY
+  - not just WHAT
 4. **Track @todo items** - Future improvements visible
 5. **Use Chinese flow** - @流程 for process steps
 
@@ -134,7 +150,9 @@ it('should render without crashing', () => {
 1. **Test IDs for automation** - Every critical element gets data-testid
 2. **Mock API calls** - Control responses for testing
 3. **Test user behavior** - Not implementation details
-4. **Accessibility attributes** - data-role, data-type, data-testid
+4. **Accessibility attributes** - data-role
+  - data-type
+  - data-testid
 5. **Loading states** - Verify UI responds to async operations
 
 ## Next Steps

@@ -1,16 +1,25 @@
 ---
 date: 2026-02-11
-tags: session, log, mindsync, hard-mindsync, admin, dashboard
+tags: 
+  - session
+  - log
+  - mindsync
+  - hard-mindsync
+  - admin
+  - dashboard
 ---
 
-# 📝 Session: Admin Dashboard Fixes — React Keys, Markdown, Scroll Areas
+# 📝 Session: Admin Dashboard Fixes — React Keys
+  - Markdown
+  - Scroll Areas
 
 > *HARD MINDSYNC: Fixed multiple UI issues in admin dashboard*
 
 ## Issues Fixed
 
 ### 1. Duplicate React Key Error
-**Problem:** `Encountered two children with the same key, learning-2026-02-11`
+**Problem:** `Encountered two children with the same key
+  - learning-2026-02-11`
 
 **Root Cause:** The mind activity API generated the same ID for multiple learnings on the same date.
 
@@ -24,7 +33,8 @@ id: `learning-${match[1]}-${index}`
 ```
 
 ### 2. Chat Window Layout
-**Problem:** Chat didn't scroll properly, input wasn't fixed at bottom.
+**Problem:** Chat didn't scroll properly
+  - input wasn't fixed at bottom.
 
 **Fix:** 
 - Used `h-[calc(100vh-4rem)]` for full height
@@ -67,7 +77,8 @@ id: `learning-${match[1]}-${index}`
 
 ## Learnings
 
-1. **React keys must be unique** — Multiple children with same key = warning, potential duplication
+1. **React keys must be unique** — Multiple children with same key = warning
+  - potential duplication
 2. **Layout requires `overflow-hidden`** — Containers need this to control scrolling
 3. **`shrink-0` prevents input squishing** — Fixed height elements need this
 4. **`min-w-0` fixes flex overflow** — Default flex min-width breaks truncation

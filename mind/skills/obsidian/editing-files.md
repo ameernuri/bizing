@@ -1,6 +1,10 @@
 ---
 date: 2026-02-13
-tags: skill, editing, obsidian, workflow
+tags:
+  - skill
+  - editing
+  - obsidian
+  - workflow
 ---
 
 # 📝 Editing Files Skill
@@ -28,20 +32,24 @@ Every file needs YAML frontmatter:
 ```yaml
 ---
 date: 2026-02-13
-tags: tag1, tag2, category
-status: active|archived|draft
+tags:
+  - skill
+  - editing
+  - workflow
+status: active
 ---
 ```
 
 ### Step 3: Use Wikilinks
 
-Link to everything mentioned:
+* Link to everything mentioned
+* Make sure you link to the .md files as much as possible, not the folders
 
 ```markdown
 # Session: Database Migration
 
 Updated [[mind/knowledge/tech/database-schema]] with new tables.
-Followed [[mind/skills/codesync]] for quality gates.
+Followed [[mind/skills/CodeSync]] for quality gates.
 
 See also: [[mind/memory/sessions/2026-02-12-prev-session]]
 ```
@@ -57,293 +65,113 @@ Edit only what needs changing:
 ```markdown
 ## ✅ Recent Completed
 
-- [2026-02-13 14:30 PST] Fixed [[bug-123]] in [[auth-system]]
-- [2026-02-13 15:00 PST] Updated [[docs]] with new examples
+- [2026-02-13 10:00 PST] **Task completed** — Description
 ```
 
-### Adding Sections
+Don't rewrite entire sections unless necessary.
 
-Use consistent headers:
+### Adding to Lists
+
+Use consistent formatting:
 
 ```markdown
-## 🎯 New Section
+## Recent Sessions
 
-Content here with [[links]] and #tags
+- [[./2026-02-13-session-name|Feb 13]] — What happened
+```
+
+---
+
+## Formatting Rules
+
+### Headers
+
+```markdown
+## Section Name
 
 ### Subsection
-
-More details...
 ```
 
-### Updating Checklists
+### Bullet Points
 
 ```markdown
-- [x] Completed task
-- [ ] Pending task [[related-file]]
-- [ ] Another task #urgent
+- First item
+- Second item
+  - Indented sub-item
 ```
 
----
-
-## Linking Strategy
-
-### Every Mention Gets a Link
+### Wikilinks
 
 ```markdown
-❌ Bad: Check the INDEX for details.
-✅ Good: Check [[mind/INDEX]] for details.
-
-❌ Bad: We use CodeSync for commits.
-✅ Good: We use [[mind/skills/codesync|CodeSync]] for commits.
+- [[path/to/file|Link Text]]
+- [[path/to/file]] (uses filename as text)
 ```
 
-### Link Types
+### Tags
 
-| Pattern | Example |
-|---------|---------|
-| File | `[[mind/INDEX]]` |
-| With display | `[[mind/skills/ram|RAM Skill]]` |
-| Heading | `[[mind/INDEX#Skills]]` |
-| Block | `[[mind/INDEX#^block-id]]` |
+Tags go in frontmatter as array:
 
-### Creating Missing Links
-
-If a file doesn't exist yet:
-
-```markdown
-Planning to work on [[mind/skills/new-skill|New Skill]] — will create later.
-```
-
-Click the link in Obsidian to create it.
-
----
-
-## Using Tags
-
-### Tag Conventions
-
-| Tag | Use |
-|-----|-----|
-| `#kanban` | Kanban boards |
-| `#skill` | How-to guides |
-| `#session` | Work logs |
-| `#research` | Research findings |
-| `#decision` | Decision records |
-| `#active` | Currently relevant |
-| `#archived` | No longer current |
-| `#urgent` | Needs attention |
-| `#blocked` | Can't proceed |
-
-### Tag Placement
-
-```markdown
----
-tags: session, backend, database
----
-
-# Session Title
-
-Working on #database migration for #backend services.
-```
-
----
-
-## Dataview Queries
-
-Query files by tags or links:
-
-### All Active Sessions
-```dataview
-LIST
-FROM "mind/memory/sessions"
-WHERE contains(tags, "#active")
-SORT date DESC
-```
-
-### Files Linking to INDEX
-```dataview
-LIST
-WHERE contains(file.outlinks, [[mind/INDEX]])
-```
-
-### Recent Skills
-```dataview
-LIST
-FROM "mind/skills"
-WHERE date > date(today) - dur(7 days)
-SORT date DESC
-```
-
----
-
-## File Organization
-
-### Naming Conventions
-
-| Type | Pattern | Example |
-|------|---------|---------|
-| Sessions | `YYYY-MM-DD-description.md` | `2026-02-13-ram-system.md` |
-| Skills | `SKILL.md` or `skill-name.md` | `codesync/SKILL.md` |
-| Research | `topic-name.md` | `booking-domain-model.md` |
-| Daily | `YYYY-MM-DD.md` | `2026-02-13.md` |
-
-### Directory Structure
-
-```
-mind/
-├── INDEX.md              # Entry point
-├── RAM.md                # Working memory
-├── MAP.md                # Complete index
-├── DISSONANCE.md         # Unresolved questions
-├──
-├── identity/             # Who Bizing is
-├── knowledge/            # What Bizing knows
-│   ├── domain/          # Business knowledge
-│   └── tech/            # Technical knowledge
-├── memory/              # Experiences
-│   ├── sessions/        # Work logs
-│   └── briefings/       # Summaries
-├── skills/              # How-to guides
-│   ├── codesync/        # Commit workflow
-│   ├── mindsync/        # Update workflow
-│   └── obsidian/        # Obsidian tips
-├── research/            # Research
-│   └── findings/        # Completed research
-├── workspace/           # Active planning
-│   └── feature-space.md # Feature kanban
-└── evolution/           # Major changes
-```
-
----
-
-## Templater Integration
-
-Auto-populate new files:
-
-### Session Template
-```markdown
----
-date: <% tp.date.now("YYYY-MM-DD") %>
-tags: session
-type: <%* tR += await tp.system.suggester(["codesync", "research", "bugfix"], ["codesync", "research", "bugfix"]) %>
----
-
-# Session: <% tp.file.title %>
-
-## Summary
-
-## Work Done
-
-## Key Decisions
-
-## Learnings
-
-## Files Changed
-
-## Output
-
-## Next Steps
-```
-
----
-
-## Common Patterns
-
-### Decision Record
-```markdown
+```yaml
 ---
 date: 2026-02-13
-tags: decision, architecture
+tags:
+  - session
+  - database
+  - migration
+status: active
 ---
-
-# Decision: Use PostgreSQL for primary database
-
-## Context
-[[problem-statement]]
-
-## Decision
-Use [[PostgreSQL]] over [[MySQL]]
-
-## Consequences
-- ✅ Better JSON support
-- ✅ More robust
-- ❌ Slightly more complex setup
-
-## Related
-- [[mind/decisions/database-migration]]
-```
-
-### Research Finding
-```markdown
----
-date: 2026-02-13
-tags: research, findings, topic
----
-
-# Research: Topic Name
-
-## Summary
-
-## Key Findings
-
-## Implementation Notes
-
-## References
-- [[source-1]]
-- [[source-2]]
 ```
 
 ---
 
-## Link Maintenance
+## File Naming
 
-### Finding Orphaned Files
+### Sessions
 
-```dataview
-LIST
-WHERE length(file.inlinks) = 0
-AND file.path != "mind/INDEX"
-AND file.path != "mind/MAP"
-```
+`memory/sessions/YYYY-MM-DD-description.md`
 
-### Updating Broken Links
+Example:
+- `memory/sessions/2026-02-13-database-migration.md`
 
-When renaming files, Obsidian updates links automatically. For manual updates:
+### Skills
 
-1. Search for old filename: `[[old-name]]`
-2. Replace with new name: `[[new-name]]`
-3. Check backlinks in [[mind/MAP]]
+`skills/category/DescriptiveName.md`
 
----
+Example:
+- `skills/CodeSync.md`
+- `skills/Memory.md`
+- `skills/Dreaming.md`
 
-## Best Practices
+### Research
 
-### Always Include
-- [ ] YAML frontmatter with date
-- [ ] At least 3 [[wikilinks]]
-- [ ] Relevant #tags
-- [ ] Link back to [[mind/INDEX]]
+`research/findings/topic.md`
 
-### Never Do
-- [ ] Leave files unlinked (orphaned)
-- [ ] Use absolute paths
-- [ ] Forget to tag
-- [ ] Commit without HARD MindSync
-
-### Regular Maintenance
-- Weekly: Archive stale items in [[mind/memory/RAM]]
-- Monthly: Review orphaned files
-- Quarterly: Update [[mind/MAP]] structure
+Example:
+- `research/findings/api-first-design.md`
 
 ---
 
-## Related
+## Quick Reference
 
-- [[mind/skills/obsidian/kanban]] — Visual task boards
-- [[mind/skills/obsidian/dataview]] — Query your mind
-- [[mind/skills/obsidian/templater]] — Auto-generate files
-- [[mind/INDEX]] — Main entry point
+### Common Tags
+
+| Tag | Use For |
+|-----|---------|
+| `session` | Work session logs |
+| `skill` | How-to guides |
+| `research` | Research documents |
+| `workflow` | Process documents |
+| `dissonance` | Tension documents |
+| `curiosity` | Question documents |
 
 ---
 
-*Good files are well-linked, well-tagged, and well-maintained.*
+## Related Skills
+
+- [[skills/obsidian/templater]] — Auto-generate files
+- [[skills/obsidian/dataview]] — Query files
+- [[skills/memory]] — Session logging
+
+---
+
+*Edit with purpose. Link everything.*

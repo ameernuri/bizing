@@ -1,6 +1,10 @@
 ---
 date: 2026-02-13
-tags: skill, obsidian, kanban, workflow
+tags: 
+  - skill
+  - obsidian
+  - kanban
+  - workflow
 ---
 
 # 🎓 Kanban Skill
@@ -11,7 +15,8 @@ tags: skill, obsidian, kanban, workflow
 
 ## What Is Kanban?
 
-**Kanban** is a visual workflow management method. In Obsidian, the [[Kanban plugin]] turns markdown files into draggable boards.
+**Kanban** is a visual workflow management method. In Obsidian
+  - the [[Kanban plugin]] turns markdown files into draggable boards.
 
 ---
 
@@ -25,7 +30,9 @@ Every kanban file needs this at the top:
 ---
 kanban-plugin: board
 date: 2026-02-13
-tags: kanban, project
+tags: 
+  - kanban
+  - project
 ---
 ```
 
@@ -138,7 +145,8 @@ Or show by tag:
 
 ```dataview
 TASK
-WHERE contains(tags, "#urgent")
+WHERE contains(tags
+  - "#urgent")
 ```
 
 ---
@@ -149,7 +157,8 @@ WHERE contains(tags, "#urgent")
 1. **Backlog** — Everything that might happen
 2. **To Do** — Committed to this sprint/week
 3. **In Progress** — Currently working on
-4. **Review** — Done, needs review
+4. **Review** — Done
+  - needs review
 5. **Done** — Complete
 
 ### Task Size
@@ -159,7 +168,8 @@ WHERE contains(tags, "#urgent")
 
 ### Regular Review
 - Daily: Check "In Progress" and "To Do"
-- Weekly: Groom "Backlog", move tasks between columns
+- Weekly: Groom "Backlog"
+  - move tasks between columns
 - Monthly: Archive completed items
 
 ---
@@ -181,7 +191,9 @@ WHERE contains(tags, "#urgent")
 ---
 kanban-plugin: board
 date: 2026-02-13
-tags: kanban, features
+tags: 
+  - kanban
+  - features
 ---
 
 # Feature Development
@@ -238,4 +250,6 @@ tags: kanban, features
 
 ---
 
-*Kanban: Visualize work, limit WIP, maximize flow.*
+*Kanban: Visualize work
+  - limit WIP
+  - maximize flow.*

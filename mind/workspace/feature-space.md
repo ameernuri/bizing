@@ -1,31 +1,43 @@
 ---
 kanban-plugin: board
 date: 2026-02-13
-tags: workspace, features, kanban, roadmap
+tags: 
+  - workspace
+  - features
+  - kanban
+  - roadmap
 ---
 
 # 🎯 Feature Space — Bizing Platform Capabilities
 
-> Complete inventory of possible features, prioritized by market prevalence and business value. This is the **feature space** — what Bizing *could* do, not what we *will* do.
+> Complete inventory of possible features
+  - prioritized by market prevalence and business value. This is the **feature space** — what Bizing *could* do
+  - not what we *will* do.
 
 ---
 
 ## ⭐⭐⭐ Universal — Must-Have v1.0
 
-- [ ] Service/Item definition with name, description, duration, price
+- [ ] Service/Item definition with name
+  - description
+  - duration
+  - price
 - [ ] Time slot generation based on availability
 - [ ] One-on-one appointment booking
 - [ ] Guest booking (no account required)
 - [ ] Customer profiles with contact info
 - [ ] Staff profiles with schedules
-- [ ] Basic calendar views (day, week, month)
+- [ ] Basic calendar views (day
+  - week
+  - month)
 - [ ] Email confirmations and notifications
 - [ ] Stripe/PayPal payment integration
 - [ ] Mobile-responsive booking flow
 - [ ] Multi-location support
 - [ ] Location-based services and hours
 - [ ] Google Calendar sync
-- [ ] Basic reporting (bookings, revenue)
+- [ ] Basic reporting (bookings
+  - revenue)
 - [ ] REST API for integrations
 - [ ] Custom fields for customer data
 - [ ] Digital product listings with descriptions
@@ -45,9 +57,11 @@ tags: workspace, features, kanban, roadmap
 - [ ] Same-day booking controls
 - [ ] Group/class bookings
 - [ ] Recurring appointments
-- [ ] Resource-based booking (rooms, equipment)
+- [ ] Resource-based booking (rooms
+  - equipment)
 - [ ] Customer registration with accounts
-- [ ] Social login (Google, Apple)
+- [ ] Social login (Google
+  - Apple)
 - [ ] Customer tags and segmentation
 - [ ] Customer notes for staff
 - [ ] Booking history and logs
@@ -105,7 +119,9 @@ tags: workspace, features, kanban, roadmap
 - [ ] Resource capacity management
 - [ ] Payment plans (split payments)
 - [ ] Gift cards and certificates
-- [ ] Buy Now, Pay Later (Klarna, etc.)
+- [ ] Buy Now
+  - Pay Later (Klarna
+  - etc.)
 - [ ] Bank transfer/check payments
 - [ ] Regional payment methods
 - [ ] Webhook notifications
@@ -168,11 +184,17 @@ tags: workspace, features, kanban, roadmap
 - [ ] Role-based access control (RBAC)
 - [ ] Audit logging
 - [ ] SLA support
-- [ ] Healthcare: HIPAA compliance, patient records
-- [ ] Fitness: Class scheduling, attendance tracking
-- [ ] Education: Curriculum levels, parent portals
-- [ ] Home services: Route optimization, job photos
-- [ ] Events: Ticketing, seat selection, check-in
+- [ ] Healthcare: HIPAA compliance
+  - patient records
+- [ ] Fitness: Class scheduling
+  - attendance tracking
+- [ ] Education: Curriculum levels
+  - parent portals
+- [ ] Home services: Route optimization
+  - job photos
+- [ ] Events: Ticketing
+  - seat selection
+  - check-in
 - [ ] Resource planning
 - [ ] Equipment maintenance tracking
 - [ ] Room booking systems
@@ -197,8 +219,10 @@ tags: workspace, features, kanban, roadmap
 
 When deciding what to build:
 
-1. **Start with ⭐⭐⭐ Universal** — Table stakes, can't launch without
-2. **Add ⭐⭐ Common** — Competitive parity, expected by users
+1. **Start with ⭐⭐⭐ Universal** — Table stakes
+  - can't launch without
+2. **Add ⭐⭐ Common** — Competitive parity
+  - expected by users
 3. **Select ⭐ Occasional** — Differentiators for target market
 4. **Defer ○ Rare** — Only if specifically requested
 5. **Reserve 🔒 Enterprise** — Paid tier features
@@ -207,12 +231,19 @@ When deciding what to build:
 
 Based on [[../research/BUSINESS_TYPES|business type research]]:
 
-**Phase 1:** Beauty, Fitness, Professional Services  
-**Phase 2:** Healthcare, Home Services, Education  
-**Phase 3:** Events, B2B, Enterprise
+**Phase 1:** Beauty
+  - Fitness
+  - Professional Services  
+**Phase 2:** Healthcare
+  - Home Services
+  - Education  
+**Phase 3:** Events
+  - B2B
+  - Enterprise
 
 ---
 
-*Feature space catalog. Reference: [[../research/FEATURE_SPACE|FEATURE_SPACE.md]], [[../research/BUSINESS_TYPES|BUSINESS_TYPES.md]]*
+*Feature space catalog. Reference: [[../research/FEATURE_SPACE|FEATURE_SPACE.md]]
+  - [[../research/BUSINESS_TYPES|BUSINESS_TYPES.md]]*
 
 *Last updated: 2026-02-13*

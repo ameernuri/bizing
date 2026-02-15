@@ -1,6 +1,11 @@
 ---
 date: 2026-02-13
-tags: skill, codesync, workflow, git, commit
+tags: 
+  - skill
+  - codesync
+  - workflow
+  - git
+  - commit
 ---
 
 # 💻 CodeSync Skill
@@ -90,7 +95,10 @@ Commit message: "feat: description"
 Approve commit and do a PR? (yes/no)
 ```
 
-**Wait for explicit:** "yes", "commit approved", "approve commit and do a PR", or "codesync"
+**Wait for explicit:** "yes"
+  - "commit approved"
+  - "approve commit and do a PR"
+  - or "codesync"
 
 ---
 

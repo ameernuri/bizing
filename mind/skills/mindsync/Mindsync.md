@@ -1,6 +1,10 @@
 ---
 date: 2026-02-13
-tags: skill, mindsync, workflow, update
+tags: 
+  - skill
+  - mindsync
+  - workflow
+  - update
 ---
 
 # 🧠 MindSync Skill
@@ -21,7 +25,9 @@ tags: skill, mindsync, workflow, update
 
 **What to update:**
 1. [[mind/memory/RAM]] — Add completed items with timestamps
-2. [[symbiosis/feedback]] — Log new learnings, rules, insights
+2. [[symbiosis/feedback]] — Log new learnings
+  - rules
+  - insights
 3. [[mind/memory/sessions/index|Session index]] — Add entry to recent sessions list (if significant work)
 
 **Time:** 2-3 minutes
@@ -66,7 +72,8 @@ Add to [[mind/memory/RAM]]:
 Add to [[symbiosis/feedback]]:
 
 ```markdown
-- [2026-02-13] **Embedding crash fixed** — Ollama context limit at 8000 chars, reduced to 2000
+- [2026-02-13] **Embedding crash fixed** — Ollama context limit at 8000 chars
+  - reduced to 2000
 ```
 
 ### Step 3: Update Session Index (if significant)
@@ -92,7 +99,10 @@ File: `mind/memory/sessions/2026-02-13-embedding-crash-fix.md`
 ```markdown
 ---
 date: 2026-02-13
-tags: session, log, bugfix
+tags: 
+  - session
+  - log
+  - bugfix
 ---
 
 # Session: Fixed Embedding Crash
@@ -147,7 +157,8 @@ curl -X POST http://localhost:6129/api/v1/admin/rebuild-knowledge
 
 Or trigger via Bizing API. This ensures Bizing AI can search and retrieve the updated content.
 
-**Why:** Embeddings are cached. After major mind changes, they must be rebuilt or Bizing AI will have stale knowledge.
+**Why:** Embeddings are cached. After major mind changes
+  - they must be rebuilt or Bizing AI will have stale knowledge.
 
 ### Step 6: Restart Server (if cache stale)
 

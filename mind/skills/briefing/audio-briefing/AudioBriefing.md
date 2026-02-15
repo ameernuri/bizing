@@ -1,6 +1,11 @@
 ---
 date: 2026-02-13
-tags: skill, briefing, audio, tts, 11labs
+tags: 
+  - skill
+  - briefing
+  - audio
+  - tts
+  - 11labs
 ---
 
 # 🔊 Audio Briefing Skill
@@ -33,7 +38,8 @@ Either:
 - `#` headers — convert to plain text
 - `-` bullets — convert to sentences or paragraphs
 - `*` emphasis markers
-- `[links]` — remove brackets, keep text
+- `[links]` — remove brackets
+  - keep text
 - URLs — write as "example dot com"
 - `%` — write as "percent" (TTS handles this)
 - Numbers — keep as digits (TTS reads correctly)
@@ -74,9 +80,10 @@ Pipedrive. Visual pipeline.
 ### Step 3: Generate Audio
 
 **TTS Settings:**
-- **Voice:** Nova (warm, conversational)
+- **Voice:** Nova (warm
+  - conversational)
 - **Model:** eleven turbo v2.5
-- **Speed:** 1.15x (slightly faster for briefings)
+- **Speed:** 1.5x (Ameer's preference for faster consumption)
 
 Generate audio via TTS tool.
 
@@ -136,8 +143,12 @@ $ → dollars
 ```
 
 ### Numbers
-- Keep as digits: 40, 100, 2026
-- TTS reads correctly: "forty", "one hundred", "two thousand twenty-six"
+- Keep as digits: 40
+  - 100
+  - 2026
+- TTS reads correctly: "forty"
+  - "one hundred"
+  - "two thousand twenty-six"
 
 ### Abbreviations
 ```
@@ -157,7 +168,9 @@ TTS → text to speech
 ```
 # CRM Research — February 13
 
-I analyzed **Clay**, *Pipedrive*, and [HubSpot](https://hubspot.com).
+I analyzed **Clay**
+  - *Pipedrive*
+  - and [HubSpot](https://hubspot.com).
 
 ## Key Findings
 - 40% no-show reduction with reminders
@@ -169,7 +182,9 @@ I analyzed **Clay**, *Pipedrive*, and [HubSpot](https://hubspot.com).
 ```
 CRM Research. February 13.
 
-I analyzed Clay, Pipedrive, and HubSpot.
+I analyzed Clay
+  - Pipedrive
+  - and HubSpot.
 
 Key Findings.
 40 percent no-show reduction with reminders.
@@ -179,16 +194,19 @@ CRM plus AI equals powerful combination.
 
 ## Speed Setting
 
-**Default: 1.15x speed**
+**Default: 1.5x speed**
 
 Why faster?
 - Briefings are information-dense
 - Users want to consume quickly
-- 1.15x is still natural, just more efficient
+- 1.5x is efficient while remaining understandable
+
+**Ameer's Preference:** 1.5x speed (requested Feb 14
+  - 2026)
 
 **Adjust if needed:**
-- User prefers normal: 1.0x
-- User wants faster: 1.25x (max)
+- Normal speed: 1.0x
+- Very fast: 1.5x (current setting)
 
 ## Delivery Rules
 
@@ -197,13 +215,18 @@ Why faster?
 2. **Text immediately after** — Reference and search
 
 ### Why Both?
-- **Audio:** Listen while driving, walking, doing other tasks
-- **Text:** Search for specific details, copy-paste, reference later
+- **Audio:** Listen while driving
+  - walking
+  - doing other tasks
+- **Text:** Search for specific details
+  - copy-paste
+  - reference later
 
 ### Target
 Send to the source of the request:
 - Group request → Send to group
-- DM request → Ask where to send, default to DM
+- DM request → Ask where to send
+  - default to DM
 
 ## Error Handling
 
@@ -214,7 +237,8 @@ Send to the source of the request:
 
 **Audio Upload Fails:**
 - Retry once
-- If still fails, send text only
+- If still fails
+  - send text only
 - Log error
 
 **File Too Large:**
@@ -233,4 +257,6 @@ Send to the source of the request:
 
 ---
 
-*Audio Briefing: Convert text to audio, send both, cleanup after.*
+*Audio Briefing: Convert text to audio
+  - send both
+  - cleanup after.*

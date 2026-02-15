@@ -1,6 +1,10 @@
 ---
 date: 2026-02-13
-tags: session, cleanup, skills, consolidation
+tags: 
+  - session
+  - cleanup
+  - skills
+  - consolidation
 type: cleanup
 ---
 
@@ -15,8 +19,8 @@ Identified and merged 4 redundant skills from `mind/skills/workflow/` into exist
 |--------------|-------------|--------|
 | `kanban-formatting.md` | `obsidian/kanban.md` | Duplicate kanban documentation |
 | `dataview.md` | `obsidian/dataview.md` | Duplicate dataview documentation |
-| `brain-updates.md` | `mindsync/SKILL.md` | Overlapping mind update content |
-| `session-logging.md` | `memory/SKILL.md` | Overlapping session logging content |
+| `brain-updates.md` | `Mindsync//.md` | Overlapping mind update content |
+| `session-logging.md` | `Memory//.md` | Overlapping session logging content |
 
 ## Files Updated
 

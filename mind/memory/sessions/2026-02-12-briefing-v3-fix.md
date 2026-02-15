@@ -1,6 +1,13 @@
 ---
 date: 2026-02-12
-tags: session, log, skill, briefing, audio, telegram, workflow
+tags: 
+  - session
+  - log
+  - skill
+  - briefing
+  - audio
+  - telegram
+  - workflow
 ---
 
 # 📝 Session: Briefing Skill v3 — Audio Delivery Fixed
@@ -47,11 +54,13 @@ await message.send({ media: ttsResult });  // File already gone!
 
 // AFTER (fixed):
 const ttsResult = await tts(text);  // Returns temp path
-const tempPath = ttsResult.replace('MEDIA:', '');
+const tempPath = ttsResult.replace('MEDIA:'
+  - '');
 const persistentPath = `/workspace/briefing-${Date.now()}.mp3`;
 
 // Copy before temp cleanup
-await copyFile(tempPath, persistentPath);
+await copyFile(tempPath
+  - persistentPath);
 
 // Now send from persistent location
 await message.send({ media: persistentPath });
@@ -62,7 +71,7 @@ await deleteFile(persistentPath);
 
 ## Updated Skill Documentation
 
-**File:** `mind/skills/briefing/SKILL.md`
+**File:** `mind/skills/Briefing//.md`
 
 **Changes:**
 1. Added explicit "copy to workspace" step
@@ -121,7 +130,7 @@ This applies to:
 
 | File | Changes |
 |------|---------|
-| `mind/skills/briefing/SKILL.md` | Complete workflow rewrite with file persistence |
+| `mind/skills/Briefing//.md` | Complete workflow rewrite with file persistence |
 | `mind/symbiosis/feedback.md` | Logged v3 update with key fix |
 | `mind/memory/sessions/2026-02-12-briefing-v3-fix.md` | This session log |
 

@@ -1,6 +1,9 @@
 ---
 date: 2026-02-11
-tags: session, log, mindsync
+tags: 
+  - session
+  - log
+  - mindsync
 ---
 
 # 📝 Session: Testing Requirements & MINDSYNC Definition
@@ -41,10 +44,12 @@ User defined critical testing requirements and the MINDSYNC command for extensiv
 - Update relevant knowledge files
 
 **Explicit MINDSYNC (Comprehensive):**
-- [[symbiosis/feedback]] — Learnings, rules
+- [[symbiosis/feedback]] — Learnings
+  - rules
 - [[symbiosis/standup]] — Task status
 - [[memory/sessions/]] — Session logs
-- [[knowledge/]] — Architecture, domain
+- [[knowledge/]] — Architecture
+  - domain
 - [[skills/]] — Workflow patterns
 - [[MAP]] — Structure updates
 - [[backlog]] — Kanban board
@@ -77,15 +82,20 @@ User defined critical testing requirements and the MINDSYNC command for extensiv
 
 #### .templates/session-log.md
 - Added Testing checklist section
-- Type check, Vitest, Playwright checkboxes
+- Type check
+  - Vitest
+  - Playwright checkboxes
 
 #### symbiosis/backlog.md
 - Added testing infrastructure task
-- Vitest, Playwright, pre-commit hooks
+- Vitest
+  - Playwright
+  - pre-commit hooks
 
 ## Decisions Made
 
-1. **Testing is mandatory** — No commits with failing tests, ever
+1. **Testing is mandatory** — No commits with failing tests
+  - ever
 2. **Type checking is mandatory** — Zero type errors required
 3. **MINDSYNC = Extensive mind updating** — Across ALL relevant files
 4. **Default mindsync** — Every instruction gets basic update

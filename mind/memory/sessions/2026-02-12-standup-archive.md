@@ -1,9 +1,14 @@
 ---
 date: 2026-02-12
-tags: session, log, archive, standup
+tags: 
+  - session
+  - log
+  - archive
+  - standup
 ---
 
-# Archived: Standup — February 12, 2026
+# Archived: Standup — February 12
+  - 2026
 
 > This file has been archived. The standup system has been replaced by [[mind/memory/RAM]] (working memory).
 
@@ -22,11 +27,13 @@ See [[mind/skills/ram/Ram]] for the new workflow.
 
 ## Original Content (Preserved)
 
-### Completed Feb 12, 2026
+### Completed Feb 12
+  - 2026
 
 - Perplexity API configured
 - 11labs API configured
-- Briefing skill v2 (11labs primary, Telegram fallback)
+- Briefing skill v2 (11labs primary
+  - Telegram fallback)
 - TTS-optimized briefing format
 - Booking Domain Model research complete
 - Event-Driven Architecture research complete
@@ -36,8 +43,12 @@ See [[mind/skills/ram/Ram]] for the new workflow.
 - Bizing function calling fixed
 - CORE-REFERENCE.md created
 - System prompt updated
-- Bizing knows sync systems (MindSync, TeamSync, CodeSync)
-- Deep mind reorganization (INDEX.md single entry point, Dreamer fixed, DISSONANCE cleaned)
+- Bizing knows sync systems (MindSync
+  - TeamSync
+  - CodeSync)
+- Deep mind reorganization (INDEX.md single entry point
+  - Dreamer fixed
+  - DISSONANCE cleaned)
 
 ### In Progress (Moved to RAM)
 
@@ -51,7 +62,9 @@ See [[mind/skills/ram/Ram]] for the new workflow.
 - Chunk splitting: 1500 char max prevents crashes
 - Resilient error handling: server continues without embeddings
 - Function calling: System prompt forces file reading
-- Sync systems: MindSync (SOFT/HARD), TeamSync (4 entities), CodeSync (check→test→commit→PR)
+- Sync systems: MindSync (SOFT/HARD)
+  - TeamSync (4 entities)
+  - CodeSync (check→test→commit→PR)
 
 ---
 

@@ -1,21 +1,32 @@
 ---
 date: 2026-02-13
-tags: skill, workflow, index
+tags: 
+  - skill
+  - workflow
+  - index
 ---
 
 # ⚡ Workflow Skills
 
-> How we work — documentation, git, collaboration
+> How we work — documentation
+  - git
+  - collaboration
 
 ---
 
 ## Available Skills
 
 ### [[mind/skills/obsidian/index|Obsidian Tools]]
-Master Obsidian: Kanban, Dataview, Templater, file editing.
+Master Obsidian: Kanban
+  - Dataview
+  - Templater
+  - file editing.
 
 ### [[mind/skills/codesync|CodeSync]]
-Quality-gated commit workflow — test, ask, commit, PR.
+Quality-gated commit workflow — test
+  - ask
+  - commit
+  - PR.
 
 ### [[mind/skills/mindsync|MindSync]]
 SOFT and HARD mind update processes.

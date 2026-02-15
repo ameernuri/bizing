@@ -1,6 +1,10 @@
 ---
 date: 2026-02-13
-tags: skill, briefing, hub, overview
+tags: 
+  - skill
+  - briefing
+  - hub
+  - overview
 ---
 
 # 📋 Briefing Skills Hub
@@ -15,7 +19,9 @@ Briefings are summaries delivered to help you stay informed. We have **two speci
 
 ### 1. [[mind/skills/briefing/text-briefing|📝 Text Briefing]]
 
-**Purpose:** Create written summaries of research, status, or findings.
+**Purpose:** Create written summaries of research
+  - status
+  - or findings.
 
 **When to use:**
 - "Create text briefing on CRM research"
@@ -39,7 +45,8 @@ Briefings are summaries delivered to help you stay informed. We have **two speci
 - MP3 audio (1.15x speed for efficiency)
 - Text file (for reference)
 
-**Both files sent together** — listen to audio, reference text later.
+**Both files sent together** — listen to audio
+  - reference text later.
 
 ---
 
@@ -56,7 +63,9 @@ Briefings are summaries delivered to help you stay informed. We have **two speci
 ### Workflow 1: Daily Status Audio Briefing
 ```
 User: "Send daily briefing"
-→ Text Briefing: Gather standup, feedback, sessions
+→ Text Briefing: Gather standup
+  - feedback
+  - sessions
 → Audio Briefing: Convert to audio
 → Send: MP3 + TXT to group
 ```
@@ -85,9 +94,13 @@ User: "Create text summary of standup"
 ## TTS Optimization
 
 The Audio Briefing skill automatically:
-- Removes markdown (`#`, `##`, `-`, `*`)
+- Removes markdown (`#`
+  - `##`
+  - `-`
+  - `*`)
 - Converts URLs to spoken form ("example dot com")
-- Handles symbols (`%` → "percent", `$` → "dollars")
+- Handles symbols (`%` → "percent"
+  - `$` → "dollars")
 - Removes emojis
 - Sets speed to 1.15x for efficiency
 
@@ -102,7 +115,8 @@ The Audio Briefing skill automatically:
 
 **Skills:**
 - [[mind/skills/briefing/text-briefing|Text Briefing]] — Create written summaries
-- [[mind/skills/briefing/audio-briefing|Audio Briefing]] — Convert to audio, send both
+- [[mind/skills/briefing/audio-briefing|Audio Briefing]] — Convert to audio
+  - send both
 
 **Related:**
 - `mind/symbiosis/standup.md` — Daily priorities
@@ -112,4 +126,5 @@ The Audio Briefing skill automatically:
 
 ---
 
-*Briefing Hub: Text for writing, Audio for listening + reference. Both skills work together.*
+*Briefing Hub: Text for writing
+  - Audio for listening + reference. Both skills work together.*

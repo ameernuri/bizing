@@ -1,9 +1,17 @@
 ---
 date: 2026-02-13
-tags: research, crm, clay, pipedrive, hubspot, analysis
+tags: 
+  - research
+  - crm
+  - clay
+  - pipedrive
+  - hubspot
+  - analysis
 ---
 
-# CRM Research: Clay, Pipedrive, HubSpot Analysis
+# CRM Research: Clay
+  - Pipedrive
+  - HubSpot Analysis
 
 > What Bizing can learn from modern CRMs
 
@@ -21,14 +29,17 @@ Analyzed three leading CRM platforms to identify features worth integrating into
 
 **What they do:**
 - Combine 75+ data sources into one enrichment layer
-- AI-powered research (reads websites, PDFs, does Google searches)
+- AI-powered research (reads websites
+  - PDFs
+  - does Google searches)
 - Automated outreach with AI-drafted messages
 - Prospecting from 10+ sources
 
 **Pricing:** $0-$720/mo (credit-based)
 
 **What's RIGHT:**
-- Credit-based pricing (pay for usage, not seats)
+- Credit-based pricing (pay for usage
+  - not seats)
 - AI research automation replaces manual SDR work
 - Data aggregation vs. 10+ subscriptions
 - Wholesale data pricing (no markup)
@@ -39,7 +50,8 @@ Analyzed three leading CRM platforms to identify features worth integrating into
 - No booking/scheduling (pure enrichment)
 - Overkill for simple CRM needs
 
-**For Bizing:** Not a fit — Clay is pre-booking, Bizing is post-booking
+**For Bizing:** Not a fit — Clay is pre-booking
+  - Bizing is post-booking
 
 ---
 
@@ -57,7 +69,9 @@ Analyzed three leading CRM platforms to identify features worth integrating into
 **What's RIGHT:**
 - Visual pipeline (intuitive for sales teams)
 - Mobile-first (strong iOS/Android apps)
-- Email integration (tracks opens, clicks, replies)
+- Email integration (tracks opens
+  - clicks
+  - replies)
 - Automation reduces admin work
 - Focus on "what to do next"
 
@@ -67,31 +81,39 @@ Analyzed three leading CRM platforms to identify features worth integrating into
 - No enrichment (needs Clay/ZoomInfo)
 - Generic (works for any industry)
 
-**For Bizing:** Partial fit — good CRM foundation, lacks booking context
+**For Bizing:** Partial fit — good CRM foundation
+  - lacks booking context
 
 ---
 
 ## 3. HubSpot CRM — All-in-One Platform
 
 **What they do:**
-- Free CRM (unlimited contacts, basic features)
+- Free CRM (unlimited contacts
+  - basic features)
 - Marketing + Sales + Service (full customer journey)
 - Email marketing with automation
 - Website analytics
 
 **What's RIGHT:**
 - Free tier ($0 to start)
-- All-in-one (marketing, sales, service unified)
+- All-in-one (marketing
+  - sales
+  - service unified)
 - 1,000+ integrations
-- Content + CRM (blog, landing pages, email)
+- Content + CRM (blog
+  - landing pages
+  - email)
 
 **What's WRONG:**
 - Expensive at scale ($800+/mo for full features)
-- Bloated (too many features, complexity)
+- Bloated (too many features
+  - complexity)
 - Generic (not designed for booking)
 - Steep learning curve
 
-**For Bizing:** Partial fit — good foundation, overkill and expensive
+**For Bizing:** Partial fit — good foundation
+  - overkill and expensive
 
 ---
 
@@ -132,24 +154,33 @@ Analyzed three leading CRM platforms to identify features worth integrating into
 ## Key Insight: The Gap in the Market
 
 **Most CRMs are:**
-- Pre-booking (Clay, Salesforce) — lead gen and sales
-- Generic (Pipedrive, HubSpot) — work for any business
+- Pre-booking (Clay
+  - Salesforce) — lead gen and sales
+- Generic (Pipedrive
+  - HubSpot) — work for any business
 
 **Bizing's opportunity:**
 - Post-booking CRM — customer management AFTER they book
 - Booking-native — pipeline stages match booking lifecycle
-- Commission-aware — track revenue, not just deals
+- Commission-aware — track revenue
+  - not just deals
 
 ---
 
 ## Recommended Features for Bizing CRM
 
 **Core:**
-1. Customer timeline — all bookings, messages, payments in one view
+1. Customer timeline — all bookings
+  - messages
+  - payments in one view
 2. Booking pipeline — Confirmed → Preparing → In Progress → Complete → Review
-3. Revenue tracking — commission calculation, payout timing
-4. Automated follow-ups — review requests, rebooking prompts
-5. Customer segments — VIP, frequent booker, at-risk
+3. Revenue tracking — commission calculation
+  - payout timing
+4. Automated follow-ups — review requests
+  - rebooking prompts
+5. Customer segments — VIP
+  - frequent booker
+  - at-risk
 6. Mobile-first — business owners check on-the-go
 
 **Don't try to be HubSpot or Pipedrive.** Be the CRM that understands booking businesses.
@@ -159,11 +190,13 @@ Analyzed three leading CRM platforms to identify features worth integrating into
 ## Recommendation
 
 Build a lightweight CRM into Bizing that:
-- Focuses on existing customers, not lead gen
+- Focuses on existing customers
+  - not lead gen
 - Uses booking stages as pipeline
 - Tracks commission/revenue natively
 - Has simple email automation
-- Is free for small users, scales with commission
+- Is free for small users
+  - scales with commission
 
 ---
 

@@ -1,6 +1,13 @@
 ---
 date: 2026-02-12
-tags: session, log, research, merchant-of-record, stripe, fees, payments
+tags: 
+  - session
+  - log
+  - research
+  - merchant-of-record
+  - stripe
+  - fees
+  - payments
 ---
 
 # 📝 Session: Merchant of Record & Stripe Fee Research
@@ -23,7 +30,9 @@ tags: session, log, research, merchant-of-record, stripe, fees, payments
 - Legal entity that sells to end customer
 - Collects payment
 - Bears transaction liability
-- Handles taxes, refunds, chargebacks
+- Handles taxes
+  - refunds
+  - chargebacks
 - Owns payment processor relationship
 
 **Bizing Should Be MoR:**
@@ -54,7 +63,8 @@ tags: session, log, research, merchant-of-record, stripe, fees, payments
 | **Level 2 data** | 0.1% | Include transaction metadata |
 | **Recurring flags** | 0.3% | Mark stored credentials |
 | **Multi-currency** | 1% on intl | Present in local currency |
-| **Wallet system** | 1-2% | Pre-fund wallet, multiple bookings |
+| **Wallet system** | 1-2% | Pre-fund wallet
+  - multiple bookings |
 | **Volume discount** | 0.2% | Negotiate at $100K/mo |
 
 **Example Savings:**
@@ -81,7 +91,8 @@ $1M annual volume:
 
 ### 5. Tax Implications
 
-**As MoR, Bizing must:**
+**As MoR
+  - Bizing must:**
 - Calculate tax (customer location)
 - Collect at checkout
 - Remit to jurisdictions
@@ -108,10 +119,13 @@ $1M annual volume:
 
 ## Key Recommendations
 
-1. **Bizing as MoR** — Yes, for unified brand and fee optimization
-2. **Stripe Connect Express** — Platform controls, simple for agents
+1. **Bizing as MoR** — Yes
+  - for unified brand and fee optimization
+2. **Stripe Connect Express** — Platform controls
+  - simple for agents
 3. **Enable ACH** — 73% fee savings on large bookings
-4. **Absorb fees for B2C** — Better UX, simpler
+4. **Absorb fees for B2C** — Better UX
+  - simpler
 5. **Negotiate at $100K/mo** — Typical 0.2% reduction
 6. **Consider alternatives at $1M/yr** — Helcim/Adyen for lower rates
 

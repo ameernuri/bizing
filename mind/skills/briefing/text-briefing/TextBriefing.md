@@ -1,15 +1,22 @@
 ---
 date: 2026-02-13
-tags: skill, briefing, text, summary
+tags: 
+  - skill
+  - briefing
+  - text
+  - summary
 ---
 
 # 📝 Text Briefing Skill
 
-> *Generate a written summary of research, status, or findings*
+> *Generate a written summary of research
+  - status
+  - or findings*
 
 ## Purpose
 
-Create a clear, readable text summary that can be:
+Create a clear
+  - readable text summary that can be:
 - Read directly by the user
 - Converted to audio via the Audio Briefing skill
 - Sent as a follow-up to audio briefings
@@ -65,7 +72,8 @@ Create text in **natural reading format** — NOT TTS-optimized yet.
 ```
 
 **Writing Guidelines:**
-- Use natural language (contractions OK: "don't", "it's")
+- Use natural language (contractions OK: "don't"
+  - "it's")
 - Use bullet points with dashes
 - Use numbers normally ("40%" not "40 percent")
 - Use emojis sparingly
@@ -86,24 +94,38 @@ If user wants audio:
 ## Example Output
 
 ```
-# CRM Research Briefing — February 13, 2026
+# CRM Research Briefing — February 13
+  - 2026
 
 ## Summary
-I analyzed three leading CRM platforms — Clay, Pipedrive, and HubSpot — to identify features worth integrating into Bizing. The key finding: most CRMs focus on pre-booking lead generation or are generic. Bizing's opportunity is a post-booking CRM built specifically for booking businesses.
+I analyzed three leading CRM platforms — Clay
+  - Pipedrive
+  - and HubSpot — to identify features worth integrating into Bizing. The key finding: most CRMs focus on pre-booking lead generation or are generic. Bizing's opportunity is a post-booking CRM built specifically for booking businesses.
 
 ## Key Points
-- Clay.com: Data enrichment + AI, credit-based pricing, $0-$720/mo
-- Pipedrive: Visual sales pipeline, $15-$100/user/mo
-- HubSpot: All-in-one platform, free tier but expensive at scale
-- Top 5 features Bizing needs: automated reminders, subscriptions, payments, CRM with loyalty, analytics
+- Clay.com: Data enrichment + AI
+  - credit-based pricing
+  - $0-$720/mo
+- Pipedrive: Visual sales pipeline
+  - $15-$100/user/mo
+- HubSpot: All-in-one platform
+  - free tier but expensive at scale
+- Top 5 features Bizing needs: automated reminders
+  - subscriptions
+  - payments
+  - CRM with loyalty
+  - analytics
 
 ## Details
 
-Clay combines 75+ data sources into one enrichment layer. They use AI to research leads and draft personalized messages. What they do right: credit-based pricing means you pay for what you use. What they do wrong: no booking features, overkill for simple needs.
+Clay combines 75+ data sources into one enrichment layer. They use AI to research leads and draft personalized messages. What they do right: credit-based pricing means you pay for what you use. What they do wrong: no booking features
+  - overkill for simple needs.
 
 Pipedrive offers a visual sales pipeline with Kanban-style deal tracking. They focus on activity-based selling. Strong mobile apps and 500+ integrations.
 
-HubSpot offers a free tier with unlimited contacts. They combine marketing, sales, and service. Expensive at scale ($800+/mo for full features).
+HubSpot offers a free tier with unlimited contacts. They combine marketing
+  - sales
+  - and service. Expensive at scale ($800+/mo for full features).
 
 ## Next Steps
 - Design booking-native CRM features for Bizing
@@ -124,4 +146,5 @@ HubSpot offers a free tier with unlimited contacts. They combine marketing, sale
 
 ---
 
-*Text Briefing: Write natural summaries, then optionally convert to audio.*
+*Text Briefing: Write natural summaries
+  - then optionally convert to audio.*

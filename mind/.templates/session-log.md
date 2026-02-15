@@ -1,6 +1,8 @@
 ---
 date: <% tp.date.now("YYYY-MM-DD") %>
-tags: session, log
+tags: 
+  - session
+  - log
 ---
 
 # 📝 Session: <% tp.file.title %>
@@ -72,7 +74,8 @@ tags: session, log
 - [ ] feedback.md updated with learnings
 - [ ] standup.md updated with status
 - [ ] Session log created/updated
-- [ ] Knowledge files updated (architecture, domain)
+- [ ] Knowledge files updated (architecture
+  - domain)
 - [ ] Skills documented (if new patterns)
 - [ ] MAP.md updated (if structure changed)
 - [ ] Kanban board updated (backlog.md)

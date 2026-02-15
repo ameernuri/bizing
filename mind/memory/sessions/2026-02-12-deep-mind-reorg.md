@@ -1,6 +1,10 @@
 ---
 date: 2026-02-12
-tags: session, log, mindsync, deep-reorganization
+tags: 
+  - session
+  - log
+  - mindsync
+  - deep-reorganization
 ---
 
 # Session: Deep Mind Reorganization
@@ -17,11 +21,16 @@ Performed comprehensive HARD MINDSYNC to reorganize the Bizing mind:
 
 ### 1. INDEX.md Rewrite
 - Merged CORE-REFERENCE content into INDEX.md
-- INDEX.md now contains: identity, three syncs, Dreamer job, dissonance format, mind structure
+- INDEX.md now contains: identity
+  - three syncs
+  - Dreamer job
+  - dissonance format
+  - mind structure
 - Bizing reads INDEX.md first
 
 ### 2. Dreamer Rewrite
-- Removed garbage conflict detection (text patterns like "but", "however")
+- Removed garbage conflict detection (text patterns like "but"
+  - "however")
 - Now checks KNOWN dissonance topics only
 - No more D-001 to D-575 spam
 - Each conflict type added ONCE
@@ -37,7 +46,8 @@ Performed comprehensive HARD MINDSYNC to reorganize the Bizing mind:
 - Now: "2026-02-12 — Deep Mind Reorganization"
 
 ### 5. System Prompt Update
-- Points to INDEX.md, not CORE-REFERENCE.md
+- Points to INDEX.md
+  - not CORE-REFERENCE.md
 - Bizing knows INDEX.md is entry point
 
 ## Files Changed
@@ -56,7 +66,8 @@ Performed comprehensive HARD MINDSYNC to reorganize the Bizing mind:
 ## Verification
 
 Bizing now correctly answers:
-- ✅ "What is INDEX.md?" → Entry point, contains everything
+- ✅ "What is INDEX.md?" → Entry point
+  - contains everything
 - ✅ "What is MindSync?" → SOFT (feedback+standup) vs HARD (comprehensive)
 - ✅ "What are dissonances?" → D-01 to D-05 listed
 
@@ -64,7 +75,8 @@ Bizing now correctly answers:
 
 1. **Single entry point beats fragmentation** — INDEX.md contains everything
 2. **Real conflicts > text patterns** — Dreamer checks known topics only
-3. **Clean evolution logs** — Only major changes, not run messages
+3. **Clean evolution logs** — Only major changes
+  - not run messages
 4. **Delete garbage** — 575 fake dissonances deleted
 
 ## Status
