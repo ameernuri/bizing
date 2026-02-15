@@ -14,15 +14,19 @@
 
 ---
 
-## 🎯 Today's Focus
+## 🎯 Active Context — START HERE
 
-### Primary: RAM System
+**Read this first:** [[mind/memory/RAM]]
 
-Moving from daily standup to RAM (Working Memory) with timestamps.
+RAM = Working Memory. What matters RIGHT NOW.
 
-**Status:** Active implementation
-
-**See:** [[mind/memory/RAM]] for current context
+| Quick Links |
+|-------------|
+| [[mind/memory/RAM]] — Active context |
+| [[mind/skills/Skills]] — All skills |
+| [[mind/SYNOPSIS]] — Bizing's story |
+| [[mind/DISSONANCE]] — Current tensions |
+| [[mind/CURIOSITIES]] — Open questions |
 
 ---
 
