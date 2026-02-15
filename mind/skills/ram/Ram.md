@@ -14,6 +14,20 @@ tags:
 
 ---
 
+## ⚡ IMPORTANT: Use RAM Every Time
+
+**Before any work with the mind:**
+
+1. Read [[mind/memory/RAM]] ← Active context ← **START HERE**
+2. Read [[mind/INDEX]] — Entry point
+3. Read [[symbiosis/feedback]] — Learnings
+4. Do work
+5. Update RAM if context changed
+
+**RAM is the first thing to read when interacting with the mind.**
+
+---
+
 ## What Is RAM?
 
 **RAM = Working Memory** — the active, immediate context of the mind.
