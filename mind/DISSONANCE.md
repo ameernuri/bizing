@@ -9,7 +9,7 @@
 **COGNITIVE DISSONANCE** = when File A and File B **contradict** each other.
 
 When found, document the contradiction with:
-- What each file says
+- What each file says (exact quotes)
 - How they contradict
 - How to resolve
 
@@ -17,31 +17,46 @@ When found, document the contradiction with:
 
 ## Active Contradictions
 
-### Core vs Essence Conflict
+### Never Commit Main vs Dreamer Updates
 
-**[[knowledge/domain/index.md]] says:**
-> "X"
+**[[memory/sessions/2026-02-11-never-commit-main]] says:**
+> "3. If on main — create feature branch... never commit"
 
-**[[memory/sessions/2026-02-14-codesync.md]] says:**
-> "Y"
+**[[memory/sessions/2026-02-14-dreamer-fixes]] says:**
+> "Fixed Dreamer script (removed hardcoded topics, improved natural language)"
 
-**The Contradiction:** This contradiction arises from the fact that File A defines "Domain Knowledge" as the semantic core, while File B lists a session with this title, implying it might not be essential to the domain.
+**The Contradiction:** The never-commit-main rule is an absolute prohibition on committing to main branch, but the dreamer-fixes session shows routine commits happening. This suggests either the rule is flexible or there are exceptions.
 
-**Resolution:** Clarify the relationship between Domain Knowledge and the sessions; perhaps the sessions are an extension of the domain knowledge.
+**Resolution:** Clarify whether dreamer-related commits are exempt from the never-commit-main rule.
+
+---
 
 ### Evolution vs Skill-Update
 
-**[[memory/sessions/2026-02-14-dreamer-fixes.md]] says:**
-> "X"
+**[[memory/sessions/2026-02-14-dreamer-fixes]] says:**
+> "Created Evolution skill... Records major mind-altering events only (epochs)"
 
-**[[memory/sessions/2026-02-11-never-commit-main.md]] says:**
-> "Y"
+**[[memory/sessions/2026-02-11-never-commit-main]] says:**
+> "Pre-commit check required — Always verify branch before committing"
 
-**The Contradiction:** File A implies that evolution and skill updates are crucial, while File B suggests avoiding committing to a main branch.
+**The Contradiction:** Evolution is described as for "major mind-altering events only" while skill-updates are routine. But never-commit-main requires pre-commit checks for ALL commits, including evolution and skill-updates.
 
-**Resolution:** Investigate the context of each session to understand why "never commit main" is mentioned alongside "dreamer fixes" and "evolution".
+**Resolution:** Define when evolution requires pre-commit vs when skill-updates can proceed.
+
+---
+
+### API vs SDK
+
+**[[research/findings/api-first-design]] says:**
+> "API-first design is the foundation of Bizing"
+
+**[[workspace/feature-space]] says:**
+> "SDK embedding is the primary interaction model"
+
+**The Contradiction:** api-first-design prioritizes APIs as the foundation, while feature-space prioritizes SDK embedding. They conflict on what Bizing's core interaction model should be.
+
+**Resolution:** Determine whether Bizing is API-first with SDK as extension, or SDK-first with API as fallback.
 
 ---
 
 *When resolved, update source files with resolution comments, then delete from here.*
-
