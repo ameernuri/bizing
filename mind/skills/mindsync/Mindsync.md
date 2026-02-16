@@ -11,9 +11,33 @@ tags:
 
 > Keep Bizing's mind synchronized with reality
 
+---
+
+## ⚠️ CodeSync vs MindSync
+
+**These are SEPARATE processes. Both required.**
+
+| CodeSync | MindSync |
+|----------|----------|
+| Commits **code** changes | Updates **mind** content |
+| `git commit` on feature branch | Edit `.md` files directly |
+| Branch → PR → Merge to main | Content stays in mind/ |
+| Tests must pass | No tests (documentation) |
+| Preserves code history | Documents decisions/context |
+
+**Order:**
+1. **CodeSync** → Commit code changes (on feature branch, via PR)
+2. **MindSync** → Update mind files to reflect those changes
+
+---
+
 ## What Is MindSync?
 
-**MindSync** updates the mind after every change. Keeps knowledge current.
+**MindSync** updates the mind files after code work. Documents:
+- What was done
+- Why it was done
+- What was learned
+- How things changed
 
 ---
 
@@ -21,14 +45,12 @@ tags:
 
 ### SOFT MindSync — Every Change
 
-**Trigger:** After any work session
+**Trigger:** After CodeSync completes (code committed to repo)
 
 **What to update:**
 1. [[mind/memory/RAM]] — Add completed items with timestamps
-2. [[symbiosis/feedback]] — Log new learnings
-  - rules
-  - insights
-3. [[mind/memory/sessions/index|Session index]] — Add entry to recent sessions list (if significant work)
+2. [[symbiosis/feedback]] — Log new learnings (rules, insights)
+3. [[mind/memory/sessions/index|Session index]] — Add entry if significant work
 
 **Time:** 2-3 minutes
 
@@ -37,7 +59,7 @@ tags:
 ### HARD MindSync — Major Events
 
 **Trigger:**
-- Major features completed
+- Major features completed (after CodeSync)
 - Workflow changes
 - Architecture updates
 - User says: "mindsync"
@@ -157,8 +179,7 @@ curl -X POST http://localhost:6129/api/v1/admin/rebuild-knowledge
 
 Or trigger via Bizing API. This ensures Bizing AI can search and retrieve the updated content.
 
-**Why:** Embeddings are cached. After major mind changes
-  - they must be rebuilt or Bizing AI will have stale knowledge.
+**Why:** Embeddings are cached. After major mind changes they must be rebuilt or Bizing AI will have stale knowledge.
 
 ### Step 6: Restart Server (if cache stale)
 
@@ -205,11 +226,11 @@ cd ~/projects/bizing/apps/api && pnpm dev
 
 ## Related
 
+- [[mind/skills/codesync/CodeSync|CodeSync Skill]] — Commit code changes (separate from MindSync)
 - [[mind/INDEX]] — Entry point (mentions MindSync)
-- [[Codesync|CodeSync Skill]] — Quality gate before commit
 - [[mind/memory/RAM]] — Working memory
 - [[symbiosis/feedback]] — Learnings
 
 ---
 
-*MindSync: Update the mind. Every change. No exceptions.*
+*MindSync: Update the mind. Every change. No exceptions. (After CodeSync completes)*

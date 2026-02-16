@@ -14,7 +14,35 @@ tags:
 
 ---
 
-## ⚠️ NEVER COMMIT WITHOUT EXPLICIT APPROVAL
+## ⚠️ CRITICAL: NEVER COMMIT TO MAIN
+
+**ALWAYS work on a feature branch. ALWAYS create a PR. NO EXCEPTIONS.**
+
+```
+Your workflow:
+1. Create branch: git checkout -b feat/description
+2. Do the work
+3. Run CodeSync checks
+4. Commit to branch
+5. Push branch
+6. Create PR
+7. Merge via PR (not direct commit)
+```
+
+**Never this:**
+❌ `git commit` on main
+❌ `git push origin main`
+❌ Direct commits to main branch
+
+**Always this:**
+✅ `git checkout -b feat/description`
+✅ `git commit` on feature branch
+✅ `git push origin feat/description`
+✅ Create PR via GitHub
+
+---
+
+## What Is CodeSync?
 
 **CRITICAL: Tests MUST pass BEFORE committing.**
 
@@ -38,12 +66,37 @@ tags:
 ## The Process
 
 ```
-Type Check → Unit Tests → E2E Tests → ASK APPROVAL → IF ALL PASS → Commit → Push → Create PR
+Type Check → Unit Tests → E2E Tests → ASK APPROVAL → Create Branch → Commit → Push → Create PR
 ```
 
 ---
 
 ## Step-by-Step
+
+### Step 0: Create Feature Branch (CRITICAL)
+
+**NEVER work on main. Create a branch FIRST.**
+
+```bash
+# Check current branch
+git branch --show-current
+
+# If on main, create and switch to feature branch
+git checkout -b feat/description
+
+# Example:
+git checkout -b feat/daydreamer-v2-enhancements
+git checkout -b fix/mind-mapper-wiki-links
+git checkout -b docs/update-synopsis-skill
+```
+
+**Branch naming:**
+- `feat/description` — New features
+- `fix/description` — Bug fixes
+- `docs/description` — Documentation
+- `refactor/description` — Code restructuring
+
+---
 
 ### Step 1: Type Check
 
@@ -124,9 +177,20 @@ Approve commit and do a PR? (yes/no)
 
 ---
 
-### Step 6: Commit
+### Step 6: Commit (On Feature Branch, NEVER Main)
+
+**VERIFY: You are on a feature branch, NOT main.**
 
 ```bash
+# Check branch
+git branch --show-current
+
+# Should show: feat/description, NOT main
+```
+
+**If on main, STOP and create branch:**
+```bash
+git checkout -b feat/description
 git add [files]
 git commit -m "type: description"
 ```
@@ -138,13 +202,23 @@ git commit -m "type: description"
 - `refactor:` — Code restructuring
 - `test:` — Tests only
 
+**Example:**
+```bash
+git add scripts/daydreamer.mjs mind/skills/
+git commit -m "feat: Add Daydreamer v2.0 with insights and dream journal"
+```
+
 ---
 
-### Step 7: Push
+### Step 7: Push Branch
 
 ```bash
-git push -u origin feature/description
+git push -u origin feat/description
 ```
+
+**NOT to main:**
+❌ `git push origin main`  
+✅ `git push origin feat/description`
 
 ---
 
@@ -154,6 +228,32 @@ git push -u origin feature/description
 gh pr create --title "type: description" --body "summary"
 ```
 
+**Or via GitHub web interface.**
+
+**PR Requirements:**
+- Clear title
+- Description of changes
+- Reference to tests passing
+- Link to related issues (if any)
+
+**Wait for:**
+- Code review (if required)
+- CI checks to pass
+- Approval to merge
+
+---
+
+### Step 9: Merge via PR
+
+**NEVER merge directly. Always use PR.**
+
+```bash
+# After PR is approved
+gh pr merge
+```
+
+**Or merge via GitHub web interface.**
+
 ---
 
 ## Critical Rules
@@ -162,10 +262,12 @@ gh pr create --title "type: description" --body "summary"
 |-------|--------|
 | ❌ Run tests AFTER commit | ✅ Run tests BEFORE commit |
 | ❌ Commit without asking | ✅ Ask "Approve commit and do a PR?" |
-| ❌ Commit to main | ✅ Feature branch only |
+| ❌ Commit to main | ✅ Commit to feature branch |
+| ❌ Push to main | ✅ Push to feature branch |
+| ❌ Merge directly | ✅ Create PR and merge via PR |
 | ❌ Commit with failing tests | ✅ All tests pass first |
-| ❌ Mix unrelated changes | ✅ One feature per commit |
 | ❌ Assume tests passed | ✅ See and verify test results |
+| ❌ Mix unrelated changes | ✅ One feature per commit |
 
 ---
 
@@ -177,6 +279,7 @@ Before asking for approval:
 - [ ] Unit tests passed (see results)
 - [ ] E2E tests passed (see results)
 - [ ] All test files shown to user
+- [ ] On feature branch (NOT main)
 - [ ] Explicit approval received
 - [ ] Commit message formatted correctly
 
@@ -201,6 +304,16 @@ Before asking for approval:
 
 ---
 
+## Why Never Commit to Main?
+
+1. **Code review** — PRs require review before merging
+2. **CI/CD protection** — Automated checks run on PRs
+3. **Rollback safety** — Can revert PR if issues found
+4. **Collaboration** — Team can see and discuss changes
+5. **History clarity** — Feature branches show related commits
+
+---
+
 ## Triggers
 
 User says any of:
@@ -208,17 +321,17 @@ User says any of:
 - **"commit approved"**
 - **"commit"** (ask for approval first)
 
-→ Run all checks → Verify results → Ask for approval → Commit if approved
+→ Run all checks → Verify results → Ask for approval → Create branch → Commit → Push → Create PR
 
 ---
 
 ## Related
 
 - [[mind/INDEX]] — Entry point (mentions CodeSync)
-- [[Mindsync|MindSync Skill]] — Update mind after code changes
+- [[mind/skills/mindsync/MindSync|MindSync Skill]] — Update mind after code changes
 - [[mind/skills/ram/Ram|Ram Skill]] — Working memory
-- [[CreatingFiles|Creating Files Skill]] — File creation guidelines
+- [[mind/skills/creating-files|Creating Files Skill]] — File creation guidelines
 
 ---
 
-*CodeSync: Test → Verify → Ask → Commit → Push → PR*
+*CodeSync: Test → Verify → Ask → Branch → Commit → Push → PR → Merge*
