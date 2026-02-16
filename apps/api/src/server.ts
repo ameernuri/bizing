@@ -1,16 +1,20 @@
 import 'dotenv/config'
 import { serve } from '@hono/node-server'
 import { cors } from 'hono/cors'
+import { desc, eq, sql } from 'drizzle-orm'
 import { v4 as uuidv4 } from 'uuid'
 import { OpenAPIHono, z } from '@hono/zod-openapi'
 import { readFileSync, existsSync, readdirSync } from 'fs'
 import { join } from 'path'
+import dbPackage from '@biz.ing/db'
 import { chatWithLLM, createBizingSystemPrompt } from './services/llm.js'
 import { getCompactMindState, getMindFile } from './services/mind-api.js'
 import { getCachedMindMap, searchMindDynamic, getMindStructure, listAllFiles, exploreDirectory } from './services/mind-map.js'
 import { semanticSearch, buildAndCacheEmbeddings, getEmbeddingStats, isEmbeddingsReady, testProviders } from './services/mind-embeddings.js'
 import { searchKnowledgeBase, getKnowledgeEntry, getEntriesByType, getKnowledgeStats } from './services/mind-knowledge.js'
 import { getFileCatalog, searchCatalog, getCatalogStats } from './services/mind-catalog.js'
+
+const { db, bookings, services, users } = dbPackage
 
 // ============================================
 // Constants
@@ -101,56 +105,58 @@ app.get('/api/v1/stats', (c) => {
 // Bookings Routes
 // ============================================
 
-app.get('/api/v1/bookings', (c) => {
-  return c.json({
-    data: [
-      {
-        id: 'booking_1',
-        serviceName: 'Haircut & Style',
-        customerName: 'Sarah Johnson',
-        date: '2026-02-12',
-        status: 'confirmed',
-        price: 65,
+app.get('/api/v1/bookings', async (c) => {
+  const page = Math.max(1, Number(c.req.query('page') || '1'))
+  const limit = Math.min(100, Math.max(1, Number(c.req.query('limit') || '10')))
+  const offset = (page - 1) * limit
+
+  try {
+    const [rows, countResult] = await Promise.all([
+      db
+        .select({
+          id: bookings.id,
+          customerName: bookings.customerName,
+          startTime: bookings.startTime,
+          status: bookings.status,
+          price: bookings.price,
+          serviceName: services.name,
+          customerFirstName: users.firstName,
+          customerLastName: users.lastName,
+        })
+        .from(bookings)
+        .leftJoin(services, eq(bookings.serviceId, services.id))
+        .leftJoin(users, eq(bookings.customerId, users.id))
+        .orderBy(desc(bookings.startTime))
+        .limit(limit)
+        .offset(offset),
+      db.select({ count: sql<number>`count(*)` }).from(bookings),
+    ])
+
+    const data = rows.map((row) => {
+      const fallbackName = [row.customerFirstName, row.customerLastName].filter(Boolean).join(' ').trim()
+
+      return {
+        id: row.id,
+        serviceName: row.serviceName || 'Unknown Service',
+        customerName: row.customerName || fallbackName || 'Unknown Customer',
+        date: row.startTime ? row.startTime.toISOString().slice(0, 10) : '',
+        status: (row.status || 'pending') as 'pending' | 'confirmed' | 'completed' | 'cancelled',
+        price: Number(row.price || 0),
+      }
+    })
+
+    return c.json({
+      data,
+      pagination: {
+        page,
+        limit,
+        total: Number(countResult[0]?.count || 0),
       },
-      {
-        id: 'booking_2',
-        serviceName: 'Color Treatment',
-        customerName: 'Mike Chen',
-        date: '2026-02-12',
-        status: 'pending',
-        price: 120,
-      },
-      {
-        id: 'booking_3',
-        serviceName: 'Beard Trim',
-        customerName: 'Alex Rivera',
-        date: '2026-02-11',
-        status: 'completed',
-        price: 25,
-      },
-      {
-        id: 'booking_4',
-        serviceName: 'Full Service',
-        customerName: 'Emma Davis',
-        date: '2026-02-13',
-        status: 'confirmed',
-        price: 150,
-      },
-      {
-        id: 'booking_5',
-        serviceName: 'Consultation',
-        customerName: 'James Wilson',
-        date: '2026-02-10',
-        status: 'cancelled',
-        price: 0,
-      },
-    ],
-    pagination: {
-      page: 1,
-      limit: 10,
-      total: 5,
-    },
-  })
+    })
+  } catch (error) {
+    log(`Failed to fetch bookings: ${error instanceof Error ? error.message : String(error)}`)
+    return c.json({ error: 'Failed to fetch bookings' }, 500)
+  }
 })
 
 // ============================================
