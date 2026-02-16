@@ -143,28 +143,82 @@ export async function scanForDissonances(mindDir) {
 }
 
 function findContradiction(fileA, fileB) {
-  // Simple contradiction detection
+  // Improved contradiction detection - looks for actual conflicting statements
   const contentA = fileA.content.toLowerCase()
   const contentB = fileB.content.toLowerCase()
   
-  // Check for opposing concepts
-  const opposites = [
-    ['always', 'never'],
-    ['must', 'must not'],
-    ['is', 'is not'],
-    ['can', 'cannot'],
-    ['should', 'should not'],
-    ['important', 'unimportant'],
-    ['always', 'sometimes'],
-    ['true', 'false']
+  // Split into paragraphs for context
+  const paragraphsA = contentA.split('\n\n').filter(p => p.trim().length > 50)
+  const paragraphsB = contentB.split('\n\n').filter(p => p.trim().length > 50)
+  
+  // Look for substantive contradictions (not just word matches)
+  const contradictionPatterns = [
+    {
+      // Direct rule conflicts: "always do X" vs "never do X"
+      pattern: /(?:^|\n)(?:>|\s*-\s*|\*\s*|\d+\.\s*)(?:always|must|required|mandatory).{10,100}/i,
+      oppositePattern: /(?:^|\n)(?:>|\s*-\s*|\*\s*|\d+\.\s*)(?:never|must not|forbidden|prohibited).{10,100}/i,
+      description: (matchA, matchB) => `Rule conflict: "${matchA.substring(0, 60)}..." vs "${matchB.substring(0, 60)}..."`
+    },
+    {
+      // Definition conflicts about what something IS
+      pattern: /(?:bizing|system|agent|mind)\s+(?:is|are)\s+(?:not\s+)?[a-z\s]{10,80}(?:\.|,|;)/i,
+      check: (matchA, matchB) => {
+        // Both files define the same thing differently
+        const subjectA = matchA.match(/^(\w+)/i)?.[0]
+        const subjectB = matchB.match(/^(\w+)/i)?.[0]
+        const negA = matchA.includes(' is not ') || matchA.includes(' are not ')
+        const negB = matchB.includes(' is not ') || matchB.includes(' are not ')
+        return subjectA && subjectB && subjectA === subjectB && negA !== negB
+      },
+      description: (matchA, matchB) => `Definition conflict: "${matchA.substring(0, 70)}..." contradicts "${matchB.substring(0, 70)}..."`
+    },
+    {
+      // Workflow conflicts: "do X first" vs "do Y first"
+      pattern: /(?:first|start with|begin by)\s+.{10,60}(?:then|before|after)/i,
+      oppositePattern: /(?:first|start with|begin by)\s+.{10,60}(?:then|before|after)/i,
+      check: (matchA, matchB) => {
+        // Extract the "first" actions
+        const firstA = matchA.match(/(?:first|start with|begin by)\s+(.{10,40}?)(?:then|before|after|\.)/i)?.[1]
+        const firstB = matchB.match(/(?:first|start with|begin by)\s+(.{10,40}?)(?:then|before|after|\.)/i)?.[1]
+        return firstA && firstB && firstA !== firstB && 
+               !firstA.includes(firstB) && !firstB.includes(firstA)
+      },
+      description: (matchA, matchB) => `Workflow conflict: Different first steps required`
+    },
+    {
+      // Priority conflicts: "X is critical" vs "X is optional"
+      pattern: /(?:critical|essential|required|mandatory|must)/i,
+      oppositePattern: /(?:optional|unnecessary|not required|can skip)/i,
+      check: (matchA, matchB) => {
+        // Check if they're talking about the same subject
+        const wordsA = matchA.split(/\s+/).slice(0, 10)
+        const wordsB = matchB.split(/\s+/).slice(0, 10)
+        const commonWords = wordsA.filter(w => wordsB.includes(w) && w.length > 4)
+        return commonWords.length >= 2
+      },
+      description: (matchA, matchB) => `Priority conflict: Same subject has conflicting importance levels`
+    }
   ]
   
-  for (const [wordA, wordB] of opposites) {
-    const hasA = contentA.includes(wordA) && contentB.includes(wordB)
-    const hasB = contentA.includes(wordB) && contentB.includes(wordA)
-    
-    if (hasA || hasB) {
-      return `Opposing concepts: "${wordA}" vs "${wordB}"`
+  // Check each pattern
+  for (const { pattern, oppositePattern, check, description } of contradictionPatterns) {
+    for (const paraA of paragraphsA.slice(0, 20)) { // Limit to first 20 substantial paragraphs
+      if (!pattern.test(paraA)) continue
+      
+      const matchA = paraA.match(pattern)?.[0]
+      if (!matchA) continue
+      
+      for (const paraB of paragraphsB.slice(0, 20)) {
+        const matchB = oppositePattern ? paraB.match(oppositePattern)?.[0] : paraB.match(pattern)?.[0]
+        if (!matchB) continue
+        
+        // Run custom check if provided, or basic validation
+        const isValidContradiction = check ? check(matchA, matchB) : true
+        
+        if (isValidContradiction) {
+          return description(matchA, matchB)
+        }
+      }
     }
   }
   
