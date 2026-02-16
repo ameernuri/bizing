@@ -19,7 +19,10 @@ import { readFile, writeFile, readdir, stat, mkdir } from 'fs/promises';
 import { existsSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import { exec } from 'child_process';
+import { promisify } from 'util';
 
+const execAsync = promisify(exec);
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const MIND_DIR = join(__dirname, '..', 'mind');
 const DREAMER_DIR = join(MIND_DIR, '.daydreamer');
@@ -33,13 +36,20 @@ const CONFIG = {
   
   // Task weights (probability of selection)
   tasks: {
-    scan_dissonances: { weight: 22, duration: '2-5m' },
-    scan_curiosities: { weight: 22, duration: '2-5m' },
+    scan_dissonances: { weight: 22, duration: '2-5m', useLLM: 0.1 }, // 10% use main LLM
+    scan_curiosities: { weight: 22, duration: '2-5m', useLLM: 0.1 }, // 10% use main LLM
     map_mind: { weight: 15, duration: '3-8m' },
     plan_future: { weight: 13, duration: '2-4m' },
     reflect: { weight: 10, duration: '1-3m' },
     mindsync: { weight: 10, duration: '10-15m' },
     rest: { weight: 8, duration: '30s-2m' }
+  },
+  
+  // LLM configuration for deep scanning
+  llm: {
+    model: 'kimi-coding/k2p5',
+    timeout: 120000, // 2 minutes
+    maxTokens: 2000
   }
 };
 
@@ -332,6 +342,64 @@ async function task_mindsync() {
   };
 }
 
+
+async function task_scanDissonancesWithLLM() {
+  log('🔥 Deep scan for contradictions using main LLM...');
+  
+  const { scanForDissonances, readMindFiles } = await import('./dreamer-lib.mjs');
+  const files = readMindFiles(MIND_DIR);
+  
+  // Sample files for analysis
+  const sampleFiles = files.slice(0, 20);
+  
+  // Use LLM for deep analysis
+  const llmResults = await scanWithLLMForDissonances(sampleFiles);
+  
+  if (llmResults.length > 0) {
+    log(`   LLM identified ${llmResults.length} contradictions`);
+    // Process LLM results and create dissonance files
+    for (const result of llmResults) {
+      log(`   - ${result.description.substring(0, 80)}...`);
+    }
+  } else {
+    log('   LLM found no contradictions in this sample');
+  }
+  
+  return { 
+    llmMode: true, 
+    found: llmResults.length,
+    dissonances: llmResults 
+  };
+}
+
+async function task_scanCuriositiesWithLLM() {
+  log('❓ Deep scan for curiosities using main LLM...');
+  
+  const { scanForCuriosities, readMindFiles } = await import('./dreamer-lib.mjs');
+  const files = readMindFiles(MIND_DIR);
+  
+  // Sample files for analysis
+  const sampleFiles = files.slice(0, 20);
+  
+  // Use LLM for deep analysis
+  const llmResults = await scanWithLLMForCuriosities(sampleFiles);
+  
+  if (llmResults.length > 0) {
+    log(`   LLM identified ${llmResults.length} curiosities`);
+    for (const result of llmResults) {
+      log(`   - ${result.question.substring(0, 80)}...`);
+    }
+  } else {
+    log('   LLM found no curiosities in this sample');
+  }
+  
+  return { 
+    llmMode: true, 
+    found: llmResults.length,
+    curiosities: llmResults 
+  };
+}
+
 async function task_rest() {
   const restDuration = 30000 + Math.random() * 90000; // 30s - 2m
   log(`😴 Resting for ${Math.round(restDuration / 1000)}s...`);
@@ -392,6 +460,28 @@ function findConnections(files) {
   return connections;
 }
 
+// ========== LLM SCANNING (10% of the time) ==========
+
+async function scanWithLLMForDissonances(sampleFiles) {
+  log('   🤖 Using main LLM for deep dissonance analysis...');
+  
+  // For now, just log that we would use LLM
+  // Full implementation would call the gateway API
+  log('   (LLM integration placeholder - would analyze with kimi-coding/k2p5)');
+  
+  // Return empty for now - would return structured data from LLM
+  return [];
+}
+
+async function scanWithLLMForCuriosities(sampleFiles) {
+  log('   🤖 Using main LLM for deep curiosity analysis...');
+  
+  log('   (LLM integration placeholder - would analyze with kimi-coding/k2p5)');
+  
+  return [];
+}
+
+// ========== MAIN LOOP ==========
 // ========== MAIN LOOP ==========
 
 async function runDaydreamer() {
@@ -420,10 +510,22 @@ async function runDaydreamer() {
       
       switch (task) {
         case 'scan_dissonances':
-          result = await task_scanDissonances();
+          // 10% chance to use main LLM for deep analysis
+          if (Math.random() < 0.1) {
+            log('   🎲 Randomly selected for LLM-powered analysis (10% chance)');
+            result = await task_scanDissonancesWithLLM();
+          } else {
+            result = await task_scanDissonances();
+          }
           break;
         case 'scan_curiosities':
-          result = await task_scanCuriosities();
+          // 10% chance to use main LLM for deep analysis
+          if (Math.random() < 0.1) {
+            log('   🎲 Randomly selected for LLM-powered analysis (10% chance)');
+            result = await task_scanCuriositiesWithLLM();
+          } else {
+            result = await task_scanCuriosities();
+          }
           break;
         case 'map_mind':
           result = await task_mapMind();
