@@ -1,189 +1,264 @@
 ---
-date: 2026-02-14
+date: 2026-02-15
 tags: 
   - skill
   - curiosity
   - questions
   - gaps
   - knowledge
+  - quality
 ---
 
 # ❓ Curiosity Skill
 
-> *Records questions
-  - knowledge gaps
-  - and things we want to explore.*
+> *Find and record quality questions worth exploring.*
 
 ---
 
 ## What Is Curiosity?
 
-**Curiosity** captures:
-- Questions we want answered
-- Knowledge gaps in the mind
-- Things to investigate
-- Open questions from research
-- Unresolved mysteries
+**Curiosity** captures substantial questions and knowledge gaps that deserve exploration.
+
+**Curiosity IS:**
+- ✅ Questions that could lead to insights
+- ✅ Knowledge gaps with context
+- ✅ Speculative ideas worth developing
+- ✅ Open questions from research
 
 **Curiosity is NOT:**
+- ❌ Section headers ("What is X?")
+- ❌ Single words or fragments
 - ❌ Tensions (conflicts between approaches)
 - ❌ Tasks to complete
-- ❌ Bugs to fix
-- ❌ Features to build
+- ❌ Already answered questions
 
 ---
 
 ## Where to Record
 
-**File:** `mind/CURIOSITIES.md`
+**Folder:** `mind/curiosities/`
 
-**Format:** Simple bullet points with context
+**Format:** Individual markdown files
 
-```markdown
-# CURIOSITIES
-
-> *Questions we want answered
-  - gaps we want to fill.*
+**Naming:** `YYYY-MM-DD-[descriptive-title].md`
 
 ---
 
-- **What is the optimal chunk size for embeddings?**
-  Context: Current chunk size is 2000
-  - but unsure if optimal
-  Sources: [[mind-embeddings.ts]]
+## Quality Standards
 
-- **Should agents have their own data storage?**
-  Context: GDPR concerns with shared storage
-  Sources: [[research/AI_AGENTS_CRM]]
+### ✅ Quality Curiosity Checklist
+
+| Criterion | Description |
+|-----------|-------------|
+| **Substantial** | At least 30 characters, not just a heading |
+| **Contextual** | Includes where/why it was found |
+| **Explorable** | Could lead to research or discussion |
+| **Specific** | Not vague or overly broad |
+| **Valuable** | Exploring it would add value |
+
+### ❌ Bad Examples (Don't Create)
+
+```
+❌ "What is Bizing?"  (Just a heading)
+❌ "Why 6.9%?"  (Fragment, no context)
+❌ "TODO: fix this"  (Task, not curiosity)
+❌ "What if..."  (Incomplete thought)
 ```
 
----
+### ✅ Good Examples (Do Create)
 
-## When to Add Curiosity
+```
+✅ "How might Bizing's self-identification as a living entity 
+     influence its approach to personalization and user experience?"
 
-### ✅ Add When:
+✅ "What is the optimal chunk size for embeddings given Ollama's 
+     4096 token context limit and overhead considerations?"
 
-- Research raises questions
-- User asks "what about X?"
-- Finding conflicting information
-- Noting gaps in knowledge
-- Marking things to investigate
-
-### ❌ Don't Add When:
-
-- It's a tension (use DISSONANCE)
-- It's a task (use feature space)
-- It's a bug (use issue tracker)
-- We have the answer
+✅ "Should AI agents have their own isolated data storage to address 
+     GDPR data minimization requirements?"
+```
 
 ---
 
 ## How to Add Curiosity
 
-### Manual Addition
+### Manual Creation
+
+Create file: `mind/curiosities/2026-02-15-optimal-embedding-chunk-size.md`
 
 ```markdown
-# CURIOSITIES
+# What is the optimal chunk size for embeddings?
 
-> *Questions we want answered
-  - gaps we want to fill.*
+**Status:** Open  
+**Created:** 2026-02-15  
+**Type:** Exploration Question
 
----
+## Source
 
-- **Your question here**
-  Context: Brief explanation of why we're curious
-  Sources:
-  - [[path/to/file]]
-  - [[path/to/another]]
+[[knowledge/tech/embeddings.md]]
+
+## The Question
+
+What is the optimal chunk size for embeddings given Ollama's 
+4096 token context limit and overhead considerations?
+
+## Context
+
+Currently using 2000 characters per chunk, but Ollama crashes 
+with 8000 characters. Need to find the sweet spot between:
+- Context completeness (larger chunks)
+- Token limit compliance (smaller chunks)
+- Processing efficiency
+
+## Why Explore This?
+
+- Affects embedding quality and search accuracy
+- Impacts system stability
+- Could improve performance significantly
+
+## Next Steps
+
+- [ ] Test various chunk sizes (1000, 1500, 2000, 2500)
+- [ ] Measure embedding quality
+- [ ] Document optimal setting
+
+## Tags
+
+#curiosity #embeddings #performance #ollama
 ```
 
 ### Components
 
 | Component | Required | Description |
 |-----------|----------|-------------|
-| **Question** | Yes | What we want to know |
-| **Context** | No | Why we're curious |
-| **Sources** | No | Files that prompted the question |
+| **Title** | Yes | Clear, descriptive question |
+| **Source** | Yes | File(s) that prompted this |
+| **The Question** | Yes | Full question with context |
+| **Context** | Yes | Background and why it matters |
+| **Why Explore** | Recommended | Potential value of exploring |
+| **Next Steps** | Optional | Actionable follow-ups |
 
 ---
 
-## Example Curiosities
+## Automated Detection (Dreamer)
 
-```markdown
-# CURIOSITIES
+The **Daydreamer** daemon automatically finds curiosities using these patterns:
 
-> *Questions we want answered
-  - gaps we want to fill.*
+### Pattern 1: Substantial Questions
 
----
+Looks for questions that:
+- Start with question words (how, what, why, when, where, who, which)
+- Are 30-200 characters long
+- Have substantial context
 
-- **What is the optimal booking flow for multi-staff businesses??**
-  Context: Need to support multiple staff members with different schedules
-  Sources:
-  - [[research/booking-domain-model]]
-  - [[research/business-types]]
+```javascript
+// Matches:
+"How might Bizing's approach to personalization differ from traditional AI?"
 
-- **How should AI agents store conversation history?**
-  Context: GDPR requires data minimization
-  Sources:
-  - [[research/AI_AGENTS_CRM]]
-  - [[research/GDPR_DATA]]
+// Doesn't match:
+"What is this?"  (Too short)
 ```
 
----
+### Pattern 2: Speculative Statements
 
-## Integrating with Dreamer
+Looks for hypotheses worth exploring:
+- "Imagine if..."
+- "Consider how..."
+- "Perhaps we could..."
 
-The **Dreamer** automatically adds curiosities when:
-- Single source found on a topic
-- Questions detected in file content
-- Knowledge gaps identified
+```javascript
+// Matches:
+"Imagine if AI agents could negotiate their own service fees"
 
-**Dreamer adds to CURIOSITIES:**
-```markdown
-- **Should we explore {topic} further?**
-  Context: Single source found
-  - might need more research
-  Sources:
-  - [[path/to/file]]
+// Doesn't match:
+"Maybe fix this"  (Too vague, task-like)
 ```
 
+### Pattern 3: Knowledge Gaps
+
+Identifies explicit gaps:
+- TODO/FIXME with context
+- "Not yet implemented"
+- "Future work"
+- Uncertainty markers
+
+```javascript
+// Good gap:
+"TODO: Implement retry logic for failed embedding requests 
+ (see issue #123 for context)"
+
+// Bad gap:
+"TODO: fix"  (No context)
+```
+
+### Pattern 4: Incomplete Documentation
+
+Detects stubs and placeholders:
+- "Section to be written"
+- "Content coming soon"
+- Empty sections marked for completion
+
 ---
 
-## Curiosities vs Tensions
+## Curiosities vs Other Concepts
 
-| | Curiosity | Tension |
-|---|-----------|---------|
-| **What** | Question | Conflict |
-| **Type** | "What is X?" | "X vs Y" |
-| **Example** | "How do embeddings work?" | "API vs SDK" |
-| **Where** | CURIOSITIES.md | DISSONANCE.md |
-| **Action** | Research | Decide |
+| | Curiosity | Dissonance | Task | Evolution |
+|---|-----------|------------|------|-----------|
+| **What** | Question | Conflict | Action | Major change |
+| **Type** | "How does X work?" | "X contradicts Y" | "Do X" | "Implemented Y" |
+| **Where** | `curiosities/` | `dissonance/` | Feature space | `evolution/` |
+| **Action** | Research | Resolve | Execute | Document |
 
 ---
 
-## Reviewing Curiosities
+## Review and Resolution
 
-**Weekly review:**
-1. Read CURIOSITIES.md
-2. Answer answered questions
-3. Remove resolved items
-4. Prioritize remaining
+### Weekly Review
 
-**Resolution:**
-- If answered → Move to knowledge base or remove
-- If becoming tension → Move to DISSONANCE.md
-- If no longer relevant → Remove
+1. Browse `mind/curiosities/` folder
+2. For each curiosity, ask:
+   - Is this still relevant?
+   - Has it been answered?
+   - Should it become a task?
+   - Is it becoming a tension?
+
+### Resolution Options
+
+| Status | Action |
+|--------|--------|
+| **Answered** | Update with answer, move to knowledge base, or delete |
+| **Becoming tension** | Move to `dissonance/` |
+| **Ready to implement** | Convert to task/feature |
+| **No longer relevant** | Delete |
+| **Needs more thought** | Keep open, add notes |
+
+---
+
+## Integration with Workflow
+
+### When Daydreamer Finds Curiosity
+
+1. Daydreamer scans files using quality patterns
+2. Creates file in `mind/curiosities/YYYY-MM-DD-[title].md`
+3. Includes context and source
+4. Adds to tracked pairs (won't duplicate)
+
+### When You Find Curiosity
+
+1. Create file manually following template
+2. Link to source files
+3. Add context explaining why it matters
+4. Tag appropriately
 
 ---
 
 ## Related Skills
 
-- [[mind/skills/dreaming]] — Dreamer scans mind (finds curiosities)
-- [[mind/skills/evolution]] — Major mind alterations
-- [[mind/DISSONANCE]] — Where tensions go
-- [[mind/CURIOSITIES]] — Where questions go
+- [[mind/skills/dreaming|Dreaming]] — Daydreamer daemon that finds curiosities
+- [[mind/skills/dissonance|Dissonance]] — For conflicts, not questions
+- [[mind/skills/evolution|Evolution]] — For major mind changes
+- [[mind/skills/knowledge|Knowledge]] — For answers to curiosities
 
 ---
 
-*Curiosity: The first step to wisdom.*
+*Quality curiosities lead to quality knowledge.*
