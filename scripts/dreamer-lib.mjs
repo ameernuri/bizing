@@ -294,13 +294,15 @@ export async function scanForCuriosities(mindDir) {
     const gaps = findKnowledgeGaps(file.content)
     
     for (const q of questions) {
-      if (!isPairTracked(file.path, q, tracked)) {
-        markPairTracked(file.path, q, tracked)
+      const questionKey = typeof q === 'string' ? q : q.question
+      if (!isPairTracked(file.path, questionKey, tracked)) {
+        markPairTracked(file.path, questionKey, tracked)
         const curiosity = {
           source: file.path,
           question: q,
           type: 'question',
-          foundAt: new Date().toISOString()
+          foundAt: new Date().toISOString(),
+          context: typeof q === 'object' ? q.context : 'From daydreaming'
         }
         newCuriosities.push(curiosity)
         writeCuriosityFile(curiositiesDir, curiosity)
@@ -308,13 +310,15 @@ export async function scanForCuriosities(mindDir) {
     }
     
     for (const g of gaps) {
-      if (!isPairTracked(file.path, g, tracked)) {
-        markPairTracked(file.path, g, tracked)
+      const gapKey = typeof g === 'string' ? g : g.question
+      if (!isPairTracked(file.path, gapKey, tracked)) {
+        markPairTracked(file.path, gapKey, tracked)
         const curiosity = {
           source: file.path,
           question: g,
           type: 'gap',
-          foundAt: new Date().toISOString()
+          foundAt: new Date().toISOString(),
+          context: typeof g === 'object' ? g.context : 'From daydreaming'
         }
         newCuriosities.push(curiosity)
         writeCuriosityFile(curiositiesDir, curiosity)
@@ -332,51 +336,132 @@ export async function scanForCuriosities(mindDir) {
 
 function extractQuestions(content) {
   const questions = []
-  const lines = content.split('\n')
+  const paragraphs = content.split('\n\n').filter(p => p.trim().length > 30)
   
-  for (const line of lines) {
-    // Match explicit questions
-    if (line.trim().endsWith('?')) {
-      questions.push(line.trim())
-    }
-    // Match "How might..." patterns
-    if (line.match(/how might|what if|why does|can we/i)) {
-      questions.push(line.trim())
-    }
-  }
-  
-  // Limit to avoid spam
-  return questions.slice(0, 3)
-}
-
-function findKnowledgeGaps(content) {
-  const gaps = []
-  
-  // Look for "TODO", "FIXME", "not yet", etc.
-  const patterns = [
-    /todo[:\s]/i,
-    /fixme[:\s]/i,
-    /not yet[:\s]/i,
-    /need to[:\s]/i,
-    /should[:\s]/i
+  // Pattern 1: Explicit questions with context (substantial)
+  const questionPatterns = [
+    // Questions that start with question words and are substantial
+    /(?:^|\n)(?:#{1,3}\s*)?(?:how|what|why|when|where|who|which)\s+(?:might|would|could|should|is|are|does|do|can|will)\s+[^?]{15,150}[?]/i,
+    // Questions about implications or effects
+    /(?:^|\n)(?:#{1,3}\s*)?(?:what\s+if|how\s+does|why\s+is|what\s+would|what\s+about)\s+[^?]{15,150}[?]/i
   ]
   
-  const lines = content.split('\n')
-  for (const line of lines) {
-    for (const pattern of patterns) {
-      if (pattern.test(line)) {
-        gaps.push(line.trim())
-        break
+  for (const paragraph of paragraphs.slice(0, 30)) {
+    for (const pattern of questionPatterns) {
+      const matches = paragraph.match(new RegExp(pattern, 'gi')) || []
+      for (const match of matches) {
+        const trimmed = match.trim()
+        // Only include if it's a substantial question (not just "What is this?")
+        if (trimmed.length > 30 && trimmed.length < 200) {
+          // Extract context: sentence before and after
+          const paraContext = paragraph.split(trimmed)[0]?.split('.').slice(-2).join('.').trim()
+          if (paraContext && paraContext.length > 20) {
+            questions.push({
+              question: trimmed,
+              context: `Context: "${paraContext.substring(0, 100)}..."`
+            })
+          } else {
+            questions.push({
+              question: trimmed,
+              context: "From a section exploring concepts and possibilities"
+            })
+          }
+        }
       }
     }
   }
   
-  return gaps.slice(0, 3)
+  // Pattern 2: Hypotheses and speculative statements (not questions but worth exploring)
+  const hypothesisPattern = /(?:imagine|consider|explore|perhaps|maybe|possibly)\s+(?:if|that|how|what)\s+.{20,150}[.]/i
+  for (const paragraph of paragraphs.slice(0, 20)) {
+    const matches = paragraph.match(hypothesisPattern) || []
+    for (const match of matches) {
+      const trimmed = match.trim()
+      if (trimmed.length > 30 && trimmed.length < 180) {
+        questions.push({
+          question: `Exploration: "${trimmed.substring(0, 100)}${trimmed.length > 100 ? '...' : ''}"`,
+          context: "A speculative idea worth developing into a concrete question"
+        })
+      }
+    }
+  }
+  
+  // Limit to avoid spam but keep quality
+  return questions.slice(0, 5)
+}
+
+function findKnowledgeGaps(content) {
+  const gaps = []
+  const paragraphs = content.split('\n\n').filter(p => p.trim().length > 40)
+  
+  // Pattern 1: Explicit gaps with context
+  const gapPatterns = [
+    // "TODO: " or similar markers with substantial content
+    {
+      pattern: /(?:todo|fixme|hack|temp|temporary|placeholder)[\s:](?:\s*[-\*]?\s*)(.{10,120})/i,
+      explanation: (match) => `Implementation needed: "${match[1].trim()}"`
+    },
+    // "Not yet" or "needs" statements
+    {
+      pattern: /(?:not yet|needs?|missing|lacks?|without)\s+(.{10,100})/i,
+      explanation: (match) => `Gap identified: "${match[1].trim()}"`
+    },
+    // Future work or next steps
+    {
+      pattern: /(?:future|next|upcoming|planned|roadmap)[\s:]\s*(?:[-\*]?\s*)(.{10,120})/i,
+      explanation: (match) => `Future work: "${match[1].trim()}"`
+    },
+    // Uncertainty markers
+    {
+      pattern: /(?:uncertain|unclear|unknown|undecided|not sure)\s+(?:about|if|whether|how)\s+(.{10,100})/i,
+      explanation: (match) => `Uncertainty: "${match[1].trim()}"`
+    }
+  ]
+  
+  for (const paragraph of paragraphs.slice(0, 25)) {
+    for (const { pattern, explanation } of gapPatterns) {
+      const matches = paragraph.match(new RegExp(pattern, 'gi')) || []
+      for (const matchText of matches) {
+        const match = matchText.match(pattern)
+        if (match) {
+          const desc = explanation(match)
+          // Get surrounding context
+          const contextMatch = paragraph.match(/[^.]*(?:this|that|these|those|here|there)[^.]*[.]/i)
+          const context = contextMatch ? contextMatch[0].substring(0, 80) : paragraph.substring(0, 80)
+          
+          gaps.push({
+            question: desc,
+            context: `Found in: "${context}..."`
+          })
+        }
+      }
+    }
+  }
+  
+  // Pattern 2: Incomplete sections or stubs
+  const stubPattern = /(?:section|part|area|aspect)\s+(?:to be|will be|should be)\s+(?:written|defined|documented|completed)/i
+  for (const paragraph of paragraphs.slice(0, 15)) {
+    if (stubPattern.test(paragraph)) {
+      const topicMatch = paragraph.match(/(?:about|for|on)\s+(.{5,50})/i)
+      const topic = topicMatch ? topicMatch[1] : 'this topic'
+      gaps.push({
+        question: `Incomplete documentation: Section about ${topic}`,
+        context: "Content stub found that needs completion"
+      })
+    }
+  }
+  
+  return gaps.slice(0, 5)
 }
 
 function writeCuriosityFile(curiositiesDir, curiosity) {
   const date = new Date().toISOString().split('T')[0]
-  const title = curiosity.question.substring(0, 80)
+  
+  // Handle both old format (string) and new format (object with question/context)
+  const questionText = typeof curiosity.question === 'string' ? curiosity.question : curiosity.question.question
+  const contextText = curiosity.context || curiosity.question?.context || 'From daydreaming through the mind'
+  
+  const title = questionText.substring(0, 70)
   const sanitizedTitle = sanitizeFilename(title)
   const filename = `${date}-${sanitizedTitle}.md`
   const filepath = join(curiositiesDir, filename)
@@ -386,26 +471,44 @@ function writeCuriosityFile(curiositiesDir, curiosity) {
     return
   }
   
-  const content = `# ${title}${curiosity.question.length > 80 ? '...' : ''}
+  const content = `# ${title}${questionText.length > 70 ? '...' : ''}
 
 **Status:** Open  
-**Created:** ${date}
+**Created:** ${date}  
+**Type:** ${curiosity.type === 'gap' ? 'Knowledge Gap' : 'Exploration Question'}
 
 ## Source
 
 [[${curiosity.source}]]
 
-## Question
+## The Question
 
-${curiosity.question}
+${questionText}
 
-## Why This Matters
+## Context
 
-*Auto-generated curiosity from daydreaming*
+${contextText}
+
+## Why Explore This?
+
+This ${curiosity.type === 'gap' ? 'gap' : 'question'} was discovered while daydreaming through the mind. Exploring it may lead to:
+- New insights about how Bizing works
+- Better understanding of the knowledge structure
+- Opportunities for improvement or clarification
+
+## Related Ideas
+
+*Consider linking to related files or concepts as they emerge*
+
+## Next Steps
+
+- [ ] Investigate this further
+- [ ] Link to related concepts
+- [ ] Develop into a concrete proposal or solution
 
 ## Tags
 
-#curiosity #${curiosity.type} #auto-detected
+#curiosity #${curiosity.type} #auto-detected #exploration
 `
   
   writeFileSync(filepath, content)
