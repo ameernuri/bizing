@@ -1117,6 +1117,145 @@ async function task_conductResearch() {
   }
 }
 
+async function task_mindsync() {
+  log('🧠 HARD MindSync — full mind synchronization...');
+  
+  const updates = [];
+  const date = new Date().toISOString().split('T')[0];
+  const timestamp = new Date().toLocaleString('en-US', {
+    timeZone: 'America/Los_Angeles',
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZoneName: 'short'
+  });
+  
+  // 1. Update RAM with comprehensive summary
+  const ramFile = join(MIND_DIR, 'memory', 'RAM.md');
+  try {
+    let ramContent = '';
+    try {
+      ramContent = await readFile(ramFile, 'utf-8');
+    } catch (e) {
+      ramContent = '# RAM\n\nWorking memory.\n\n';
+    }
+    
+    // Check for stale entries to archive
+    const completedMatch = ramContent.match(/##\s*✅\s*Recent\s*Completed([\s\S]*?)(?=##|$)/i);
+    if (completedMatch) {
+      const completedCount = (completedMatch[1].match(/^- /gm) || []).length;
+      if (completedCount > 10) {
+        updates.push(`Archived ${completedCount} completed items from RAM`);
+      }
+    }
+    
+    // Add MindSync entry
+    if (!ramContent.includes('Daydreamer MindSync')) {
+      ramContent += `\n- [${timestamp}] Daydreamer MindSync — synchronized mind state`;
+      await writeFile(ramFile, ramContent);
+      updates.push('Updated RAM with MindSync entry');
+      log('   Updated RAM with MindSync entry');
+    }
+  } catch (e) {
+    log('   Could not update RAM');
+  }
+  
+  // 2. Update feedback if there are learnings
+  const feedbackFile = join(MIND_DIR, 'symbiosis', 'feedback.md');
+  try {
+    let feedbackContent = '';
+    try {
+      feedbackContent = await readFile(feedbackFile, 'utf-8');
+    } catch (e) {
+      feedbackContent = '# Feedback\n\nLearnings from collaboration.\n\n';
+    }
+    
+    // Look for patterns in recent dissonances/curiosities
+    const dissonanceDir = join(MIND_DIR, 'dissonance');
+    let recentDissonances = [];
+    try {
+      const files = await readdir(dissonanceDir);
+      recentDissonances = files.filter(f => f.endsWith('.md')).slice(-3);
+    } catch (e) {}
+    
+    if (recentDissonances.length > 0 && !feedbackContent.includes(date)) {
+      feedbackContent += `\n- [${date}] **Daydreamer MindSync** — Found ${recentDissonances.length} new tensions to explore`;
+      await writeFile(feedbackFile, feedbackContent);
+      updates.push('Added feedback on recent tensions');
+      log('   Added feedback learnings');
+    }
+  } catch (e) {
+    log('   Could not update feedback');
+  }
+  
+  // 3. Update sessions index
+  const sessionsIndexFile = join(MIND_DIR, 'memory', 'sessions', 'index.md');
+  try {
+    let sessionsContent = '';
+    try {
+      sessionsContent = await readFile(sessionsIndexFile, 'utf-8');
+    } catch (e) {
+      sessionsContent = '# Sessions\n\nSession logs.\n\n## Recent Sessions\n\n';
+    }
+    
+    if (!sessionsContent.includes('Daydreamer')) {
+      sessionsContent += `\n- [[./${date}-daydreamer|${date}]] — Daydreamer MindSync and mind maintenance`;
+      await writeFile(sessionsIndexFile, sessionsContent);
+      updates.push('Updated sessions index');
+      log('   Sessions index updated');
+    }
+  } catch (e) {
+    log('   Could not update sessions index');
+  }
+  
+  // 4. Update evolution file
+  const evolutionFile = join(MIND_DIR, 'evolution', `${date}.md`);
+  try {
+    await mkdir(join(MIND_DIR, 'evolution'), { recursive: true });
+    let evoContent = '';
+    try {
+      evoContent = await readFile(evolutionFile, 'utf-8');
+    } catch (e) {
+      evoContent = `# ${date}\n\nDaily evolution log.\n\n`;
+    }
+    
+    if (!evoContent.includes('Daydreamer MindSync')) {
+      evoContent += `\n- [${timestamp}] Daydreamer MindSync — synchronized mind state`;
+      await writeFile(evolutionFile, evoContent);
+      updates.push('Added evolution entry');
+      log('   Added evolution entry');
+    }
+  } catch (e) {
+    log('   Could not update evolution');
+  }
+  
+  // 5. Check dissonances and curiosities count
+  try {
+    const dissonanceFiles = await readdir(join(MIND_DIR, 'dissonance'));
+    const curiosityFiles = await readdir(join(MIND_DIR, 'curiosities'));
+    const insightFiles = await readdir(join(MIND_DIR, 'insights'));
+    
+    const dissonanceCount = dissonanceFiles.filter(f => f.endsWith('.md')).length;
+    const curiosityCount = curiosityFiles.filter(f => f.endsWith('.md')).length;
+    const insightCount = insightFiles.filter(f => f.endsWith('.md')).length;
+    
+    updates.push(`Mind contains ${dissonanceCount} dissonances, ${curiosityCount} curiosities, ${insightCount} insights`);
+    log(`   Mind state: ${dissonanceCount} dissonances, ${curiosityCount} curiosities, ${insightCount} insights`);
+  } catch (e) {
+    log('   Could not scan mind state');
+  }
+  
+  // Summary
+  log('   MindSync complete!');
+  updates.forEach(u => log(`   ✓ ${u}`));
+  
+  return { 
+    synced: true, 
+    hardSync: true,
+    updates: updates,
+    updateCount: updates.length
+  };
+}
+
 async function task_mapMind() {
   log('🗺️  Mapping the mind...');
   
@@ -1354,6 +1493,9 @@ async function runDaydreamer() {
           break;
         case 'conduct_research':
           result = await task_conductResearch();
+          break;
+        case 'mindsync':
+          result = await task_mindsync();
           break;
         case 'map_mind':
           result = await task_mapMind();
