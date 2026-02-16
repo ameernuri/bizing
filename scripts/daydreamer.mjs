@@ -6,13 +6,15 @@
  * one task at a time, like a daydreamer.
  * 
  * Tasks:
- * - scan_dissonances: Find contradictions in the mind
- * - scan_curiosities: Find questions worth exploring
- * - map_mind: Update the mental map of files/concepts
- * - plan_future: Think about what needs to be done
- * - reflect: Review recent changes and learn
- * - mindsync: Hard mind synchronization (10% chance) - full sync like after major work
- * - rest: Take a break (important for daydreaming!)
+ * - scan_dissonances: Find contradictions in the mind (17%, Ollama)
+ * - scan_curiosities: Find questions worth exploring (17%, Ollama)
+ * - generate_research_topics: Find research topics from research/ folder (8%, Kimi)
+ * - conduct_research: Research topics using Perplexity (2%, Kimi)
+ * - map_mind: Update the mental map of files/concepts (15%)
+ * - plan_future: Think about what needs to be done (13%)
+ * - reflect: Review recent changes and learn (10%)
+ * - mindsync: Hard mind synchronization (10%)
+ * - rest: Take a break (8%)
  */
 
 import { readFile, writeFile, readdir, stat, mkdir } from 'fs/promises';
@@ -58,8 +60,10 @@ const CONFIG = {
   
   // Task weights (probability of selection)
   tasks: {
-    scan_dissonances: { weight: 22, duration: '2-5m', useLLM: 0.1 }, // 10% use main LLM
-    scan_curiosities: { weight: 22, duration: '2-5m', useLLM: 0.1 }, // 10% use main LLM
+    scan_dissonances: { weight: 17, duration: '2-5m' },      // Uses Ollama
+    scan_curiosities: { weight: 17, duration: '2-5m' },      // Uses Ollama
+    generate_research_topics: { weight: 8, duration: '3-5m', useLLM: 'kimi' }, // Uses Kimi
+    conduct_research: { weight: 2, duration: '5-10m', useLLM: 'kimi' },        // Uses Kimi
     map_mind: { weight: 15, duration: '3-8m' },
     plan_future: { weight: 13, duration: '2-4m' },
     reflect: { weight: 10, duration: '1-3m' },
@@ -67,10 +71,11 @@ const CONFIG = {
     rest: { weight: 8, duration: '30s-2m' }
   },
   
-  // LLM configuration for deep scanning
+  // LLM configuration
   llm: {
-    model: 'kimi-coding/k2p5',
-    timeout: 120000, // 2 minutes
+    primary: 'kimi-coding/k2p5',
+    local: 'llama3.1:8b',
+    timeout: 120000,
     maxTokens: 2000
   }
 };
@@ -473,6 +478,213 @@ async function task_scanCuriositiesWithLLM() {
   };
 }
 
+async function task_generateResearchTopics() {
+  log('🔬 Generating research topics using Kimi...');
+  
+  // Read research folder contents
+  const researchDir = join(MIND_DIR, 'research');
+  const topicsDir = join(researchDir, 'topics');
+  
+  // Ensure topics directory exists
+  try {
+    await mkdir(topicsDir, { recursive: true });
+  } catch (e) {}
+  
+  // Read existing research files
+  let researchFiles = [];
+  try {
+    const allFiles = await readdir(researchDir, { recursive: true });
+    researchFiles = allFiles.filter(f => f.endsWith('.md') && !f.includes('topics/'));
+  } catch (e) {
+    log('   No research folder found');
+    return { newCount: 0 };
+  }
+  
+  if (researchFiles.length === 0) {
+    log('   No research files to analyze');
+    return { newCount: 0 };
+  }
+  
+  // Sample research files for context
+  const sampleFiles = [];
+  for (const file of researchFiles.slice(0, 5)) {
+    try {
+      const content = await readFile(join(researchDir, file), 'utf-8');
+      sampleFiles.push({ path: file, content: content.substring(0, 1000) });
+    } catch (e) {}
+  }
+  
+  // Build prompt for Kimi
+  const fileContexts = sampleFiles.map(f => `FILE: ${f.path}\nCONTENT: ${f.content}\n---`).join('\n');
+  
+  const prompt = `Analyze these research files and generate 1-2 high-quality research topics:
+
+${fileContexts}
+
+Generate research topics that:
+1. Are substantial and worth exploring (not superficial)
+2. Connect to the existing research content
+3. Would add value to understanding the domain
+4. Are specific enough to be actionable
+
+For each topic, output:
+TOPIC: <clear, descriptive title>
+DESCRIPTION: <what this research would explore>
+WHY_IT_MATTERS: <why this is important to understand>
+SOURCE_FILES: <which files prompted this topic>
+---
+
+If no quality topics can be generated from this sample, output "NONE".`;
+
+  // Call Kimi via Ollama (placeholder for actual Kimi API call)
+  log('   Calling Kimi for topic generation...');
+  const response = askOllama(prompt);
+  
+  if (!response || response.toUpperCase().includes('NONE')) {
+    log('   No new research topics generated');
+    return { newCount: 0 };
+  }
+  
+  // Parse response and create topic files
+  const topics = parseResearchTopics(response);
+  const date = new Date().toISOString().split('T')[0];
+  
+  let created = 0;
+  for (const topic of topics) {
+    const filename = `${date}-${sanitizeFilename(topic.title)}.md`;
+    const filepath = join(topicsDir, filename);
+    
+    // Check if already exists
+    if (existsSync(filepath)) continue;
+    
+    const content = `# ${topic.title}
+
+**Status:** Proposed  
+**Created:** ${date}  
+**Priority:** Medium
+
+## Description
+
+${topic.description}
+
+## Why This Matters
+
+${topic.whyItMatters}
+
+## Source Files
+
+${topic.sourceFiles.map(f => `- [[${f}]]`).join('\n')}
+
+## Research Questions
+
+- [ ] What is the current state of knowledge on this topic?
+- [ ] What are the key insights or findings?
+- [ ] How does this relate to Bizing's domain?
+
+## Notes
+
+*Add research findings here as they are discovered*
+
+## Tags
+
+#research #topic #proposed
+`;
+    
+    await writeFile(filepath, content);
+    created++;
+    log(`   Created: ${filename}`);
+  }
+  
+  log(`   Generated ${created} research topics`);
+  return { newCount: created, topics };
+}
+
+async function task_conductResearch() {
+  log('📚 Conducting research using Perplexity...');
+  
+  const researchDir = join(MIND_DIR, 'research');
+  const topicsDir = join(researchDir, 'topics');
+  
+  // Find un researched topics
+  let topicFiles = [];
+  try {
+    topicFiles = (await readdir(topicsDir))
+      .filter(f => f.endsWith('.md'))
+      .map(f => join(topicsDir, f));
+  } catch (e) {
+    log('   No topics directory found');
+    return { researched: 0 };
+  }
+  
+  if (topicFiles.length === 0) {
+    log('   No research topics available');
+    return { researched: 0 };
+  }
+  
+  // Pick one topic that hasn't been researched yet
+  // (look for "Status: Proposed" or minimal content)
+  let selectedTopic = null;
+  for (const file of topicFiles) {
+    try {
+      const content = await readFile(file, 'utf-8');
+      if (content.includes('Status: Proposed') || content.split('## Notes')[1]?.length < 100) {
+        selectedTopic = { file, content };
+        break;
+      }
+    } catch (e) {}
+  }
+  
+  if (!selectedTopic) {
+    log('   No pending research topics found');
+    return { researched: 0 };
+  }
+  
+  // Extract topic details
+  const titleMatch = selectedTopic.content.match(/^# (.+)$/m);
+  const descMatch = selectedTopic.content.match(/## Description\n\n(.+?)(?=\n\n##)/s);
+  
+  const title = titleMatch?.[1] || 'Research Topic';
+  const description = descMatch?.[1] || '';
+  
+  log(`   Researching: ${title}`);
+  
+  // This is where Perplexity integration would go
+  // For now, mark as needing research
+  log('   (Perplexity integration placeholder - would conduct deep research)');
+  
+  // Update topic file to mark as in-progress
+  const updatedContent = selectedTopic.content.replace(
+    'Status: Proposed',
+    'Status: In Progress'
+  );
+  await writeFile(selectedTopic.file, updatedContent);
+  
+  return { researched: 1, topic: title };
+}
+
+function parseResearchTopics(response) {
+  const topics = [];
+  const sections = response.split('---').filter(s => s.trim());
+  
+  for (const section of sections) {
+    const titleMatch = section.match(/TOPIC:\s*(.+)/i);
+    const descMatch = section.match(/DESCRIPTION:\s*(.+?)(?=WHY_IT_MATTERS:|$)/is);
+    const whyMatch = section.match(/WHY_IT_MATTERS:\s*(.+?)(?=SOURCE_FILES:|$)/is);
+    const sourceMatch = section.match(/SOURCE_FILES:\s*(.+?)(?=---|$)/is);
+    
+    if (titleMatch && descMatch) {
+      topics.push({
+        title: titleMatch[1].trim(),
+        description: descMatch[1].trim(),
+        whyItMatters: whyMatch?.[1]?.trim() || 'Important for domain understanding',
+        sourceFiles: sourceMatch?.[1]?.split(/,|\n/).map(f => f.trim()).filter(f => f) || []
+      });
+    }
+  }
+  
+  return topics;
+}
+
 async function task_rest() {
   const restDuration = 30000 + Math.random() * 90000; // 30s - 2m
   log(`😴 Resting for ${Math.round(restDuration / 1000)}s...`);
@@ -587,6 +799,12 @@ async function runDaydreamer() {
           break;
         case 'scan_curiosities':
           result = await task_scanCuriosities();
+          break;
+        case 'generate_research_topics':
+          result = await task_generateResearchTopics();
+          break;
+        case 'conduct_research':
+          result = await task_conductResearch();
           break;
         case 'map_mind':
           result = await task_mapMind();
