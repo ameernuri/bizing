@@ -727,20 +727,51 @@ async function task_conductResearch() {
 
 function parseResearchTopics(response) {
   const topics = [];
-  const sections = response.split('---').filter(s => s.trim());
+  
+  // Try to find topics in various formats
+  // Format 1: TOPIC: title
+  // Format 2: **Topic 1:** title
+  // Format 3: ## Topic: title
+  
+  // Split by topic indicators - look for TOPIC: or **Topic patterns
+  const sections = response.split(/\n(?=TOPIC:|\*\*Topic \d+:|\*\*Topic:\*\*)/i).filter(s => s.trim());
   
   for (const section of sections) {
-    const titleMatch = section.match(/TOPIC:\s*(.+)/i);
-    const descMatch = section.match(/DESCRIPTION:\s*(.+?)(?=WHY_IT_MATTERS:|$)/is);
-    const whyMatch = section.match(/WHY_IT_MATTERS:\s*(.+?)(?=SOURCE_FILES:|$)/is);
-    const sourceMatch = section.match(/SOURCE_FILES:\s*(.+?)(?=---|$)/is);
+    // Skip if this looks like an intro/conclusion paragraph (no description)
+    if (!section.match(/DESCRIPTION/i)) continue;
+    
+    // Try multiple patterns for title
+    let titleMatch = section.match(/TOPIC:\s*\*\*?\s*([^*\n]+)/i) ||
+                     section.match(/\*\*Topic \d+:\*\*\s*([^\n]+)/i) ||
+                     section.match(/\*\*Topic:\*\*\s*([^\n]+)/i) ||
+                     section.match(/TOPIC:\s*([^\n]+)/i);
+    
+    // Try multiple patterns for description
+    let descMatch = section.match(/DESCRIPTION:\s*\*\*?\s*([^*]+?)(?=\*\*\s*WHY|WHY_IT_MATTERS|WHY IT MATTERS|$)/is) ||
+                    section.match(/DESCRIPTION:\s*([^\n]+?)(?=WHY|SOURCE|CONCLUSION|$)/is);
+    
+    // Try multiple patterns for why it matters
+    let whyMatch = section.match(/(?:WHY_IT_MATTERS|WHY IT MATTERS):\s*\*\*?\s*([^*]+?)(?=\*\*|$)/is) ||
+                   section.match(/(?:WHY_IT_MATTERS|WHY IT MATTERS):\s*([^\n]+?)(?=SOURCE|CONCLUSION|$)/is);
+    
+    // Extract source files - only look for actual file paths
+    let sourceMatch = section.match(/SOURCE_FILES:\s*([^]+?)(?=\n\n|$)/is);
+    let sourceFiles = [];
+    if (sourceMatch) {
+      // Extract only .md file references
+      sourceFiles = sourceMatch[1].match(/[A-Z_]+\.md/g) || [];
+    }
     
     if (titleMatch && descMatch) {
+      const title = titleMatch[1].trim().replace(/^\*\*?|\*\*?$/g, '');
+      // Skip if title contains "TOPIC" (indicates parsing error)
+      if (title.toUpperCase().includes('TOPIC')) continue;
+      
       topics.push({
-        title: titleMatch[1].trim(),
-        description: descMatch[1].trim(),
-        whyItMatters: whyMatch?.[1]?.trim() || 'Important for domain understanding',
-        sourceFiles: sourceMatch?.[1]?.split(/,|\n/).map(f => f.trim()).filter(f => f) || []
+        title: title,
+        description: descMatch[1].trim().replace(/^\*\*?|\*\*?$/g, ''),
+        whyItMatters: whyMatch?.[1]?.trim().replace(/^\*\*?|\*\*?$/g, '') || 'Important for domain understanding',
+        sourceFiles: sourceFiles
       });
     }
   }
