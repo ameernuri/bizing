@@ -685,46 +685,33 @@ async function task_conductResearch() {
   
   log(`   Researching: ${title}`);
   
-  // Use web search to conduct research
-  log('   🔍 Searching for information...');
+  // Use Perplexity to conduct research
+  log('   🔍 Querying Perplexity...');
   const searchQuery = `${title} ${description}`.substring(0, 200);
   
   try {
-    // Search the web
+    // Search using Perplexity
     const searchResults = await searchWeb(searchQuery);
     
     if (searchResults && searchResults.length > 0) {
-      // Generate research summary using Kimi
-      const researchPrompt = `Based on these search results about "${title}", provide a comprehensive research summary:
-
-${searchResults.map(r => `Source: ${r.title}\n${r.snippet}\n---`).join('\n')}
-
-Provide:
-1. Key findings (3-5 bullet points)
-2. Important insights
-3. How this relates to booking platforms and service businesses
-4. Recommended actions
-
-Format as markdown.`;
-
-      const researchSummary = await askKimi(researchPrompt, 1500);
+      // Perplexity already provides comprehensive research
+      const researchSummary = searchResults[0].snippet;
       
       // Update topic file with research
-      const notesSection = selectedTopic.content.split('## Notes')[1] || '\n\n';
       const updatedContent = selectedTopic.content.replace(
         'Status: Proposed',
         'Status: Complete'
       ).replace(
         /## Notes\n\n/,
-        `## Notes\n\n${researchSummary || '*Research completed - see findings below*'}\n\n### Sources\n${searchResults.map(r => `- [${r.title}](${r.url})`).join('\n')}\n\n---\n\n`
+        `## Notes\n\n## Research Findings\n\n${researchSummary}\n\n---\n\n`
       );
       
       await writeFile(selectedTopic.file, updatedContent);
-      log(`   ✓ Research completed and saved`);
-      return { researched: 1, topic: title, sources: searchResults.length };
+      log(`   ✓ Research completed via Perplexity and saved`);
+      return { researched: 1, topic: title };
     } else {
-      log('   No search results found');
-      // Mark as in-progress for manual research
+      log('   No research results from Perplexity');
+      // Mark as needs manual research
       const updatedContent = selectedTopic.content.replace(
         'Status: Proposed',
         'Status: Needs Manual Research'
@@ -765,33 +752,55 @@ function sanitizeFilename(str) {
   return str.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').substring(0, 50);
 }
 
-// Web search helper for research
+// Web search helper for research using Perplexity API
 async function searchWeb(query, count = 5) {
   try {
-    // Use Brave Search API via fetch
-    const apiKey = process.env.BRAVE_API_KEY;
+    // Use Perplexity API
+    const apiKey = process.env.PERPLEXITY_API_KEY || process.env.PPLX_API_KEY;
     if (!apiKey) {
-      log('   ⚠️  No BRAVE_API_KEY set, skipping web search');
+      log('   ⚠️  No PERPLEXITY_API_KEY set, skipping web search');
       return null;
     }
     
-    const response = await fetch(`https://api.search.brave.com/api/web/search?q=${encodeURIComponent(query)}&count=${count}`, {
+    const response = await fetch('https://api.perplexity.ai/chat/completions', {
+      method: 'POST',
       headers: {
-        'X-Subscription-Token': apiKey,
-        'Accept': 'application/json'
-      }
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: 'sonar-pro',
+        messages: [
+          {
+            role: 'system',
+            content: 'You are a research assistant. Provide concise, factual information with sources.'
+          },
+          {
+            role: 'user',
+            content: `Research this topic and provide key findings with sources: ${query}`
+          }
+        ],
+        max_tokens: 2000,
+        temperature: 0.2
+      })
     });
     
     if (response.ok) {
       const data = await response.json();
-      return data.web?.results?.map(r => ({
-        title: r.title,
-        url: r.url,
-        snippet: r.description
-      })) || [];
+      const content = data.choices?.[0]?.message?.content;
+      
+      if (content) {
+        // Parse Perplexity response into structured format
+        return [{
+          title: `Research: ${query.substring(0, 50)}...`,
+          url: 'https://perplexity.ai',
+          snippet: content
+        }];
+      }
     }
     return null;
   } catch (e) {
+    log(`   ⚠️  Perplexity search error: ${e.message}`);
     return null;
   }
 }
