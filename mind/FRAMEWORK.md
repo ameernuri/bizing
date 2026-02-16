@@ -1,2 +1,0 @@
-- before you do the work read the appropriate skill inside [[mind/skills]]
-- when you respond, mention all the things you 

@@ -25,8 +25,8 @@ RAM = Working Memory. What matters RIGHT NOW.
 | [[mind/memory/RAM]] — Active context |
 | [[mind/skills/Skills]] — All skills |
 | [[mind/SYNOPSIS]] — Bizing's story |
-| [[mind/DISSONANCE]] — Current tensions |
-| [[mind/CURIOSITIES]] — Open questions |
+| [[mind/dissonance/]] — Current tensions (folder) |
+| [[mind/curiosities/]] — Open questions (folder) |
 
 ---
 
@@ -106,8 +106,8 @@ Skills are step-by-step guides. Check [[mind/skills/Skills]] directory:
 
 The Dreamer runs continuously with four jobs:
 
-1. **Find Tensions** — Contradicting ideas in the mind → adds to [[mind/DISSONANCE]] with a question
-2. **Find Curiosities** — Questions and gaps → adds to [[mind/CURIOSITIES]]
+1. **Find Tensions** — Contradicting ideas in the mind → adds to [[mind/dissonance/]] with a question
+2. **Find Curiosities** — Questions and gaps → adds to [[mind/curiosities/]]
 3. **Update SYNOPSIS** — Keeps Bizing's story current #story
 4. **Update MAP** — Keeps [[mind/MAP]] current
 
@@ -115,12 +115,16 @@ The Dreamer runs continuously with four jobs:
 
 ---
 
-## 📋 Dissonances
+## 📋 Dissonances & Curiosities
 
 When the mind contradicts itself:
 - File A says "use HTTP API"
 - File B says "embed SDK"  
-- → Real conflict in [[mind/DISSONANCE]]
+- → Real conflict in [[mind/dissonance/]] folder
+
+Questions and gaps go to [[mind/curiosities/]] folder
+
+Each entry is a separate markdown file: `YYYY-MM-DD-title.md`
 
 **Related:**
 - [[mind/skills/dreaming/Dreaming|Dreaming]] — How dreamer finds tensions
