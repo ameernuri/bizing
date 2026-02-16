@@ -19,14 +19,36 @@ import { readFile, writeFile, readdir, stat, mkdir } from 'fs/promises';
 import { existsSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import { exec } from 'child_process';
-import { promisify } from 'util';
+import { spawnSync } from 'child_process';
 
-const execAsync = promisify(exec);
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const MIND_DIR = join(__dirname, '..', 'mind');
 const DREAMER_DIR = join(MIND_DIR, '.daydreamer');
 const STATE_FILE = join(DREAMER_DIR, 'state.json');
+
+// Ollama LLM function (primary method)
+function askOllama(prompt) {
+  try {
+    const r = spawnSync('bash', ['-lc', `printf '%s\n' "${prompt.replace(/"/g, '\\"')}" | ollama run llama3.1:8b`], { 
+      encoding: 'utf-8', 
+      timeout: 120000 
+    });
+    return r.stdout?.replace(/\x1B\[[0-9;]*[mG]/g, '').replace(/\n+/g, '\n').trim() || null;
+  } catch (e) { 
+    return null;
+  }
+}
+
+// Main LLM function (for deep analysis 10% of the time)
+async function askMainLLM(prompt, maxTokens = 1500) {
+  try {
+    // Gateway API call would go here
+    // For now, fall back to Ollama
+    return askOllama(prompt);
+  } catch (e) {
+    return null;
+  }
+}
 
 // Daydreamer configuration
 const CONFIG = {
@@ -108,34 +130,85 @@ function selectTask() {
 // ========== TASK IMPLEMENTATIONS ==========
 
 async function task_scanDissonances() {
-  log('🔥 Scanning for contradictions...');
-  
-  // Import and run the original dreamer's dissonance scanning logic
-  const { scanForDissonances } = await import('./dreamer-lib.mjs');
-  const result = await scanForDissonances(MIND_DIR);
-  
-  if (result.newCount > 0) {
-    log(`   Found ${result.newCount} new contradictions`);
-  } else {
-    log('   No new contradictions found');
+  // 10% chance to use main LLM, 90% use Ollama
+  if (Math.random() < 0.1) {
+    log('   🎲 Using main LLM (kimi-coding/k2p5) for deep analysis (10% chance)');
+    return await task_scanDissonancesWithLLM();
   }
   
-  return result;
+  log('🔥 Scanning for contradictions with Ollama (llama3.1:8b)...');
+  
+  const { readMindFiles } = await import('./dreamer-lib.mjs');
+  const files = readMindFiles(MIND_DIR);
+  
+  // Sample files for analysis
+  const sampleFiles = files.slice(0, 10);
+  const fileContexts = sampleFiles.map(f => `FILE: ${f.path}\nCONTENT: ${f.content.substring(0, 800)}\n---`).join('\n');
+  
+  const prompt = `Analyze these files and find REAL contradictions (where files say opposite things about the same topic):
+
+${fileContexts}
+
+For each contradiction found, output:
+CONTRADICTION: <brief description>
+FILE_A: <path>
+QUOTE_A: <what file A says>
+FILE_B: <path>  
+QUOTE_B: <what file B says>
+RESOLUTION: <suggested resolution>
+---
+
+Or output "NONE" if no contradictions found.`;
+
+  const response = askOllama(prompt);
+  
+  if (!response || response.toUpperCase().includes('NONE')) {
+    log('   No contradictions found by Ollama');
+    return { newCount: 0 };
+  }
+  
+  // Parse response and create files (simplified for now)
+  log('   Ollama analysis complete');
+  return { newCount: 0 };
 }
 
 async function task_scanCuriosities() {
-  log('❓ Scanning for curiosities...');
-  
-  const { scanForCuriosities } = await import('./dreamer-lib.mjs');
-  const result = await scanForCuriosities(MIND_DIR);
-  
-  if (result.newCount > 0) {
-    log(`   Found ${result.newCount} new curiosities`);
-  } else {
-    log('   No new curiosities found');
+  // 10% chance to use main LLM, 90% use Ollama
+  if (Math.random() < 0.1) {
+    log('   🎲 Using main LLM (kimi-coding/k2p5) for deep analysis (10% chance)');
+    return await task_scanCuriositiesWithLLM();
   }
   
-  return result;
+  log('❓ Scanning for curiosities with Ollama (llama3.1:8b)...');
+  
+  const { readMindFiles } = await import('./dreamer-lib.mjs');
+  const files = readMindFiles(MIND_DIR);
+  
+  // Sample files for analysis
+  const sampleFiles = files.slice(0, 10);
+  const fileContexts = sampleFiles.map(f => `FILE: ${f.path}\nCONTENT: ${f.content.substring(0, 800)}\n---`).join('\n');
+  
+  const prompt = `Analyze these files and find interesting QUESTIONS worth exploring:
+
+${fileContexts}
+
+For each question found, output:
+QUESTION: <substantial question>
+SOURCE: <file path>
+WHY: <why this is worth exploring>
+---
+
+Or output "NONE" if no questions found.`;
+
+  const response = askOllama(prompt);
+  
+  if (!response || response.toUpperCase().includes('NONE')) {
+    log('   No curiosities found by Ollama');
+    return { newCount: 0 };
+  }
+  
+  log('   Ollama analysis complete');
+  return { newCount: 0 };
 }
 
 async function task_mapMind() {
@@ -510,22 +583,10 @@ async function runDaydreamer() {
       
       switch (task) {
         case 'scan_dissonances':
-          // 10% chance to use main LLM for deep analysis
-          if (Math.random() < 0.1) {
-            log('   🎲 Randomly selected for LLM-powered analysis (10% chance)');
-            result = await task_scanDissonancesWithLLM();
-          } else {
-            result = await task_scanDissonances();
-          }
+          result = await task_scanDissonances();
           break;
         case 'scan_curiosities':
-          // 10% chance to use main LLM for deep analysis
-          if (Math.random() < 0.1) {
-            log('   🎲 Randomly selected for LLM-powered analysis (10% chance)');
-            result = await task_scanCuriositiesWithLLM();
-          } else {
-            result = await task_scanCuriosities();
-          }
+          result = await task_scanCuriosities();
           break;
         case 'map_mind':
           result = await task_mapMind();
