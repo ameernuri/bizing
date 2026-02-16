@@ -23,6 +23,11 @@ start() {
   
   cd ~/projects/bizing || exit 1
   
+  # Note: Set these environment variables in your shell profile (e.g., ~/.zshrc):
+  # export PERPLEXITY_API_KEY="your-key-here"
+  # export OPENCLAW_GATEWAY_URL="http://127.0.0.1:6130"
+  # export OPENCLAW_GATEWAY_TOKEN="your-token-here"
+  
   # Run in background with nohup
   nohup node scripts/daydreamer.mjs > /tmp/bizing-daydreamer.log 2>&1 &
   
