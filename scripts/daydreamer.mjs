@@ -1120,6 +1120,7 @@ async function task_conductResearch() {
 async function task_mapMind() {
   log('🗺️  Mapping the mind...');
   
+  // Scan all markdown files
   const files = [];
   
   async function scanDir(dir, relative = '') {
@@ -1129,10 +1130,10 @@ async function task_mapMind() {
         const path = join(dir, entry.name);
         const relPath = join(relative, entry.name);
         
-        if (entry.isDirectory() && !entry.name.startsWith('.') && entry.name !== 'node_modules') {
+        if (entry.isDirectory() && !entry.name.startsWith('.') && !['node_modules', '.git'].includes(entry.name)) {
           await scanDir(path, relPath);
         } else if (entry.isFile() && entry.name.endsWith('.md')) {
-          files.push(relPath);
+          files.push({ path: relPath, dir: relative });
         }
       }
     } catch (e) {}
@@ -1140,22 +1141,139 @@ async function task_mapMind() {
   
   await scanDir(MIND_DIR);
   
+  // Categorize by directory
   const categories = {};
   for (const file of files) {
-    const cat = file.split('/')[0] || 'root';
-    categories[cat] = (categories[cat] || 0) + 1;
+    const cat = file.dir.split('/')[0] || 'root';
+    if (!categories[cat]) categories[cat] = [];
+    categories[cat].push(file.path);
   }
   
-  const mindMap = {
-    lastUpdated: new Date().toISOString(),
-    totalFiles: files.length,
-    categories
+  // Count dissonances, curiosities, insights
+  let dissonanceCount = 0, curiosityCount = 0, insightCount = 0;
+  try {
+    dissonanceCount = (await readdir(join(MIND_DIR, 'dissonance'))).filter(f => f.endsWith('.md')).length;
+  } catch (e) {}
+  try {
+    curiosityCount = (await readdir(join(MIND_DIR, 'curiosities'))).filter(f => f.endsWith('.md')).length;
+  } catch (e) {}
+  try {
+    insightCount = (await readdir(join(MIND_DIR, 'insights'))).filter(f => f.endsWith('.md')).length;
+  } catch (e) {}
+  
+  // Build MAP.md content
+  const date = new Date().toISOString().split('T')[0];
+  
+  let mapContent = `---
+date: ${date}
+tags:
+  - map
+  - index
+  - navigation
+---
+
+# 🗺️ MAP
+
+_Complete index of the Bizing mind. Updated by the Daydreamer._
+
+**→ [[mind/INDEX|Back to INDEX]]** — Start here for daily context
+
+---
+
+## 🧠 Mind Health
+
+**→ [[mind/dissonance/|Cognitive Dissonance]]** — ${dissonanceCount} active tension${dissonanceCount !== 1 ? 's' : ''} #dissonance
+**→ [[mind/curiosities/|Curiosities]]** — ${curiosityCount} open question${curiosityCount !== 1 ? 's' : ''} #curiosity
+**→ [[mind/insights/|Insights]]** — ${insightCount} active pattern${insightCount !== 1 ? 's' : ''} #insight
+
+---
+
+## 📊 Mind Overview
+
+**Total Files:** ${files.length}
+**Last Updated:** ${date} by Daydreamer
+
+---
+`;
+
+  // Add categories
+  const categoryOrder = ['identity', 'knowledge', 'skills', 'research', 'memory', 'evolution', 'symbiosis', 'operations', 'curiosities', 'dissonance', 'insights'];
+  const categoryTitles = {
+    identity: '🧬 Identity — Who Bizing Is',
+    knowledge: '📚 Knowledge — What Bizing Knows',
+    skills: '🛠️ Skills — How Bizing Works',
+    research: '🔬 Research — External Knowledge',
+    memory: '📝 Memory — What Bizing Remembers',
+    evolution: '🏛️ Evolution — How Bizing Changes',
+    symbiosis: '🤝 Symbiosis — Human + AI Collaboration',
+    operations: '🗂️ Operations — How Things Run',
+    curiosities: '❓ Curiosities — Open Questions',
+    dissonance: '🔥 Dissonance — Active Tensions',
+    insights: '💡 Insights — Recognized Patterns'
   };
   
-  await writeFile(join(DREAMER_DIR, 'mind-map.json'), JSON.stringify(mindMap, null, 2));
-  log(`   Mapped ${files.length} files`);
+  // Sort and add categories
+  for (const cat of categoryOrder) {
+    if (categories[cat] && categories[cat].length > 0) {
+      const title = categoryTitles[cat] || `📁 ${cat.charAt(0).toUpperCase() + cat.slice(1)}`;
+      mapContent += `\n## ${title}\n\n`;
+      
+      // List files (limit to 10 per category)
+      const displayFiles = categories[cat].slice(0, 10);
+      for (const file of displayFiles) {
+        const name = file.replace('.md', '').split('/').pop();
+        const displayName = name.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+        mapContent += `**→ [[${file.replace('.md', '')}|${displayName}]]**\n`;
+      }
+      
+      if (categories[cat].length > 10) {
+        mapContent += `\n*...and ${categories[cat].length - 10} more*\n`;
+      }
+    }
+  }
   
-  return mindMap;
+  // Add any other categories not in the order
+  for (const [cat, catFiles] of Object.entries(categories)) {
+    if (!categoryOrder.includes(cat) && catFiles.length > 0) {
+      mapContent += `\n## 📁 ${cat.charAt(0).toUpperCase() + cat.slice(1)}\n\n`;
+      for (const file of catFiles.slice(0, 5)) {
+        const name = file.replace('.md', '').split('/').pop();
+        mapContent += `**→ [[${file.replace('.md', '')}|${name}]]**\n`;
+      }
+    }
+  }
+  
+  mapContent += `
+---
+
+## 🔗 Quick Navigation
+
+**By Purpose:**
+- **Start Here:** [[mind/INDEX]]
+- **Who Am I:** [[mind/identity/essence]]
+- **How I Work:** [[mind/skills]]
+- **What I Remember:** [[mind/memory]]
+- **Open Questions:** [[mind/curiosities]]
+
+**By Activity:**
+- **Daily Standup:** Check [[mind/INDEX]]
+- **Learning:** Review [[mind/symbiosis/feedback]]
+- **Research:** Explore [[mind/research]]
+- **Building:** Follow [[mind/skills]]
+
+---
+
+_This map is maintained by the Daydreamer. It updates automatically as the mind grows._
+`;
+  
+  // Write MAP.md
+  const mapFile = join(MIND_DIR, 'MAP.md');
+  await writeFile(mapFile, mapContent);
+  
+  log(`   Mapped ${files.length} files across ${Object.keys(categories).length} categories`);
+  log(`   Updated mind/MAP.md`);
+  
+  return { totalFiles: files.length, categories: Object.keys(categories).length };
 }
 
 async function task_reflect() {
