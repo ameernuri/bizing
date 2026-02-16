@@ -4,26 +4,179 @@ tags:
   - skill
   - dreaming
   - dreamer
-  - loop
+  - daydreamer
+  - daemon
   - contradiction
   - curiosity
 ---
 
 # 💤 Dreaming Skill
 
-> How the Dreamer scans the mind for contradictions and curiosities.
+> How the Daydreamer daemon scans the mind for quality contradictions and curiosities.
 
 ---
 
 ## What Is Dreaming?
 
-The **Dreamer** is an autonomous agent that runs in a **loop**:
+The **Daydreamer** is an autonomous daemon that runs continuously, slowly contemplating the mind one task at a time.
 
-1. Read existing contradictions and curiosities
-2. Ask Ollama to find NEW ones (with serendipity)
-3. Add unique entries with wiki links
-4. Update MAP.md with links
-5. Create session log
+### Tasks
+
+| Task | Weight | Description |
+|------|--------|-------------|
+| **scan_dissonances** | 22% | Find real contradictions (not word-level opposites) |
+| **scan_curiosities** | 22% | Find substantial questions worth exploring |
+| **map_mind** | 15% | Update mental map of files/concepts |
+| **plan_future** | 13% | Think about what needs attention |
+| **reflect** | 10% | Review recent changes |
+| **mindsync** | 10% | Full mind synchronization |
+| **rest** | 8% | Take a break |
+
+### Schedule
+
+- **Interval:** ~15 minutes between tasks (±5 min variance)
+- **Runs:** Continuously in background
+- **PID:** Tracked in `/tmp/bizing-daydreamer.pid`
+
+---
+
+## Quality Standards
+
+The Daydreamer follows strict quality standards from the Curiosity and Dissonance skills:
+
+### For Curiosities
+
+✅ **DO find:**
+- Substantial questions (30-200 chars)
+- Questions with context
+- Speculative ideas worth developing
+- Knowledge gaps with explanations
+
+❌ **DON'T find:**
+- Section headers ("What is X?")
+- Single words or fragments
+- Questions already answered
+
+See: [[mind/skills/curiosity|Curiosity Skill]]
+
+### For Dissonances
+
+✅ **DO find:**
+- Rule conflicts ("always X" vs "never X")
+- Definition conflicts (same term, different meanings)
+- Workflow conflicts (different first steps)
+- Priority conflicts (critical vs optional)
+
+❌ **DON'T find:**
+- Word-level opposites without context
+- Different valid approaches
+
+See: [[mind/skills/dissonance|Dissonance Skill]]
+
+---
+
+## The Daydreamer Loop
+
+### Step 1: Select Task
+
+Randomly select next task based on weights:
+```javascript
+const task = selectTask() // scan_dissonances, scan_curiosities, etc.
+```
+
+### Step 2: Execute Task
+
+#### Scan Dissonances
+
+1. Read sample of files (30-50)
+2. Check file pairs for contextual contradictions:
+   - Rule conflicts
+   - Definition conflicts
+   - Workflow conflicts
+   - Priority conflicts
+3. Only save if both sides have substance (>50 chars)
+4. Write to `mind/dissonance/YYYY-MM-DD-[title].md`
+
+#### Scan Curiosities
+
+1. Read sample of files (30)
+2. Look for:
+   - Substantial questions with context
+   - Speculative statements
+   - Knowledge gaps (TODO, future work, uncertainty)
+   - Incomplete documentation
+3. Only save if substantial (30+ chars) with context
+4. Write to `mind/curiosities/YYYY-MM-DD-[title].md`
+
+### Step 3: Update State
+
+- Increment task counter
+- Save tracked pairs (avoid duplicates)
+- Log completion
+
+### Step 4: Rest
+
+- Calculate next interval (~15 min ± variance)
+- Sleep until next task
+
+---
+
+## Where Results Go
+
+### Dissonances → `mind/dissonance/`
+
+Individual files with:
+- Status (Active/Resolved)
+- Files in conflict
+- Actual quotes showing contradiction
+- Why it matters
+- Resolution options
+
+### Curiosities → `mind/curiosities/`
+
+Individual files with:
+- Status (Open)
+- Source file(s)
+- The question
+- Context
+- Why explore this
+- Next steps
+
+### State → `mind/.daydreamer/`
+
+- `state.json` — Task history and stats
+- `dissonance-pairs.json` — Tracked file pairs
+- `curiosity-pairs.json` — Tracked file pairs
+- `mind-map.json` — Latest mind map
+
+---
+
+## Managing the Daydreamer
+
+### Check Status
+
+```bash
+~/projects/bizing/scripts/daydreamer-daemon.sh status
+```
+
+### View Logs
+
+```bash
+~/projects/bizing/scripts/daydreamer-daemon.sh log
+tail -f /tmp/bizing-daydreamer.log
+```
+
+### Restart
+
+```bash
+~/projects/bizing/scripts/daydreamer-daemon.sh restart
+```
+
+### Stop
+
+```bash
+~/projects/bizing/scripts/daydreamer-daemon.sh stop
+```
 
 ---
 
@@ -34,215 +187,62 @@ The **Dreamer** is an autonomous agent that runs in a **loop**:
 | Contradiction | Curiosity |
 |--------------|-----------|
 | File A says X, File B says Y (opposite) | A question worth exploring |
-| → DISSONANCE.md | → CURIOSITIES.md |
+| → `mind/dissonance/` | → `mind/curiosities/` |
 | Must explain HOW they contradict | Must explain WHY it's interesting |
+| Real conflict | Gap in knowledge |
 
----
+### Real vs False Dissonance
 
-## The Dreamer Loop
+**Real:** "Always deploy Fridays" vs "Never deploy Fridays"
 
-### Step 1: Read Existing
+**False:** File A uses "is", File B uses "is not" (word-level only)
 
-The Dreamer reads:
-- `mind/DISSONANCE.md` — Existing contradictions
-- `mind/CURIOSITIES.md` — Existing questions
+### Substantial vs Fragment
 
-### Step 2: Ask Ollama (with Serendipity)
+**Substantial:** "How might Bizing's approach to personalization differ from traditional AI?"
 
-Ollama (llama3.1:8b) scans files looking for:
-
-**Contradictions:**
-- File A says X
-- File B says Y (opposite)
-- Must explain the contradiction
-- Must suggest resolution
-
-**Curiosities:**
-- Questions worth exploring
-- Why they're interesting
-- Where they came from
-
-**Serendipity:**
-- Randomly selects 5 files to focus on
-- Adds variety to scans
-- Prevents rigid patterns
-
-### Step 3: Add Unique Entries
-
-**Rules:**
-- Check if already exists before adding
-- Use wiki links: `[[path/to/file]]`
-- Use #tags: `#dissonance #curiosity`
-- Natural language
-
-### Step 4: Update MAP.md
-
-Adds links to `mind/MAP.md`:
-```markdown
-## 🧠 Mind Health
-
-→ [[mind/DISSONANCE|Cognitive Dissonance]]
-→ [[mind/CURIOSITIES|Curiosities]]
-```
-
-### Step 5: Create Session Log
-
-- Creates `memory/sessions/YEAR-MONTH-DAY-dreamer.md`
-- NOT RAM (RAM is for active context)
-
----
-
-## Resolving Contradictions
-
-When a contradiction is resolved:
-
-1. **Update source files** — Add resolution comment to both files
-2. **Delete from DISSONANCE.md** — Remove the contradiction
-
-**Resolution comment format:**
-```markdown
-> **RESOLVED CONTRADICTION** (YYYY-MM-DD):
-> Explanation of how they contradicted
-> Resolution applied
-```
-
----
-
-## Running the Dreamer
-
-### Automated (Cron)
-
-Every 15 minutes:
-```bash
-# Cron runs automatically every 15 mins
-node scripts/dreamer.mjs
-```
-
-### Manual
-
-```bash
-cd ~/projects/bizing
-node scripts/dreamer.mjs
-```
-
----
-
-## File Formats
-
-### DISSONANCE.md
-
-```markdown
-# Cognitive Dissonance
-
-> Real conflicts where different files say different things. #dissonance #conflict
-
----
-
-## What Is This File?
-
-**COGNITIVE DISSONADION** = when File A and File B **contradict** each other.
-
-When found, document the contradiction with:
-- What each file says
-- How they contradict
-- How to resolve
-
----
-
-## Active Contradictions
-
-### API vs SDK
-
-**[[research/findings/api-first-design]] says:**
-> "API-first design is the foundation of Bizing"
-
-**[[research/FEATURE_SPACE]] says:**
-> "SDK embedding is the primary interaction model"
-
-**The Contradiction:** One file prioritizes API design, the other prioritizes SDK embedding. They conflict on what Bizing's core interaction model should be.
-
-**Resolution:** TBD
-
-```
-
-### CURIOSITIES.md
-
-```markdown
-# Curiosities
-
-> Questions worth exploring. #curiosity #questions
-
----
-
-## Questions
-
-- **What is the optimal chunk size?**
-
-  Source: [[apps/api/src/services/mind-embeddings]]
-  Why: Understanding limits helps optimize performance
-
-```
+**Fragment:** "What is this?" (just a heading)
 
 ---
 
 ## Example Output
 
-```bash
-$ node scripts/dreamer.mjs
-🌀 Dreamer Loop...
+```
+🌀 Daydreamer Loop...
 
-📖 Scanned 115 files
-📖 Read 2 existing contradictions
-📖 Read 5 existing curiosities
+📖 Scanned 131 files
+📖 Tracked 3 file pairs
+📖 Read 0 contradictions, 13 curiosities
 
-🎯 Found 2 NEW contradictions
-  🔥 API vs SDK: api-first-design vs feature-space
-  🔥 Payment Timing: business-model vs purpose
+🎯 Found 0 NEW contradictions
+🎯 Found 0 NEW curiosities
+✅ No new found
 
-🎯 Found 1 NEW curiosity
-  ❓ What is optimal chunk size?
+✨ Daydream complete!
 
-✅ Updated DISSONANCE.md with 2 contradiction(s)
-✅ Updated CURIOSITIES.md with 1 curiosity
-
-✨ Dreamer complete!
+⏳ Next daydream at 10:33:30 PM (16m)
 ```
 
 ---
 
 ## Integration with Other Skills
 
-### Editing Files
-Follow [[mind/skills/obsidian/editing-files]]:
-- Wiki links: `[[path/to/file]]`
-- Tags: `#topic #keyword`
-- Consistent formatting
-
-### Templater
-Use [[mind/skills/obsidian/templater]]:
-- Templates for new entries
-- Auto-formatting
-
-### Dataview
-Query [[mind/skills/obsidian/dataview]]:
-- List all contradictions: `TABLE WHERE file = "DISSONANCE.md"`
-- List all curiosities: `TABLE WHERE file = "CURIOSITIES.md"`
+- **Finds:** [[mind/skills/curiosity|Curiosities]] — Questions worth exploring
+- **Finds:** [[mind/skills/dissonance|Dissonances]] — Contradictions to resolve
+- **Creates:** [[mind/skills/evolution|Evolution entries]] — Logs major changes
+- **Updates:** [[mind/skills/mapping|MAP.md]] — Mind structure
+- **Does:** [[mind/skills/mindsync|MindSync]] — 10% of the time
 
 ---
 
 ## Related Skills
 
-- [[mind/skills/evolution/Evolution]] — Major events (not routine)
-- [[mind/skills/obsidian/editing-files]] — File formatting
-- [[mind/skills/obsidian/templater]] — Templates
-- [[mind/skills/obsidian/dataview]] — Queries
-- [[mind/skills/mapping/Mapping]] — MAP updates
-- [[mind/skills/memory/Memory]] — Session logging
-- [[mind/skills/ram/Ram]] — Working memory
-- [[mind/skills/mindsync/Mindsync]] — Mind updates
-- [[mind/DISSONANCE]] — Where contradictions go
-- [[mind/CURIOSITIES]] — Where questions go
+- [[mind/skills/curiosity|Curiosity Skill]] — Quality standards for questions
+- [[mind/skills/dissonance|Dissonance Skill]] — Quality standards for contradictions
+- [[mind/skills/evolution|Evolution Skill]] — Recording major changes
+- [[mind/skills/mapping|Mapping Skill]] — Maintaining mind structure
+- [[mind/skills/mindsync|Mindsync Skill]] — Full mind synchronization
 
 ---
 
-*Dream: Scan, find, explain, resolve.*
+*The Daydreamer never sleeps, only rests between dreams.*
