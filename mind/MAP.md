@@ -10,114 +10,167 @@ tags:
 
 _Complete index of the Bizing mind. Updated by the Daydreamer._
 
-**→ [[mind/INDEX|Back to INDEX]]**
+**→ [[mind/INDEX|Back to INDEX]]** — Start here for daily context
 
 ---
 
 ## 🧠 Mind Health
 
-**→ [[mind/dissonance/|Dissonances]]** — 15 active #dissonance
-**→ [[mind/curiosities/|Curiosities]]** — 18 open #curiosity  
-**→ [[mind/insights/|Insights]]** — 0 patterns #insight
+**→ [[mind/dissonance/|Cognitive Dissonance]]** — 15 active tensions #dissonance
+**→ [[mind/curiosities/|Curiosities]]** — 18 open questions #curiosity
+**→ [[mind/insights/|Insights]]** — 0 active patterns #insight
 
 ---
 
-## 📊 Overview
+## 📊 Mind Overview
 
-**Total:** 164 files | **Updated:** 2026-02-16
+**Total Files:** 164
+**Last Updated:** 2026-02-16 by Daydreamer
 
 ---
 
-## 🧬 Identity
+## 🧬 Identity — Who Bizing Is
 
 **→ [[identity/Bizing AI|Bizing AI]]**
 **→ [[identity/Bizing|Bizing]]**
-**→ [[identity/consciousness|consciousness]]**
-**→ [[identity/essence|essence]]**
-**→ [[identity/evolution|evolution]]**
-**→ [[identity/purpose|purpose]]**
-**→ [[identity/values|values]]**
+**→ [[identity/consciousness|Consciousness]]**
+**→ [[identity/essence|Essence]]**
+**→ [[identity/evolution|Evolution]]**
+**→ [[identity/purpose|Purpose]]**
+**→ [[identity/values|Values]]**
 
-## 📚 Knowledge
+## 📚 Knowledge — What Bizing Knows
 
-**→ [[knowledge/api/index|index]]**
-**→ [[knowledge/domain/business-model|business model]]**
-**→ [[knowledge/domain/index|index]]**
-**→ [[knowledge/domain/landing-pages|landing pages]]**
-**→ [[knowledge/domain/startup-builder|startup builder]]**
-**→ [[knowledge/domain/why-agents-love-bizing|why agents love bizing]]**
-**→ [[knowledge/tech/index|index]]**
+**→ [[knowledge/api/index|Index]]**
+**→ [[knowledge/domain/business-model|Business Model]]**
+**→ [[knowledge/domain/index|Index]]**
+**→ [[knowledge/domain/landing-pages|Landing Pages]]**
+**→ [[knowledge/domain/startup-builder|Startup Builder]]**
+**→ [[knowledge/domain/why-agents-love-bizing|Why Agents Love Bizing]]**
+**→ [[knowledge/tech/index|Index]]**
 
-## 🛠️ Skills
+## 🛠️ Skills — How Bizing Works
 
 **→ [[skills/Skills|Skills]]**
 **→ [[skills/Teamsync|Teamsync]]**
-**→ [[skills/analysis/index|index]]**
+**→ [[skills/analysis/index|Index]]**
 **→ [[skills/briefing/Briefing|Briefing]]**
 **→ [[skills/briefing/audio-briefing/AudioBriefing|AudioBriefing]]**
 **→ [[skills/briefing/text-briefing/TextBriefing|TextBriefing]]**
-**→ [[skills/code/index|index]]**
-**→ [[skills/code/link-everything|link everything]]**
+**→ [[skills/code/index|Index]]**
+**→ [[skills/code/link-everything|Link Everything]]**
+**→ [[skills/codesync/CodeSync|CodeSync]]**
+**→ [[skills/consolidator/Consolidator|Consolidator]]**
 
-*...and 27 more*
+*...and 25 more*
 
-## 🔬 Research
+## 🔬 Research — External Knowledge
 
 **→ [[research/AI_SUPPORT_CRM|AI_SUPPORT_CRM]]**
 **→ [[research/BUSINESS_TYPES|BUSINESS_TYPES]]**
 **→ [[research/FEATURE_SPACE|FEATURE_SPACE]]**
 **→ [[research/MARKET_RESEARCH|MARKET_RESEARCH]]**
 **→ [[research/MARKET_RESEARCH_EXTENDED|MARKET_RESEARCH_EXTENDED]]**
-**→ [[research/backlog|backlog]]**
-**→ [[research/briefings/event-driven-architecture-audio-tts|event driven architecture audio tts]]**
-**→ [[research/briefings/event-driven-architecture-audio|event driven architecture audio]]**
+**→ [[research/backlog|Backlog]]**
+**→ [[research/briefings/event-driven-architecture-audio-tts|Event Driven Architecture Audio Tts]]**
+**→ [[research/briefings/event-driven-architecture-audio|Event Driven Architecture Audio]]**
+**→ [[research/findings/api-first-design|Api First Design]]**
+**→ [[research/findings/booking-domain-model|Booking Domain Model]]**
 
-*...and 6 more*
+*...and 4 more*
 
-## 📝 Memory
+## 📝 Memory — What Bizing Remembers
 
 **→ [[memory/2026-02-15|2026 02 15]]**
 **→ [[memory/RAM|RAM]]**
-**→ [[memory/index|index]]**
-**→ [[memory/sessions/2026-02-11-admin-docs-tests|2026 02 11 admin docs tests]]**
-**→ [[memory/sessions/2026-02-11-admin-fixes|2026 02 11 admin fixes]]**
-**→ [[memory/sessions/2026-02-11-bizing-ai-chat|2026 02 11 bizing ai chat]]**
-**→ [[memory/sessions/2026-02-11-codesync-mindsync|2026 02 11 codesync mindsync]]**
-**→ [[memory/sessions/2026-02-11-dashboard-fixes|2026 02 11 dashboard fixes]]**
+**→ [[memory/index|Index]]**
+**→ [[memory/sessions/2026-02-11-admin-docs-tests|2026 02 11 Admin Docs Tests]]**
+**→ [[memory/sessions/2026-02-11-admin-fixes|2026 02 11 Admin Fixes]]**
+**→ [[memory/sessions/2026-02-11-bizing-ai-chat|2026 02 11 Bizing Ai Chat]]**
+**→ [[memory/sessions/2026-02-11-codesync-mindsync|2026 02 11 Codesync Mindsync]]**
+**→ [[memory/sessions/2026-02-11-dashboard-fixes|2026 02 11 Dashboard Fixes]]**
+**→ [[memory/sessions/2026-02-11-kimi-debug|2026 02 11 Kimi Debug]]**
+**→ [[memory/sessions/2026-02-11-kimi-integration|2026 02 11 Kimi Integration]]**
 
-*...and 43 more*
+*...and 41 more*
 
-## 🤝 Symbiosis
+## 🏛️ Evolution — How Bizing Changes
 
-**→ [[symbiosis/backlog|backlog]]**
-**→ [[symbiosis/feedback|feedback]]**
+**→ [[evolution/2026-02-13|2026 02 13]]**
 
-## ❓ Curiosities
+## 🤝 Symbiosis — Human + AI Collaboration
 
-**→ [[curiosities/2026-02-15-context-specific-business-models|2026 02 15 context specific business models]]**
-**→ [[curiosities/2026-02-15-living-entity-personalization|2026 02 15 living entity personalization]]**
-**→ [[curiosities/2026-02-15-novel-business-models|2026 02 15 novel business models]]**
-**→ [[curiosities/2026-02-15-nuanced-advertising|2026 02 15 nuanced advertising]]**
-**→ [[curiosities/2026-02-15-nuanced-business-recommendations|2026 02 15 nuanced business recommendations]]**
-**→ [[curiosities/2026-02-16-bizing-believes-ai-agents-should-use-bizing-better|2026 02 16 bizing believes ai agents should use bizing better]]**
-**→ [[curiosities/2026-02-16-can-bizing-s-ability-to-understand-and-process-inf|2026 02 16 can bizing s ability to understand and process inf]]**
-**→ [[curiosities/2026-02-16-consciousness-current-state-does-bizing-understand|2026 02 16 consciousness current state does bizing understand]]**
+**→ [[symbiosis/backlog|Backlog]]**
+**→ [[symbiosis/feedback|Feedback]]**
 
-*...and 10 more*
+## 🗂️ Operations — How Things Run
 
-## 🔥 Dissonance
+**→ [[operations/RULES|RULES]]**
+**→ [[operations/WORKFLOW|WORKFLOW]]**
 
-**→ [[dissonance/2026-02-16-autonomous-agency-vs-guest-like-deference-in-decis|2026 02 16 autonomous agency vs guest like deference in decis]]**
-**→ [[dissonance/2026-02-16-competing-memory-philosophies-daily-files-instruct|2026 02 16 competing memory philosophies daily files instruct]]**
-**→ [[dissonance/2026-02-16-competing-priorities-in-memory-capture-systematic-|2026 02 16 competing priorities in memory capture systematic ]]**
-**→ [[dissonance/2026-02-16-competing-priorities-on-memory-capture-curate-sele|2026 02 16 competing priorities on memory capture curate sele]]**
-**→ [[dissonance/2026-02-16-competing-priorities-on-what-memory-to-capture-wit|2026 02 16 competing priorities on what memory to capture wit]]**
-**→ [[dissonance/2026-02-16-conflicting-guidance-on-when-to-load-memory-md-cre|2026 02 16 conflicting guidance on when to load memory md cre]]**
-**→ [[dissonance/2026-02-16-conflicting-instructions-on-when-to-load-memory-md|2026 02 16 conflicting instructions on when to load memory md]]**
-**→ [[dissonance/2026-02-16-contradictory-philosophies-on-personality-and-dire|2026 02 16 contradictory philosophies on personality and dire]]**
+## ❓ Curiosities — Open Questions
 
-*...and 7 more*
+**→ [[curiosities/2026-02-15-context-specific-business-models|2026 02 15 Context Specific Business Models]]**
+**→ [[curiosities/2026-02-15-living-entity-personalization|2026 02 15 Living Entity Personalization]]**
+**→ [[curiosities/2026-02-15-novel-business-models|2026 02 15 Novel Business Models]]**
+**→ [[curiosities/2026-02-15-nuanced-advertising|2026 02 15 Nuanced Advertising]]**
+**→ [[curiosities/2026-02-15-nuanced-business-recommendations|2026 02 15 Nuanced Business Recommendations]]**
+**→ [[curiosities/2026-02-16-bizing-believes-ai-agents-should-use-bizing-better|2026 02 16 Bizing Believes Ai Agents Should Use Bizing Better]]**
+**→ [[curiosities/2026-02-16-can-bizing-s-ability-to-understand-and-process-inf|2026 02 16 Can Bizing S Ability To Understand And Process Inf]]**
+**→ [[curiosities/2026-02-16-consciousness-current-state-does-bizing-understand|2026 02 16 Consciousness Current State Does Bizing Understand]]**
+**→ [[curiosities/2026-02-16-how-does-bizing-s-custom-memory-system-daily-notes|2026 02 16 How Does Bizing S Custom Memory System Daily Notes]]**
+**→ [[curiosities/2026-02-16-how-might-bizing-s-ability-to-think-and-evolve-lea|2026 02 16 How Might Bizing S Ability To Think And Evolve Lea]]**
+
+*...and 8 more*
+
+## 🔥 Dissonance — Active Tensions
+
+**→ [[dissonance/2026-02-16-autonomous-agency-vs-guest-like-deference-in-decis|2026 02 16 Autonomous Agency Vs Guest Like Deference In Decis]]**
+**→ [[dissonance/2026-02-16-competing-memory-philosophies-daily-files-instruct|2026 02 16 Competing Memory Philosophies Daily Files Instruct]]**
+**→ [[dissonance/2026-02-16-competing-priorities-in-memory-capture-systematic-|2026 02 16 Competing Priorities In Memory Capture Systematic ]]**
+**→ [[dissonance/2026-02-16-competing-priorities-on-memory-capture-curate-sele|2026 02 16 Competing Priorities On Memory Capture Curate Sele]]**
+**→ [[dissonance/2026-02-16-competing-priorities-on-what-memory-to-capture-wit|2026 02 16 Competing Priorities On What Memory To Capture Wit]]**
+**→ [[dissonance/2026-02-16-conflicting-guidance-on-when-to-load-memory-md-cre|2026 02 16 Conflicting Guidance On When To Load Memory Md Cre]]**
+**→ [[dissonance/2026-02-16-conflicting-instructions-on-when-to-load-memory-md|2026 02 16 Conflicting Instructions On When To Load Memory Md]]**
+**→ [[dissonance/2026-02-16-contradictory-philosophies-on-personality-and-dire|2026 02 16 Contradictory Philosophies On Personality And Dire]]**
+**→ [[dissonance/2026-02-16-directive-to-delete-birth-certificate-conflicts-wi|2026 02 16 Directive To Delete Birth Certificate Conflicts Wi]]**
+**→ [[dissonance/2026-02-16-index-md-defines-strict-limits-on-ram-content-to-m|2026 02 16 Index Md Defines Strict Limits On Ram Content To M]]**
+
+*...and 5 more*
+
+## 📁 Root
+
+**→ [[AGENTS|AGENTS]]**
+**→ [[HEARTBEAT|HEARTBEAT]]**
+**→ [[IDENTITY|IDENTITY]]**
+**→ [[INDEX|INDEX]]**
+**→ [[MAP|MAP]]**
+
+## 📁 Dream-journal
+
+**→ [[dream-journal/2026-02-16-12-39 PM|2026-02-16-12-39 PM]]**
+
+## 📁 Workspace
+
+**→ [[workspace/feature-space|feature-space]]**
 
 ---
 
-_Mapped by the Daydreamer. Updates automatically._
+## 🔗 Quick Navigation
+
+**By Purpose:**
+- **Start Here:** [[mind/INDEX]]
+- **Who Am I:** [[mind/identity/essence]]
+- **How I Work:** [[mind/skills]]
+- **What I Remember:** [[mind/memory]]
+- **Open Questions:** [[mind/curiosities]]
+
+**By Activity:**
+- **Daily Standup:** Check [[mind/INDEX]]
+- **Learning:** Review [[mind/symbiosis/feedback]]
+- **Research:** Explore [[mind/research]]
+- **Building:** Follow [[mind/skills]]
+
+---
+
+_This map is maintained by the Daydreamer. It updates automatically as the mind grows._
