@@ -172,85 +172,185 @@ function selectTask() {
 // ========== TASK IMPLEMENTATIONS ==========
 
 async function task_scanDissonances() {
-  // 10% chance to use main LLM, 90% use Ollama
-  if (Math.random() < 0.1) {
-    log('   🎲 Using main LLM (kimi-coding/k2p5) for deep analysis (10% chance)');
-    return await task_scanDissonancesWithLLM();
-  }
-  
-  log('🔥 Scanning for contradictions with Ollama (llama3.1:8b)...');
+  log('🔥 Scanning for contradictions with Kimi (kimi-coding/k2p5)...');
   
   const { readMindFiles } = await import('./dreamer-lib.mjs');
   const files = readMindFiles(MIND_DIR);
   
   // Sample files for analysis
-  const sampleFiles = files.slice(0, 10);
-  const fileContexts = sampleFiles.map(f => `FILE: ${f.path}\nCONTENT: ${f.content.substring(0, 800)}\n---`).join('\n');
+  const sampleFiles = files.slice(0, 15);
+  const fileContexts = sampleFiles.map(f => `FILE: ${f.path}\nCONTENT: ${f.content.substring(0, 1000)}\n---`).join('\n');
   
-  const prompt = `Analyze these files and find REAL contradictions (where files say opposite things about the same topic):
+  const prompt = `Analyze these files and find REAL contradictions or tensions (where files say opposite things about the same topic, or where there are conflicting approaches/philosophies):
 
 ${fileContexts}
 
+Look for:
+1. Direct contradictions (File A says X, File B says not X)
+2. Conflicting approaches (File A recommends Y, File B recommends incompatible Z)
+3. Unresolved tensions (competing priorities, unclear trade-offs)
+
 For each contradiction found, output:
-CONTRADICTION: <brief description>
+DISSONANCE: <brief description of the tension>
 FILE_A: <path>
-QUOTE_A: <what file A says>
-FILE_B: <path>  
-QUOTE_B: <what file B says>
-RESOLUTION: <suggested resolution>
+QUOTE_A: <exact quote from file A>
+FILE_B: <path>
+QUOTE_B: <exact quote from file B>
+QUESTION: <the question this raises>
 ---
 
-Or output "NONE" if no contradictions found.`;
+Or output "NONE" if no meaningful contradictions found.`;
 
-  const response = askOllama(prompt);
+  const response = await askKimi(prompt, 2500);
   
   if (!response || response.toUpperCase().includes('NONE')) {
-    log('   No contradictions found by Ollama');
+    log('   No contradictions found by Kimi');
     return { newCount: 0 };
   }
   
-  // Parse response and create files (simplified for now)
-  log('   Ollama analysis complete');
-  return { newCount: 0 };
+  // Parse and create dissonance files
+  const dissonances = parseDissonances(response);
+  const dissonanceDir = join(MIND_DIR, 'dissonance');
+  await mkdir(dissonanceDir, { recursive: true });
+  
+  const date = new Date().toISOString().split('T')[0];
+  let created = 0;
+  
+  for (const d of dissonances) {
+    const filename = `${date}-${sanitizeFilename(d.title)}.md`;
+    const filepath = join(dissonanceDir, filename);
+    
+    if (existsSync(filepath)) continue;
+    
+    const content = `# ${d.title}
+
+**Status:** Active  
+**Created:** ${date}  
+**Priority:** Medium
+
+## The Tension
+
+${d.description}
+
+## Sources
+
+**[[${d.fileA}]]:**
+> ${d.quoteA}
+
+**[[${d.fileB}]]:**
+> ${d.quoteB}
+
+## The Question
+
+${d.question}
+
+## Possible Resolutions
+
+- [ ] Resolution not yet explored
+
+## Related
+
+- [[${d.fileA}]]
+- [[${d.fileB}]]
+
+## Tags
+
+#dissonance #tension #unresolved
+`;
+    
+    await writeFile(filepath, content);
+    created++;
+    log(`   Created: ${filename}`);
+  }
+  
+  log(`   Kimi found ${dissonances.length} dissonances, created ${created} new files`);
+  return { newCount: created, dissonances };
 }
 
 async function task_scanCuriosities() {
-  // 10% chance to use main LLM, 90% use Ollama
-  if (Math.random() < 0.1) {
-    log('   🎲 Using main LLM (kimi-coding/k2p5) for deep analysis (10% chance)');
-    return await task_scanCuriositiesWithLLM();
-  }
-  
-  log('❓ Scanning for curiosities with Ollama (llama3.1:8b)...');
+  log('❓ Scanning for curiosities with Kimi (kimi-coding/k2p5)...');
   
   const { readMindFiles } = await import('./dreamer-lib.mjs');
   const files = readMindFiles(MIND_DIR);
   
   // Sample files for analysis
-  const sampleFiles = files.slice(0, 10);
-  const fileContexts = sampleFiles.map(f => `FILE: ${f.path}\nCONTENT: ${f.content.substring(0, 800)}\n---`).join('\n');
+  const sampleFiles = files.slice(0, 15);
+  const fileContexts = sampleFiles.map(f => `FILE: ${f.path}\nCONTENT: ${f.content.substring(0, 1000)}\n---`).join('\n');
   
-  const prompt = `Analyze these files and find interesting QUESTIONS worth exploring:
+  const prompt = `Analyze these files and find interesting QUESTIONS worth exploring - gaps in knowledge, unexplored implications, or things that seem important but aren't fully understood:
 
 ${fileContexts}
 
-For each question found, output:
-QUESTION: <substantial question>
+Look for:
+1. Knowledge gaps (mentioned but not explained)
+2. Unexplored implications (if X is true, what does that mean for Y?)
+3. Missing connections (how does A relate to B?)
+4. Worthwhile questions that would deepen understanding
+
+For each curiosity found, output:
+CURIOSITY: <clear, substantial question>
 SOURCE: <file path>
-WHY: <why this is worth exploring>
+CONTEXT: <brief context from the file>
+WHY_IT_MATTERS: <why exploring this would be valuable>
 ---
 
-Or output "NONE" if no questions found.`;
+Or output "NONE" if no meaningful curiosities found.`;
 
-  const response = askOllama(prompt);
+  const response = await askKimi(prompt, 2500);
   
   if (!response || response.toUpperCase().includes('NONE')) {
-    log('   No curiosities found by Ollama');
+    log('   No curiosities found by Kimi');
     return { newCount: 0 };
   }
   
-  log('   Ollama analysis complete');
-  return { newCount: 0 };
+  // Parse and create curiosity files
+  const curiosities = parseCuriosities(response);
+  const curiositiesDir = join(MIND_DIR, 'curiosities');
+  await mkdir(curiositiesDir, { recursive: true });
+  
+  const date = new Date().toISOString().split('T')[0];
+  let created = 0;
+  
+  for (const c of curiosities) {
+    const filename = `${date}-${sanitizeFilename(c.question)}.md`;
+    const filepath = join(curiositiesDir, filename);
+    
+    if (existsSync(filepath)) continue;
+    
+    const content = `# ${c.question}
+
+**Status:** Open  
+**Created:** ${date}  
+**Priority:** Medium
+
+## Context
+
+${c.context}
+
+## Source
+
+[[${c.source}]]
+
+## Why This Matters
+
+${c.whyItMatters}
+
+## Notes
+
+*Add findings as they are discovered*
+
+## Tags
+
+#curiosity #question #open
+`;
+    
+    await writeFile(filepath, content);
+    created++;
+    log(`   Created: ${filename}`);
+  }
+  
+  log(`   Kimi found ${curiosities.length} curiosities, created ${created} new files`);
+  return { newCount: created, curiosities };
 }
 
 async function task_mapMind() {
@@ -770,6 +870,79 @@ function parseResearchTopics(response) {
   }
   
   return topics;
+}
+
+function parseDissonances(response) {
+  const dissonances = [];
+  
+  // Split by dissonance indicators
+  const sections = response.split(/\n(?=DISSONANCE:|Dissonance:)/i).filter(s => s.trim());
+  
+  for (const section of sections) {
+    // Skip if no file references
+    if (!section.match(/FILE_A/i)) continue;
+    
+    // Extract title/description
+    let titleMatch = section.match(/DISSONANCE:\s*["']?([^\n"]+)["']?/i);
+    
+    // Extract file paths and quotes
+    let fileAMatch = section.match(/FILE_A:\s*([^\n]+)/i);
+    let quoteAMatch = section.match(/QUOTE_A:\s*([^]+?)(?=FILE_B|FILE B|$)/is);
+    let fileBMatch = section.match(/FILE_B:\s*([^\n]+)/i);
+    let quoteBMatch = section.match(/QUOTE_B:\s*([^]+?)(?=QUESTION|RESOLUTION|$)/is);
+    let questionMatch = section.match(/QUESTION:\s*([^\n]+)/i);
+    
+    if (titleMatch && fileAMatch && fileBMatch) {
+      const title = titleMatch[1].trim();
+      if (title.length < 10) continue;
+      
+      dissonances.push({
+        title: title,
+        description: title,
+        fileA: fileAMatch[1].trim(),
+        quoteA: quoteAMatch?.[1]?.trim() || 'See source file',
+        fileB: fileBMatch[1].trim(),
+        quoteB: quoteBMatch?.[1]?.trim() || 'See source file',
+        question: questionMatch?.[1]?.trim() || 'What is the resolution?'
+      });
+    }
+  }
+  
+  return dissonances;
+}
+
+function parseCuriosities(response) {
+  const curiosities = [];
+  
+  // Split by curiosity indicators
+  const sections = response.split(/\n(?=CURIOSITY:|Curiosity:)/i).filter(s => s.trim());
+  
+  for (const section of sections) {
+    // Skip if no source
+    if (!section.match(/SOURCE:/i)) continue;
+    
+    // Extract question
+    let questionMatch = section.match(/CURIOSITY:\s*["']?([^\n"]+)["']?/i);
+    
+    // Extract source, context, why
+    let sourceMatch = section.match(/SOURCE:\s*([^\n]+)/i);
+    let contextMatch = section.match(/CONTEXT:\s*([^]+?)(?=WHY_IT_MATTERS|WHY IT MATTERS|WHY:|$)/is);
+    let whyMatch = section.match(/(?:WHY_IT_MATTERS|WHY IT MATTERS|WHY):\s*([^]+?)(?=---|$)/is);
+    
+    if (questionMatch && sourceMatch) {
+      const question = questionMatch[1].trim();
+      if (question.length < 15) continue; // Skip short/fragment questions
+      
+      curiosities.push({
+        question: question,
+        source: sourceMatch[1].trim(),
+        context: contextMatch?.[1]?.trim() || 'See source file',
+        whyItMatters: whyMatch?.[1]?.trim() || 'Worth exploring to deepen understanding'
+      });
+    }
+  }
+  
+  return curiosities;
 }
 
 function sanitizeFilename(str) {
