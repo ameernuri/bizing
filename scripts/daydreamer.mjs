@@ -52,40 +52,43 @@ async function askMainLLM(prompt, maxTokens = 1500) {
   }
 }
 
-// Kimi LLM function for research tasks
+// Kimi LLM function via Perplexity API (since local gateway doesn't support chat completions)
 async function askKimi(prompt, maxTokens = 2000) {
   try {
-    // Try to use the gateway API first
-    const gatewayUrl = process.env.OPENCLAW_GATEWAY_URL || 'http://127.0.0.1:6130';
-    const gatewayToken = process.env.OPENCLAW_GATEWAY_TOKEN;
-    
-    if (gatewayToken) {
-      const response = await fetch(`${gatewayUrl}/v1/chat/completions`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${gatewayToken}`
-        },
-        body: JSON.stringify({
-          model: 'kimi-coding/k2p5',
-          messages: [{ role: 'user', content: prompt }],
-          max_tokens: maxTokens,
-          temperature: 0.7
-        })
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        return data.choices?.[0]?.message?.content || null;
-      }
+    // Use Perplexity API as the LLM backend
+    const apiKey = process.env.PERPLEXITY_API_KEY;
+    if (!apiKey) {
+      log('   ⚠️  No PERPLEXITY_API_KEY set, cannot call LLM');
+      return null;
     }
     
-    // Fallback to Ollama if gateway not available
-    log('   ⚠️  Gateway not available, falling back to Ollama');
-    return askOllama(prompt);
+    const response = await fetch('https://api.perplexity.ai/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: 'sonar-pro',
+        messages: [
+          { role: 'system', content: 'You are a helpful assistant analyzing text for contradictions and questions.' },
+          { role: 'user', content: prompt }
+        ],
+        max_tokens: maxTokens,
+        temperature: 0.3
+      })
+    });
+    
+    if (response.ok) {
+      const data = await response.json();
+      return data.choices?.[0]?.message?.content || null;
+    } else {
+      log(`   API error: ${response.status}`);
+      return null;
+    }
   } catch (e) {
-    // Final fallback to Ollama
-    return askOllama(prompt);
+    log(`   Error: ${e.message}`);
+    return null;
   }
 }
 
