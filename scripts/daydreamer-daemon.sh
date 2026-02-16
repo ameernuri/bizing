@@ -23,13 +23,25 @@ start() {
   
   cd ~/projects/bizing || exit 1
   
-  # Note: Set these environment variables in your shell profile (e.g., ~/.zshrc):
-  # export PERPLEXITY_API_KEY="your-key-here"
-  # export OPENCLAW_GATEWAY_URL="http://127.0.0.1:6130"
-  # export OPENCLAW_GATEWAY_TOKEN="your-token-here"
+  # Source environment variables from shell profile if available
+  if [ -f "$HOME/.zshrc" ]; then
+    source "$HOME/.zshrc" 2>/dev/null || true
+  fi
+  if [ -f "$HOME/.bashrc" ]; then
+    source "$HOME/.bashrc" 2>/dev/null || true
+  fi
   
-  # Run in background with nohup
-  nohup node scripts/daydreamer.mjs > /tmp/bizing-daydreamer.log 2>&1 &
+  # Check if required env vars are set
+  if [ -z "$PERPLEXITY_API_KEY" ]; then
+    echo "⚠️  Warning: PERPLEXITY_API_KEY not set. Research and Kimi tasks will not work."
+    echo "    Add to ~/.zshrc: export PERPLEXITY_API_KEY='your-key'"
+  fi
+  
+  # Run in background with nohup, passing environment
+  env PERPLEXITY_API_KEY="$PERPLEXITY_API_KEY" \
+      OPENCLAW_GATEWAY_URL="${OPENCLAW_GATEWAY_URL:-http://127.0.0.1:6130}" \
+      OPENCLAW_GATEWAY_TOKEN="$OPENCLAW_GATEWAY_TOKEN" \
+      nohup node scripts/daydreamer.mjs > /tmp/bizing-daydreamer.log 2>&1 &
   
   PID=$!
   echo $PID > "$DAYDREAMER_PID_FILE"
