@@ -52,6 +52,43 @@ async function askMainLLM(prompt, maxTokens = 1500) {
   }
 }
 
+// Kimi LLM function for research tasks
+async function askKimi(prompt, maxTokens = 2000) {
+  try {
+    // Try to use the gateway API first
+    const gatewayUrl = process.env.OPENCLAW_GATEWAY_URL || 'http://127.0.0.1:6130';
+    const gatewayToken = process.env.OPENCLAW_GATEWAY_TOKEN;
+    
+    if (gatewayToken) {
+      const response = await fetch(`${gatewayUrl}/v1/chat/completions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${gatewayToken}`
+        },
+        body: JSON.stringify({
+          model: 'kimi-coding/k2p5',
+          messages: [{ role: 'user', content: prompt }],
+          max_tokens: maxTokens,
+          temperature: 0.7
+        })
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        return data.choices?.[0]?.message?.content || null;
+      }
+    }
+    
+    // Fallback to Ollama if gateway not available
+    log('   ⚠️  Gateway not available, falling back to Ollama');
+    return askOllama(prompt);
+  } catch (e) {
+    // Final fallback to Ollama
+    return askOllama(prompt);
+  }
+}
+
 // Daydreamer configuration
 const CONFIG = {
   // Base interval between tasks (ms) - varies with "mood"
@@ -536,11 +573,11 @@ SOURCE_FILES: <which files prompted this topic>
 
 If no quality topics can be generated from this sample, output "NONE".`;
 
-  // Call Kimi via Ollama (placeholder for actual Kimi API call)
-  log('   Calling Kimi for topic generation...');
-  const response = askOllama(prompt);
+  // Call Kimi via gateway API
+  log('   Calling Kimi (kimi-coding/k2p5) for topic generation...');
+  const response = await askKimi(prompt);
   
-  if (!response || response.toUpperCase().includes('NONE')) {
+  if (!response || response.toUpperCase().includes('NONE') || response.length < 50) {
     log('   No new research topics generated');
     return { newCount: 0 };
   }
@@ -648,18 +685,57 @@ async function task_conductResearch() {
   
   log(`   Researching: ${title}`);
   
-  // This is where Perplexity integration would go
-  // For now, mark as needing research
-  log('   (Perplexity integration placeholder - would conduct deep research)');
+  // Use web search to conduct research
+  log('   🔍 Searching for information...');
+  const searchQuery = `${title} ${description}`.substring(0, 200);
   
-  // Update topic file to mark as in-progress
-  const updatedContent = selectedTopic.content.replace(
-    'Status: Proposed',
-    'Status: In Progress'
-  );
-  await writeFile(selectedTopic.file, updatedContent);
-  
-  return { researched: 1, topic: title };
+  try {
+    // Search the web
+    const searchResults = await searchWeb(searchQuery);
+    
+    if (searchResults && searchResults.length > 0) {
+      // Generate research summary using Kimi
+      const researchPrompt = `Based on these search results about "${title}", provide a comprehensive research summary:
+
+${searchResults.map(r => `Source: ${r.title}\n${r.snippet}\n---`).join('\n')}
+
+Provide:
+1. Key findings (3-5 bullet points)
+2. Important insights
+3. How this relates to booking platforms and service businesses
+4. Recommended actions
+
+Format as markdown.`;
+
+      const researchSummary = await askKimi(researchPrompt, 1500);
+      
+      // Update topic file with research
+      const notesSection = selectedTopic.content.split('## Notes')[1] || '\n\n';
+      const updatedContent = selectedTopic.content.replace(
+        'Status: Proposed',
+        'Status: Complete'
+      ).replace(
+        /## Notes\n\n/,
+        `## Notes\n\n${researchSummary || '*Research completed - see findings below*'}\n\n### Sources\n${searchResults.map(r => `- [${r.title}](${r.url})`).join('\n')}\n\n---\n\n`
+      );
+      
+      await writeFile(selectedTopic.file, updatedContent);
+      log(`   ✓ Research completed and saved`);
+      return { researched: 1, topic: title, sources: searchResults.length };
+    } else {
+      log('   No search results found');
+      // Mark as in-progress for manual research
+      const updatedContent = selectedTopic.content.replace(
+        'Status: Proposed',
+        'Status: Needs Manual Research'
+      );
+      await writeFile(selectedTopic.file, updatedContent);
+      return { researched: 0, topic: title };
+    }
+  } catch (e) {
+    log(`   Research error: ${e.message}`);
+    return { researched: 0, topic: title, error: e.message };
+  }
 }
 
 function parseResearchTopics(response) {
@@ -683,6 +759,41 @@ function parseResearchTopics(response) {
   }
   
   return topics;
+}
+
+function sanitizeFilename(str) {
+  return str.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').substring(0, 50);
+}
+
+// Web search helper for research
+async function searchWeb(query, count = 5) {
+  try {
+    // Use Brave Search API via fetch
+    const apiKey = process.env.BRAVE_API_KEY;
+    if (!apiKey) {
+      log('   ⚠️  No BRAVE_API_KEY set, skipping web search');
+      return null;
+    }
+    
+    const response = await fetch(`https://api.search.brave.com/api/web/search?q=${encodeURIComponent(query)}&count=${count}`, {
+      headers: {
+        'X-Subscription-Token': apiKey,
+        'Accept': 'application/json'
+      }
+    });
+    
+    if (response.ok) {
+      const data = await response.json();
+      return data.web?.results?.map(r => ({
+        title: r.title,
+        url: r.url,
+        snippet: r.description
+      })) || [];
+    }
+    return null;
+  } catch (e) {
+    return null;
+  }
 }
 
 async function task_rest() {
