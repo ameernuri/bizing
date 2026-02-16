@@ -1,236 +1,123 @@
+---
+date: 2026-02-16
+tags:
+  - map
+  - index
+  - navigation
+---
+
 # 🗺️ MAP
 
-_Complete index of the Bizing mind. Every file, organized logically._
+_Complete index of the Bizing mind. Updated by the Daydreamer._
 
-**→ [[mind/INDEX|Back to INDEX]]** — Start here for daily context
+**→ [[mind/INDEX|Back to INDEX]]**
 
 ---
 
 ## 🧠 Mind Health
 
-**→ [[mind/DISSONANCE|Cognitive Dissonance]]** — 3 contradictions #dissonance
-**→ [[mind/CURIOSITIES|Curiosities]]** — 5 questions #curiosity
-
-## 🎯 Core Entry Points
-
-| File           | Purpose                                                     |
-| -------------- | ----------------------------------------------------------- |
-| [[mind/INDEX]] | 🧠 **START HERE** — Daily entry point, current focus, tasks |
-| [[README]]     | What Bizing is, the vision, quick start                     |
-| [[FRAMEWORK]]  | ⚡ **MANDATORY** — Rules for every interaction              |
+**→ [[mind/dissonance/|Dissonances]]** — 15 active #dissonance
+**→ [[mind/curiosities/|Curiosities]]** — 18 open #curiosity  
+**→ [[mind/insights/|Insights]]** — 0 patterns #insight
 
 ---
 
-## 🧬 Identity — Who We Are
+## 📊 Overview
 
-**→ [[identity/essence|Essence]]** — Core purpose, principles, entity nature  
-**→ [[identity/consciousness|Consciousness]]** — Booking, entities, relationships  
-**→ [[identity/evolution|Evolution]]** — How Bizing grows and learns  
-**→ [[identity/values|Values]]** — What we stand for
+**Total:** 164 files | **Updated:** 2026-02-16
 
 ---
 
-## 🤝 Symbiosis — Human + AI Collaboration
+## 🧬 Identity
 
-**→ [[symbiosis/index|Symbiosis Hub]]** — Our collaboration space  
-**→ [[symbiosis/standup|Standup]]** — Daily priorities (template)  
-**→ [[symbiosis/feedback|Feedback]]** — What you learned from Ameer  
-**→ [[symbiosis/backlog|Backlog]]** — All tasks
+**→ [[identity/Bizing AI|Bizing AI]]**
+**→ [[identity/Bizing|Bizing]]**
+**→ [[identity/consciousness|consciousness]]**
+**→ [[identity/essence|essence]]**
+**→ [[identity/evolution|evolution]]**
+**→ [[identity/purpose|purpose]]**
+**→ [[identity/values|values]]**
 
-**People:**
-**→ [[HUMAN]]** — About Ameer  
-**→ [[AGENT]]** — AI agent interface
+## 📚 Knowledge
 
----
+**→ [[knowledge/api/index|index]]**
+**→ [[knowledge/domain/business-model|business model]]**
+**→ [[knowledge/domain/index|index]]**
+**→ [[knowledge/domain/landing-pages|landing pages]]**
+**→ [[knowledge/domain/startup-builder|startup builder]]**
+**→ [[knowledge/domain/why-agents-love-bizing|why agents love bizing]]**
+**→ [[knowledge/tech/index|index]]**
 
-## 🎯 Goals & Status
+## 🛠️ Skills
 
-**→ [[GOALS]]** — North Star and roadmap  
-**→ [[STATUS]]** — Current system status  
-**→ [[SUMMARY]]** — Executive summary of everything
+**→ [[skills/Skills|Skills]]**
+**→ [[skills/Teamsync|Teamsync]]**
+**→ [[skills/analysis/index|index]]**
+**→ [[skills/briefing/Briefing|Briefing]]**
+**→ [[skills/briefing/audio-briefing/AudioBriefing|AudioBriefing]]**
+**→ [[skills/briefing/text-briefing/TextBriefing|TextBriefing]]**
+**→ [[skills/code/index|index]]**
+**→ [[skills/code/link-everything|link everything]]**
 
----
-
-## 📚 Knowledge — Domain & Technical
-
-### Domain Knowledge (Booking Business)
-
-**→ [[knowledge/domain/index|Domain Hub]]** — All business concepts  
-**→ [[knowledge/domain/startup-builder|Startup Builder]]** — How agents build businesses  
-**→ [[knowledge/domain/business-model|Business Model]]** — 6.9% commission, pricing  
-**→ [[knowledge/domain/landing-pages|Landing Pages]]** — Templates and flows  
-**→ [[knowledge/domain/why-agents-love-bizing|Why Agents Love Bizing]]** — Value prop
-
-### Technical Knowledge
-
-**→ [[knowledge/tech/index|Tech Hub]]** — Stack documentation  
-**→ [[knowledge/api/index|API Design]]** — Endpoints, patterns, auth
-
----
-
-## 🤖 Agents & Interfaces
-
-**→ [[agents/index|Agents Hub]]** — AI agent definitions  
-**→ [[interfaces/index|Interfaces Hub]]** — UI/UX patterns  
-**→ [[interfaces/skills|Interface Skills]]** — Component library
-
----
-
-## 🛠️ Skills — How We Work
-
-**→ [[Skills|Skills Hub]]** — Master skills directory
-
-### By Category:
-
-**→ [[skills/memory|Memory]]** — Session logging, RAM, mind updates  
-**→ [[skills/creating-files|Creating Files]]** — Complete guide to creating and updating files  
-**→ [[skills/codesync|CodeSync]]** — Quality-gated commits  
-**→ [[skills/mindsync|MindSync]]** — Mind synchronization  
-**→ [[mind/skills/ram/Ram|RAM]]** — Working memory  
-**→ [[skills/workflow/index|Workflow]]** — Session logging, kanban, brain updates  
-**→ [[skills/analysis/index|Analysis]]** — Research and decision-making  
-**→ [[skills/code/index|Code]]** — Coding patterns, link everything  
-**→ [[skills/design/index|Design]]** — UI/UX patterns
-
-### Workflow Specifics:
-
-**→ [[skills/obsidian/index|Obsidian Tools]]** — Kanban, Dataview, Templater, editing  
-**→ [[skills/obsidian/kanban|Kanban]]** — Visual task boards  
-**→ [[skills/obsidian/dataview|Dataview]]** — Query and filter files  
-**→ [[skills/obsidian/templater|Templater]]** — Auto-generate files  
-**→ [[skills/obsidian/editing-files|Editing Files]]** — Create and edit mind files  
-**→ [[skills/memory|Memory]]** — Session logging, working memory updates  
-**→ [[skills/codesync|CodeSync]]** — Quality-gated commit workflow  
-**→ [[skills/mindsync|MindSync]]** — SOFT and HARD mind updates  
-**→ [[mind/skills/ram/Ram|RAM]]** — Working memory management  
-**→ [[skills/workflow/briefing|Daily Briefing]]** — Generate TTS-optimized briefings for Telegram  
-**→ [[skills/workflow/briefing-for-11labs|11Labs Briefing]]** — Voice agent setup  
-**→ [[skills/workflow/documentation-standards|Documentation Standards]]** — ⚡ **MANDATORY** JSDoc requirements  
-**→ [[skills/workflow/dotenv-config|Dotenv Config]]** — Environment setup  
-**→ [[skills/workflow/kimi-api-keys|Kimi API Keys]]** — API key management  
-**→ [[Talking To Bizing|Talking to Bizing]]** — Conversation patterns
-
----
+*...and 27 more*
 
 ## 🔬 Research
 
-**→ [[research/index|Research Hub]]** — Research organization
+**→ [[research/AI_SUPPORT_CRM|AI_SUPPORT_CRM]]**
+**→ [[research/BUSINESS_TYPES|BUSINESS_TYPES]]**
+**→ [[research/FEATURE_SPACE|FEATURE_SPACE]]**
+**→ [[research/MARKET_RESEARCH|MARKET_RESEARCH]]**
+**→ [[research/MARKET_RESEARCH_EXTENDED|MARKET_RESEARCH_EXTENDED]]**
+**→ [[research/backlog|backlog]]**
+**→ [[research/briefings/event-driven-architecture-audio-tts|event driven architecture audio tts]]**
+**→ [[research/briefings/event-driven-architecture-audio|event driven architecture audio]]**
 
-### Active Research:
-
-**→ [[research/backlog|Research Backlog]]** — Topics to investigate
-
-### Completed Findings:
-
-**→ [[research/findings/booking-domain-model|Booking Domain Model]]** — Reservation patterns, state machines  
-**→ [[research/findings/event-driven-architecture|Event-Driven Architecture]]** — Sagas, webhooks, event sourcing  
-**→ [[research/findings/api-first-design|API-First Design]]** — OpenAPI, contract testing, versioning  
-**→ [[research/findings/merchant-of-record-stripe-fees|Merchant of Record & Stripe Fees]]** — MoR model, fee optimization strategies
-
-### Architecture Visualizations:
-
-**→ [[../canvas/architecture-overview|Architecture Overview]]** — Complete system overview  
-**→ [[../canvas/booking-domain-architecture|Booking Domain]]** — Domain model canvas  
-**→ [[../canvas/event-driven-architecture|Event-Driven]]** — Saga and events canvas  
-**→ [[../canvas/api-first-design|API-First Design]]** — API workflow canvas
-
-### Archive:
-
-**→ [[research/MARKET_RESEARCH|Market Research]]** — Original research  
-**→ [[research/MARKET_RESEARCH_EXTENDED|Extended Research]]** — Deep dive  
-**→ [[research/BUSINESS_TYPES|Business Types]]** — Booking use cases  
-**→ [[research/FEATURE_SPACE|Feature Space]]** — All possible features  
-**→ [[research/AI_SUPPORT_CRM|AI Support CRM]]** — Support automation research
-
----
-
-## 🗂️ Operations
-
-**→ [[operations/WORKFLOW|Workflow]]** — Operational processes  
-**→ [[operations/RULES|Rules]]** — Constraints and guidelines
-
----
+*...and 6 more*
 
 ## 📝 Memory
 
-**→ [[memory/index|Memory Hub]]** — Long-term memory organization  
-**→ [[memory/sessions/index|Sessions]]** — All session logs
+**→ [[memory/2026-02-15|2026 02 15]]**
+**→ [[memory/RAM|RAM]]**
+**→ [[memory/index|index]]**
+**→ [[memory/sessions/2026-02-11-admin-docs-tests|2026 02 11 admin docs tests]]**
+**→ [[memory/sessions/2026-02-11-admin-fixes|2026 02 11 admin fixes]]**
+**→ [[memory/sessions/2026-02-11-bizing-ai-chat|2026 02 11 bizing ai chat]]**
+**→ [[memory/sessions/2026-02-11-codesync-mindsync|2026 02 11 codesync mindsync]]**
+**→ [[memory/sessions/2026-02-11-dashboard-fixes|2026 02 11 dashboard fixes]]**
 
-### Recent Sessions:
+*...and 43 more*
 
-**→ [[memory/sessions/2026-02-11-bizing-ai-chat|Bizing AI Chat]]** — Today's session  
-**→ [[memory/sessions/2026-02-11-dashboard-fixes|Dashboard Fixes]]** — Schema graph fixes  
-**→ [[memory/sessions/2026-02-11-kimi-integration|Kimi Integration]]** — API setup  
-**→ [[memory/sessions/2026-02-11-kimi-debug|Kimi Debug]]** — Debugging
+## 🤝 Symbiosis
 
----
+**→ [[symbiosis/backlog|backlog]]**
+**→ [[symbiosis/feedback|feedback]]**
 
-## 🎨 Design
+## ❓ Curiosities
 
-**→ [[design/SCHEMA_DESIGN|Schema Design]]** — Database architecture  
-**→ [[design/MONOREPO_SETUP|Monorepo Setup]]** — Project structure
+**→ [[curiosities/2026-02-15-context-specific-business-models|2026 02 15 context specific business models]]**
+**→ [[curiosities/2026-02-15-living-entity-personalization|2026 02 15 living entity personalization]]**
+**→ [[curiosities/2026-02-15-novel-business-models|2026 02 15 novel business models]]**
+**→ [[curiosities/2026-02-15-nuanced-advertising|2026 02 15 nuanced advertising]]**
+**→ [[curiosities/2026-02-15-nuanced-business-recommendations|2026 02 15 nuanced business recommendations]]**
+**→ [[curiosities/2026-02-16-bizing-believes-ai-agents-should-use-bizing-better|2026 02 16 bizing believes ai agents should use bizing better]]**
+**→ [[curiosities/2026-02-16-can-bizing-s-ability-to-understand-and-process-inf|2026 02 16 can bizing s ability to understand and process inf]]**
+**→ [[curiosities/2026-02-16-consciousness-current-state-does-bizing-understand|2026 02 16 consciousness current state does bizing understand]]**
 
----
+*...and 10 more*
 
-## 🚀 Start Here (For New Projects)
+## 🔥 Dissonance
 
-**→ [[start/START|START]]** — Quick start guide  
-**→ [[start/DEVELOPMENT|Development]]** — Dev setup  
-**→ [[start/_INIT|_INIT]]** — Initialization checklist
+**→ [[dissonance/2026-02-16-autonomous-agency-vs-guest-like-deference-in-decis|2026 02 16 autonomous agency vs guest like deference in decis]]**
+**→ [[dissonance/2026-02-16-competing-memory-philosophies-daily-files-instruct|2026 02 16 competing memory philosophies daily files instruct]]**
+**→ [[dissonance/2026-02-16-competing-priorities-in-memory-capture-systematic-|2026 02 16 competing priorities in memory capture systematic ]]**
+**→ [[dissonance/2026-02-16-competing-priorities-on-memory-capture-curate-sele|2026 02 16 competing priorities on memory capture curate sele]]**
+**→ [[dissonance/2026-02-16-competing-priorities-on-what-memory-to-capture-wit|2026 02 16 competing priorities on what memory to capture wit]]**
+**→ [[dissonance/2026-02-16-conflicting-guidance-on-when-to-load-memory-md-cre|2026 02 16 conflicting guidance on when to load memory md cre]]**
+**→ [[dissonance/2026-02-16-conflicting-instructions-on-when-to-load-memory-md|2026 02 16 conflicting instructions on when to load memory md]]**
+**→ [[dissonance/2026-02-16-contradictory-philosophies-on-personality-and-dire|2026 02 16 contradictory philosophies on personality and dire]]**
 
----
-
-## 🎯 Workspace — Active Planning
-
-**→ [[workspace/feature-space|Feature Space]]** — Complete feature catalog (~165 features, prioritized)
-
----
-
-## 🏛️ Evolution & Archive
-
-**→ [[evolution/index|Evolution]]** — Change log, versions  
-**→ [[archive/DISTILLATION|Distillation]]** — Compressed learnings
-
----
-
-## 📋 Daily
-
-**→ [[daily/2026-02-11|Today]]** — Current day's notes
+*...and 7 more*
 
 ---
 
-## 📝 Templates
-
-**→ [[.templates/session-log|Session Log Template]]**  
-**→ [[.templates/decision|Decision Template]]**  
-**→ [[.templates/skill|Skill Template]]**
-
----
-
-## ⚡ Workflows
-
-**→ [[WORKFLOW]]** — How we work together  
-**→ [[skills/workflow/index|Workflow Skills]]** — Detailed workflows
-
----
-
-## 🔗 Navigation
-
-**By Type:**
-
-- **Entry Points:** [[mind/INDEX]], [[README]], [[FRAMEWORK]], [[DREAMER]]
-- **Identity:** [[identity/essence]], [[identity/consciousness]]
-- **Knowledge:** [[knowledge/domain/index]], [[knowledge/tech/index]]
-- **Skills:** [[Skills]], [[skills/workflow/index]]
-- **Memory:** [[memory/index]], [[memory/sessions/index]]
-
-**By Activity:**
-
-- **Daily Standup:** [[symbiosis/standup]] → [[mind/INDEX]]
-- **Learning:** [[symbiosis/feedback]] → [[Skills]]
-- **Research:** [[research/MARKET_RESEARCH]] → [[knowledge/domain/index]]
-- **Building:** [[start/START]] → [[knowledge/api/index]]
-
----
-
-_This map is the source of truth for mind structure. Update it when adding/removing files._
+_Mapped by the Daydreamer. Updates automatically._
