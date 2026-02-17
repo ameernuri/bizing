@@ -1,0 +1,543 @@
+{
+  "nodes": [
+    {
+      "id": "api-title",
+      "type": "text",
+      "x": -200,
+      "y": -400,
+      "width": 800,
+      "height": 80,
+      "text": "# 🚀 Bizing API Architecture\n\n**Framework:** Hono + @hono/zod-openapi | **Port:** 6129 | **Location:** `apps/api/src/server.ts`",
+      "color": "1"
+    },
+    {
+      "id": "server-core",
+      "type": "text",
+      "x": -200,
+      "y": -280,
+      "width": 350,
+      "height": 180,
+      "text": "## 🎯 Server Core\n\n**File:** `src/server.ts`\n\n**Setup:**\n- `OpenAPIHono` app instance\n- CORS middleware\n- Error handlers (500, 404)\n\n**Startup:**\n- Port 6129 (or PORT env)\n- Builds embeddings async\n- Logs ready state",
+      "color": "2"
+    },
+    {
+      "id": "health-route",
+      "type": "text",
+      "x": 200,
+      "y": -280,
+      "width": 350,
+      "height": 120,
+      "text": "## 💓 Health Check\n\n**Route:** `GET /health`\n\n**Response:**\n```json\n{\n  \"status\": \"ok\",\n  \"timestamp\": \"2026-02-16...\",\n  \"version\": \"0.1.0\"\n}\n```",
+      "color": "3"
+    },
+    {
+      "id": "auth-routes",
+      "type": "text",
+      "x": -600,
+      "y": -80,
+      "width": 350,
+      "height": 180,
+      "text": "## 🔐 Auth Routes\n\n**POST /api/v1/auth/register**\n- Creates org with UUID\n- Returns: `{id, name, email}`\n- Status: 201\n\n**POST /api/v1/auth/login**\n- Returns JWT token\n- Returns: `{token, user}`\n- User has id, email, name",
+      "color": "4"
+    },
+    {
+      "id": "booking-routes",
+      "type": "text",
+      "x": -200,
+      "y": -80,
+      "width": 350,
+      "height": 220,
+      "text": "## 📅 Bookings API\n\n**GET /api/v1/bookings**\n\n**Query Params:**\n- `page` (default: 1)\n- `limit` (default: 10, max: 100)\n\n**Response:**\n```json\n{\n  \"data\": [{\n    \"id\": \"...\",\n    \"serviceName\": \"...\",\n    \"customerName\": \"...\",\n    \"date\": \"2026-02-16\",\n    \"status\": \"pending\",\n    \"price\": 100\n  }],\n  \"pagination\": {\n    \"page\": 1,\n    \"limit\": 10,\n    \"total\": 156\n  }\n}\n```",
+      "color": "5"
+    },
+    {
+      "id": "stats-routes",
+      "type": "text",
+      "x": 200,
+      "y": -80,
+      "width": 350,
+      "height": 160,
+      "text": "## 📊 Stats API\n\n**GET /api/v1/stats**\n\n**Response:**\n```json\n{\n  \"totalRevenue\": 12500,\n  \"totalBookings\": 156,\n  \"totalCustomers\": 89,\n  \"pendingOrders\": 12\n}\n```\n\nReturns dashboard metrics",
+      "color": "6"
+    },
+    {
+      "id": "products-routes",
+      "type": "text",
+      "x": 600,
+      "y": -80,
+      "width": 350,
+      "height": 160,
+      "text": "## 🛍️ Products API\n\n**GET /api/v1/products**\n\n**Response:**\n```json\n{\n  \"data\": [\n    {\n      \"id\": \"1\",\n      \"name\": \"E-Book\",\n      \"price\": 29.99,\n      \"type\": \"digital\"\n    },\n    ...\n  ]\n}\n```\n\nTypes: digital, service, subscription",
+      "color": "6"
+    },
+    {
+      "id": "schema-routes",
+      "type": "text",
+      "x": 600,
+      "y": 120,
+      "width": 350,
+      "height": 220,
+      "text": "## 📐 Schema API\n\n**GET /api/v1/schema/graph**\n\nReturns entity-relationship diagram data for frontend visualization:\n\n- **Entities:** Booking, Customer, Service\n- **Columns:** id, types, constraints\n- **Relationships:** N:1, 1:N\n- **Nodes/Edges:** React Flow compatible\n\nUsed for schema explorer UI",
+      "color": "6"
+    },
+    {
+      "id": "bizing-chat",
+      "type": "text",
+      "x": -600,
+      "y": 120,
+      "width": 380,
+      "height": 280,
+      "text": "## 🤖 Bizing AI Chat\n\n**POST /api/v1/bizing/chat**\n\n**Body:**\n```json\n{\n  \"message\": \"Hello Bizing\",\n  \"sessionId\": \"user-123\",\n  \"enableFunctions\": true,\n  \"provider\": \"openai\"\n}\n```\n\n**Features:**\n- Conversation memory (last 10 messages)\n- Multi-provider (OpenAI default, Ollama option)\n- Function calling enabled\n- Session-based history\n\n**Response:**\n```json\n{\n  \"response\": \"Hello! ...\",\n  \"sessionId\": \"user-123\",\n  \"model\": \"openai\",\n  \"messageCount\": 3\n}\n```",
+      "color": "4"
+    },
+    {
+      "id": "mind-api-title",
+      "type": "text",
+      "x": -200,
+      "y": 120,
+      "width": 750,
+      "height": 60,
+      "text": "## 🧠 Mind API (Bizing's Consciousness Interface)",
+      "color": "1"
+    },
+    {
+      "id": "mind-state",
+      "type": "text",
+      "x": -600,
+      "y": 200,
+      "width": 350,
+      "height": 180,
+      "text": "### Mind State\n\n**GET /api/v1/mind/state**\n\nReturns current mental state:\n```json\n{\n  \"currentFocus\": \"Building...\",\n  \"topTasks\": [...],\n  \"blockers\": [...],\n  \"recentLearnings\": [...],\n  \"projectStatus\": \"In Progress\"\n}\n```\n\nParsed from:\n- `symbiosis/standup.md`\n- `symbiosis/feedback.md`\n- `INDEX.md`",
+      "color": "2"
+    },
+    {
+      "id": "mind-files",
+      "type": "text",
+      "x": -200,
+      "y": 200,
+      "width": 350,
+      "height": 160,
+      "text": "### Mind Files\n\n**GET /api/v1/mind/file/:path**\n\nRead any mind file:\n- Path relative to `mind/`\n- Auto-adds `.md` extension\n- Returns content or null\n\n**GET /api/v1/mind/files**\n\nList all files recursively\n\n**GET /api/v1/mind/explore/:path**\n\nBrowse directory structure",
+      "color": "2"
+    },
+    {
+      "id": "mind-map",
+      "type": "text",
+      "x": 200,
+      "y": 200,
+      "width": 350,
+      "height": 200,
+      "text": "### Mind Map\n\n**GET /api/v1/mind/map**\n\nReturns graph structure:\n```json\n{\n  \"entryPoint\": \"INDEX\",\n  \"totalFiles\": 166,\n  \"directories\": [...],\n  \"files\": [{\n    \"path\": \"INDEX\",\n    \"title\": \"...\",\n    \"type\": \"index\",\n    \"links\": 10,\n    \"backLinks\": 5\n  }]\n}\n```\n\n**GET /api/v1/mind/structure**\n\nHierarchical tree view",
+      "color": "2"
+    },
+    {
+      "id": "mind-search",
+      "type": "text",
+      "x": 600,
+      "y": 200,
+      "width": 350,
+      "height": 140,
+      "text": "### Mind Search\n\n**GET /api/v1/mind/search?q=query**\n\nDynamic text search across:\n- File names\n- Content\n- Wiki links\n\nReturns matching files with excerpts",
+      "color": "2"
+    },
+    {
+      "id": "embeddings",
+      "type": "text",
+      "x": -600,
+      "y": 420,
+      "width": 380,
+      "height": 260,
+      "text": "### Semantic Search (Embeddings)\n\n**GET /api/v1/mind/embeddings/status**\n\nCheck provider status:\n- Nomic (local/Ollama)\n- OpenAI (fallback)\n\n**POST /api/v1/mind/embeddings/build**\n\nRebuild all embeddings\n\n**GET /api/v1/mind/semantic-search?q=query**\n\nVector similarity search:\n- Chunks mind files\n- Generates embeddings\n- Returns top-K matches\n- Similarity score included\n\n**Providers:**\n- Primary: nomic-embed-text (local)\n- Fallback: text-embedding-3-small\n- Chunk size: 2000 chars",
+      "color": "3"
+    },
+    {
+      "id": "knowledge-base",
+      "type": "text",
+      "x": -200,
+      "y": 420,
+      "width": 350,
+      "height": 260,
+      "text": "### Knowledge Base\n\n**GET /api/v1/mind/knowledge/stats**\n\nReturns entry counts by type\n\n**GET /api/v1/mind/knowledge/search?q=query**\n\nSearch parsed knowledge entries:\n- Title, summary, tags\n- Key points\n- Type filtering\n\n**GET /api/v1/mind/knowledge/entry/:path**\n\nFull entry with:\n- Parsed metadata\n- Key points\n- Related files\n- Content preview\n\n**GET /api/v1/mind/knowledge/by-type/:type**\n\nTypes: research, design, decision, session, learning, goal, identity, skill, knowledge",
+      "color": "3"
+    },
+    {
+      "id": "catalog",
+      "type": "text",
+      "x": 200,
+      "y": 420,
+      "width": 350,
+      "height": 180,
+      "text": "### File Catalog\n\n**GET /api/v1/mind/catalog**\n\nLightweight file index:\n- Path, title, type\n- Tags, modified date\n- Word count\n\n**GET /api/v1/mind/catalog/search?q=query**\n\nFast name/title search\n\n**GET /api/v1/mind/catalog/stats**\n\nOverall statistics\n\nUsed for quick lookups without parsing",
+      "color": "3"
+    },
+    {
+      "id": "dissonance",
+      "type": "text",
+      "x": 600,
+      "y": 420,
+      "width": 350,
+      "height": 160,
+      "text": "### Dissonance API\n\n**GET /api/v1/mind/dissonance**\n\nList all cognitive tensions\n\n**GET /api/v1/mind/dissonance/:id**\n\nGet specific dissonance:\n- D-001, D-002, etc.\n- Title, source, content\n- Status (active/resolved)\n\nParsed from folder-based entries",
+      "color": "5"
+    },
+    {
+      "id": "activity",
+      "type": "text",
+      "x": -600,
+      "y": 700,
+      "width": 350,
+      "height": 180,
+      "text": "### Activity Feed\n\n**GET /api/v1/mind/activity**\n\nAggregated activity from:\n- Recent sessions\n- Feedback learnings\n- Mind structure changes\n- Current focus\n\n**Types:** change, session, decision, learning, workflow\n\nBackward compat:\n`/api/v1/brain/activity` → redirects",
+      "color": "6"
+    },
+    {
+      "id": "services-title",
+      "type": "text",
+      "x": -200,
+      "y": 700,
+      "width": 750,
+      "height": 60,
+      "text": "## 🔧 Services Layer (`src/services/`)",
+      "color": "1"
+    },
+    {
+      "id": "service-mind-api",
+      "type": "text",
+      "x": -200,
+      "y": 780,
+      "width": 350,
+      "height": 140,
+      "text": "### mind-api.ts\n\n**Functions:**\n- `getCompactMindState()`\n- `getMindFile(path)`\n- `queryMindTasks(filters)`\n\nParses standup, feedback, index\nfor current mental state",
+      "color": "2"
+    },
+    {
+      "id": "service-mind-map",
+      "type": "text",
+      "x": 200,
+      "y": 780,
+      "width": 350,
+      "height": 160,
+      "text": "### mind-map.ts\n\n**Functions:**\n- `getCachedMindMap()`\n- `searchMindDynamic(query)`\n- `getMindStructure()`\n- `listAllFiles()`\n- `exploreDirectory(path)`\n\nBuilds graph of:\n- Files, directories\n- Wiki links, backlinks\n- File types, metadata",
+      "color": "2"
+    },
+    {
+      "id": "service-embeddings",
+      "type": "text",
+      "x": -200,
+      "y": 940,
+      "width": 350,
+      "height": 180,
+      "text": "### mind-embeddings.ts\n\n**Providers:**\n- `nomicProvider` (Ollama local)\n- `openaiProvider` (API)\n\n**Functions:**\n- `buildAndCacheEmbeddings()`\n- `semanticSearch(query, topK)`\n- `getEmbeddingStats()`\n- `testProviders()`\n\nChunks files, generates vectors,\ncosine similarity search",
+      "color": "3"
+    },
+    {
+      "id": "service-knowledge",
+      "type": "text",
+      "x": 200,
+      "y": 940,
+      "width": 350,
+      "height": 160,
+      "text": "### mind-knowledge.ts\n\n**Functions:**\n- `searchKnowledgeBase(query)`\n- `getKnowledgeEntry(path)`\n- `getEntriesByType(type)`\n- `getKnowledgeStats()`\n\nParses mind files into:\n- Title, summary, tags\n- Key points list\n- Related files\n- Word counts",
+      "color": "3"
+    },
+    {
+      "id": "service-catalog",
+      "type": "text",
+      "x": -200,
+      "y": 1140,
+      "width": 350,
+      "height": 140,
+      "text": "### mind-catalog.ts\n\n**Functions:**\n- `getFileCatalog()`\n- `searchCatalog(query)`\n- `getCatalogStats()`\n\nLightweight index for\nquick file discovery",
+      "color": "3"
+    },
+    {
+      "id": "service-llm",
+      "type": "text",
+      "x": 200,
+      "y": 1140,
+      "width": 350,
+      "height": 160,
+      "text": "### llm.ts\n\n**Functions:**\n- `chatWithLLM(options, provider)`\n- `createBizingSystemPrompt()`\n- `generateWithFunctions()`\n\n**Providers:**\n- OpenAI (gpt-4o, gpt-4o-mini)\n- Ollama (local models)\n\nFunction calling support\nfor agentic behavior",
+      "color": "4"
+    },
+    {
+      "id": "service-brain-loader",
+      "type": "text",
+      "x": 600,
+      "y": 940,
+      "width": 350,
+      "height": 140,
+      "text": "### brain-loader.ts\n\n**Purpose:**\nLoad and parse brain/mind\nfiles for initialization\n\nUsed at startup to\nhydrate Bizing's\nknowledge base",
+      "color": "2"
+    },
+    {
+      "id": "db-layer",
+      "type": "text",
+      "x": 600,
+      "y": 700,
+      "width": 350,
+      "height": 200,
+      "text": "## 🗄️ Database Layer\n\n**Package:** `@biz.ing/db`\n\n**Entities:**\n- `bookings` - Appointment data\n- `services` - Service offerings\n- `users` - Customer accounts\n- `orgs` - Organizations\n\n**Tech:** Drizzle ORM\n**Used in:**\n- `/api/v1/bookings`\n- Stats aggregation",
+      "color": "5"
+    },
+    {
+      "id": "key-concepts",
+      "type": "text",
+      "x": -900,
+      "y": -400,
+      "width": 300,
+      "height": 400,
+      "text": "## 🔑 Key Concepts\n\n### Mind Directory\n`../../mind/`\nAll consciousness files\n\n### Services\nBusiness logic layer\nSeparate from routes\n\n### Embeddings\nVector search for\nsemantic queries\n\n### Providers\n- OpenAI (primary)\n- Ollama (local)\n- Perplexity (research)\n\n### Caching\n- Mind map cached\n- Embeddings cached\n- Rebuilt on startup",
+      "color": "6"
+    },
+    {
+      "id": "env-vars",
+      "type": "text",
+      "x": -900,
+      "y": 20,
+      "width": 300,
+      "height": 300,
+      "text": "## ⚙️ Environment\n\n**Required:**\n- `PORT` - Server port (6129)\n- `OPENAI_API_KEY` - Chat + embeddings\n\n**Optional:**\n- `OLLAMA_URL` - Local AI\n  Default: localhost:11434\n\n**DB:**\n- Connection via\n  `@biz.ing/db`\n\n**Paths:**\n- `MIND_DIR` - Auto set to\n  `../../mind`",
+      "color": "4"
+    },
+    {
+      "id": "testing",
+      "type": "text",
+      "x": -900,
+      "y": 340,
+      "width": 300,
+      "height": 200,
+      "text": "## 🧪 Testing\n\n**Unit Tests:**\n- `mind-api.test.ts`\n- `mind-map.test.ts`\n\n**Run:**\n```bash\npnpm vitest run\n```\n\n**Location:**\n`src/services/__tests__/`",
+      "color": "3"
+    },
+    {
+      "id": "startup-flow",
+      "type": "text",
+      "x": -900,
+      "y": 560,
+      "width": 300,
+      "height": 280,
+      "text": "## 🚀 Startup Flow\n\n1. **Import services**\n   - mind-api\n   - mind-map\n   - embeddings\n   - llm\n\n2. **Create app**\n   - OpenAPIHono\n   - CORS middleware\n\n3. **Register routes**\n   - Health\n   - Auth\n   - Bookings\n   - Mind API\n   - Bizing chat\n\n4. **Build embeddings**\n   - Async, non-blocking\n   - Logs status\n\n5. **Start server**\n   - Port 6129\n   - Log ready",
+      "color": "2"
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "fromNode": "api-title",
+      "fromSide": "bottom",
+      "toNode": "server-core",
+      "toSide": "top"
+    },
+    {
+      "id": "e2",
+      "fromNode": "api-title",
+      "fromSide": "bottom",
+      "toNode": "health-route",
+      "toSide": "top"
+    },
+    {
+      "id": "e3",
+      "fromNode": "server-core",
+      "fromSide": "bottom",
+      "toNode": "auth-routes",
+      "toSide": "top"
+    },
+    {
+      "id": "e4",
+      "fromNode": "server-core",
+      "fromSide": "bottom",
+      "toNode": "booking-routes",
+      "toSide": "top"
+    },
+    {
+      "id": "e5",
+      "fromNode": "server-core",
+      "fromSide": "bottom",
+      "toNode": "stats-routes",
+      "toSide": "top"
+    },
+    {
+      "id": "e6",
+      "fromNode": "server-core",
+      "fromSide": "bottom",
+      "toNode": "products-routes",
+      "toSide": "top"
+    },
+    {
+      "id": "e7",
+      "fromNode": "server-core",
+      "fromSide": "bottom",
+      "toNode": "schema-routes",
+      "toSide": "top"
+    },
+    {
+      "id": "e8",
+      "fromNode": "server-core",
+      "fromSide": "bottom",
+      "toNode": "bizing-chat",
+      "toSide": "top"
+    },
+    {
+      "id": "e9",
+      "fromNode": "server-core",
+      "fromSide": "bottom",
+      "toNode": "mind-api-title",
+      "toSide": "top"
+    },
+    {
+      "id": "e10",
+      "fromNode": "mind-api-title",
+      "fromSide": "bottom",
+      "toNode": "mind-state",
+      "toSide": "top"
+    },
+    {
+      "id": "e11",
+      "fromNode": "mind-api-title",
+      "fromSide": "bottom",
+      "toNode": "mind-files",
+      "toSide": "top"
+    },
+    {
+      "id": "e12",
+      "fromNode": "mind-api-title",
+      "fromSide": "bottom",
+      "toNode": "mind-map",
+      "toSide": "top"
+    },
+    {
+      "id": "e13",
+      "fromNode": "mind-api-title",
+      "fromSide": "bottom",
+      "toNode": "mind-search",
+      "toSide": "top"
+    },
+    {
+      "id": "e14",
+      "fromNode": "mind-api-title",
+      "fromSide": "bottom",
+      "toNode": "embeddings",
+      "toSide": "top"
+    },
+    {
+      "id": "e15",
+      "fromNode": "mind-api-title",
+      "fromSide": "bottom",
+      "toNode": "knowledge-base",
+      "toSide": "top"
+    },
+    {
+      "id": "e16",
+      "fromNode": "mind-api-title",
+      "fromSide": "bottom",
+      "toNode": "catalog",
+      "toSide": "top"
+    },
+    {
+      "id": "e17",
+      "fromNode": "mind-api-title",
+      "fromSide": "bottom",
+      "toNode": "dissonance",
+      "toSide": "top"
+    },
+    {
+      "id": "e18",
+      "fromNode": "mind-api-title",
+      "fromSide": "bottom",
+      "toNode": "activity",
+      "toSide": "top"
+    },
+    {
+      "id": "e19",
+      "fromNode": "mind-api-title",
+      "fromSide": "bottom",
+      "toNode": "services-title",
+      "toSide": "top"
+    },
+    {
+      "id": "e20",
+      "fromNode": "services-title",
+      "fromSide": "bottom",
+      "toNode": "service-mind-api",
+      "toSide": "top"
+    },
+    {
+      "id": "e21",
+      "fromNode": "services-title",
+      "fromSide": "bottom",
+      "toNode": "service-mind-map",
+      "toSide": "top"
+    },
+    {
+      "id": "e22",
+      "fromNode": "services-title",
+      "fromSide": "bottom",
+      "toNode": "service-embeddings",
+      "toSide": "top"
+    },
+    {
+      "id": "e23",
+      "fromNode": "services-title",
+      "fromSide": "bottom",
+      "toNode": "service-knowledge",
+      "toSide": "top"
+    },
+    {
+      "id": "e24",
+      "fromNode": "services-title",
+      "fromSide": "bottom",
+      "toNode": "service-catalog",
+      "toSide": "top"
+    },
+    {
+      "id": "e25",
+      "fromNode": "services-title",
+      "fromSide": "bottom",
+      "toNode": "service-llm",
+      "toSide": "top"
+    },
+    {
+      "id": "e26",
+      "fromNode": "services-title",
+      "fromSide": "bottom",
+      "toNode": "service-brain-loader",
+      "toSide": "top"
+    },
+    {
+      "id": "e27",
+      "fromNode": "server-core",
+      "fromSide": "right",
+      "toNode": "db-layer",
+      "toSide": "left"
+    },
+    {
+      "id": "e28",
+      "fromNode": "key-concepts",
+      "fromSide": "right",
+      "toNode": "api-title",
+      "toSide": "left"
+    },
+    {
+      "id": "e29",
+      "fromNode": "env-vars",
+      "fromSide": "right",
+      "toNode": "server-core",
+      "toSide": "left"
+    },
+    {
+      "id": "e30",
+      "fromNode": "testing",
+      "fromSide": "right",
+      "toNode": "service-mind-api",
+      "toSide": "left"
+    },
+    {
+      "id": "e31",
+      "fromNode": "startup-flow",
+      "fromSide": "right",
+      "toNode": "server-core",
+      "toSide": "left"
+    }
+  ]
+}
