@@ -53,10 +53,20 @@ Each session, I wake up fresh. Without loading context, I:
 
 **Signal format after completing:**
 ```
-🛡️ HH:MM | YYYY-MM-DD.md | INDEX.md | N skills
+🛡️ PreWork @ HH:MM
+☐ memory/YYYY-MM-DD.md
+☐ INDEX.md
+☐ skill/name
 ```
 
-Example: `🛡️ 20:23 | 2026-02-16.md | INDEX.md | 3 skills`
+Example:
+```
+🛡️ PreWork @ 20:23
+☑ memory/2026-02-16.md
+☑ INDEX.md
+☑ skills/creating-files/CreatingFiles.md
+☑ skills/codesync/CodeSync.md
+```
 
 ---
 
@@ -70,11 +80,12 @@ Example: `🛡️ 20:23 | 2026-02-16.md | INDEX.md | 3 skills`
 ### Step 2: Run PreWork
 ```
 🛡️ Running PreWork...
-✅ Read memory/2026-02-16.md
-✅ Read INDEX.md
-✅ Read skills/codesync, skills/creating-files
 
-🛡️ 20:23 | 2026-02-16.md | INDEX.md | 2 skills
+🛡️ PreWork @ 20:23
+☑ memory/2026-02-16.md
+☑ INDEX.md
+☑ skills/codesync/CodeSync.md
+☑ skills/creating-files/CreatingFiles.md
 ```
 
 ### Step 3: Do the Work
@@ -90,12 +101,12 @@ Proceed with confidence that context is loaded.
 **Me:**
 ```
 🛡️ Running PreWork before creating skill...
-✅ Read memory/2026-02-16.md
-✅ Read INDEX.md  
-✅ Read skills/creating-files/CreatingFiles.md
-✅ Read skills/obsidian/Obsidian.md
 
-🛡️ 20:23 | 2026-02-16.md | INDEX.md | 2 skills
+🛡️ PreWork @ 20:23
+☑ memory/2026-02-16.md
+☑ INDEX.md
+☑ skills/creating-files/CreatingFiles.md
+☑ skills/obsidian/Obsidian.md
 
 Now creating Templater skill...
 ```
@@ -104,27 +115,31 @@ Now creating Templater skill...
 
 ## Signal Format
 
-Add this to **every substantive response** after PreWork completes:
+Add this **checklist** to **every substantive response** after PreWork completes:
 
 ```
-🛡️ HH:MM | YYYY-MM-DD.md | INDEX.md | N skills
+🛡️ PreWork @ HH:MM
+☐ memory/YYYY-MM-DD.md
+☐ INDEX.md
+☐ skill/name
+☐ skill/name
+...
 ```
-
-**Components:**
-- `HH:MM` — Current time (verifies when check happened)
-- `YYYY-MM-DD.md` — Memory file read (proves today's file loaded)
-- `INDEX.md` — Index file read (proves priorities loaded)
-- `N skills` — Number of skills read for this task
 
 **Example:**
 ```
-🛡️ 20:23 | 2026-02-16.md | INDEX.md | 3 skills
+🛡️ PreWork @ 20:23
+☑ memory/2026-02-16.md
+☑ INDEX.md
+☑ skills/creating-files/CreatingFiles.md
+☐ skills/codesync/CodeSync.md
 ```
 
 **Why this works:**
-- Time changes every response (can't copy from last)
-- File names are specific (can't fake without reading)
-- Skill count varies per task (hard to guess)
+- Checklist shows exactly which files were read
+- Checked (☑) vs unchecked (☐) items are verifiable
+- Time makes each response unique
+- File paths prove actual reading happened
 
 ---
 
