@@ -27,6 +27,22 @@ Each session, I wake up fresh. Without loading context, I:
 
 ---
 
+## Critical Rules
+
+### 1. NEVER Commit Without Approval
+
+**DO NOT auto-commit every change.**
+
+- Make multiple related changes first
+- Batch work into logical commits
+- Wait for explicit "codesync" or "commit approved"
+- Ask before creating any PR
+
+**Wrong:** Commit after every small edit  
+**Right:** Do the work, batch changes, then ask
+
+---
+
 ## When to Run
 
 **MANDATORY before:**

@@ -14,7 +14,9 @@ tags:
 
 ---
 
-## ⚠️ CRITICAL: NEVER COMMIT TO MAIN
+## ⚠️ CRITICAL RULES
+
+### 1. NEVER COMMIT TO MAIN
 
 **ALWAYS work on a feature branch. ALWAYS create a PR. NO EXCEPTIONS.**
 
@@ -39,6 +41,42 @@ Your workflow:
 ✅ `git commit` on feature branch
 ✅ `git push origin feat/description`
 ✅ Create PR via GitHub
+
+---
+
+### 2. NEVER AUTO-COMMIT EVERY CHANGE
+
+**DO NOT commit and create a PR for every single small change.**
+
+**Batch related work together:**
+- Multiple related files → One commit
+- Small fixes → Batch into larger commits  
+- Documentation updates → Group logically
+- Wait for user to say "codesync" or "commit"
+
+**Never this:**
+❌ Auto-commit after every file edit
+❌ Create PR for each tiny change
+❌ Commit without explicit user approval
+❌ "I'll just commit this real quick"
+
+**Always this:**
+✅ Make multiple changes, then ask "Ready to commit?"
+✅ Wait for explicit "codesync" or "commit approved"
+✅ Batch related changes into single commits
+✅ Get approval before each commit/PR
+
+**Examples of what to BATCH:**
+- Skill documentation updates (do 3-4, then commit once)
+- Canvas file + related docs (one PR)
+- Multiple bug fixes (group by theme)
+- Config changes + documentation (together)
+
+**When to ask for approval:**
+- After completing a logical chunk of work
+- When user explicitly says "codesync"
+- Before creating any PR
+- Never assume, always ask
 
 ---
 
