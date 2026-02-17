@@ -53,8 +53,10 @@ Each session, I wake up fresh. Without loading context, I:
 
 **Signal format after completing:**
 ```
-🛡️ [PreWork OK] memory | index | skills
+🛡️ HH:MM | YYYY-MM-DD.md | INDEX.md | N skills
 ```
+
+Example: `🛡️ 20:23 | 2026-02-16.md | INDEX.md | 3 skills`
 
 ---
 
@@ -72,7 +74,7 @@ Each session, I wake up fresh. Without loading context, I:
 ✅ Read INDEX.md
 ✅ Read skills/codesync, skills/creating-files
 
-🛡️ [PreWork OK] memory | index | skills
+🛡️ 20:23 | 2026-02-16.md | INDEX.md | 2 skills
 ```
 
 ### Step 3: Do the Work
@@ -93,7 +95,7 @@ Proceed with confidence that context is loaded.
 ✅ Read skills/creating-files/CreatingFiles.md
 ✅ Read skills/obsidian/Obsidian.md
 
-🛡️ [PreWork OK] memory | index | skills
+🛡️ 20:23 | 2026-02-16.md | INDEX.md | 2 skills
 
 Now creating Templater skill...
 ```
@@ -105,13 +107,24 @@ Now creating Templater skill...
 Add this to **every substantive response** after PreWork completes:
 
 ```
-🛡️ [PreWork OK] memory | index | skills
+🛡️ HH:MM | YYYY-MM-DD.md | INDEX.md | N skills
 ```
 
-Or if specific files checked:
+**Components:**
+- `HH:MM` — Current time (verifies when check happened)
+- `YYYY-MM-DD.md` — Memory file read (proves today's file loaded)
+- `INDEX.md` — Index file read (proves priorities loaded)
+- `N skills` — Number of skills read for this task
+
+**Example:**
 ```
-🛡️ [PreWork OK] memory/2026-02-16.md | INDEX | CreatingFiles | CodeSync
+🛡️ 20:23 | 2026-02-16.md | INDEX.md | 3 skills
 ```
+
+**Why this works:**
+- Time changes every response (can't copy from last)
+- File names are specific (can't fake without reading)
+- Skill count varies per task (hard to guess)
 
 ---
 
