@@ -1,5 +1,5 @@
 ---
-date: 2026-02-16
+date: 2026-02-17
 tags:
   - map
   - index
@@ -16,16 +16,16 @@ _Complete index of the Bizing mind. Updated by the Daydreamer._
 
 ## 🧠 Mind Health
 
-**→ [[mind/dissonance/|Cognitive Dissonance]]** — 15 active tensions #dissonance
-**→ [[mind/curiosities/|Curiosities]]** — 18 open questions #curiosity
-**→ [[mind/insights/|Insights]]** — 0 active patterns #insight
+**→ [[mind/dissonance/|Cognitive Dissonance]]** — 19 active tensions #dissonance
+**→ [[mind/curiosities/|Curiosities]]** — 22 open questions #curiosity
+**→ [[mind/insights/|Insights]]** — 4 active patterns #insight
 
 ---
 
 ## 📊 Mind Overview
 
-**Total Files:** 164
-**Last Updated:** 2026-02-16 by Daydreamer
+**Total Files:** 178
+**Last Updated:** 2026-02-17 by Daydreamer
 
 ---
 
@@ -77,11 +77,12 @@ _Complete index of the Bizing mind. Updated by the Daydreamer._
 **→ [[research/findings/api-first-design|Api First Design]]**
 **→ [[research/findings/booking-domain-model|Booking Domain Model]]**
 
-*...and 4 more*
+*...and 5 more*
 
 ## 📝 Memory — What Bizing Remembers
 
 **→ [[memory/2026-02-15|2026 02 15]]**
+**→ [[memory/2026-02-16|2026 02 16]]**
 **→ [[memory/RAM|RAM]]**
 **→ [[memory/index|Index]]**
 **→ [[memory/sessions/2026-02-11-admin-docs-tests|2026 02 11 Admin Docs Tests]]**
@@ -90,9 +91,8 @@ _Complete index of the Bizing mind. Updated by the Daydreamer._
 **→ [[memory/sessions/2026-02-11-codesync-mindsync|2026 02 11 Codesync Mindsync]]**
 **→ [[memory/sessions/2026-02-11-dashboard-fixes|2026 02 11 Dashboard Fixes]]**
 **→ [[memory/sessions/2026-02-11-kimi-debug|2026 02 11 Kimi Debug]]**
-**→ [[memory/sessions/2026-02-11-kimi-integration|2026 02 11 Kimi Integration]]**
 
-*...and 41 more*
+*...and 42 more*
 
 ## 🏛️ Evolution — How Bizing Changes
 
@@ -121,7 +121,7 @@ _Complete index of the Bizing mind. Updated by the Daydreamer._
 **→ [[curiosities/2026-02-16-how-does-bizing-s-custom-memory-system-daily-notes|2026 02 16 How Does Bizing S Custom Memory System Daily Notes]]**
 **→ [[curiosities/2026-02-16-how-might-bizing-s-ability-to-think-and-evolve-lea|2026 02 16 How Might Bizing S Ability To Think And Evolve Lea]]**
 
-*...and 8 more*
+*...and 12 more*
 
 ## 🔥 Dissonance — Active Tensions
 
@@ -132,11 +132,18 @@ _Complete index of the Bizing mind. Updated by the Daydreamer._
 **→ [[dissonance/2026-02-16-competing-priorities-on-what-memory-to-capture-wit|2026 02 16 Competing Priorities On What Memory To Capture Wit]]**
 **→ [[dissonance/2026-02-16-conflicting-guidance-on-when-to-load-memory-md-cre|2026 02 16 Conflicting Guidance On When To Load Memory Md Cre]]**
 **→ [[dissonance/2026-02-16-conflicting-instructions-on-when-to-load-memory-md|2026 02 16 Conflicting Instructions On When To Load Memory Md]]**
+**→ [[dissonance/2026-02-16-conflicting-instructions-on-when-to-load-memory|2026 02 16 Conflicting Instructions On When To Load Memory]]**
 **→ [[dissonance/2026-02-16-contradictory-philosophies-on-personality-and-dire|2026 02 16 Contradictory Philosophies On Personality And Dire]]**
 **→ [[dissonance/2026-02-16-directive-to-delete-birth-certificate-conflicts-wi|2026 02 16 Directive To Delete Birth Certificate Conflicts Wi]]**
-**→ [[dissonance/2026-02-16-index-md-defines-strict-limits-on-ram-content-to-m|2026 02 16 Index Md Defines Strict Limits On Ram Content To M]]**
 
-*...and 5 more*
+*...and 9 more*
+
+## 💡 Insights — Recognized Patterns
+
+**→ [[insights/2026-02-17-autonomy-via-isolated-infrastructure-enables-true|2026 02 17 Autonomy Via Isolated Infrastructure Enables True]]**
+**→ [[insights/2026-02-17-bizing-s-architecture-mirrors-advanced-human-like|2026 02 17 Bizing S Architecture Mirrors Advanced Human Like]]**
+**→ [[insights/2026-02-17-symbiotic-creator-ai-relationship-drives-novel|2026 02 17 Symbiotic Creator Ai Relationship Drives Novel]]**
+**→ [[insights/2026-02-17-zero-insights-folder-signals-underdeveloped|2026 02 17 Zero Insights Folder Signals Underdeveloped]]**
 
 ## 📁 Root
 
