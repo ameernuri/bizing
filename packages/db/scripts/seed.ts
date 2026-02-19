@@ -1,16 +1,18 @@
-import { and, eq } from 'drizzle-orm'
-import { db, bookings, organizations, services, users } from '../src/index'
+import { and, eq, inArray } from 'drizzle-orm'
+import { db, bizes, bookings, services, users } from '../src/index'
+import type { NewBooking } from '../src/schema/bookings'
 
 const ORG_SLUG = 'mock-bookings-org'
-const SOURCE = 'mock-seed'
+const SOURCE = 'import' as const
+const BOOKING_CODES = ['BK1001', 'BK1002', 'BK1003', 'BK1004'] as const
 
 function plusHours(date: Date, hours: number): Date {
   return new Date(date.getTime() + hours * 60 * 60 * 1000)
 }
 
 async function seed() {
-  const [org] = await db
-    .insert(organizations)
+  const [biz] = await db
+    .insert(bizes)
     .values({
       name: 'Bizing Demo Studio',
       slug: ORG_SLUG,
@@ -19,7 +21,7 @@ async function seed() {
       status: 'active',
     })
     .onConflictDoUpdate({
-      target: organizations.slug,
+      target: bizes.slug,
       set: {
         name: 'Bizing Demo Studio',
         timezone: 'America/Los_Angeles',
@@ -28,17 +30,19 @@ async function seed() {
         updatedAt: new Date(),
       },
     })
-    .returning({ id: organizations.id })
+    .returning({ id: bizes.id })
 
-  const orgId = org.id
+  const bizId = biz.id
 
-  await db.delete(bookings).where(and(eq(bookings.orgId, orgId), eq(bookings.source, SOURCE)))
+  await db
+    .delete(bookings)
+    .where(and(eq(bookings.bizId, bizId), inArray(bookings.confirmationCode, [...BOOKING_CODES])))
 
   const [haircut, color, consultation] = await db
     .insert(services)
     .values([
       {
-        orgId,
+        bizId,
         name: 'Haircut and Style',
         slug: 'mock-haircut-style',
         description: 'Classic cut and styling session',
@@ -49,7 +53,7 @@ async function seed() {
         isOnlineBookable: true,
       },
       {
-        orgId,
+        bizId,
         name: 'Color Treatment',
         slug: 'mock-color-treatment',
         description: 'Single-process color refresh',
@@ -60,7 +64,7 @@ async function seed() {
         isOnlineBookable: true,
       },
       {
-        orgId,
+        bizId,
         name: 'Consultation',
         slug: 'mock-consultation',
         description: '15-minute discovery call',
@@ -71,13 +75,18 @@ async function seed() {
         isOnlineBookable: true,
       },
     ])
+    .onConflictDoUpdate({
+      target: [services.bizId, services.slug],
+      set: {
+        updatedAt: new Date(),
+      },
+    })
     .returning({ id: services.id, name: services.name })
 
   const [sarah, mike, emma] = await db
     .insert(users)
     .values([
       {
-        orgId,
         email: 'sarah.mock@example.com',
         firstName: 'Sarah',
         lastName: 'Johnson',
@@ -86,7 +95,6 @@ async function seed() {
         status: 'active',
       },
       {
-        orgId,
         email: 'mike.mock@example.com',
         firstName: 'Mike',
         lastName: 'Chen',
@@ -95,7 +103,6 @@ async function seed() {
         status: 'active',
       },
       {
-        orgId,
         email: 'emma.mock@example.com',
         firstName: 'Emma',
         lastName: 'Davis',
@@ -104,13 +111,19 @@ async function seed() {
         status: 'active',
       },
     ])
+    .onConflictDoUpdate({
+      target: [users.email],
+      set: {
+        updatedAt: new Date(),
+      },
+    })
     .returning({ id: users.id, firstName: users.firstName, lastName: users.lastName })
 
   const now = new Date()
 
-  const seedBookings = [
+  const seedBookings: NewBooking[] = [
     {
-      orgId,
+      bizId,
       serviceId: haircut.id,
       customerId: sarah.id,
       customerName: `${sarah.firstName} ${sarah.lastName}`,
@@ -125,7 +138,7 @@ async function seed() {
       confirmationCode: 'BK1001',
     },
     {
-      orgId,
+      bizId,
       serviceId: color.id,
       customerId: mike.id,
       customerName: `${mike.firstName} ${mike.lastName}`,
@@ -140,7 +153,7 @@ async function seed() {
       confirmationCode: 'BK1002',
     },
     {
-      orgId,
+      bizId,
       serviceId: haircut.id,
       customerId: emma.id,
       customerName: `${emma.firstName} ${emma.lastName}`,
@@ -155,7 +168,7 @@ async function seed() {
       confirmationCode: 'BK1003',
     },
     {
-      orgId,
+      bizId,
       serviceId: consultation.id,
       customerId: sarah.id,
       customerName: `${sarah.firstName} ${sarah.lastName}`,
@@ -169,7 +182,7 @@ async function seed() {
       source: SOURCE,
       confirmationCode: 'BK1004',
     },
-  ] as const
+  ]
 
   await db.insert(bookings).values(seedBookings)
 
