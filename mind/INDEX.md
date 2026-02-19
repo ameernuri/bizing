@@ -132,28 +132,6 @@ Each entry is a separate markdown file: `YYYY-MM-DD-title.md`
 - [[mind/skills/mapping/Mapping|Mapping]] — Maintaining structure
 
 ---
-
-## 🎯 Active Tasks
-
-### Today (Feb 13)
-
-**Completed:**
-- RAM system implementation
-- Session logging skill
-- CodeSync skill
-- MindSync skill
-- Obsidian enhancements
-
-**In Progress:**
-- Moving standup → RAM
-- Creating documentation
-
-**Next:**
-- Test RAM system
-- Document workflows
-
----
-
 ## 📚 Knowledge Base
 
 ### Domain Knowledge

@@ -1,52 +1,82 @@
 import { drizzle } from 'drizzle-orm/node-postgres'
-import { config } from 'dotenv'
-import { dirname, resolve } from 'node:path'
 import { Pool } from 'pg'
-import { fileURLToPath } from 'node:url'
-
-const __dirname = dirname(fileURLToPath(import.meta.url))
-config({ path: resolve(__dirname, '../../../.env') })
 
 // Common utilities
 export * from './schema/_common'
+export * from './schema/enums'
 
 // Schema exports
-export * from './schema/organizations'
+export * from './schema/bizes'
 export * from './schema/users'
+export * from './schema/locations'
+export * from './schema/group_accounts'
+export * from './schema/memberships'
 export * from './schema/services'
 export * from './schema/products'
-export * from './schema/bookings'
+export * from './schema/auth'
 export * from './schema/assets'
-export * from './schema/asset_categories'
-export * from './schema/asset_tags'
 export * from './schema/venues'
+export * from './schema/bookables'
+export * from './schema/scheduling'
+export * from './schema/pricing'
+export * from './schema/bookings'
+export * from './schema/booking_flows'
+export * from './schema/offerings'
+export * from './schema/commerce'
+export * from './schema/payments'
+export * from './schema/stripe'
+export * from './schema/operations'
 
-import * as organizationsSchema from './schema/organizations'
+import * as enumsSchema from './schema/enums'
+import * as bizesSchema from './schema/bizes'
 import * as usersSchema from './schema/users'
+import * as locationsSchema from './schema/locations'
+import * as groupAccountsSchema from './schema/group_accounts'
+import * as membershipsSchema from './schema/memberships'
 import * as servicesSchema from './schema/services'
 import * as productsSchema from './schema/products'
-import * as bookingsSchema from './schema/bookings'
+import * as authSchema from './schema/auth'
 import * as assetsSchema from './schema/assets'
-import * as assetCategoriesSchema from './schema/asset_categories'
-import * as assetTagsSchema from './schema/asset_tags'
 import * as venuesSchema from './schema/venues'
+import * as bookablesSchema from './schema/bookables'
+import * as schedulingSchema from './schema/scheduling'
+import * as pricingSchema from './schema/pricing'
+import * as bookingsSchema from './schema/bookings'
+import * as bookingFlowsSchema from './schema/booking_flows'
+import * as offeringsSchema from './schema/offerings'
+import * as commerceSchema from './schema/commerce'
+import * as paymentsSchema from './schema/payments'
+import * as stripeSchema from './schema/stripe'
+import * as operationsSchema from './schema/operations'
 
 const schema = {
-  ...organizationsSchema,
+  ...enumsSchema,
+  ...bizesSchema,
   ...usersSchema,
+  ...locationsSchema,
+  ...groupAccountsSchema,
+  ...membershipsSchema,
   ...servicesSchema,
   ...productsSchema,
-  ...bookingsSchema,
+  ...authSchema,
   ...assetsSchema,
-  ...assetCategoriesSchema,
-  ...assetTagsSchema,
   ...venuesSchema,
+  ...bookablesSchema,
+  ...schedulingSchema,
+  ...pricingSchema,
+  ...bookingsSchema,
+  ...bookingFlowsSchema,
+  ...offeringsSchema,
+  ...commerceSchema,
+  ...paymentsSchema,
+  ...stripeSchema,
+  ...operationsSchema,
 }
 
 const connectionString = process.env.DATABASE_URL
 
 if (!connectionString) {
-  throw new Error('DATABASE_URL is required to initialize @biz.ing/db')
+  throw new Error('DATABASE_URL is required to initialize @bizing/db')
 }
 
 export const pool = new Pool({ connectionString })
