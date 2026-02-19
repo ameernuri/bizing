@@ -1,5 +1,5 @@
 import { and, eq, inArray } from 'drizzle-orm'
-import { db, bizes, bookings, services, users } from '../src/index'
+import { db, bizes, bookings, services, serviceGroups, users } from '../src/index'
 import type { NewBooking } from '../src/schema/bookings'
 
 const ORG_SLUG = 'mock-bookings-org'
@@ -27,7 +27,6 @@ async function seed() {
         timezone: 'America/Los_Angeles',
         currency: 'USD',
         status: 'active',
-        updatedAt: new Date(),
       },
     })
     .returning({ id: bizes.id })
@@ -38,47 +37,88 @@ async function seed() {
     .delete(bookings)
     .where(and(eq(bookings.bizId, bizId), inArray(bookings.confirmationCode, [...BOOKING_CODES])))
 
+  // Create service groups first (services require serviceGroupId)
+  const [hairGroup, colorGroup, consultGroup] = await db
+    .insert(serviceGroups)
+    .values([
+      {
+        bizId,
+        name: 'Hair Services',
+        slug: 'hair-services',
+        description: 'Cuts, styles, and hair treatments',
+        status: 'active',
+      },
+      {
+        bizId,
+        name: 'Color Services',
+        slug: 'color-services',
+        description: 'Color treatments and refreshers',
+        status: 'active',
+      },
+      {
+        bizId,
+        name: 'Consultations',
+        slug: 'consultations',
+        description: 'Discovery calls and consultations',
+        status: 'active',
+      },
+    ])
+    .onConflictDoUpdate({
+      target: [serviceGroups.bizId, serviceGroups.slug],
+      set: {
+        name: 'Hair Services',
+        description: 'Cuts, styles, and hair treatments',
+        status: 'active',
+      },
+    })
+    .returning({ id: serviceGroups.id })
+
+  // Note: services no longer have duration/price - those moved to service_products
   const [haircut, color, consultation] = await db
     .insert(services)
     .values([
       {
         bizId,
+        serviceGroupId: hairGroup.id,
         name: 'Haircut and Style',
         slug: 'mock-haircut-style',
         description: 'Classic cut and styling session',
-        durationMinutes: 60,
-        price: '65.00',
-        currency: 'USD',
+        type: 'appointment',
         isActive: true,
-        isOnlineBookable: true,
+        isSelfBookable: true,
+        status: 'active',
       },
       {
         bizId,
+        serviceGroupId: colorGroup.id,
         name: 'Color Treatment',
         slug: 'mock-color-treatment',
         description: 'Single-process color refresh',
-        durationMinutes: 90,
-        price: '120.00',
-        currency: 'USD',
+        type: 'appointment',
         isActive: true,
-        isOnlineBookable: true,
+        isSelfBookable: true,
+        status: 'active',
       },
       {
         bizId,
+        serviceGroupId: consultGroup.id,
         name: 'Consultation',
         slug: 'mock-consultation',
         description: '15-minute discovery call',
-        durationMinutes: 30,
-        price: '0.00',
-        currency: 'USD',
+        type: 'appointment',
         isActive: true,
-        isOnlineBookable: true,
+        isSelfBookable: true,
+        status: 'active',
       },
     ])
     .onConflictDoUpdate({
       target: [services.bizId, services.slug],
       set: {
-        updatedAt: new Date(),
+        name: 'Haircut and Style',
+        description: 'Classic cut and styling session',
+        isActive: true,
+        isSelfBookable: true,
+        status: 'active',
       },
     })
     .returning({ id: services.id, name: services.name })
@@ -114,7 +154,11 @@ async function seed() {
     .onConflictDoUpdate({
       target: [users.email],
       set: {
-        updatedAt: new Date(),
+        firstName: 'Sarah',
+        lastName: 'Johnson',
+        phone: '+1-555-0101',
+        role: 'customer',
+        status: 'active',
       },
     })
     .returning({ id: users.id, firstName: users.firstName, lastName: users.lastName })
