@@ -1,0 +1,24 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**", ".next/**", "!.next/cache/**"]
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true,
+      "env": ["PORT_API", "PORT_ADMIN"]
+    },
+    "lint": {},
+    "test": {
+      "outputs": ["coverage/**"]
+    },
+    "db:generate": {
+      "dependsOn": ["@bizing/db:build"]
+    },
+    "db:migrate": {
+      "dependsOn": ["@bizing/db:generate"]
+    }
+  }
+}
