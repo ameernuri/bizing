@@ -1,0 +1,518 @@
+{
+  "stepKey": "owner-invite-member",
+  "callCount": 7,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs",
+      "status": 201,
+      "requestBody": {
+        "sagaKey": "uc-257-the-power-couple-shared-sheila",
+        "mode": "dry_run",
+        "runnerLabel": "codex-rerun-all",
+        "runContext": {
+          "createdBy": "apps/api/src/scripts/rerun-sagas.ts"
+        }
+      },
+      "responseBody": {
+        "_truncated": true,
+        "_preview": "{\"success\":true,\"data\":{\"run\":{\"id\":\"saga_run_3AAP85iwvT7BSZHpHnFLzJCap2A\",\"sagaDefinitionId\":\"saga_definition_3A8fQukRYXoFHsNz9vGeruRvM2y\",\"sagaKey\":\"uc-257-the-power-couple-shared-sheila\",\"bizId\":null,\"status\":\"pending\",\"mode\":\"dry_run\",\"requestedByUserId\":\"n1sZmxkoRU3I056ePPa62zeC77c08bew\",\"runnerLabel\":\"codex-rerun-all\",\"definitionChecksum\":\"ae6846e89e95412953d61dbd8fdd68195b08972aa2f24917167ed7b74acf9cfc\",\"startedAt\":null,\"endedAt\":null,\"lastHeartbeatAt\":null,\"totalSteps\":28,\"passedSteps\":0,\"failedSteps\":0,\"skippedSteps\":0,\"runContext\":{\"createdBy\":\"apps/api/src/scripts/rerun-sagas.ts\"},\"runSummary\":{},\"metadata\":{\"tags\":[\"uc-derived\",\"persona-derived\",\"lifecycle\",\"api-first\",\"agents\"],\"title\":\"UC-257 • The Contact Deduplication and Merge Audit Trail • The Power Couple (Shared Sheila)\"},\"createdAt\":\"2026-02-25T15:10:38.483Z\",\"updatedAt\":\"2026-02-25T15:10:38.483Z\",\"deletedAt\":null,\"createdBy\":null,\"updatedBy\":null,\"deletedBy\":null},\"definition\":{\"id\":\"saga_definition_3A8fQukRYXoFHsNz9vGeruRvM2y\",\"bizId\":null,\"sagaKey\":\"uc-257-the-power-couple-shared-sheila\",\"title\":\"UC-257 • The Contact Deduplication and Merge Audit Trail • The Power Couple (Shared Sheila)\",\"description\":\"Comprehensive lifecycle saga derived from UC-257 and persona P-41. Needs summary: Duplicate-candidate detection records; Merge decision workflow with survivor/merged ids; Field-level conflict resolution snapshots; Redirect map for historical references; Full audit of who merged what and why\",\"status\":\"active\",\"sourceUseCaseRef\":\"UC-257\",\"sourcePersonaRef\":\"P-41\",\"sourceUseCaseFile\":\"/Users/ameer/bizing/mind/workspace/documentation/use-cases-comprehensive.md\",\"sourcePersonaFile\":\"/Users/ameer/bizing/mind/workspace/documentation/tester-personas.md\",\"specVersion\":\"saga.v0\",\"specFilePath\":\"testing/sagas/specs/uc-257-the-power-couple-shared-sheila.json\",\"specChecksum\":\"ae6846e89e95412953d61dbd8fdd68195b08972aa2f24917167ed7b74acf9cfc\",\"metadata\":{\"tags\":[\"uc-derived\",\"persona-derived\",\"lifecycle\",\"api-first\",\"agents\"],\"generatedAt\":\"2026-02-25T06:41:05.501Z\"},\"createdAt\":\"2026-02-25T00:25:05.329Z\",\"updatedAt\":\"2026-02-25T00:25:05.329Z\",\"deletedAt\":null,\"createdBy\":null,\"updatedBy\":null,\"deletedBy\":null},\"spec\":{\"schemaVersion\":\"saga.v0\",\"sagaKey\":\"uc-257-the-power-couple-shared-sheila\",\"title\":\"UC-257 • The Contact Deduplication and Merge Audit Trail • The Power Couple (Shared Sheila)\",\"description\":\"Comprehensive lifecycle saga derived from UC-257 and persona P-41. Needs summary: Duplicate-candidate detection records; Merge decision workflow with survivor/merged ids; Field-level conflict resolution snapshots; Redirect map for historical references; Full audit of who merged what and why\",\"tags\":[\"uc-derived\",\"persona-derived\",\"lifecycle\",\"api-first\",\"agents\"],\"defaults\":{\"runMode\":\"dry_run\",\"continueOnFailure\":false},\"source\":{\"useCaseRef\":\"UC-257\",\"personaRef\":\"P-41\",\"useCaseFile\":\"/Users/ameer/bizing/mind/workspace/documentation/use-cases-comprehensive.md\",\"personaFile\":\"/Users/ameer/bizing/mind/workspace/documentation/tester-personas.md\",\"generatedAt\":\"2026-02-25T06:41:05.501Z\"},\"objectives\":[\"Validate UC-257 lifecycle end-to-end using persona The Power Couple (Shared Sheila).\",\"Exercise owner setup, team setup, catalog publishing, and customer journeys.\",\"Stress ACL/security edge cases and verify expected denials are enforced.\",\"Collect snapshots and report artifacts for every critical milestone.\"],\"actors\":[{\"actorKey\":\"biz_owner\",\"name\":\"The Power Couple (Shared Sheila)\",\"role\":\"owner\",\"description\":\"Shares account with partner, chaos ensues\",\"personaRef\":\"P-41\"},{\"actorKey\":\"biz_member\",\"name\":\"Operations Team Member\",\"role\":\"manager\",\"description\":\"Business member invited by owner to assist with operations and booking flow.\"},{\"actorKey\":\"customer_1\",\"name\":\"Customer One\",\"role\":\"customer\",\"description\":\"Primary customer exploring catalog, booking services, and purchasing products.\"},{\"actorKey\":\"customer_2\",\"name\":\"Customer Two\",\"role\":\"customer\",\"description\":\"Concurrent customer used to simulate realistic demand and race conditions.\"},{\"actorKey\":\"adversary\",\"name\":\"Adversarial User\",\"role\":\"malicious_actor\",\"description\":\"Actor intentionally attempting unauthorized or abusive actions.\"}],\"phases\":[{\"phaseKey\":\"owner-onboarding\",\"order\":1,\"title\":\"Owner Onboarding\",\"description\":\"Business owner signs up, authenticates, and establishes tenant root.\",\"steps\":[{\"stepKey\":\"owner-sign-up\",\"order\":1,\"title\":\"Owner signs up and authenticates\",\"actorKey\":\"biz_owner\",\"intent\":\"Establish authenticated owner identity for the lifecycle.\",\"instruction\":\"Create or login the owner account through Better Auth endpoints, then verify session context can call authenticated API routes.\",\"expectedResult\":\"Owner session exists and authenticated routes return success for this user.\",\"toolHints\":[],\"assertions\":[{\"kind\":\"api_response\",\"description\":\"API call returns success and includes stable ids for created entities.\"},{\"kind\":\"acl_guard\",\"description\":\"Actor permissions are honored for this step context.\"}],\"evidenceRequired\":[{\"kind\":\"api_trace\",\"label\":\"Request/response trace for this step\"},{\"kind\":\"snapshot\",\"label\":\"Structured snapshot.v1 screen blocks (what user saw) with real API-backed data\"}],\"guardrails\":[],\"tags\":[\"auth\",\"setup\"],\"delay\":{\"mode\":\"none\",\"jitterMs\":0}},{\"stepKey\":\"owner-create-biz\",\"order\":2,\"title\":\"Owner creates business tenant\",\"actorKey\":\"biz_owner\",\"intent\":\"Create the biz root for all subsequent configuration.\",\"instruction\":\"Using agents tools, create a biz representing The Contact Deduplication and Merge Audit Trail. Use name/slug derived from saga context.\",\"expectedResult\":\"Biz is created, owner is auto-added as member with owner role, and biz id is captured.\",\"toolHints\":[\"bizing.bizes.create\"],\"assertions\":[{\"kind\":\"api_response\",\"description\":\"API call returns success and includes stable ids for created entities.\"},{\"kind\":\"acl_guard\",\"description\":\"Actor permissions are honored for this step context.\"}],\"evidenceRequired\":[{\"kind\":\"api_trace\",\"label\":\"Request/response trace for this step\"},{\"kind\":\"snapshot\",\"label\":\"Structured snapshot.v1 screen blocks (what user saw) with real API-backed data\"}],\"guardrails\":[],\"tags\":[\"biz\",\"setup\"],\"delay\":{\"mode\":\"none\",\"jitterMs\":0}},{\"stepKey\":\"owner-create-location\",\"order\":3,\"title\":\"Owner creates primary location\",\"actorKey\":\"biz_owner\",\"intent\":\"Establish operational location for services/resources.\",\"instruction\":\"Create a primary location for the biz and set timezone aligned with scenario context.\",\"expectedResult\":\"Location exists and is associated with the new biz.\",\"toolHints\":[\"bizing.locations.create\"],\"assertions\":[{\"kind\":\"api_response\",\"description\":\"API call returns success and includes stable ids for created entities.\"},{\"kind\":\"acl_guard\",\"description\":\"Actor permissions are honored for this step context.\"}],\"evidenceRequired\":[{\"kind\":\"api_trace\",\"label\":\"Request/response trace for this step\"},{\"kind\":\"snapshot\",\"label\":\"Structured snapshot.v1 screen blocks (what user saw) with real API-backed data\"}],\"guardrails\":[],\"tags\":[\"location\",\"setup\"],\"delay\":{\"mode\":\"none\",\"jitterMs\":0}}]},{\"phaseKey\":\"business-configuration\",\"order\":2,\"title\":\"Business Configuration\",\"description\":\"Owner configures scheduling, pricing baseline, and operational defaults.\",\"steps\":[{\"stepKey\":\"owner-configure-hours\",\"order\":4,\"title\":\"Configure default hours and availability mode\",\"actorKey\":\"biz_owner\",\"intent\":\"Set baseline availability without forcing advanced complexity.\",\"instruction\":\"Create baseline availability and lead-time rules representing the UC default business hours and booking window behavior.\",\"expectedResult\":\"Availability defaults and rules are stored and can be referenced by calendars.\",\"toolHints\":[],\"assertions\":[{\"kind\":\"api_response\",\"description\":\"API call returns success and includes stable ids for created entities.\"},{\"kind\":\"acl_guard\",\"description\":\"Actor permissions are honored for this step context.\"}],\"evidenceRequired\":[{\"kind\":\"api_trace\",\"label\":\"Request/response trace for this step\"},{\"kind\":\"snapshot\",\"label\":\"Structured snapshot.v1 screen blocks (what user saw) with real API-backed data\"}],\"guardrails\":[],\"tags\":[\"availability\",\"policy\"],\"delay\":{\"mode\":\"none\",\"jitterMs\":0}},{\"stepKey\":\"owner-configure-pricing\",\"order\":5,\"title\":\"Configure default pricing rules\",\"actorKey\":\"biz_owner\",\"intent\":\"Set base pricing and optional manual demand overrides.\",\"instruction\":\"Configure pricing defaults for the offer lifecycle including call fees/manual surge if UC needs imply it.\",\"expectedResult\":\"Pricing model persists and future bookings can calculate totals deterministically.\",\"toolHints\":[],\"assertions\":[{\"kind\":\"api_response\",\"description\":\"API call returns success and includes stable ids for created entities.\"},{\"kind\":\"acl_guard\",\"description\":\"Actor permissions are honored for this step context.\"}],\"evidenceRequired\":[{\"kind\":\"api_trace\",\"label\":\"Request/response trace for this step\"},{\"kind\":\"snapshot\",\"label\":\"Structured snapshot.v1 screen blocks (what user saw) with real API-backed data\"}],\"guardrails\":[],\"tags\":[\"pricing\"],\"delay\":{\"mode\":\"none\",\"jitterMs\":0}}]},{\"phaseKey\":\"supply-and-team-setup\",\"order\":3,\"title\":\"Supply And Team Setup\",\"description\":\"Business owner sets up hosts/assets/venues/resources and invites members.\",\"steps\":[{\"stepKey\":\"owner-create-resources\",\"order\":6,\"title\":\"Create resources representing hosts/assets/venues\",\"actorKey\":\"biz_owner\",\"intent\":\"Model real-world supply that bookings will consume.\",\"instruction\":\"Create at least one host resource and one non-host resource (asset or venue) suitable for the UC.\",\"expectedResult\":\"Resources are created with expected type, location, and buffers.\",\"toolHints\":[\"bizing.resources.create\"],\"assertions\":[{\"kind\":\"api_response\",\"description\":\"API call returns success and includes stable ids for created entities.\"},{\"kind\":\"acl_guard\",\"description\":\"Actor permissions are honored for this step context.\"}],\"evidenceRequired\":[{\"kind\":\"api_trace\",\"label\":\"Request/response trace for this step\"},{\"kind\":\"snapshot\",\"label\":\"Structured snapshot.v1 screen blocks (what user saw) with real API-backed data\"}],\"guardrails\":[],\"tags\":[\"resources\"],\"delay\":{\"mode\":\"none\",\"jitterMs\":0}},{\"stepKey\":\"owner-invite-member\",\"order\":7,\"title\":\"Invite and provision business member\",\"actorKey\":\"biz_owner\",\"intent\":\"Validate collaboration and role assignment.\",\"instruction\":\"Invite a biz member, assign an operational role, and verify that member can authenticate into the same biz.\",\"expectedResult\":\"Biz member account/session exists with scoped role permissions.\",\"toolHints\":[],\"assertions\":[{\"kind\":\"api_response\",\"description\":\"API call returns success and includes stable ids for created entities.\"},{\"kind\":\"acl_guard\",\"description\":\"Actor permissions are honored for this step context.\"}],\"evidenceRequired\":[{\"kind\":\"api_trace\",\"label\":\"Request/response trace for this step\"},{\"kind\":\"snapshot\",\"label\":\"Structured snapshot.v1 screen blocks (what user saw) with real API-backed data\"}],\"guardrails\":[],\"tags\":[\"team\",\"acl\"],\"delay\":{\"mode\":\"none\",\"jitterMs\":0}}]},{\"phaseKey\":\"catalog-publish\",\"order\":4,\"title\":\"Catalog And Publish\",\"description\":\"Owner creates services/offers/products and publishes sellable catalog entries.\",\"steps\":[{\"stepKey\":\"owner-create-offer\",\"order\":8,\"title\":\"Create offer shell\",\"actorKey\":\"biz_owner\",\"intent\":\"Define sellable service/catalog entry.\",\"instruction\":\"Create an offer representing the UC primary service; choose execution mode matching the scenario.\",\"expectedResult\":\"Offer is created in draft state with captured id.\",\"toolHints\":[\"bizing.offers.create\"],\"assertions\":[{\"kind\":\"api_response\",\"description\":\"API call returns success and includes stable ids for created entities.\"},{\"kind\":\"acl_guard\",\"description\":\"Actor permissions are honored for this step context.\"}],\"evidenceRequired\":[{\"kind\":\"api_trace\",\"label\":\"Request/respo",
+        "_size": 73494
+      },
+      "at": "2026-02-25T15:10:38.542Z"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AAP6zi3DB5at4dA8Tk2CT70fRI/traces",
+      "status": 201,
+      "requestBody": {
+        "stepKey": "customer-sign-up",
+        "title": "Customer one signs up and logs in API Trace",
+        "trace": {
+          "stepKey": "customer-sign-up",
+          "callCount": 4,
+          "calls": [
+            {
+              "method": "POST",
+              "path": "/api/v1/sagas/runs/saga_run_3AAP5BTzHw6F01xuVB3o2T1S7VF/steps/runner-submit-artifacts/result",
+              "status": 200,
+              "requestBody": {
+                "status": "in_progress",
+                "startedAt": "2026-02-25T15:10:38.037Z",
+                "resultPayload": {
+                  "note": "Started runner-submit-artifacts"
+                },
+                "assertionSummary": {
+                  "status": "in_progress"
+                }
+              },
+              "responseBody": {
+                "success": true,
+                "data": {
+                  "id": "saga_run_step_3AAP590T8RG1mzmP0nrYPcP4xbA",
+                  "sagaRunId": "saga_run_3AAP5BTzHw6F01xuVB3o2T1S7VF",
+                  "phaseKey": "reporting-and-closeout",
+                  "phaseOrder": 8,
+                  "phaseTitle": "Reporting And Closeout",
+                  "stepKey": "runner-submit-artifacts",
+                  "stepOrder": 28,
+                  "actorKey": "biz_owner",
+                  "instruction": "Upload snapshots for critical steps and submit final markdown report summarizing pass/fail and discovered gaps.",
+                  "expectedResult": "Run has persisted report + snapshots in project directory and indexed metadata in DB.",
+                  "delayMode": "none",
+                  "delayMs": null,
+                  "delayConditionKey": null,
+                  "delayTimeoutMs": null,
+                  "delayPollMs": null,
+                  "delayJitterMs": 0,
+                  "status": "in_progress",
+                  "attemptCount": 1,
+                  "startedAt": "2026-02-25T15:10:38.037Z",
+                  "endedAt": null,
+                  "failureCode": null,
+                  "failureMessage": null,
+                  "resultPayload": {
+                    "note": "Started runner-submit-artifacts"
+                  },
+                  "assertionSummary": {
+                    "status": "in_progress"
+                  },
+                  "metadata": {},
+                  "createdAt": "2026-02-25T15:10:15.688Z",
+                  "updatedAt": "2026-02-25T15:10:15.688Z",
+                  "deletedAt": null,
+                  "createdBy": null,
+                  "updatedBy": null,
+                  "deletedBy": null
+                },
+                "meta": {
+                  "requestId": "ef662a21-e34b-4ea7-b71b-9efa45a6ac78",
+                  "timestamp": "2026-02-25T15:10:38.142Z"
+                }
+              },
+              "at": "2026-02-25T15:10:38.143Z"
+            },
+            {
+              "method": "POST",
+              "path": "/api/v1/sagas/runs/saga_run_3AAP6XfXg5OXWpDDe75RYaEiUr0/steps/owner-calendar-review/result",
+              "status": 200,
+              "requestBody": {
+                "status": "in_progress",
+                "startedAt": "2026-02-25T15:10:38.078Z",
+                "resultPayload": {
+                  "note": "Started owner-calendar-review"
+                },
+                "assertionSummary": {
+                  "status": "in_progress"
+                }
+              },
+              "responseBody": {
+                "success": true,
+                "data": {
+                  "id": "saga_run_step_3AAP6Y19EjA6QfdRd8Xw32iI5fH",
+                  "sagaRunId": "saga_run_3AAP6XfXg5OXWpDDe75RYaEiUr0",
+                  "phaseKey": "operations-and-follow-up",
+                  "phaseOrder": 7,
+                  "phaseTitle": "Operations And Follow-up",
+                  "stepKey": "owner-calendar-review",
+                  "stepOrder": 17,
+                  "actorKey": "biz_owner",
+                  "instruction": "Query and compare availability + bookings timeline for the entities involved in this scenario.",
+                  "expectedResult": "Calendar state reflects booked slots, blocks, and any conflict outcomes from previous steps.",
+                  "delayMode": "none",
+                  "delayMs": null,
+                  "delayConditionKey": null,
+                  "delayTimeoutMs": null,
+                  "delayPollMs": null,
+                  "delayJitterMs": 0,
+                  "status": "in_progress",
+                  "attemptCount": 1,
+                  "startedAt": "2026-02-25T15:10:38.078Z",
+                  "endedAt": null,
+                  "failureCode": null,
+                  "failureMessage": null,
+                  "resultPayload": {
+                    "note": "Started owner-calendar-review"
+                  },
+                  "assertionSummary": {
+                    "status": "in_progress"
+                  },
+                  "metadata": {},
+                  "createdAt": "2026-02-25T15:10:26.830Z",
+                  "updatedAt": "2026-02-25T15:10:26.830Z",
+                  "deletedAt": null,
+                  "createdBy": null,
+                  "updatedBy": null,
+                  "deletedBy": null
+                },
+                "meta": {
+                  "requestId": "8c464a2e-42be-4ac8-bb76-031fae94cfc9",
+                  "timestamp": "2026-02-25T15:10:38.252Z"
+                }
+              },
+              "at": "2026-02-25T15:10:38.252Z"
+            },
+            {
+              "method": "POST",
+              "path": "/api/v1/sagas/runs/saga_run_3AAP7TH67xVdIBmfcLzveO5TDyX/steps/owner-create-resources/result",
+              "status": 200,
+              "requestBody": {
+                "status": "passed",
+                "startedAt": "2026-02-25T15:10:37.981Z",
+                "endedAt": "2026-02-25T15:10:37.981Z",
+                "failureMessage": null,
+                "resultPayload": {
+                  "note": "Host + asset resources created.",
+                  "evidence": {
+                    "hostId": "3AAP7u1PWKVmPu9AJPgH1BPeLZA",
+                    "assetId": "3AAP7yBhIBIuzZ34HlLjDoRQF7Q"
+                  }
+                },
+                "assertionSummary": {
+                  "status": "passed",
+                  "hasFailure": false,
+                  "assertionsPassed": 1
+                }
+              },
+              "responseBody": {
+                "success": true,
+                "data": {
+                  "id": "saga_run_step_3AAP7SOFruiPTpYxEXvHM6zvSFI",
+                  "sagaRunId": "saga_run_3AAP7TH67xVdIBmfcLzveO5TDyX",
+                  "phaseKey": "supply-and-team-setup",
+                  "phaseOrder": 3,
+                  "phaseTitle": "Supply And Team Setup",
+                  "stepKey": "owner-create-resources",
+                  "stepOrder": 6,
+                  "actorKey": "biz_owner",
+                  "instruction": "Create at least one host resource and one non-host resource (asset or venue) suitable for the UC.",
+                  "expectedResult": "Resources are created with expected type, location, and buffers.",
+                  "delayMode": "none",
+                  "delayMs": null,
+                  "delayConditionKey": null,
+                  "delayTimeoutMs": null,
+                  "delayPollMs": null,
+                  "delayJitterMs": 0,
+                  "status": "passed",
+                  "attemptCount": 1,
+                  "startedAt": "2026-02-25T15:10:37.981Z",
+                  "endedAt": "2026-02-25T15:10:37.981Z",
+                  "failureCode": null,
+                  "failureMessage": null,
+                  "resultPayload": {
+                    "note": "Host + asset resources created.",
+                    "evidence": {
+                      "hostId": "3AAP7u1PWKVmPu9AJPgH1BPeLZA",
+                      "assetId": "3AAP7yBhIBIuzZ34HlLjDoRQF7Q"
+                    }
+                  },
+                  "assertionSummary": {
+                    "status": "passed",
+                    "hasFailure": false,
+                    "assertionsPassed": 1
+                  },
+                  "metadata": {},
+                  "createdAt": "2026-02-25T15:10:33.543Z",
+                  "updatedAt": "2026-02-25T15:10:33.543Z",
+                  "deletedAt": null,
+                  "createdBy": null,
+                  "updatedBy": null,
+                  "deletedBy": null
+                },
+                "meta": {
+                  "requestId": "7acc7f53-9f00-4ffa-8b60-05144c949489",
+                  "timestamp": "2026-02-25T15:10:38.264Z"
+                }
+              },
+              "at": "2026-02-25T15:10:38.265Z"
+            },
+            {
+              "method": "POST",
+              "path": "/api/v1/bizes/3AAP7IwZQGfsLJDsIhBjfi3Ywb4/offers/offer_3AAP7rLvT73n5lO22cDDhgqWMK1/versions",
+              "status": 201,
+              "requestBody": {
+                "version": 1,
+                "status": "published",
+                "durationMode": "fixed",
+                "defaultDurationMin": 50,
+                "basePriceMinor": 15000,
+                "currency": "USD"
+              },
+              "responseBody": {
+                "success": true,
+                "data": {
+                  "id": "offer_version_3AAP80D3mHrEF44BZE4f4PvoTie",
+                  "bizId": "3AAP7IwZQGfsLJDsIhBjfi3Ywb4",
+                  "offerId": "offer_3AAP7rLvT73n5lO22cDDhgqWMK1",
+                  "version": 1,
+                  "status": "published",
+                  "statusConfigValueId": null,
+                  "publishAt": null,
+                  "retireAt": null,
+                  "durationMode": "fixed",
+                  "durationModeConfigValueId": null,
+                  "defaultDurationMin": 50,
+                  "minDurationMin": null,
+                  "maxDurationMin": null,
+                  "durationStepMin": 15,
+                  "basePriceMinor": 15000,
+                  "currency": "USD",
+                  "pricingModel": {},
+                  "policyModel": {},
+                  "capacityModel": {},
+                  "revisionHash": null,
+                  "metadata": {},
+                  "createdAt": "2026-02-25T15:10:38.261Z",
+                  "updatedAt": "2026-02-25T15:10:38.261Z",
+                  "deletedAt": null,
+                  "createdBy": null,
+                  "updatedBy": null,
+                  "deletedBy": null
+                },
+                "meta": {
+                  "requestId": "84c99912-7848-498c-ab78-40de610c3555",
+                  "timestamp": "2026-02-25T15:10:38.270Z"
+                }
+              },
+              "at": "2026-02-25T15:10:38.273Z"
+            }
+          ]
+        },
+        "metadata": {
+          "source": "rerun-sagas.ts"
+        }
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "id": "saga_artifact_3AAP81FUZYvhLdHlBsR6ScTlzwH",
+          "sagaRunId": "saga_run_3AAP6zi3DB5at4dA8Tk2CT70fRI",
+          "sagaRunStepId": "saga_run_step_3AAP757htuitXTMIUDjWKyeFXw8",
+          "artifactType": "api_trace",
+          "title": "Customer one signs up and logs in API Trace",
+          "storagePath": "testing/sagas/runs/saga_run_3AAP6zi3DB5at4dA8Tk2CT70fRI/artifacts/1772032238314-Customer_one_signs_up_and_logs_in_API_Trace.json",
+          "contentType": "application/json",
+          "bodyText": "{\n  \"stepKey\": \"customer-sign-up\",\n  \"callCount\": 4,\n  \"calls\": [\n    {\n      \"method\": \"POST\",\n      \"path\": \"/api/v1/sagas/runs/saga_run_3AAP5BTzHw6F01xuVB3o2T1S7VF/steps/runner-submit-artifacts/result\",\n      \"status\": 200,\n      \"requestBody\": {\n        \"status\": \"in_progress\",\n        \"startedAt\": \"2026-02-25T15:10:38.037Z\",\n        \"resultPayload\": {\n          \"note\": \"Started runner-submit-artifacts\"\n        },\n        \"assertionSummary\": {\n          \"status\": \"in_progress\"\n        }\n      },\n      \"responseBody\": {\n        \"success\": true,\n        \"data\": {\n          \"id\": \"saga_run_step_3AAP590T8RG1mzmP0nrYPcP4xbA\",\n          \"sagaRunId\": \"saga_run_3AAP5BTzHw6F01xuVB3o2T1S7VF\",\n          \"phaseKey\": \"reporting-and-closeout\",\n          \"phaseOrder\": 8,\n          \"phaseTitle\": \"Reporting And Closeout\",\n          \"stepKey\": \"runner-submit-artifacts\",\n          \"stepOrder\": 28,\n          \"actorKey\": \"biz_owner\",\n          \"instruction\": \"Upload snapshots for critical steps and submit final markdown report summarizing pass/fail and discovered gaps.\",\n          \"expectedResult\": \"Run has persisted report + snapshots in project directory and indexed metadata in DB.\",\n          \"delayMode\": \"none\",\n          \"delayMs\": null,\n          \"delayConditionKey\": null,\n          \"delayTimeoutMs\": null,\n          \"delayPollMs\": null,\n          \"delayJitterMs\": 0,\n          \"status\": \"in_progress\",\n          \"attemptCount\": 1,\n          \"startedAt\": \"2026-02-25T15:10:38.037Z\",\n          \"endedAt\": null,\n          \"failureCode\": null,\n          \"failureMessage\": null,\n          \"resultPayload\": {\n            \"note\": \"Started runner-submit-artifacts\"\n          },\n          \"assertionSummary\": {\n            \"status\": \"in_progress\"\n          },\n          \"metadata\": {},\n          \"createdAt\": \"2026-02-25T15:10:15.688Z\",\n          \"updatedAt\": \"2026-02-25T15:10:15.688Z\",\n          \"deletedAt\": null,\n          \"createdBy\": null,\n          \"updatedBy\": null,\n          \"deletedBy\": null\n        },\n        \"meta\": {\n          \"requestId\": \"ef662a21-e34b-4ea7-b71b-9efa45a6ac78\",\n          \"timestamp\": \"2026-02-25T15:10:38.142Z\"\n        }\n      },\n      \"at\": \"2026-02-25T15:10:38.143Z\"\n    },\n    {\n      \"method\": \"POST\",\n      \"path\": \"/api/v1/sagas/runs/saga_run_3AAP6XfXg5OXWpDDe75RYaEiUr0/steps/owner-calendar-review/result\",\n      \"status\": 200,\n      \"requestBody\": {\n        \"status\": \"in_progress\",\n        \"startedAt\": \"2026-02-25T15:10:38.078Z\",\n        \"resultPayload\": {\n          \"note\": \"Started owner-calendar-review\"\n        },\n        \"assertionSummary\": {\n          \"status\": \"in_progress\"\n        }\n      },\n      \"responseBody\": {\n        \"success\": true,\n        \"data\": {\n          \"id\": \"saga_run_step_3AAP6Y19EjA6QfdRd8Xw32iI5fH\",\n          \"sagaRunId\": \"saga_run_3AAP6XfXg5OXWpDDe75RYaEiUr0\",\n          \"phaseKey\": \"operations-and-follow-up\",\n          \"phaseOrder\": 7,\n          \"phaseTitle\": \"Operations And Follow-up\",\n          \"stepKey\": \"owner-calendar-review\",\n          \"stepOrder\": 17,\n          \"actorKey\": \"biz_owner\",\n          \"instruction\": \"Query and compare availability + bookings timeline for the entities involved in this scenario.\",\n          \"expectedResult\": \"Calendar state reflects booked slots, blocks, and any conflict outcomes from previous steps.\",\n          \"delayMode\": \"none\",\n          \"delayMs\": null,\n          \"delayConditionKey\": null,\n          \"delayTimeoutMs\": null,\n          \"delayPollMs\": null,\n          \"delayJitterMs\": 0,\n          \"status\": \"in_progress\",\n          \"attemptCount\": 1,\n          \"startedAt\": \"2026-02-25T15:10:38.078Z\",\n          \"endedAt\": null,\n          \"failureCode\": null,\n          \"failureMessage\": null,\n          \"resultPayload\": {\n            \"note\": \"Started owner-calendar-review\"\n          },\n          \"assertionSummary\": {\n            \"status\": \"in_progress\"\n          },\n          \"metadata\": {},\n          \"createdAt\": \"2026-02-25T15:10:26.830Z\",\n          \"updatedAt\": \"2026-02-25T15:10:26.830Z\",\n          \"deletedAt\": null,\n          \"createdBy\": null,\n          \"updatedBy\": null,\n          \"deletedBy\": null\n        },\n        \"meta\": {\n          \"requestId\": \"8c464a2e-42be-4ac8-bb76-031fae94cfc9\",\n          \"timestamp\": \"2026-02-25T15:10:38.252Z\"\n        }\n      },\n      \"at\": \"2026-02-25T15:10:38.252Z\"\n    },\n    {\n      \"method\": \"POST\",\n      \"path\": \"/api/v1/sagas/runs/saga_run_3AAP7TH67xVdIBmfcLzveO5TDyX/steps/owner-create-resources/result\",\n      \"status\": 200,\n      \"requestBody\": {\n        \"status\": \"passed\",\n        \"startedAt\": \"2026-02-25T15:10:37.981Z\",\n        \"endedAt\": \"2026-02-25T15:10:37.981Z\",\n        \"failureMessage\": null,\n        \"resultPayload\": {\n          \"note\": \"Host + asset resources created.\",\n          \"evidence\": {\n            \"hostId\": \"3AAP7u1PWKVmPu9AJPgH1BPeLZA\",\n            \"assetId\": \"3AAP7yBhIBIuzZ34HlLjDoRQF7Q\"\n          }\n        },\n        \"assertionSummary\": {\n          \"status\": \"passed\",\n          \"hasFailure\": false,\n          \"assertionsPassed\": 1\n        }\n      },\n      \"responseBody\": {\n        \"success\": true,\n        \"data\": {\n          \"id\": \"saga_run_step_3AAP7SOFruiPTpYxEXvHM6zvSFI\",\n          \"sagaRunId\": \"saga_run_3AAP7TH67xVdIBmfcLzveO5TDyX\",\n          \"phaseKey\": \"supply-and-team-setup\",\n          \"phaseOrder\": 3,\n          \"phaseTitle\": \"Supply And Team Setup\",\n          \"stepKey\": \"owner-create-resources\",\n          \"stepOrder\": 6,\n          \"actorKey\": \"biz_owner\",\n          \"instruction\": \"Create at least one host resource and one non-host resource (asset or venue) suitable for the UC.\",\n          \"expectedResult\": \"Resources are created with expected type, location, and buffers.\",\n          \"delayMode\": \"none\",\n          \"delayMs\": null,\n          \"delayConditionKey\": null,\n          \"delayTimeoutMs\": null,\n          \"delayPollMs\": null,\n          \"delayJitterMs\": 0,\n          \"status\": \"passed\",\n          \"attemptCount\": 1,\n          \"startedAt\": \"2026-02-25T15:10:37.981Z\",\n          \"endedAt\": \"2026-02-25T15:10:37.981Z\",\n          \"failureCode\": null,\n          \"failureMessage\": null,\n          \"resultPayload\": {\n            \"note\": \"Host + asset resources created.\",\n            \"evidence\": {\n              \"hostId\": \"3AAP7u1PWKVmPu9AJPgH1BPeLZA\",\n              \"assetId\": \"3AAP7yBhIBIuzZ34HlLjDoRQF7Q\"\n            }\n          },\n          \"assertionSummary\": {\n            \"status\": \"passed\",\n            \"hasFailure\": false,\n            \"assertionsPassed\": 1\n          },\n          \"metadata\": {},\n          \"createdAt\": \"2026-02-25T15:10:33.543Z\",\n          \"updatedAt\": \"2026-02-25T15:10:33.543Z\",\n          \"deletedAt\": null,\n          \"createdBy\": null,\n          \"updatedBy\": null,\n          \"deletedBy\": null\n        },\n        \"meta\": {\n          \"requestId\": \"7acc7f53-9f00-4ffa-8b60-05144c949489\",\n          \"timestamp\": \"2026-02-25T15:10:38.264Z\"\n        }\n      },\n      \"at\": \"2026-02-25T15:10:38.265Z\"\n    },\n    {\n      \"method\": \"POST\",\n      \"path\": \"/api/v1/bizes/3AAP7IwZQGfsLJDsIhBjfi3Ywb4/offers/offer_3AAP7rLvT73n5lO22cDDhgqWMK1/versions\",\n      \"status\": 201,\n      \"requestBody\": {\n        \"version\": 1,\n        \"status\": \"published\",\n        \"durationMode\": \"fixed\",\n        \"defaultDurationMin\": 50,\n        \"basePriceMinor\": 15000,\n        \"currency\": \"USD\"\n      },\n      \"responseBody\": {\n        \"success\": true,\n        \"data\": {\n          \"id\": \"offer_version_3AAP80D3mHrEF44BZE4f4PvoTie\",\n          \"bizId\": \"3AAP7IwZQGfsLJDsIhBjfi3Ywb4\",\n          \"offerId\": \"offer_3AAP7rLvT73n5lO22cDDhgqWMK1\",\n          \"version\": 1,\n          \"status\": \"published\",\n          \"statusConfigValueId\": null,\n          \"publishAt\": null,\n          \"retireAt\": null,\n          \"durationMode\": \"fixed\",\n          \"durationModeConfigValueId\": null,\n          \"defaultDurationMin\": 50,\n          \"minDurationMin\": null,\n          \"maxDurationMin\": null,\n          \"durationStepMin\": 15,\n          \"basePriceMinor\": 15000,\n          \"currency\": \"USD\",\n          \"pricingModel\": {},\n          \"policyModel\": {},\n          \"capacityModel\": {},\n          \"revisionHash\": null,\n          \"metadata\": {},\n          \"createdAt\": \"2026-02-25T15:10:38.261Z\",\n          \"updatedAt\": \"2026-02-25T15:10:38.261Z\",\n          \"deletedAt\": null,\n          \"createdBy\": null,\n          \"updatedBy\": null,\n          \"deletedBy\": null\n        },\n        \"meta\": {\n          \"requestId\": \"84c99912-7848-498c-ab78-40de610c3555\",\n          \"timestamp\": \"2026-02-25T15:10:38.270Z\"\n        }\n      },\n      \"at\": \"2026-02-25T15:10:38.273Z\"\n    }\n  ]\n}\n",
+          "byteSize": 8575,
+          "checksum": "3493399ce449a01d673201028e228862f2b9f7793d720c7ae0e20ecf3512aa6b",
+          "capturedAt": "2026-02-25T15:10:38.445Z",
+          "metadata": {
+            "source": "rerun-sagas.ts"
+          },
+          "createdAt": "2026-02-25T15:10:38.445Z",
+          "updatedAt": "2026-02-25T15:10:38.445Z",
+          "deletedAt": null,
+          "createdBy": null,
+          "updatedBy": null,
+          "deletedBy": null
+        },
+        "meta": {
+          "requestId": "ea926530-7765-4461-9ec4-a1bad9144de4",
+          "timestamp": "2026-02-25T15:10:38.639Z"
+        }
+      },
+      "at": "2026-02-25T15:10:38.640Z"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AAP6aXEsFFQUBt2SsfjcjWdp3M/steps/owner-revenue-sanity/result",
+      "status": 200,
+      "requestBody": {
+        "status": "passed",
+        "startedAt": "2026-02-25T15:10:38.119Z",
+        "endedAt": "2026-02-25T15:10:38.119Z",
+        "failureMessage": null,
+        "resultPayload": {
+          "note": "Revenue sanity computed from booking orders.",
+          "evidence": {
+            "bookingCount": 2,
+            "totalMinor": 30000,
+            "currency": "USD"
+          }
+        },
+        "assertionSummary": {
+          "status": "passed",
+          "hasFailure": false,
+          "assertionsPassed": 1
+        }
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "id": "saga_run_step_3AAP6XCR2PjMxLkhkiNMIVt09pt",
+          "sagaRunId": "saga_run_3AAP6aXEsFFQUBt2SsfjcjWdp3M",
+          "phaseKey": "reporting-and-closeout",
+          "phaseOrder": 8,
+          "phaseTitle": "Reporting And Closeout",
+          "stepKey": "owner-revenue-sanity",
+          "stepOrder": 18,
+          "actorKey": "biz_owner",
+          "instruction": "Read reporting endpoints and verify booking totals, counts, and statuses align with saga actions.",
+          "expectedResult": "Reported metrics match booking actions and highlight any discrepancies for schema/API iteration.",
+          "delayMode": "none",
+          "delayMs": null,
+          "delayConditionKey": null,
+          "delayTimeoutMs": null,
+          "delayPollMs": null,
+          "delayJitterMs": 0,
+          "status": "passed",
+          "attemptCount": 1,
+          "startedAt": "2026-02-25T15:10:38.119Z",
+          "endedAt": "2026-02-25T15:10:38.119Z",
+          "failureCode": null,
+          "failureMessage": null,
+          "resultPayload": {
+            "note": "Revenue sanity computed from booking orders.",
+            "evidence": {
+              "currency": "USD",
+              "totalMinor": 30000,
+              "bookingCount": 2
+            }
+          },
+          "assertionSummary": {
+            "status": "passed",
+            "hasFailure": false,
+            "assertionsPassed": 1
+          },
+          "metadata": {},
+          "createdAt": "2026-02-25T15:10:26.134Z",
+          "updatedAt": "2026-02-25T15:10:26.134Z",
+          "deletedAt": null,
+          "createdBy": null,
+          "updatedBy": null,
+          "deletedBy": null
+        },
+        "meta": {
+          "requestId": "623f3070-7dca-422b-bfab-1c3737e08c7d",
+          "timestamp": "2026-02-25T15:10:38.641Z"
+        }
+      },
+      "at": "2026-02-25T15:10:38.642Z"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AAP74m3cw0A9hzt7V9eEkwlgts/traces",
+      "status": 201,
+      "requestBody": {
+        "_truncated": true,
+        "_preview": "{\"stepKey\":\"owner-create-offer-version\",\"title\":\"Create and publish offer version API Trace\",\"trace\":{\"stepKey\":\"owner-create-offer-version\",\"callCount\":1,\"calls\":[{\"method\":\"POST\",\"path\":\"/api/v1/sagas/runs/saga_run_3AAP6zi3DB5at4dA8Tk2CT70fRI/snapshots\",\"status\":201,\"requestBody\":{\"_truncated\":true,\"_preview\":\"{\\\"stepKey\\\":\\\"owner-publish-catalog\\\",\\\"screenKey\\\":\\\"owner-publish-catalog-1772032238037\\\",\\\"title\\\":\\\"Publish catalog visibility Snapshot\\\",\\\"status\\\":\\\"passed\\\",\\\"route\\\":\\\"/sagas/saga_run_3AAP6zi3DB5at4dA8Tk2CT70fRI/owner-publish-catalog\\\",\\\"format\\\":\\\"json\\\",\\\"view\\\":{\\\"title\\\":\\\"Publish catalog visibility\\\",\\\"subtitle\\\":\\\"Offer published and activated.\\\",\\\"blocks\\\":[{\\\"type\\\":\\\"alert\\\",\\\"title\\\":\\\"Owner Publish Catalog completed\\\",\\\"message\\\":\\\"Offer published and activated.\\\",\\\"tone\\\":\\\"success\\\"}]},\\\"rawData\\\":{\\\"stepKey\\\":\\\"owner-publish-catalog\\\",\\\"resultPayload\\\":{\\\"note\\\":\\\"Offer published and activated.\\\"},\\\"apiCalls\\\":[{\\\"method\\\":\\\"POST\\\",\\\"path\\\":\\\"/api/v1/sagas/runs/saga_run_3AAP6aXEsFFQUBt2SsfjcjWdp3M/traces\\\",\\\"status\\\":201,\\\"requestBody\\\":{\\\"stepKey\\\":\\\"owner-calendar-review\\\",\\\"title\\\":\\\"Owner reviews consolidated calendar state API Trace\\\",\\\"trace\\\":{\\\"stepKey\\\":\\\"owner-calendar-review\\\",\\\"callCount\\\":7,\\\"calls\\\":[{\\\"method\\\":\\\"POST\\\",\\\"path\\\":\\\"/api/v1/sagas/runs/saga_run_3AAP6o5DMMc4LSSqF2bxCwtb7R2/steps/customer-sign-up/result\\\",\\\"status\\\":200,\\\"requestBody\\\":{\\\"status\\\":\\\"passed\\\",\\\"startedAt\\\":\\\"2026-02-25T15:10:37.261Z\\\",\\\"endedAt\\\":\\\"2026-02-25T15:10:37.261Z\\\",\\\"failureMessage\\\":null,\\\"resultPayload\\\":{\\\"note\\\":\\\"Primary customer account created.\\\",\\\"evidence\\\":{\\\"customerUserId\\\":\\\"5ZbJ2E0m3CY8tiXgLSlpcClCmOxA1CcB\\\",\\\"email\\\":\\\"customer1-uc-254-the-solo-entrepreneur-sarah-1772032237002-qnnl2f@example.com\\\"}},\\\"assertionSummary\\\":{\\\"status\\\":\\\"passed\\\",\\\"hasFailure\\\":false,\\\"assertionsPassed\\\":1}},\\\"responseBody\\\":{\\\"success\\\":true,\\\"data\\\":{\\\"id\\\":\\\"saga_run_step_3AAP6iroeijE2Gx3ijWU2byF6hY\\\",\\\"sagaRunId\\\":\\\"saga_run_3AAP6o5DMMc4LSSqF2bxCwtb7R2\\\",\\\"phaseKey\\\":\\\"customer-lifecycle\\\",\\\"phaseOrder\\\":5,\\\"phaseTitle\\\":\\\"Customer Lifecycle\\\",\\\"stepKey\\\":\\\"customer-sign-up\\\",\\\"stepOrder\\\":11,\\\"actorKey\\\":\\\"customer_1\\\",\\\"instruction\\\":\\\"Create customer account/session and verify customer can browse published offers.\\\",\\\"expectedResult\\\":\\\"Customer session established and offer discovery succeeds.\\\",\\\"delayMode\\\":\\\"none\\\",\\\"delayMs\\\":null,\\\"delayConditionKey\\\":null,\\\"delayTimeoutMs\\\":null,\\\"delayPollMs\\\":null,\\\"delayJitterMs\\\":0,\\\"status\\\":\\\"passed\\\",\\\"attemptCount\\\":1,\\\"startedAt\\\":\\\"2026-02-25T15:10:37.261Z\\\",\\\"endedAt\\\":\\\"2026-02-25T15:10:37.261Z\\\",\\\"failureCode\\\":null,\\\"failureMessage\\\":null,\\\"resultPayload\\\":{\\\"note\\\":\\\"Primary customer account created.\\\",\\\"evidence\\\":{\\\"email\\\":\\\"customer1-uc-254-the-solo-entrepreneur-sarah-1772032237002-qnnl2f@example.com\\\",\\\"customerUserId\\\":\\\"5ZbJ2E0m3CY8tiXgLSlpcClCmOxA1CcB\\\"}},\\\"assertionSummary\\\":{\\\"status\\\":\\\"passed\\\",\\\"hasFailure\\\":false,\\\"assertionsPassed\\\":1},\\\"metadata\\\":{},\\\"createdAt\\\":\\\"2026-02-25T15:10:28.309Z\\\",\\\"updatedAt\\\":\\\"2026-02-25T15:10:28.309Z\\\",\\\"deletedAt\\\":null,\\\"createdBy\\\":null,\\\"updatedBy\\\":null,\\\"deletedBy\\\":null},\\\"meta\\\":{\\\"requestId\\\":\\\"34dfc84b-f759-494e-a7e0-15246562f857\\\",\\\"timestamp\\\":\\\"2026-02-25T15:10:37.464Z\\\"}},\\\"at\\\":\\\"2026-02-25T15:10:37.464Z\\\"},{\\\"method\\\":\\\"POST\\\",\\\"path\\\":\\\"/api/v1/sagas/runs/saga_run_3AAP5KP57oYKkNfT8mI9YeJLMBW/steps/runner-submit-artifacts/result\\\",\\\"status\\\":200,\\\"requestBody\\\":{\\\"status\\\":\\\"in_progress\\\",\\\"startedAt\\\":\\\"2026-02-25T15:10:37.373Z\\\",\\\"resultPayload\\\":{\\\"note\\\":\\\"Started runner-submit-artifacts\\\"},\\\"assertionSummary\\\":{\\\"status\\\":\\\"in_progress\\\"}},\\\"responseBody\\\":{\\\"success\\\":true,\\\"data\\\":{\\\"id\\\":\\\"saga_run_step_3AAP5KgWRVRorvF4Z0w7x0Z3Pu2\\\",\\\"sagaRunId\\\":\\\"saga_run_3AAP5KP57oYKkNfT8mI9YeJLMBW\\\",\\\"phaseKey\\\":\\\"reporting-and-closeout\\\",\\\"phaseOrder\\\":8,\\\"phaseTitle\\\":\\\"Reporting And Closeout\\\",\\\"stepKey\\\":\\\"runner-submit-artifacts\\\",\\\"stepOrder\\\":31,\\\"actorKey\\\":\\\"biz_owner\\\",\\\"instruction\\\":\\\"Upload snapshots for critical steps and submit final markdown report summarizing pass/fail and discovered gaps.\\\",\\\"expectedResult\\\":\\\"Run has persisted report + snapshots in project directory and indexed metadata in DB.\\\",\\\"delayMode\\\":\\\"none\\\",\\\"delayMs\\\":null,\\\"delayConditionKey\\\":null,\\\"delayTimeoutMs\\\":null,\\\"delayPollMs\\\":null,\\\"delayJitterMs\\\":0,\\\"status\\\":\\\"in_progress\\\",\\\"attemptCount\\\":1,\\\"startedAt\\\":\\\"2026-02-25T15:10:37.373Z\\\",\\\"endedAt\\\":null,\\\"failureCode\\\":null,\\\"failureMessage\\\":null,\\\"resultPayload\\\":{\\\"note\\\":\\\"Started runner-submit-artifacts\\\"},\\\"assertionSummary\\\":{\\\"status\\\":\\\"in_progress\\\"},\\\"metadata\\\":{},\\\"createdAt\\\":\\\"2026-02-25T15:10:16.921Z\\\",\\\"updatedAt\\\":\\\"2026-02-25T15:10:16.921Z\\\",\\\"deletedAt\\\":null,\\\"createdBy\\\":null,\\\"updatedBy\\\":null,\\\"deletedBy\\\":null},\\\"meta\\\":{\\\"requestId\\\":\\\"01d139d8-5b7c-4d33-8a74-150c2349b315\\\",\\\"timestamp\\\":\\\"2026-02-25T15:10:37.471Z\\\"}},\\\"at\\\":\\\"2026-02-25T15:10:37.471Z\\\"},{\\\"method\\\":\\\"POST\\\",\\\"path\\\":\\\"/api/v1/sagas/runs/saga_run_3AAP7TH67xVdIBmfcLzveO5TDyX/steps/owner-configure-pricing/result\\\",\\\"status\\\":200,\\\"requestBody\\\":{\\\"status\\\":\\\"in_progress\\\",\\\"startedAt\\\":\\\"2026-02-25T15:10:37.374Z\\\",\\\"resultPayload\\\":{\\\"note\\\":\\\"Started owner-configure-pricing\\\"},\\\"assertionSummary\\\":{\\\"status\\\":\\\"in_progress\\\"}},\\\"responseBody\\\":{\\\"success\\\":true,\\\"data\\\":{\\\"id\\\":\\\"saga_run_step_3AAP7O7V6nZ4ODtZdufOoLNdkSZ\\\",\\\"sagaRunId\\\":\\\"saga_run_3AAP7TH67xVdIBmfcLzveO5TDyX\\\",\\\"phaseKey\\\":\\\"business-configuration\\\",\\\"phaseOrder\\\":2,\\\"phaseTitle\\\":\\\"Business Configuration\\\",\\\"stepKey\\\":\\\"owner-configure-pricing\\\",\\\"stepOrder\\\":5,\\\"actorKey\\\":\\\"biz_owner\\\",\\\"instruction\\\":\\\"Configure pricing defaults for the offer lifecycle including call fees/manual surge if UC needs imply it.\\\",\\\"expectedResult\\\":\\\"Pricing model persists and future bookings can calculate totals deterministically.\\\",\\\"delayMode\\\":\\\"none\\\",\\\"delayMs\\\":null,\\\"delayConditionKey\\\":null,\\\"delayTimeoutMs\\\":null,\\\"delayPollMs\\\":null,\\\"delayJitterMs\\\":0,\\\"status\\\":\\\"in_progress\\\",\\\"attemptCount\\\":1,\\\"startedAt\\\":\\\"2026-02-25T15:10:37.374Z\\\",\\\"endedAt\\\":null,\\\"failureCode\\\":null,\\\"failureMessage\\\":null,\\\"resultPayload\\\":{\\\"note\\\":\\\"Started owner-configure-pricing\\\"},\\\"assertionSummary\\\":{\\\"status\\\":\\\"in_progress\\\"},\\\"metadata\\\":{},\\\"createdAt\\\":\\\"2026-02-25T15:10:33.543Z\\\",\\\"updatedAt\\\":\\\"2026-02-25T15:10:33.543Z\\\",\\\"deletedAt\\\":null,\\\"createdBy\\\":null,\\\"updatedBy\\\":null,\\\"deletedBy\\\":null},\\\"meta\\\":{\\\"requestId\\\":\\\"e08fc189-d207-4129-9115-66855836f859\\\",\\\"timestamp\\\":\\\"2026-02-25T15:10:37.474Z\\\"}},\\\"at\\\":\\\"2026-02-25T15:10:37.475Z\\\"},{\\\"method\\\":\\\"POST\\\",\\\"path\\\":\\\"/api/v1/sagas/runs/saga_run_3AAP6zi3DB5at4dA8Tk2CT70fRI/steps/owner-create-offer-version/result\\\",\\\"status\\\":200,\\\"requestBody\\\":{\\\"status\\\":\\\"passed\\\",\\\"startedAt\\\":\\\"2026-02-25T15:10:37.292Z\\\",\\\"endedAt\\\":\\\"2026-02-25T15:10:37.292Z\\\",\\\"failureMessage\\\":null,\\\"resultPayload\\\":{\\\"note\\\":\\\"Offer version created.\\\",\\\"evidence\\\":{\\\"offerVersionId\\\":\\\"offer_version_3AAP7u0K9iYecLi39uCUTlHodzu\\\"}},\\\"assertionSummary\\\":{\\\"status\\\":\\\"passed\\\",\\\"hasFailure\\\":false,\\\"assertionsPassed\\\":1}},\\\"responseBody\\\":{\\\"success\\\":true,\\\"data\\\":{\\\"id\\\":\\\"saga_run_step_3AAP73DwxodHvodWqFmYa5qxq70\\\",\\\"sagaRunId\\\":\\\"saga_run_3AAP6zi3DB5at4dA8Tk2CT70fRI\\\",\\\"phaseKey\\\":\\\"catalog-publish\\\",\\\"phaseOrder\\\":4,\\\"phaseTitle\\\":\\\"Catalog And Publish\\\",\\\"stepKey\\\":\\\"owner-create-offer-version\\\",\\\"stepOrder\\\":9,\\\"actorKey\\\":\\\"biz_owner\\\",\\\"instruction\\\":\\\"Create a published offer version with realistic duration and base price for this UC.\\\",\\\"expectedResult\\\":\\\"Offer version exists and is ready for booking order references.\\\",\\\"delayMode\\\":\\\"none\\\",\\\"delayMs\\\":null,\\\"delayConditionKey\\\":null,\\\"delayTimeoutMs\\\":null,\\\"delayPollMs\\\":null,\\\"delayJitterMs\\\":0,\\\"status\\\":\\\"passed\\\",\\\"attemptCount\\\":1,\\\"startedAt\\\":\\\"2026-02-25T15:10:37.292Z\\\",\\\"endedAt\\\":\\\"2026-02-25T15:10:37.292Z\\\",\\\"failureCode\\\":null,\\\"failureMessage\\\":null,\\\"resultPayload\\\":{\\\"note\\\":\\\"Offer version created.\\\",\\\"evidence\\\":{\\\"offerVersionId\\\":\\\"offer_version_3AAP7u0K9iYecLi39uCUTlHodzu\\\"}},\\\"assertionSummary\\\":{\\\"status\\\":\\\"passed\\\",\\\"hasFailure\\\":false,\\\"assertionsPassed\\\":1},\\\"metadata\\\":{},\\\"createdAt\\\":\\\"2026-02-25T15:10:30.350Z\\\",\\\"updatedAt\\\":\\\"2026-02-25T15:10:30.350Z\\\",\\\"deletedAt\\\":null,\\\"createdBy\\\":null,\\\"updatedBy\\\":null,\\\"deletedBy\\\":null},\\\"meta\\\":{\\\"requestId\\\":\\\"9924cb99-477a-4f68-83f3-9dec980b010f\\\",\\\"timestamp\\\":\\\"2026-02-25T15:10:37.476Z\\\"}},\\\"at\\\":\\\"2026-02-25T15:10:37.477Z\\\"},{\\\"method\\\":\\\"GET\\\",\\\"path\\\":\\\"/api/v1/bizes/3AAP6oJcVvsFJONG5N82uslA2ng/booking-orders?perPage=50\\\",\\\"status\\\":200,\\\"responseBody\\\":{\\\"success\\\":true,\\\"data\\\":[{\\\"id\\\":\\\"booking_order_3AAP7To3eMQTylhFNStiTKDkzaa\\\",\\\"bizId\\\":\\\"3AAP6oJcVvsFJONG5N82uslA2ng\\\",\\\"offerId\\\":\\\"offer_3AAP7AlgzdpiPQWk8JezRPbomXv\\\",\\\"offerVersionId\\\":\\\"offer_version_3AAP7DH6UngMFSgAXRPak1iRPXR\\\",\\\"customerUserId\\\":\\\"GaQp8bKGa5HTWJQ5Kb23Nkm1pFJxlhE3\\\",\\\"customerGroupAccountId\\\":null,\\\"status\\\":\\\"in_progress\\\",\\\"statusConfigValueId\\\":null,\\\"currency\\\":\\\"USD\\\",\\\"subtotalMinor\\\":15000,\\\"taxMinor\\\":0,\\\"feeMinor\\\":0,\\\"discountMinor\\\":0,\\\"totalMinor\\\":15000,\\\"requestedStartAt\\\":\\\"2026-02-26T15:10:34.818Z\\\",\\\"requestedEndAt\\\":\\\"2026-02-26T16:00:34.818Z\\\",\\\"confirmedStartAt\\\":\\\"2026-02-26T15:10:34.818Z\\\",\\\"confirmedEndAt\\\":\\\"2026-02-26T16:00:34.818Z\\\",\\\"pricingSnapshot\\\":{},\\\"policySnapshot\\\":{},\\\"metadata\\\":{},\\\"createdAt\\\":\\\"2026-02-25T15:10:34.820Z\\\",\\\"updatedAt\\\":\\\"2026-02-25T15:10:34.820Z\\\",\\\"deletedAt\\\":null,\\\"createdBy\\\":null,\\\"updatedBy\\\":null,\\\"deletedBy\\\":null},{\\\"id\\\":\\\"booking_order_3AAP7YeCZ30JP30VaAbKTFL0TJM\\\",\\\"bizId\\\":\\\"3AAP6oJcVvsFJONG5N82uslA2ng\\\",\\\"offerId\\\":\\\"offer_3AAP7AlgzdpiPQWk8JezRPbomXv\\\",\\\"offerVersionId\\\":\\\"offer_version_3AAP7DH6UngMFSgAXRPak1iRPXR\\\",\\\"customerUserId\\\":\\\"XopRKJ9Joxz6tao0N7W4HtTP08C9QrCJ\\\",\\\"customerGroupAccountId\\\":null,\\\"status\\\":\\\"confirmed\\\",\\\"statusConfigValueId\\\":null,\\\"currency\\\":\\\"USD\\\",\\\"subtotalMinor\\\":15000,\\\"taxMinor\\\":0,\\\"feeMinor\\\":0,\\\"discountMinor\\\":0,\\\"totalMinor\\\":15000,\\\"requestedStartAt\\\":\\\"2026-02-26T15:10:34.281Z\\\",\\\"requestedEndAt\\\":\\\"2026-02-26T16:00:34.281Z\\\",\\\"confirmedStartAt\\\":\\\"2026-02-26T15:10:34.281Z\\\",\\\"confirmedEndAt\\\":\\\"2026-02-26T16:00:34.281Z\\\",\\\"pricingSnapshot\\\":{},\\\"policySnapshot\\\":{},\\\"metadata\\\":{},\\\"createdAt\\\":\\\"2026-02-25T15:10:34.288Z\\\",\\\"updatedAt\\\":\\\"2026-02-25T15:10:34.288Z\\\",\\\"deletedAt\\\":null,\\\"createdBy\\\":null,\\\"updatedBy\\\":null,\\\"deletedBy\\\":null}],\\\"meta\\\":{\\\"requestId\\\":\\\"535818a0-bef1-44ff-b047-db31fc1fa9a6\\\",\\\"timestamp\\\":\\\"2026-02-25T15:10:37.478Z\\\"},\\\"pagination\\\":{\\\"page\\\":1,\\\"perPage\\\":50,\\\"total\\\":2,\\\"hasMore\\\":false}},\\\"at\\\":\\\"2026-02-25T15:10:37.479Z\\\"},{\\\"method\\\":\\\"GET\\\",\\\"path\\\":\\\"/api/v1/bizes/3AAP6oJcVvsFJONG5N82uslA2ng/offers\\\",\\\"status\\\":200,\\\"responseBody\\\":{\\\"success\\\":true,\\\"data\\\":[{\\\"id\\\":\\\"offer_3AAP7AlgzdpiPQWk8JezRPbomXv\\\",\\\"bizId\\\":\\\"3AAP6oJcVvsFJONG5N82uslA2ng\\\",\\\"name\\\":\\\"Primary Service Offer\\\",\\\"slug\\\":\\\"offer-gayxp8u1\\\",\\\"description\\\":null,\\\"executionMode\\\":\\\"slot\\\",\\\"executionModeConfigValueId\\\":null,\\\"status\\\":\\\"active\\\",\\\"statusConfigValueId\\\":null,\\\"isPublished\\\":true,\\\"timezone\\\":\\\"UTC\\\",\\\"metadata\\\":{},\\\"createdAt\\\":\\\"2026-02-25T15:10:31.275Z\\\",\\\"updatedAt\\\":\\\"2026-02-25T15:10:31.275Z\\\",\\\"deletedAt\\\":null,\\\"createdBy\\\":null,\\\"updatedBy\\\":null,\\\"deletedBy\\\":null}],\\\"meta\\\":{\\\"requestId\\\":\\\"879ff9c0-382d-4be5-8c00-350219e01271\\\",\\\"timestamp\\\":\\\"2026-02-25T15:10:37.483Z\\\"},\\\"pagination\\\":{\\\"page\\\":1,\\\"perPage\\\":20,\\\"total\\\":1,\\\"hasMore\\\":false}},\\\"at\\\":\\\"2026-02-25T15:10:37.483Z\\\"},{\\\"method\\\":\\\"GET\\\",\\\"path\\\":\\\"/api/v1/bizes/3AAP6oJcVvsFJONG5N82uslA2ng/resources\\\",\\\"status\\\":200,\\\"responseBody\\\":{\\\"success\\\":true,\\\"data\\\":[{\\\"id\\\":\\\"3AAP74JEmQhMAZjcttdmQKFK0Tu\\\",\\\"bizId\\\":\\\"3AAP6oJcVvsFJONG5N82uslA2ng\\\",\\\"locationId\\\":\\\"3AAP6oDHXAv7LJ7uEF0diz7abv1\\\",\\\"type\\\":\\\"host\\\",\\\"name\\\":\\\"Primary Host\\\",\\\"slug\\\":\\\"host-1ti7d5hi\\\",\\\"description\\\":null,\\\"timezone\\\":\\\"UTC\\\",\\\"statusDefinitionId\\\":null,\\\"hostUserId\\\":null,\\\"groupAccountId\\\":null,\\\"assetId\\\":null,",
+        "_size": 27249
+      },
+      "responseBody": {
+        "_truncated": true,
+        "_preview": "{\"success\":true,\"data\":{\"id\":\"saga_artifact_3AAP80QZF10Tan3Xc0tB5NlDfNB\",\"sagaRunId\":\"saga_run_3AAP74m3cw0A9hzt7V9eEkwlgts\",\"sagaRunStepId\":\"saga_run_step_3AAP74jrz1NQZJxR55YdBmKsuod\",\"artifactType\":\"api_trace\",\"title\":\"Create and publish offer version API Trace\",\"storagePath\":\"testing/sagas/runs/saga_run_3AAP74m3cw0A9hzt7V9eEkwlgts/artifacts/1772032238305-Create_and_publish_offer_version_API_Trace.json\",\"contentType\":\"application/json\",\"bodyText\":\"{\\n  \\\"stepKey\\\": \\\"owner-create-offer-version\\\",\\n  \\\"callCount\\\": 1,\\n  \\\"calls\\\": [\\n    {\\n      \\\"method\\\": \\\"POST\\\",\\n      \\\"path\\\": \\\"/api/v1/sagas/runs/saga_run_3AAP6zi3DB5at4dA8Tk2CT70fRI/snapshots\\\",\\n      \\\"status\\\": 201,\\n      \\\"requestBody\\\": {\\n        \\\"_truncated\\\": true,\\n        \\\"_preview\\\": \\\"{\\\\\\\"stepKey\\\\\\\":\\\\\\\"owner-publish-catalog\\\\\\\",\\\\\\\"screenKey\\\\\\\":\\\\\\\"owner-publish-catalog-1772032238037\\\\\\\",\\\\\\\"title\\\\\\\":\\\\\\\"Publish catalog visibility Snapshot\\\\\\\",\\\\\\\"status\\\\\\\":\\\\\\\"passed\\\\\\\",\\\\\\\"route\\\\\\\":\\\\\\\"/sagas/saga_run_3AAP6zi3DB5at4dA8Tk2CT70fRI/owner-publish-catalog\\\\\\\",\\\\\\\"format\\\\\\\":\\\\\\\"json\\\\\\\",\\\\\\\"view\\\\\\\":{\\\\\\\"title\\\\\\\":\\\\\\\"Publish catalog visibility\\\\\\\",\\\\\\\"subtitle\\\\\\\":\\\\\\\"Offer published and activated.\\\\\\\",\\\\\\\"blocks\\\\\\\":[{\\\\\\\"type\\\\\\\":\\\\\\\"alert\\\\\\\",\\\\\\\"title\\\\\\\":\\\\\\\"Owner Publish Catalog completed\\\\\\\",\\\\\\\"message\\\\\\\":\\\\\\\"Offer published and activated.\\\\\\\",\\\\\\\"tone\\\\\\\":\\\\\\\"success\\\\\\\"}]},\\\\\\\"rawData\\\\\\\":{\\\\\\\"stepKey\\\\\\\":\\\\\\\"owner-publish-catalog\\\\\\\",\\\\\\\"resultPayload\\\\\\\":{\\\\\\\"note\\\\\\\":\\\\\\\"Offer published and activated.\\\\\\\"},\\\\\\\"apiCalls\\\\\\\":[{\\\\\\\"method\\\\\\\":\\\\\\\"POST\\\\\\\",\\\\\\\"path\\\\\\\":\\\\\\\"/api/v1/sagas/runs/saga_run_3AAP6aXEsFFQUBt2SsfjcjWdp3M/traces\\\\\\\",\\\\\\\"status\\\\\\\":201,\\\\\\\"requestBody\\\\\\\":{\\\\\\\"stepKey\\\\\\\":\\\\\\\"owner-calendar-review\\\\\\\",\\\\\\\"title\\\\\\\":\\\\\\\"Owner reviews consolidated calendar state API Trace\\\\\\\",\\\\\\\"trace\\\\\\\":{\\\\\\\"stepKey\\\\\\\":\\\\\\\"owner-calendar-review\\\\\\\",\\\\\\\"callCount\\\\\\\":7,\\\\\\\"calls\\\\\\\":[{\\\\\\\"method\\\\\\\":\\\\\\\"POST\\\\\\\",\\\\\\\"path\\\\\\\":\\\\\\\"/api/v1/sagas/runs/saga_run_3AAP6o5DMMc4LSSqF2bxCwtb7R2/steps/customer-sign-up/result\\\\\\\",\\\\\\\"status\\\\\\\":200,\\\\\\\"requestBody\\\\\\\":{\\\\\\\"status\\\\\\\":\\\\\\\"passed\\\\\\\",\\\\\\\"startedAt\\\\\\\":\\\\\\\"2026-02-25T15:10:37.261Z\\\\\\\",\\\\\\\"endedAt\\\\\\\":\\\\\\\"2026-02-25T15:10:37.261Z\\\\\\\",\\\\\\\"failureMessage\\\\\\\":null,\\\\\\\"resultPayload\\\\\\\":{\\\\\\\"note\\\\\\\":\\\\\\\"Primary customer account created.\\\\\\\",\\\\\\\"evidence\\\\\\\":{\\\\\\\"customerUserId\\\\\\\":\\\\\\\"5ZbJ2E0m3CY8tiXgLSlpcClCmOxA1CcB\\\\\\\",\\\\\\\"email\\\\\\\":\\\\\\\"customer1-uc-254-the-solo-entrepreneur-sarah-1772032237002-qnnl2f@example.com\\\\\\\"}},\\\\\\\"assertionSummary\\\\\\\":{\\\\\\\"status\\\\\\\":\\\\\\\"passed\\\\\\\",\\\\\\\"hasFailure\\\\\\\":false,\\\\\\\"assertionsPassed\\\\\\\":1}},\\\\\\\"responseBody\\\\\\\":{\\\\\\\"success\\\\\\\":true,\\\\\\\"data\\\\\\\":{\\\\\\\"id\\\\\\\":\\\\\\\"saga_run_step_3AAP6iroeijE2Gx3ijWU2byF6hY\\\\\\\",\\\\\\\"sagaRunId\\\\\\\":\\\\\\\"saga_run_3AAP6o5DMMc4LSSqF2bxCwtb7R2\\\\\\\",\\\\\\\"phaseKey\\\\\\\":\\\\\\\"customer-lifecycle\\\\\\\",\\\\\\\"phaseOrder\\\\\\\":5,\\\\\\\"phaseTitle\\\\\\\":\\\\\\\"Customer Lifecycle\\\\\\\",\\\\\\\"stepKey\\\\\\\":\\\\\\\"customer-sign-up\\\\\\\",\\\\\\\"stepOrder\\\\\\\":11,\\\\\\\"actorKey\\\\\\\":\\\\\\\"customer_1\\\\\\\",\\\\\\\"instruction\\\\\\\":\\\\\\\"Create customer account/session and verify customer can browse published offers.\\\\\\\",\\\\\\\"expectedResult\\\\\\\":\\\\\\\"Customer session established and offer discovery succeeds.\\\\\\\",\\\\\\\"delayMode\\\\\\\":\\\\\\\"none\\\\\\\",\\\\\\\"delayMs\\\\\\\":null,\\\\\\\"delayConditionKey\\\\\\\":null,\\\\\\\"delayTimeoutMs\\\\\\\":null,\\\\\\\"delayPollMs\\\\\\\":null,\\\\\\\"delayJitterMs\\\\\\\":0,\\\\\\\"status\\\\\\\":\\\\\\\"passed\\\\\\\",\\\\\\\"attemptCount\\\\\\\":1,\\\\\\\"startedAt\\\\\\\":\\\\\\\"2026-02-25T15:10:37.261Z\\\\\\\",\\\\\\\"endedAt\\\\\\\":\\\\\\\"2026-02-25T15:10:37.261Z\\\\\\\",\\\\\\\"failureCode\\\\\\\":null,\\\\\\\"failureMessage\\\\\\\":null,\\\\\\\"resultPayload\\\\\\\":{\\\\\\\"note\\\\\\\":\\\\\\\"Primary customer account created.\\\\\\\",\\\\\\\"evidence\\\\\\\":{\\\\\\\"email\\\\\\\":\\\\\\\"customer1-uc-254-the-solo-entrepreneur-sarah-1772032237002-qnnl2f@example.com\\\\\\\",\\\\\\\"customerUserId\\\\\\\":\\\\\\\"5ZbJ2E0m3CY8tiXgLSlpcClCmOxA1CcB\\\\\\\"}},\\\\\\\"assertionSummary\\\\\\\":{\\\\\\\"status\\\\\\\":\\\\\\\"passed\\\\\\\",\\\\\\\"hasFailure\\\\\\\":false,\\\\\\\"assertionsPassed\\\\\\\":1},\\\\\\\"metadata\\\\\\\":{},\\\\\\\"createdAt\\\\\\\":\\\\\\\"2026-02-25T15:10:28.309Z\\\\\\\",\\\\\\\"updatedAt\\\\\\\":\\\\\\\"2026-02-25T15:10:28.309Z\\\\\\\",\\\\\\\"deletedAt\\\\\\\":null,\\\\\\\"createdBy\\\\\\\":null,\\\\\\\"updatedBy\\\\\\\":null,\\\\\\\"deletedBy\\\\\\\":null},\\\\\\\"meta\\\\\\\":{\\\\\\\"requestId\\\\\\\":\\\\\\\"34dfc84b-f759-494e-a7e0-15246562f857\\\\\\\",\\\\\\\"timestamp\\\\\\\":\\\\\\\"2026-02-25T15:10:37.464Z\\\\\\\"}},\\\\\\\"at\\\\\\\":\\\\\\\"2026-02-25T15:10:37.464Z\\\\\\\"},{\\\\\\\"method\\\\\\\":\\\\\\\"POST\\\\\\\",\\\\\\\"path\\\\\\\":\\\\\\\"/api/v1/sagas/runs/saga_run_3AAP5KP57oYKkNfT8mI9YeJLMBW/steps/runner-submit-artifacts/result\\\\\\\",\\\\\\\"status\\\\\\\":200,\\\\\\\"requestBody\\\\\\\":{\\\\\\\"status\\\\\\\":\\\\\\\"in_progress\\\\\\\",\\\\\\\"startedAt\\\\\\\":\\\\\\\"2026-02-25T15:10:37.373Z\\\\\\\",\\\\\\\"resultPayload\\\\\\\":{\\\\\\\"note\\\\\\\":\\\\\\\"Started runner-submit-artifacts\\\\\\\"},\\\\\\\"assertionSummary\\\\\\\":{\\\\\\\"status\\\\\\\":\\\\\\\"in_progress\\\\\\\"}},\\\\\\\"responseBody\\\\\\\":{\\\\\\\"success\\\\\\\":true,\\\\\\\"data\\\\\\\":{\\\\\\\"id\\\\\\\":\\\\\\\"saga_run_step_3AAP5KgWRVRorvF4Z0w7x0Z3Pu2\\\\\\\",\\\\\\\"sagaRunId\\\\\\\":\\\\\\\"saga_run_3AAP5KP57oYKkNfT8mI9YeJLMBW\\\\\\\",\\\\\\\"phaseKey\\\\\\\":\\\\\\\"reporting-and-closeout\\\\\\\",\\\\\\\"phaseOrder\\\\\\\":8,\\\\\\\"phaseTitle\\\\\\\":\\\\\\\"Reporting And Closeout\\\\\\\",\\\\\\\"stepKey\\\\\\\":\\\\\\\"runner-submit-artifacts\\\\\\\",\\\\\\\"stepOrder\\\\\\\":31,\\\\\\\"actorKey\\\\\\\":\\\\\\\"biz_owner\\\\\\\",\\\\\\\"instruction\\\\\\\":\\\\\\\"Upload snapshots for critical steps and submit final markdown report summarizing pass/fail and discovered gaps.\\\\\\\",\\\\\\\"expectedResult\\\\\\\":\\\\\\\"Run has persisted report + snapshots in project directory and indexed metadata in DB.\\\\\\\",\\\\\\\"delayMode\\\\\\\":\\\\\\\"none\\\\\\\",\\\\\\\"delayMs\\\\\\\":null,\\\\\\\"delayConditionKey\\\\\\\":null,\\\\\\\"delayTimeoutMs\\\\\\\":null,\\\\\\\"delayPollMs\\\\\\\":null,\\\\\\\"delayJitterMs\\\\\\\":0,\\\\\\\"status\\\\\\\":\\\\\\\"in_progress\\\\\\\",\\\\\\\"attemptCount\\\\\\\":1,\\\\\\\"startedAt\\\\\\\":\\\\\\\"2026-02-25T15:10:37.373Z\\\\\\\",\\\\\\\"endedAt\\\\\\\":null,\\\\\\\"failureCode\\\\\\\":null,\\\\\\\"failureMessage\\\\\\\":null,\\\\\\\"resultPayload\\\\\\\":{\\\\\\\"note\\\\\\\":\\\\\\\"Started runner-submit-artifacts\\\\\\\"},\\\\\\\"assertionSummary\\\\\\\":{\\\\\\\"status\\\\\\\":\\\\\\\"in_progress\\\\\\\"},\\\\\\\"metadata\\\\\\\":{},\\\\\\\"createdAt\\\\\\\":\\\\\\\"2026-02-25T15:10:16.921Z\\\\\\\",\\\\\\\"updatedAt\\\\\\\":\\\\\\\"2026-02-25T15:10:16.921Z\\\\\\\",\\\\\\\"deletedAt\\\\\\\":null,\\\\\\\"createdBy\\\\\\\":null,\\\\\\\"updatedBy\\\\\\\":null,\\\\\\\"deletedBy\\\\\\\":null},\\\\\\\"meta\\\\\\\":{\\\\\\\"requestId\\\\\\\":\\\\\\\"01d139d8-5b7c-4d33-8a74-150c2349b315\\\\\\\",\\\\\\\"timestamp\\\\\\\":\\\\\\\"2026-02-25T15:10:37.471Z\\\\\\\"}},\\\\\\\"at\\\\\\\":\\\\\\\"2026-02-25T15:10:37.471Z\\\\\\\"},{\\\\\\\"method\\\\\\\":\\\\\\\"POST\\\\\\\",\\\\\\\"path\\\\\\\":\\\\\\\"/api/v1/sagas/runs/saga_run_3AAP7TH67xVdIBmfcLzveO5TDyX/steps/owner-configure-pricing/result\\\\\\\",\\\\\\\"status\\\\\\\":200,\\\\\\\"requestBody\\\\\\\":{\\\\\\\"status\\\\\\\":\\\\\\\"in_progress\\\\\\\",\\\\\\\"startedAt\\\\\\\":\\\\\\\"2026-02-25T15:10:37.374Z\\\\\\\",\\\\\\\"resultPayload\\\\\\\":{\\\\\\\"note\\\\\\\":\\\\\\\"Started owner-configure-pricing\\\\\\\"},\\\\\\\"assertionSummary\\\\\\\":{\\\\\\\"status\\\\\\\":\\\\\\\"in_progress\\\\\\\"}},\\\\\\\"responseBody\\\\\\\":{\\\\\\\"success\\\\\\\":true,\\\\\\\"data\\\\\\\":{\\\\\\\"id\\\\\\\":\\\\\\\"saga_run_step_3AAP7O7V6nZ4ODtZdufOoLNdkSZ\\\\\\\",\\\\\\\"sagaRunId\\\\\\\":\\\\\\\"saga_run_3AAP7TH67xVdIBmfcLzveO5TDyX\\\\\\\",\\\\\\\"phaseKey\\\\\\\":\\\\\\\"business-configuration\\\\\\\",\\\\\\\"phaseOrder\\\\\\\":2,\\\\\\\"phaseTitle\\\\\\\":\\\\\\\"Business Configuration\\\\\\\",\\\\\\\"stepKey\\\\\\\":\\\\\\\"owner-configure-pricing\\\\\\\",\\\\\\\"stepOrder\\\\\\\":5,\\\\\\\"actorKey\\\\\\\":\\\\\\\"biz_owner\\\\\\\",\\\\\\\"instruction\\\\\\\":\\\\\\\"Configure pricing defaults for the offer lifecycle including call fees/manual surge if UC needs imply it.\\\\\\\",\\\\\\\"expectedResult\\\\\\\":\\\\\\\"Pricing model persists and future bookings can calculate totals deterministically.\\\\\\\",\\\\\\\"delayMode\\\\\\\":\\\\\\\"none\\\\\\\",\\\\\\\"delayMs\\\\\\\":null,\\\\\\\"delayConditionKey\\\\\\\":null,\\\\\\\"delayTimeoutMs\\\\\\\":null,\\\\\\\"delayPollMs\\\\\\\":null,\\\\\\\"delayJitterMs\\\\\\\":0,\\\\\\\"status\\\\\\\":\\\\\\\"in_progress\\\\\\\",\\\\\\\"attemptCount\\\\\\\":1,\\\\\\\"startedAt\\\\\\\":\\\\\\\"2026-02-25T15:10:37.374Z\\\\\\\",\\\\\\\"endedAt\\\\\\\":null,\\\\\\\"failureCode\\\\\\\":null,\\\\\\\"failureMessage\\\\\\\":null,\\\\\\\"resultPayload\\\\\\\":{\\\\\\\"note\\\\\\\":\\\\\\\"Started owner-configure-pricing\\\\\\\"},\\\\\\\"assertionSummary\\\\\\\":{\\\\\\\"status\\\\\\\":\\\\\\\"in_progress\\\\\\\"},\\\\\\\"metadata\\\\\\\":{},\\\\\\\"createdAt\\\\\\\":\\\\\\\"2026-02-25T15:10:33.543Z\\\\\\\",\\\\\\\"updatedAt\\\\\\\":\\\\\\\"2026-02-25T15:10:33.543Z\\\\\\\",\\\\\\\"deletedAt\\\\\\\":null,\\\\\\\"createdBy\\\\\\\":null,\\\\\\\"updatedBy\\\\\\\":null,\\\\\\\"deletedBy\\\\\\\":null},\\\\\\\"meta\\\\\\\":{\\\\\\\"requestId\\\\\\\":\\\\\\\"e08fc189-d207-4129-9115-66855836f859\\\\\\\",\\\\\\\"timestamp\\\\\\\":\\\\\\\"2026-02-25T15:10:37.474Z\\\\\\\"}},\\\\\\\"at\\\\\\\":\\\\\\\"2026-02-25T15:10:37.475Z\\\\\\\"},{\\\\\\\"method\\\\\\\":\\\\\\\"POST\\\\\\\",\\\\\\\"path\\\\\\\":\\\\\\\"/api/v1/sagas/runs/saga_run_3AAP6zi3DB5at4dA8Tk2CT70fRI/steps/owner-create-offer-version/result\\\\\\\",\\\\\\\"status\\\\\\\":200,\\\\\\\"requestBody\\\\\\\":{\\\\\\\"status\\\\\\\":\\\\\\\"passed\\\\\\\",\\\\\\\"startedAt\\\\\\\":\\\\\\\"2026-02-25T15:10:37.292Z\\\\\\\",\\\\\\\"endedAt\\\\\\\":\\\\\\\"2026-02-25T15:10:37.292Z\\\\\\\",\\\\\\\"failureMessage\\\\\\\":null,\\\\\\\"resultPayload\\\\\\\":{\\\\\\\"note\\\\\\\":\\\\\\\"Offer version created.\\\\\\\",\\\\\\\"evidence\\\\\\\":{\\\\\\\"offerVersionId\\\\\\\":\\\\\\\"offer_version_3AAP7u0K9iYecLi39uCUTlHodzu\\\\\\\"}},\\\\\\\"assertionSummary\\\\\\\":{\\\\\\\"status\\\\\\\":\\\\\\\"passed\\\\\\\",\\\\\\\"hasFailure\\\\\\\":false,\\\\\\\"assertionsPassed\\\\\\\":1}},\\\\\\\"responseBody\\\\\\\":{\\\\\\\"success\\\\\\\":true,\\\\\\\"data\\\\\\\":{\\\\\\\"id\\\\\\\":\\\\\\\"saga_run_step_3AAP73DwxodHvodWqFmYa5qxq70\\\\\\\",\\\\\\\"sagaRunId\\\\\\\":\\\\\\\"saga_run_3AAP6zi3DB5at4dA8Tk2CT70fRI\\\\\\\",\\\\\\\"phaseKey\\\\\\\":\\\\\\\"catalog-publish\\\\\\\",\\\\\\\"phaseOrder\\\\\\\":4,\\\\\\\"phaseTitle\\\\\\\":\\\\\\\"Catalog And Publish\\\\\\\",\\\\\\\"stepKey\\\\\\\":\\\\\\\"owner-create-offer-version\\\\\\\",\\\\\\\"stepOrder\\\\\\\":9,\\\\\\\"actorKey\\\\\\\":\\\\\\\"biz_owner\\\\\\\",\\\\\\\"instruction\\\\\\\":\\\\\\\"Create a published offer version with realistic duration and base price for this UC.\\\\\\\",\\\\\\\"expectedResult\\\\\\\":\\\\\\\"Offer version exists and is ready for booking order references.\\\\\\\",\\\\\\\"delayMode\\\\\\\":\\\\\\\"none\\\\\\\",\\\\\\\"delayMs\\\\\\\":null,\\\\\\\"delayConditionKey\\\\\\\":null,\\\\\\\"delayTimeoutMs\\\\\\\":null,\\\\\\\"delayPollMs\\\\\\\":null,\\\\\\\"delayJitterMs\\\\\\\":0,\\\\\\\"status\\\\\\\":\\\\\\\"passed\\\\\\\",\\\\\\\"attemptCount\\\\\\\":1,\\\\\\\"startedAt\\\\\\\":\\\\\\\"2026-02-25T15:10:37.292Z\\\\\\\",\\\\\\\"endedAt\\\\\\\":\\\\\\\"2026-02-25T15:10:37.292Z\\\\\\\",\\\\\\\"failureCode\\\\\\\":null,\\\\\\\"failureMessage\\\\\\\":null,\\\\\\\"resultPayload\\\\\\\":{\\\\\\\"note\\\\\\\":\\\\\\\"Offer version created.\\\\\\\",\\\\\\\"evidence\\\\\\\":{\\\\\\\"offerVersionId\\\\\\\":\\\\\\\"offer_version_3AAP7u0K9iYecLi39uCUTlHodzu\\\\\\\"}},\\\\\\\"assertionSummary\\\\\\\":{\\\\\\\"status\\\\\\\":\\\\\\\"passed\\\\\\\",\\\\\\\"hasFailure\\\\\\\":false,\\\\\\\"assertionsPassed\\\\\\\":1},\\\\\\\"metadata\\\\\\\":{},\\\\\\\"createdAt\\\\\\\":\\\\\\\"2026-02-25T15:10:30.350Z\\\\\\\",\\\\\\\"updatedAt\\\\\\\":\\\\\\\"2026-02-25T15:10:30.350Z\\\\\\\",\\\\\\\"deletedAt\\\\\\\":null,\\\\\\\"createdBy\\\\\\\":null,\\\\\\\"updatedBy\\\\\\\":null,\\\\\\\"deletedBy\\\\\\\":null},\\\\\\\"meta\\\\\\\":{\\\\\\\"requestId\\\\\\\":\\\\\\\"9924cb99-477a-4f68-83f3-9dec980b010f\\\\\\\",\\\\\\\"timestamp\\\\\\\":\\\\\\\"2026-02-25T15:10:37.476Z\\\\\\\"}},\\\\\\\"at\\\\\\\":\\\\\\\"2026-02-25T15:10:37.477Z\\\\\\\"},{\\\\\\\"method\\\\\\\":\\\\\\\"GET\\\\\\\",\\\\\\\"path\\\\\\\":\\\\\\\"/api/v1/bizes/3AAP6oJcVvsFJONG5N82uslA2ng/booking-orders?perPage=50\\\\\\\",\\\\\\\"status\\\\\\\":200,\\\\\\\"responseBody\\\\\\\":{\\\\\\\"success\\\\\\\":true,\\\\\\\"data\\\\\\\":[{\\\\\\\"id\\\\\\\":\\\\\\\"booking_order_3AAP7To3eMQTylhFNStiTKDkzaa\\\\\\\",\\\\\\\"bizId\\\\\\\":\\\\\\\"3AAP6oJcVvsFJONG5N82uslA2ng\\\\\\\",\\\\\\\"offerId\\\\\\\":\\\\\\\"offer_3AAP7AlgzdpiPQWk8JezRPbomXv\\\\\\\",\\\\\\\"offerVersionId\\\\\\\":\\\\\\\"offer_version_3AAP7DH6UngMFSgAXRPak1iRPXR\\\\\\\",\\\\\\\"customerUserId\\\\\\\":\\\\\\\"GaQp8bKGa5HTWJQ5Kb23Nkm1pFJxlhE3\\\\\\\",\\\\\\\"customerGroupAccountId\\\\\\\":null,\\\\\\\"status\\\\\\\":\\\\\\\"in_progress\\\\\\\",\\\\\\\"statusConfigValueId\\\\\\\":null,\\\\\\\"currency\\\\\\\":\\\\\\\"USD\\\\\\\",\\\\\\\"subtotalMinor\\\\\\\":15000,\\\\\\\"taxMinor\\\\\\\":0,\\\\\\\"feeMinor\\\\\\\":0,\\\\\\\"discountMinor\\\\\\\":0,\\\\\\\"totalMinor\\\\\\\":15000,\\\\\\\"requestedStartAt\\\\\\\":\\\\\\\"2026-02-26T15:10:34.818Z\\\\\\\",\\\\\\\"requestedEndAt\\\\\\\":\\\\\\\"2026-02-26T16:00:34.818Z\\\\\\\",\\\\\\\"confirmedStartAt\\\\\\\":\\\\\\\"2026-02-26T15:10:34.818Z\\\\\\\",\\\\\\\"confirmedEndAt\\\\\\\":\\\\\\\"2026-02-26T16:00:34.818Z\\\\\\\",\\\\\\\"pricingSnapshot\\\\\\\":{},\\\\\\\"policySnapshot\\\\\\\":{},\\\\\\\"metadata\\\\\\\":{},\\\\\\\"createdAt\\\\\\\":\\\\\\\"2026-02-25T15:10:34.820Z\\\\\\\",\\\\\\\"updatedAt\\\\\\\":\\\\\\\"2026-02-25T15:10:34.820Z\\\\\\\",\\\\\\\"deletedAt\\\\\\\":null,\\\\\\\"createdBy\\\\\\\":null,\\\\\\\"updatedBy\\\\\\\":null,\\\\\\\"deletedBy\\\\\\\":null},{\\\\\\\"id\\\\\\\":\\\\\\\"booking_order_3AAP7YeCZ30JP30VaAbKTFL0TJM\\\\\\\",\\\\\\\"bizId\\\\\\\":\\\\\\\"3AAP6oJcVvsFJONG5N82uslA2ng\\\\\\\",\\\\\\\"offerId\\\\\\\":\\\\\\\"offer_3AAP7AlgzdpiPQWk8JezRPbomXv\\\\\\\",\\\\\\\"offerVersionId\\\\\\\":\\\\\\\"offer_version_3AAP7DH6UngMFSgAXRPak1iRPXR\\\\\\\",\\\\\\\"customerUserId\\\\\\\":\\\\\\\"XopRKJ9Joxz6tao0N7W4HtTP08C9QrCJ\\\\",
+        "_size": 33758
+      },
+      "at": "2026-02-25T15:10:38.653Z"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AAP7KF6QQH1aIMv1jrXOf30UOV/steps/owner-create-offer/result",
+      "status": 200,
+      "requestBody": {
+        "status": "in_progress",
+        "startedAt": "2026-02-25T15:10:38.461Z",
+        "resultPayload": {
+          "note": "Started owner-create-offer"
+        },
+        "assertionSummary": {
+          "status": "in_progress"
+        }
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "id": "saga_run_step_3AAP7IUAKkyKzYf7BYjm42ZH2mH",
+          "sagaRunId": "saga_run_3AAP7KF6QQH1aIMv1jrXOf30UOV",
+          "phaseKey": "catalog-publish",
+          "phaseOrder": 4,
+          "phaseTitle": "Catalog And Publish",
+          "stepKey": "owner-create-offer",
+          "stepOrder": 8,
+          "actorKey": "biz_owner",
+          "instruction": "Create an offer representing the UC primary service; choose execution mode matching the scenario.",
+          "expectedResult": "Offer is created in draft state with captured id.",
+          "delayMode": "none",
+          "delayMs": null,
+          "delayConditionKey": null,
+          "delayTimeoutMs": null,
+          "delayPollMs": null,
+          "delayJitterMs": 0,
+          "status": "in_progress",
+          "attemptCount": 1,
+          "startedAt": "2026-02-25T15:10:38.461Z",
+          "endedAt": null,
+          "failureCode": null,
+          "failureMessage": null,
+          "resultPayload": {
+            "note": "Started owner-create-offer"
+          },
+          "assertionSummary": {
+            "status": "in_progress"
+          },
+          "metadata": {},
+          "createdAt": "2026-02-25T15:10:32.699Z",
+          "updatedAt": "2026-02-25T15:10:32.699Z",
+          "deletedAt": null,
+          "createdBy": null,
+          "updatedBy": null,
+          "deletedBy": null
+        },
+        "meta": {
+          "requestId": "f3db8cef-4ad9-4ce6-b6df-b52d7523f7f2",
+          "timestamp": "2026-02-25T15:10:38.667Z"
+        }
+      },
+      "at": "2026-02-25T15:10:38.667Z"
+    },
+    {
+      "method": "GET",
+      "path": "/api/auth/get-session",
+      "status": 200,
+      "responseBody": {
+        "session": {
+          "expiresAt": "2026-03-04T15:10:38.640Z",
+          "token": "RQONY7Gljqke42Enn84r0fSyFBQT3W4z",
+          "createdAt": "2026-02-25T15:10:38.640Z",
+          "updatedAt": "2026-02-25T15:10:38.640Z",
+          "ipAddress": "",
+          "userAgent": "node",
+          "userId": "TmRpjPCenS1IARJdn1s8Kar6Uup7yqNJ",
+          "activeOrganizationId": null,
+          "impersonatedBy": null,
+          "id": "NWfPPlJA1AjKnm1kGzMGSAc9FZTjAytb"
+        },
+        "user": {
+          "name": "member-uc-256-the-franchisee-priya",
+          "email": "member-uc-256-the-franchisee-priya-1772032238530-17jpev@example.com",
+          "emailVerified": false,
+          "image": null,
+          "createdAt": "2026-02-25T15:10:38.635Z",
+          "updatedAt": "2026-02-25T15:10:38.635Z",
+          "role": "user",
+          "banned": false,
+          "banReason": null,
+          "banExpires": null,
+          "id": "TmRpjPCenS1IARJdn1s8Kar6Uup7yqNJ"
+        }
+      },
+      "at": "2026-02-25T15:10:38.673Z"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AAP7bhdH2XW6vY2iVkOLXGqd2u/snapshots",
+      "status": 201,
+      "requestBody": {
+        "_truncated": true,
+        "_preview": "{\"stepKey\":\"owner-create-location\",\"screenKey\":\"owner-create-location-1772032238320\",\"title\":\"Owner creates primary location Snapshot\",\"status\":\"passed\",\"route\":\"/sagas/saga_run_3AAP7bhdH2XW6vY2iVkOLXGqd2u/owner-create-location\",\"format\":\"json\",\"view\":{\"title\":\"Owner creates primary location\",\"subtitle\":\"Location created.\",\"blocks\":[{\"type\":\"alert\",\"title\":\"Owner Create Location completed\",\"message\":\"Location created.\",\"tone\":\"success\"},{\"type\":\"key_value\",\"title\":\"Screen details\",\"items\":[{\"label\":\"Id\",\"value\":\"3AAP7vlWzDUY5dLykjtO6FjqqnQ\"},{\"label\":\"BizId\",\"value\":\"3AAP7vasAAmjL67lUv0BrP3inOJ\"},{\"label\":\"Name\",\"value\":\"Primary Location\"},{\"label\":\"Slug\",\"value\":\"loc-sw285ky2\"},{\"label\":\"Type\",\"value\":\"physical\"},{\"label\":\"Timezone\",\"value\":\"UTC\"},{\"label\":\"Status\",\"value\":\"active\"},{\"label\":\"IsDefault\",\"value\":\"false\"},{\"label\":\"CreatedAt\",\"value\":\"2026-02-25T15:10:37.850Z\"},{\"label\":\"UpdatedAt\",\"value\":\"2026-02-25T15:10:37.850Z\"},{\"label\":\"DeletedAt\",\"value\":\"null\"}]}]},\"rawData\":{\"stepKey\":\"owner-create-location\",\"resultPayload\":{\"note\":\"Location created.\",\"evidence\":{\"id\":\"3AAP7vlWzDUY5dLykjtO6FjqqnQ\",\"bizId\":\"3AAP7vasAAmjL67lUv0BrP3inOJ\",\"name\":\"Primary Location\",\"slug\":\"loc-sw285ky2\",\"type\":\"physical\",\"timezone\":\"UTC\",\"address\":{},\"operatingHours\":{},\"configOverride\":{},\"serviceArea\":{},\"status\":\"active\",\"isDefault\":false,\"metadata\":{},\"createdAt\":\"2026-02-25T15:10:37.850Z\",\"updatedAt\":\"2026-02-25T15:10:37.850Z\",\"deletedAt\":null}},\"apiCalls\":[{\"method\":\"POST\",\"path\":\"/api/v1/sagas/runs/saga_run_3AAP6o5DMMc4LSSqF2bxCwtb7R2/traces\",\"status\":201,\"requestBody\":{\"stepKey\":\"customer-book-primary\",\"title\":\"Customer one books primary offer API Trace\",\"trace\":{\"stepKey\":\"customer-book-primary\",\"callCount\":2,\"calls\":[{\"method\":\"POST\",\"path\":\"/api/v1/sagas/runs/saga_run_3AAP7bhdH2XW6vY2iVkOLXGqd2u/steps/owner-create-biz/result\",\"status\":200,\"requestBody\":{\"status\":\"passed\",\"startedAt\":\"2026-02-25T15:10:37.375Z\",\"endedAt\":\"2026-02-25T15:10:37.375Z\",\"failureMessage\":null,\"resultPayload\":{\"note\":\"Biz created.\",\"evidence\":{\"id\":\"3AAP7vasAAmjL67lUv0BrP3inOJ\",\"name\":\"Saga uc-256-the-solo-entrepreneur-sarah\",\"slug\":\"uc-256-the-solo-entrepreneur-sarah-gpvxw6st\",\"type\":\"small_business\",\"logoUrl\":null,\"timezone\":\"UTC\",\"currency\":\"USD\",\"status\":\"active\",\"metadata\":{},\"createdAt\":\"2026-02-25T15:10:37.258Z\",\"updatedAt\":\"2026-02-25T15:10:37.258Z\",\"deletedAt\":null,\"createdBy\":null,\"updatedBy\":null,\"deletedBy\":null}},\"assertionSummary\":{\"status\":\"passed\",\"hasFailure\":false,\"assertionsPassed\":1}},\"responseBody\":{\"success\":true,\"data\":{\"id\":\"saga_run_step_3AAP7ctTk89FquopdmqHlvvonEp\",\"sagaRunId\":\"saga_run_3AAP7bhdH2XW6vY2iVkOLXGqd2u\",\"phaseKey\":\"owner-onboarding\",\"phaseOrder\":1,\"phaseTitle\":\"Owner Onboarding\",\"stepKey\":\"owner-create-biz\",\"stepOrder\":2,\"actorKey\":\"biz_owner\",\"instruction\":\"Using agents tools, create a biz representing The Churn Risk and Reactivation Playbooks. Use name/slug derived from saga context.\",\"expectedResult\":\"Biz is created, owner is auto-added as member with owner role, and biz id is captured.\",\"delayMode\":\"none\",\"delayMs\":null,\"delayConditionKey\":null,\"delayTimeoutMs\":null,\"delayPollMs\":null,\"delayJitterMs\":0,\"status\":\"passed\",\"attemptCount\":1,\"startedAt\":\"2026-02-25T15:10:37.375Z\",\"endedAt\":\"2026-02-25T15:10:37.375Z\",\"failureCode\":null,\"failureMessage\":null,\"resultPayload\":{\"note\":\"Biz created.\",\"evidence\":{\"id\":\"3AAP7vasAAmjL67lUv0BrP3inOJ\",\"name\":\"Saga uc-256-the-solo-entrepreneur-sarah\",\"slug\":\"uc-256-the-solo-entrepreneur-sarah-gpvxw6st\",\"type\":\"small_business\",\"status\":\"active\",\"logoUrl\":null,\"currency\":\"USD\",\"metadata\":{},\"timezone\":\"UTC\",\"createdAt\":\"2026-02-25T15:10:37.258Z\",\"createdBy\":null,\"deletedAt\":null,\"deletedBy\":null,\"updatedAt\":\"2026-02-25T15:10:37.258Z\",\"updatedBy\":null}},\"assertionSummary\":{\"status\":\"passed\",\"hasFailure\":false,\"assertionsPassed\":1},\"metadata\":{},\"createdAt\":\"2026-02-25T15:10:35.345Z\",\"updatedAt\":\"2026-02-25T15:10:35.345Z\",\"deletedAt\":null,\"createdBy\":null,\"updatedBy\":null,\"deletedBy\":null},\"meta\":{\"requestId\":\"fbc4245f-f2fa-40ab-8535-3d7728e4300b\",\"timestamp\":\"2026-02-25T15:10:37.707Z\"}},\"at\":\"2026-02-25T15:10:37.707Z\"},{\"method\":\"POST\",\"path\":\"/api/v1/public/bizes/3AAP6y8JenySBSyBT41by9PmjyH/booking-orders\",\"status\":201,\"requestBody\":{\"offerId\":\"offer_3AAP7aQEQqCr5MB44aSCdW907eS\",\"offerVersionId\":\"offer_version_3AAP7epBTwLBQtUYJOfT61IlKer\",\"customerUserId\":\"5ZbJ2E0m3CY8tiXgLSlpcClCmOxA1CcB\",\"status\":\"confirmed\",\"subtotalMinor\":15000,\"taxMinor\":0,\"feeMinor\":0,\"discountMinor\":0,\"totalMinor\":15000,\"currency\":\"USD\",\"requestedStartAt\":\"2026-02-26T15:10:37.704Z\",\"requestedEndAt\":\"2026-02-26T16:00:37.704Z\",\"confirmedStartAt\":\"2026-02-26T15:10:37.704Z\",\"confirmedEndAt\":\"2026-02-26T16:00:37.704Z\"},\"responseBody\":{\"success\":true,\"data\":{\"id\":\"booking_order_3AAP7rrZHDv3tjyHDOKPcVCdt1C\",\"bizId\":\"3AAP6y8JenySBSyBT41by9PmjyH\",\"offerId\":\"offer_3AAP7aQEQqCr5MB44aSCdW907eS\",\"offerVersionId\":\"offer_version_3AAP7epBTwLBQtUYJOfT61IlKer\",\"customerUserId\":\"5ZbJ2E0m3CY8tiXgLSlpcClCmOxA1CcB\",\"customerGroupAccountId\":null,\"status\":\"confirmed\",\"statusConfigValueId\":null,\"currency\":\"USD\",\"subtotalMinor\":15000,\"taxMinor\":0,\"feeMinor\":0,\"discountMinor\":0,\"totalMinor\":15000,\"requestedStartAt\":\"2026-02-26T15:10:37.704Z\",\"requestedEndAt\":\"2026-02-26T16:00:37.704Z\",\"confirmedStartAt\":\"2026-02-26T15:10:37.704Z\",\"confirmedEndAt\":\"2026-02-26T16:00:37.704Z\",\"pricingSnapshot\":{},\"policySnapshot\":{},\"metadata\":{},\"createdAt\":\"2026-02-25T15:10:37.709Z\",\"updatedAt\":\"2026-02-25T15:10:37.709Z\",\"deletedAt\":null,\"createdBy\":null,\"updatedBy\":null,\"deletedBy\":null},\"meta\":{\"requestId\":\"24463b4e-3aa5-44d8-9f46-e2fd907e95c7\",\"timestamp\":\"2026-02-25T15:10:37.722Z\"}},\"at\":\"2026-02-25T15:10:37.723Z\"}]},\"metadata\":{\"source\":\"rerun-sagas.ts\"}},\"responseBody\":{\"success\":true,\"data\":{\"id\":\"saga_artifact_3AAP7sBf88UMJ04DE7DEsCZiUeI\",\"sagaRunId\":\"saga_run_3AAP6o5DMMc4LSSqF2bxCwtb7R2\",\"sagaRunStepId\":\"saga_run_step_3AAP6mAF1k1vYJB1puMGhDKlT9C\",\"artifactType\":\"api_trace\",\"title\":\"Customer one books primary offer API Trace\",\"storagePath\":\"testing/sagas/runs/saga_run_3AAP6o5DMMc4LSSqF2bxCwtb7R2/artifacts/1772032237734-Customer_one_books_primary_offer_API_Trace.json\",\"contentType\":\"application/json\",\"bodyText\":\"{\\n  \\\"stepKey\\\": \\\"customer-book-primary\\\",\\n  \\\"callCount\\\": 2,\\n  \\\"calls\\\": [\\n    {\\n      \\\"method\\\": \\\"POST\\\",\\n      \\\"path\\\": \\\"/api/v1/sagas/runs/saga_run_3AAP7bhdH2XW6vY2iVkOLXGqd2u/steps/owner-create-biz/result\\\",\\n      \\\"status\\\": 200,\\n      \\\"requestBody\\\": {\\n        \\\"status\\\": \\\"passed\\\",\\n        \\\"startedAt\\\": \\\"2026-02-25T15:10:37.375Z\\\",\\n        \\\"endedAt\\\": \\\"2026-02-25T15:10:37.375Z\\\",\\n        \\\"failureMessage\\\": null,\\n        \\\"resultPayload\\\": {\\n          \\\"note\\\": \\\"Biz created.\\\",\\n          \\\"evidence\\\": {\\n            \\\"id\\\": \\\"3AAP7vasAAmjL67lUv0BrP3inOJ\\\",\\n            \\\"name\\\": \\\"Saga uc-256-the-solo-entrepreneur-sarah\\\",\\n            \\\"slug\\\": \\\"uc-256-the-solo-entrepreneur-sarah-gpvxw6st\\\",\\n            \\\"type\\\": \\\"small_business\\\",\\n            \\\"logoUrl\\\": null,\\n            \\\"timezone\\\": \\\"UTC\\\",\\n            \\\"currency\\\": \\\"USD\\\",\\n            \\\"status\\\": \\\"active\\\",\\n            \\\"metadata\\\": {},\\n            \\\"createdAt\\\": \\\"2026-02-25T15:10:37.258Z\\\",\\n            \\\"updatedAt\\\": \\\"2026-02-25T15:10:37.258Z\\\",\\n            \\\"deletedAt\\\": null,\\n            \\\"createdBy\\\": null,\\n            \\\"updatedBy\\\": null,\\n            \\\"deletedBy\\\": null\\n          }\\n        },\\n        \\\"assertionSummary\\\": {\\n          \\\"status\\\": \\\"passed\\\",\\n          \\\"hasFailure\\\": false,\\n          \\\"assertionsPassed\\\": 1\\n        }\\n      },\\n      \\\"responseBody\\\": {\\n        \\\"success\\\": true,\\n        \\\"data\\\": {\\n          \\\"id\\\": \\\"saga_run_step_3AAP7ctTk89FquopdmqHlvvonEp\\\",\\n          \\\"sagaRunId\\\": \\\"saga_run_3AAP7bhdH2XW6vY2iVkOLXGqd2u\\\",\\n          \\\"phaseKey\\\": \\\"owner-onboarding\\\",\\n          \\\"phaseOrder\\\": 1,\\n          \\\"phaseTitle\\\": \\\"Owner Onboarding\\\",\\n          \\\"stepKey\\\": \\\"owner-create-biz\\\",\\n          \\\"stepOrder\\\": 2,\\n          \\\"actorKey\\\": \\\"biz_owner\\\",\\n          \\\"instruction\\\": \\\"Using agents tools, create a biz representing The Churn Risk and Reactivation Playbooks. Use name/slug derived from saga context.\\\",\\n          \\\"expectedResult\\\": \\\"Biz is created, owner is auto-added as member with owner role, and biz id is captured.\\\",\\n          \\\"delayMode\\\": \\\"none\\\",\\n          \\\"delayMs\\\": null,\\n          \\\"delayConditionKey\\\": null,\\n          \\\"delayTimeoutMs\\\": null,\\n          \\\"delayPollMs\\\": null,\\n          \\\"delayJitterMs\\\": 0,\\n          \\\"status\\\": \\\"passed\\\",\\n          \\\"attemptCount\\\": 1,\\n          \\\"startedAt\\\": \\\"2026-02-25T15:10:37.375Z\\\",\\n          \\\"endedAt\\\": \\\"2026-02-25T15:10:37.375Z\\\",\\n          \\\"failureCode\\\": null,\\n          \\\"failureMessage\\\": null,\\n          \\\"resultPayload\\\": {\\n            \\\"note\\\": \\\"Biz created.\\\",\\n            \\\"evidence\\\": {\\n              \\\"id\\\": \\\"3AAP7vasAAmjL67lUv0BrP3inOJ\\\",\\n              \\\"name\\\": \\\"Saga uc-256-the-solo-entrepreneur-sarah\\\",\\n              \\\"slug\\\": \\\"uc-256-the-solo-entrepreneur-sarah-gpvxw6st\\\",\\n              \\\"type\\\": \\\"small_business\\\",\\n              \\\"status\\\": \\\"active\\\",\\n              \\\"logoUrl\\\": null,\\n              \\\"currency\\\": \\\"USD\\\",\\n              \\\"metadata\\\": {},\\n              \\\"timezone\\\": \\\"UTC\\\",\\n              \\\"createdAt\\\": \\\"2026-02-25T15:10:37.258Z\\\",\\n              \\\"createdBy\\\": null,\\n              \\\"deletedAt\\\": null,\\n              \\\"deletedBy\\\": null,\\n              \\\"updatedAt\\\": \\\"2026-02-25T15:10:37.258Z\\\",\\n              \\\"updatedBy\\\": null\\n            }\\n          },\\n          \\\"assertionSummary\\\": {\\n            \\\"status\\\": \\\"passed\\\",\\n            \\\"hasFailure\\\": false,\\n            \\\"assertionsPassed\\\": 1\\n          },\\n          \\\"metadata\\\": {},\\n          \\\"createdAt\\\": \\\"2026-02-25T15:10:35.345Z\\\",\\n          \\\"updatedAt\\\": \\\"2026-02-25T15:10:35.345Z\\\",\\n          \\\"deletedAt\\\": null,\\n          \\\"createdBy\\\": null,\\n          \\\"updatedBy\\\": null,\\n          \\\"deletedBy\\\": null\\n        },\\n        \\\"meta\\\": {\\n          \\\"requestId\\\": \\\"fbc4245f-f2fa-40ab-8535-3d7728e4300b\\\",\\n          \\\"timestamp\\\": \\\"2026-02-25T15:10:37.707Z\\\"\\n        }\\n      },\\n      \\\"at\\\": \\\"2026-02-25T15:10:37.707Z\\\"\\n    },\\n    {\\n      \\\"method\\\": \\\"POST\\\",\\n      \\\"path\\\": \\\"/api/v1/public/bizes/3AAP6y8JenySBSyBT41by9PmjyH/booking-orders\\\",\\n      \\\"status\\\": 201,\\n      \\\"requestBody\\\": {\\n        \\\"offerId\\\": \\\"offer_3AAP7aQEQqCr5MB44aSCdW907eS\\\",\\n        \\\"offerVersionId\\\": \\\"offer_version_3AAP7epBTwLBQtUYJOfT61IlKer\\\",\\n        \\\"customerUserId\\\": \\\"5ZbJ2E0m3CY8tiXgLSlpcClCmOxA1CcB\\\",\\n        \\\"status\\\": \\\"confirmed\\\",\\n        \\\"subtotalMinor\\\": 15000,\\n        \\\"taxMinor\\\": 0,\\n        \\\"feeMinor\\\": 0,\\n        \\\"discountMinor\\\": 0,\\n        \\\"totalMinor\\\": 15000,\\n        \\\"currency\\\": \\\"USD\\\",\\n        \\\"requestedStartAt\\\": \\\"2026-02-26T15:10:37.704Z\\\",\\n        \\\"requestedEndAt\\\": \\\"2026-02-26T16:00:37.704Z\\\",\\n        \\\"confirmedStartAt\\\": \\\"2026-02-26T15:10:37.704Z\\\",\\n        \\\"confirmedEndAt\\\": \\\"2026-02-26T16:00:37.704Z\\\"\\n      },\\n      \\\"responseBody\\\": {\\n        \\\"success\\\": true,\\n        \\\"data\\\": {\\n          \\\"id\\\": \\\"booking_order_3AAP7rrZHDv3tjyHDOKPcVCdt1C\\\",\\n          \\\"bizId\\\": \\\"3AAP6y8JenySBSyBT41by9PmjyH\\\",\\n          \\\"offerId\\\": \\\"offer_3AAP7aQEQqCr5MB44aSCdW907eS\\\",\\n          \\\"offerVersionId\\\": \\\"offer_version_3AAP7epBTwLBQtUYJOfT61IlKer\\\",\\n          \\\"customerUserId\\\": \\\"5ZbJ2E0m3CY8tiXgLSlpcClCmOxA1CcB\\\",\\n          \\\"customerGroupAccountId\\\": null,\\n          \\\"status\\\": \\\"confirmed\\\",\\n          \\\"statusConfigValueId\\\": null,\\n          \\\"currency\\\": \\\"USD\\\",\\n          \\\"subtotalMinor\\\": 15000,\\n          \\\"taxMinor\\\": 0,\\n          \\\"feeMinor\\\": 0,\\n          \\\"discountMinor\\\": 0,\\n          \\\"totalMinor\\\": 15000,\\n          \\\"requestedStartAt\\\": \\\"2026-02-26T15:10:37.704Z\\\",\\n          \\\"requestedEndAt\\\": \\\"2026-02-26T16:00:37.704Z\\\",\\n          \\\"confirmedStartAt\\\": \\\"2",
+        "_size": 46464
+      },
+      "responseBody": {
+        "_truncated": true,
+        "_preview": "{\"success\":true,\"data\":{\"id\":\"saga_artifact_3AAP81hK7lJeTq7wQjKCsOituZk\",\"sagaRunId\":\"saga_run_3AAP7bhdH2XW6vY2iVkOLXGqd2u\",\"sagaRunStepId\":\"saga_run_step_3AAP7hrM6MwHB8u4QpBv7EU4ER9\",\"artifactType\":\"snapshot\",\"title\":\"Owner creates primary location Snapshot\",\"storagePath\":\"testing/sagas/runs/saga_run_3AAP7bhdH2XW6vY2iVkOLXGqd2u/snapshots/2026-02-25T15-10-38-451Z-owner-create-location-1772032238320.json\",\"contentType\":\"application/json\",\"bodyText\":\"{\\n  \\\"schemaVersion\\\": \\\"snapshot.v1\\\",\\n  \\\"screenKey\\\": \\\"owner-create-location-1772032238320\\\",\\n  \\\"title\\\": \\\"Owner creates primary location Snapshot\\\",\\n  \\\"generatedAt\\\": \\\"2026-02-25T15:10:38.432Z\\\",\\n  \\\"stepKey\\\": \\\"owner-create-location\\\",\\n  \\\"status\\\": \\\"passed\\\",\\n  \\\"view\\\": {\\n    \\\"title\\\": \\\"Owner creates primary location\\\",\\n    \\\"subtitle\\\": \\\"Location created.\\\",\\n    \\\"blocks\\\": [\\n      {\\n        \\\"type\\\": \\\"alert\\\",\\n        \\\"title\\\": \\\"Owner Create Location completed\\\",\\n        \\\"message\\\": \\\"Location created.\\\",\\n        \\\"tone\\\": \\\"success\\\"\\n      },\\n      {\\n        \\\"type\\\": \\\"key_value\\\",\\n        \\\"title\\\": \\\"Screen details\\\",\\n        \\\"items\\\": [\\n          {\\n            \\\"label\\\": \\\"Id\\\",\\n            \\\"value\\\": \\\"3AAP7vlWzDUY5dLykjtO6FjqqnQ\\\"\\n          },\\n          {\\n            \\\"label\\\": \\\"BizId\\\",\\n            \\\"value\\\": \\\"3AAP7vasAAmjL67lUv0BrP3inOJ\\\"\\n          },\\n          {\\n            \\\"label\\\": \\\"Name\\\",\\n            \\\"value\\\": \\\"Primary Location\\\"\\n          },\\n          {\\n            \\\"label\\\": \\\"Slug\\\",\\n            \\\"value\\\": \\\"loc-sw285ky2\\\"\\n          },\\n          {\\n            \\\"label\\\": \\\"Type\\\",\\n            \\\"value\\\": \\\"physical\\\"\\n          },\\n          {\\n            \\\"label\\\": \\\"Timezone\\\",\\n            \\\"value\\\": \\\"UTC\\\"\\n          },\\n          {\\n            \\\"label\\\": \\\"Status\\\",\\n            \\\"value\\\": \\\"active\\\"\\n          },\\n          {\\n            \\\"label\\\": \\\"IsDefault\\\",\\n            \\\"value\\\": \\\"false\\\"\\n          },\\n          {\\n            \\\"label\\\": \\\"CreatedAt\\\",\\n            \\\"value\\\": \\\"2026-02-25T15:10:37.850Z\\\"\\n          },\\n          {\\n            \\\"label\\\": \\\"UpdatedAt\\\",\\n            \\\"value\\\": \\\"2026-02-25T15:10:37.850Z\\\"\\n          },\\n          {\\n            \\\"label\\\": \\\"DeletedAt\\\",\\n            \\\"value\\\": \\\"null\\\"\\n          }\\n        ]\\n      }\\n    ]\\n  },\\n  \\\"rawData\\\": {\\n    \\\"stepKey\\\": \\\"owner-create-location\\\",\\n    \\\"resultPayload\\\": {\\n      \\\"note\\\": \\\"Location created.\\\",\\n      \\\"evidence\\\": {\\n        \\\"id\\\": \\\"3AAP7vlWzDUY5dLykjtO6FjqqnQ\\\",\\n        \\\"bizId\\\": \\\"3AAP7vasAAmjL67lUv0BrP3inOJ\\\",\\n        \\\"name\\\": \\\"Primary Location\\\",\\n        \\\"slug\\\": \\\"loc-sw285ky2\\\",\\n        \\\"type\\\": \\\"physical\\\",\\n        \\\"timezone\\\": \\\"UTC\\\",\\n        \\\"address\\\": {},\\n        \\\"operatingHours\\\": {},\\n        \\\"configOverride\\\": {},\\n        \\\"serviceArea\\\": {},\\n        \\\"status\\\": \\\"active\\\",\\n        \\\"isDefault\\\": false,\\n        \\\"metadata\\\": {},\\n        \\\"createdAt\\\": \\\"2026-02-25T15:10:37.850Z\\\",\\n        \\\"updatedAt\\\": \\\"2026-02-25T15:10:37.850Z\\\",\\n        \\\"deletedAt\\\": null\\n      }\\n    },\\n    \\\"apiCalls\\\": [\\n      {\\n        \\\"method\\\": \\\"POST\\\",\\n        \\\"path\\\": \\\"/api/v1/sagas/runs/saga_run_3AAP6o5DMMc4LSSqF2bxCwtb7R2/traces\\\",\\n        \\\"status\\\": 201,\\n        \\\"requestBody\\\": {\\n          \\\"stepKey\\\": \\\"customer-book-primary\\\",\\n          \\\"title\\\": \\\"Customer one books primary offer API Trace\\\",\\n          \\\"trace\\\": {\\n            \\\"stepKey\\\": \\\"customer-book-primary\\\",\\n            \\\"callCount\\\": 2,\\n            \\\"calls\\\": [\\n              {\\n                \\\"method\\\": \\\"POST\\\",\\n                \\\"path\\\": \\\"/api/v1/sagas/runs/saga_run_3AAP7bhdH2XW6vY2iVkOLXGqd2u/steps/owner-create-biz/result\\\",\\n                \\\"status\\\": 200,\\n                \\\"requestBody\\\": {\\n                  \\\"status\\\": \\\"passed\\\",\\n                  \\\"startedAt\\\": \\\"2026-02-25T15:10:37.375Z\\\",\\n                  \\\"endedAt\\\": \\\"2026-02-25T15:10:37.375Z\\\",\\n                  \\\"failureMessage\\\": null,\\n                  \\\"resultPayload\\\": {\\n                    \\\"note\\\": \\\"Biz created.\\\",\\n                    \\\"evidence\\\": {\\n                      \\\"id\\\": \\\"3AAP7vasAAmjL67lUv0BrP3inOJ\\\",\\n                      \\\"name\\\": \\\"Saga uc-256-the-solo-entrepreneur-sarah\\\",\\n                      \\\"slug\\\": \\\"uc-256-the-solo-entrepreneur-sarah-gpvxw6st\\\",\\n                      \\\"type\\\": \\\"small_business\\\",\\n                      \\\"logoUrl\\\": null,\\n                      \\\"timezone\\\": \\\"UTC\\\",\\n                      \\\"currency\\\": \\\"USD\\\",\\n                      \\\"status\\\": \\\"active\\\",\\n                      \\\"metadata\\\": {},\\n                      \\\"createdAt\\\": \\\"2026-02-25T15:10:37.258Z\\\",\\n                      \\\"updatedAt\\\": \\\"2026-02-25T15:10:37.258Z\\\",\\n                      \\\"deletedAt\\\": null,\\n                      \\\"createdBy\\\": null,\\n                      \\\"updatedBy\\\": null,\\n                      \\\"deletedBy\\\": null\\n                    }\\n                  },\\n                  \\\"assertionSummary\\\": {\\n                    \\\"status\\\": \\\"passed\\\",\\n                    \\\"hasFailure\\\": false,\\n                    \\\"assertionsPassed\\\": 1\\n                  }\\n                },\\n                \\\"responseBody\\\": {\\n                  \\\"success\\\": true,\\n                  \\\"data\\\": {\\n                    \\\"id\\\": \\\"saga_run_step_3AAP7ctTk89FquopdmqHlvvonEp\\\",\\n                    \\\"sagaRunId\\\": \\\"saga_run_3AAP7bhdH2XW6vY2iVkOLXGqd2u\\\",\\n                    \\\"phaseKey\\\": \\\"owner-onboarding\\\",\\n                    \\\"phaseOrder\\\": 1,\\n                    \\\"phaseTitle\\\": \\\"Owner Onboarding\\\",\\n                    \\\"stepKey\\\": \\\"owner-create-biz\\\",\\n                    \\\"stepOrder\\\": 2,\\n                    \\\"actorKey\\\": \\\"biz_owner\\\",\\n                    \\\"instruction\\\": \\\"Using agents tools, create a biz representing The Churn Risk and Reactivation Playbooks. Use name/slug derived from saga context.\\\",\\n                    \\\"expectedResult\\\": \\\"Biz is created, owner is auto-added as member with owner role, and biz id is captured.\\\",\\n                    \\\"delayMode\\\": \\\"none\\\",\\n                    \\\"delayMs\\\": null,\\n                    \\\"delayConditionKey\\\": null,\\n                    \\\"delayTimeoutMs\\\": null,\\n                    \\\"delayPollMs\\\": null,\\n                    \\\"delayJitterMs\\\": 0,\\n                    \\\"status\\\": \\\"passed\\\",\\n                    \\\"attemptCount\\\": 1,\\n                    \\\"startedAt\\\": \\\"2026-02-25T15:10:37.375Z\\\",\\n                    \\\"endedAt\\\": \\\"2026-02-25T15:10:37.375Z\\\",\\n                    \\\"failureCode\\\": null,\\n                    \\\"failureMessage\\\": null,\\n                    \\\"resultPayload\\\": {\\n                      \\\"note\\\": \\\"Biz created.\\\",\\n                      \\\"evidence\\\": {\\n                        \\\"id\\\": \\\"3AAP7vasAAmjL67lUv0BrP3inOJ\\\",\\n                        \\\"name\\\": \\\"Saga uc-256-the-solo-entrepreneur-sarah\\\",\\n                        \\\"slug\\\": \\\"uc-256-the-solo-entrepreneur-sarah-gpvxw6st\\\",\\n                        \\\"type\\\": \\\"small_business\\\",\\n                        \\\"status\\\": \\\"active\\\",\\n                        \\\"logoUrl\\\": null,\\n                        \\\"currency\\\": \\\"USD\\\",\\n                        \\\"metadata\\\": {},\\n                        \\\"timezone\\\": \\\"UTC\\\",\\n                        \\\"createdAt\\\": \\\"2026-02-25T15:10:37.258Z\\\",\\n                        \\\"createdBy\\\": null,\\n                        \\\"deletedAt\\\": null,\\n                        \\\"deletedBy\\\": null,\\n                        \\\"updatedAt\\\": \\\"2026-02-25T15:10:37.258Z\\\",\\n                        \\\"updatedBy\\\": null\\n                      }\\n                    },\\n                    \\\"assertionSummary\\\": {\\n                      \\\"status\\\": \\\"passed\\\",\\n                      \\\"hasFailure\\\": false,\\n                      \\\"assertionsPassed\\\": 1\\n                    },\\n                    \\\"metadata\\\": {},\\n                    \\\"createdAt\\\": \\\"2026-02-25T15:10:35.345Z\\\",\\n                    \\\"updatedAt\\\": \\\"2026-02-25T15:10:35.345Z\\\",\\n                    \\\"deletedAt\\\": null,\\n                    \\\"createdBy\\\": null,\\n                    \\\"updatedBy\\\": null,\\n                    \\\"deletedBy\\\": null\\n                  },\\n                  \\\"meta\\\": {\\n                    \\\"requestId\\\": \\\"fbc4245f-f2fa-40ab-8535-3d7728e4300b\\\",\\n                    \\\"timestamp\\\": \\\"2026-02-25T15:10:37.707Z\\\"\\n                  }\\n                },\\n                \\\"at\\\": \\\"2026-02-25T15:10:37.707Z\\\"\\n              },\\n              {\\n                \\\"method\\\": \\\"POST\\\",\\n                \\\"path\\\": \\\"/api/v1/public/bizes/3AAP6y8JenySBSyBT41by9PmjyH/booking-orders\\\",\\n                \\\"status\\\": 201,\\n                \\\"requestBody\\\": {\\n                  \\\"offerId\\\": \\\"offer_3AAP7aQEQqCr5MB44aSCdW907eS\\\",\\n                  \\\"offerVersionId\\\": \\\"offer_version_3AAP7epBTwLBQtUYJOfT61IlKer\\\",\\n                  \\\"customerUserId\\\": \\\"5ZbJ2E0m3CY8tiXgLSlpcClCmOxA1CcB\\\",\\n                  \\\"status\\\": \\\"confirmed\\\",\\n                  \\\"subtotalMinor\\\": 15000,\\n                  \\\"taxMinor\\\": 0,\\n                  \\\"feeMinor\\\": 0,\\n                  \\\"discountMinor\\\": 0,\\n                  \\\"totalMinor\\\": 15000,\\n                  \\\"currency\\\": \\\"USD\\\",\\n                  \\\"requestedStartAt\\\": \\\"2026-02-26T15:10:37.704Z\\\",\\n                  \\\"requestedEndAt\\\": \\\"2026-02-26T16:00:37.704Z\\\",\\n                  \\\"confirmedStartAt\\\": \\\"2026-02-26T15:10:37.704Z\\\",\\n                  \\\"confirmedEndAt\\\": \\\"2026-02-26T16:00:37.704Z\\\"\\n                },\\n                \\\"responseBody\\\": {\\n                  \\\"success\\\": true,\\n                  \\\"data\\\": {\\n                    \\\"id\\\": \\\"booking_order_3AAP7rrZHDv3tjyHDOKPcVCdt1C\\\",\\n                    \\\"bizId\\\": \\\"3AAP6y8JenySBSyBT41by9PmjyH\\\",\\n                    \\\"offerId\\\": \\\"offer_3AAP7aQEQqCr5MB44aSCdW907eS\\\",\\n                    \\\"offerVersionId\\\": \\\"offer_version_3AAP7epBTwLBQtUYJOfT61IlKer\\\",\\n                    \\\"customerUserId\\\": \\\"5ZbJ2E0m3CY8tiXgLSlpcClCmOxA1CcB\\\",\\n                    \\\"customerGroupAccountId\\\": null,\\n                    \\\"status\\\": \\\"confirmed\\\",\\n                    \\\"statusConfigValueId\\\": null,\\n                    \\\"currency\\\": \\\"USD\\\",\\n                    \\\"subtotalMinor\\\": 15000,\\n                    \\\"taxMinor\\\": 0,\\n                    \\\"feeMinor\\\": 0,\\n                    \\\"discountMinor\\\": 0,\\n                    \\\"totalMinor\\\": 15000,\\n                    \\\"requestedStartAt\\\": \\\"2026-02-26T15:10:37.704Z\\\",\\n                    \\\"requestedEndAt\\\": \\\"2026-02-26T16:00:37.704Z\\\",\\n                    \\\"confirmedStartAt\\\": \\\"2026-02-26T15:10:37.704Z\\\",\\n                    \\\"confirmedEndAt\\\": \\\"2026-02-26T16:00:37.704Z\\\",\\n                    \\\"pricingSnapshot\\\": {},\\n                    \\\"policySnapshot\\\": {},\\n                    \\\"metadata\\\": {},\\n                    \\\"createdAt\\\": \\\"2026-02-25T15:10:37.709Z\\\",\\n                    \\\"updatedAt\\\": \\\"2026-02-25T15:10:37.709Z\\\",\\n                    \\\"deletedAt\\\": null,\\n                    \\\"createdBy\\\": null,\\n                    \\\"updatedBy\\\": null,\\n                    \\\"deletedBy\\\": null\\n                  },\\n                  \\\"meta\\\": {\\n                    \\\"requestId\\\": \\\"24463b4e-3aa5-44d8-9f46-e2fd907e95c7\\\",\\n                    \\\"timestamp\\\": \\\"2026-02-25T15:10:37.722Z\\\"\\n                  }\\n                },\\n                \\\"at\\\": \\\"2026-02-25T15:10:37.723Z\\\"\\n              }\\n            ]\\n          },\\n          \\\"metadata\\\": {\\n            \\\"source\\\": \\\"rerun-sagas.ts\\\"\\n          }\\n        },\\n        \\\"responseBody\\\": {\\n          \\\"success\\\": true,\\n          \\\"data\\\": {\\n            \\\"id\\\": \\\"saga_artifact_3AAP7sBf88UMJ04DE7DEsCZiUeI\\\",\\n            \\\"sagaRunId\\\": \\\"saga_run_3AAP6o5DMMc4LSSqF2bxCwtb7R2\\\",\\n            \\\"sagaRunStepId\\\": \\\"saga_run_step_3AAP6mAF1k1vYJB1puMGhDKlT9C\\\",\\n            \\\"artifactType\\\": \\\"api_trace\\\",\\n            \\\"",
+        "_size": 65419
+      },
+      "at": "2026-02-25T15:10:38.784Z"
+    }
+  ]
+}

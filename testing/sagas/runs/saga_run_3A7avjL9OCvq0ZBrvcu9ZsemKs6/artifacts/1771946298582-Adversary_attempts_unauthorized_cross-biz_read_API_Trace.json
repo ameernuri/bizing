@@ -1,0 +1,210 @@
+{
+  "stepKey": "adversary-cross-biz-read",
+  "callCount": 5,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/bizes/3A7avhPkK8batRWogxRQ0HfLfJl/booking-orders",
+      "status": 403,
+      "requestBody": {
+        "offerId": "offer_3A7avqOgFM0n4PK73Xl0Etke63C",
+        "offerVersionId": "offer_version_3A7avuuDFeaw2Pz7zETsoITJBfk",
+        "status": "draft",
+        "subtotalMinor": 1000,
+        "taxMinor": 0,
+        "feeMinor": 0,
+        "discountMinor": 0,
+        "totalMinor": 1000,
+        "currency": "USD"
+      },
+      "responseBody": {
+        "success": false,
+        "error": {
+          "code": "FORBIDDEN",
+          "message": "You are not a member of this biz."
+        },
+        "meta": {
+          "requestId": "74326205-0bd6-4f97-ae6d-06d824e35899",
+          "timestamp": "2026-02-24T15:18:18.440Z"
+        }
+      },
+      "at": "2026-02-24T15:18:18.449Z"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3A7avc5YrRavhxycoxgjvISOXES/steps/adversary-hold-abuse/result",
+      "status": 200,
+      "requestBody": {
+        "status": "in_progress",
+        "startedAt": "2026-02-24T15:18:18.418Z",
+        "resultPayload": {
+          "note": "Started adversary-hold-abuse"
+        },
+        "assertionSummary": {
+          "status": "in_progress"
+        }
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "id": "saga_run_step_3A7avY817nvzUOWeOAoAijXmbV1",
+          "sagaRunId": "saga_run_3A7avc5YrRavhxycoxgjvISOXES",
+          "phaseKey": "security-and-abuse",
+          "phaseOrder": 6,
+          "phaseTitle": "Security And Abuse Checks",
+          "stepKey": "adversary-hold-abuse",
+          "stepOrder": 15,
+          "actorKey": "adversary",
+          "instruction": "Trigger repeated booking/hold-like attempts to validate throttling, expiry, or non-blocking demand visibility behavior.",
+          "expectedResult": "Abusive attempts are rate-limited or isolated without blocking legitimate customer flow.",
+          "status": "in_progress",
+          "attemptCount": 1,
+          "startedAt": "2026-02-24T15:18:18.418Z",
+          "endedAt": null,
+          "failureCode": null,
+          "failureMessage": null,
+          "resultPayload": {
+            "note": "Started adversary-hold-abuse"
+          },
+          "assertionSummary": {
+            "status": "in_progress"
+          },
+          "metadata": {},
+          "createdAt": "2026-02-24T15:18:13.872Z",
+          "updatedAt": "2026-02-24T15:18:13.872Z",
+          "deletedAt": null,
+          "createdBy": null,
+          "updatedBy": null,
+          "deletedBy": null
+        },
+        "meta": {
+          "requestId": "3913ba0d-efc7-4c34-91c9-d52230b3fa88",
+          "timestamp": "2026-02-24T15:18:18.442Z"
+        }
+      },
+      "at": "2026-02-24T15:18:18.450Z"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3A7avgl9k8hRhI0NJLABfV6Cw4r/steps/adversary-cross-biz-read/result",
+      "status": 200,
+      "requestBody": {
+        "status": "passed",
+        "startedAt": "2026-02-24T15:18:18.398Z",
+        "endedAt": "2026-02-24T15:18:18.398Z",
+        "failureMessage": null,
+        "resultPayload": {
+          "note": "Cross-biz read blocked for non-member account.",
+          "evidence": {
+            "adversaryUserId": "RVe7WbWebIlJ4IwqNZzvcOXZKFFe6rUW"
+          }
+        },
+        "assertionSummary": {
+          "status": "passed",
+          "hasFailure": false,
+          "assertionsPassed": 1
+        }
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "id": "saga_run_step_3A7avgwgGs5YyQ62CKeYO8jebYR",
+          "sagaRunId": "saga_run_3A7avgl9k8hRhI0NJLABfV6Cw4r",
+          "phaseKey": "security-and-abuse",
+          "phaseOrder": 6,
+          "phaseTitle": "Security And Abuse Checks",
+          "stepKey": "adversary-cross-biz-read",
+          "stepOrder": 14,
+          "actorKey": "adversary",
+          "instruction": "Using credentials from another context, attempt to read or mutate booking/order resources for this biz.",
+          "expectedResult": "Request is rejected with forbidden/unauthorized error and no data leakage.",
+          "status": "passed",
+          "attemptCount": 1,
+          "startedAt": "2026-02-24T15:18:18.398Z",
+          "endedAt": "2026-02-24T15:18:18.398Z",
+          "failureCode": null,
+          "failureMessage": null,
+          "resultPayload": {
+            "note": "Cross-biz read blocked for non-member account.",
+            "evidence": {
+              "adversaryUserId": "RVe7WbWebIlJ4IwqNZzvcOXZKFFe6rUW"
+            }
+          },
+          "assertionSummary": {
+            "status": "passed",
+            "hasFailure": false,
+            "assertionsPassed": 1
+          },
+          "metadata": {},
+          "createdAt": "2026-02-24T15:18:14.078Z",
+          "updatedAt": "2026-02-24T15:18:14.078Z",
+          "deletedAt": null,
+          "createdBy": null,
+          "updatedBy": null,
+          "deletedBy": null
+        },
+        "meta": {
+          "requestId": "f744f1f6-14a7-428c-8783-77597c58394a",
+          "timestamp": "2026-02-24T15:18:18.442Z"
+        }
+      },
+      "at": "2026-02-24T15:18:18.450Z"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/bizes/3A7avhPkK8batRWogxRQ0HfLfJl/booking-orders",
+      "status": 403,
+      "requestBody": {
+        "offerId": "offer_3A7avqOgFM0n4PK73Xl0Etke63C",
+        "offerVersionId": "offer_version_3A7avuuDFeaw2Pz7zETsoITJBfk",
+        "status": "draft",
+        "subtotalMinor": 1000,
+        "taxMinor": 0,
+        "feeMinor": 0,
+        "discountMinor": 0,
+        "totalMinor": 1000,
+        "currency": "USD"
+      },
+      "responseBody": {
+        "success": false,
+        "error": {
+          "code": "FORBIDDEN",
+          "message": "You are not a member of this biz."
+        },
+        "meta": {
+          "requestId": "fd9187c0-3c0f-404e-84e5-990e35a0bab6",
+          "timestamp": "2026-02-24T15:18:18.543Z"
+        }
+      },
+      "at": "2026-02-24T15:18:18.547Z"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/bizes/3A7avhPkK8batRWogxRQ0HfLfJl/booking-orders",
+      "status": 403,
+      "requestBody": {
+        "offerId": "offer_3A7avqOgFM0n4PK73Xl0Etke63C",
+        "offerVersionId": "offer_version_3A7avuuDFeaw2Pz7zETsoITJBfk",
+        "status": "draft",
+        "subtotalMinor": 1000,
+        "taxMinor": 0,
+        "feeMinor": 0,
+        "discountMinor": 0,
+        "totalMinor": 1000,
+        "currency": "USD"
+      },
+      "responseBody": {
+        "success": false,
+        "error": {
+          "code": "FORBIDDEN",
+          "message": "You are not a member of this biz."
+        },
+        "meta": {
+          "requestId": "a7bf53e4-64bc-4744-9f97-7e910a64e648",
+          "timestamp": "2026-02-24T15:18:18.556Z"
+        }
+      },
+      "at": "2026-02-24T15:18:18.557Z"
+    }
+  ]
+}

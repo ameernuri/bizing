@@ -1,0 +1,171 @@
+{
+  "schemaVersion": "snapshot.v1",
+  "screenKey": "adversary-hold-abuse-1771904438051",
+  "title": "Adversary attempts demand/hold abuse Snapshot",
+  "generatedAt": "2026-02-24T03:40:38.170Z",
+  "stepKey": "adversary-hold-abuse",
+  "status": "passed",
+  "view": {
+    "title": "Adversary attempts demand/hold abuse",
+    "subtitle": "Repeated unauthorized hold attempts were blocked (403).",
+    "blocks": [
+      {
+        "type": "alert",
+        "title": "Adversary Hold Abuse completed",
+        "message": "Repeated unauthorized hold attempts were blocked (403).",
+        "tone": "success"
+      }
+    ]
+  },
+  "rawData": {
+    "stepKey": "adversary-hold-abuse",
+    "resultPayload": {
+      "note": "Repeated unauthorized hold attempts were blocked (403)."
+    },
+    "apiCalls": [
+      {
+        "method": "GET",
+        "path": "/api/auth/get-session",
+        "status": 200,
+        "responseBody": {
+          "session": {
+            "expiresAt": "2026-03-03T03:40:37.354Z",
+            "token": "j9DhFHbevyfXnBRbGMRUzFC8YhM9f6Ac",
+            "createdAt": "2026-02-24T03:40:37.354Z",
+            "updatedAt": "2026-02-24T03:40:37.354Z",
+            "ipAddress": "",
+            "userAgent": "node",
+            "userId": "19kqPoe8wbfrGKZTnWIVUvIvtIjsPMIE",
+            "activeOrganizationId": null,
+            "impersonatedBy": null,
+            "id": "r9Bd4MAV0Jocdc4g2OVLKrnmjFljwtAc"
+          },
+          "user": {
+            "name": "adversary-uc-190-the-solo-entrepreneur-sarah",
+            "email": "adversary-uc-190-the-solo-entrepreneur-sarah-1771904437161-ksde1u@example.com",
+            "emailVerified": false,
+            "image": null,
+            "createdAt": "2026-02-24T03:40:37.296Z",
+            "updatedAt": "2026-02-24T03:40:37.296Z",
+            "role": "user",
+            "banned": false,
+            "banReason": null,
+            "banExpires": null,
+            "id": "19kqPoe8wbfrGKZTnWIVUvIvtIjsPMIE"
+          }
+        },
+        "at": "2026-02-24T03:40:37.490Z"
+      },
+      {
+        "method": "POST",
+        "path": "/api/v1/sagas/runs/saga_run_3A6E3hcXmh36eYtCWXjXuj536Fl/steps/adversary-cross-biz-read/result",
+        "status": 200,
+        "requestBody": {
+          "status": "passed",
+          "startedAt": "2026-02-24T03:40:37.191Z",
+          "endedAt": "2026-02-24T03:40:37.191Z",
+          "failureMessage": null,
+          "resultPayload": {
+            "note": "Cross-biz read blocked for non-member account.",
+            "evidence": {
+              "adversaryUserId": "kuV8kf6TMTqjNpvd5jJXrWhD1ADQVVhA"
+            }
+          },
+          "assertionSummary": {
+            "status": "passed",
+            "hasFailure": false
+          }
+        },
+        "responseBody": {
+          "success": true,
+          "data": {
+            "id": "saga_run_step_3A6E3gpFNbFVfgjI7Eqa6GpyXJG",
+            "sagaRunId": "saga_run_3A6E3hcXmh36eYtCWXjXuj536Fl",
+            "phaseKey": "security-and-abuse",
+            "phaseOrder": 6,
+            "phaseTitle": "Security And Abuse Checks",
+            "stepKey": "adversary-cross-biz-read",
+            "stepOrder": 14,
+            "actorKey": "adversary",
+            "instruction": "Using credentials from another context, attempt to read or mutate booking/order resources for this biz.",
+            "expectedResult": "Request is rejected with forbidden/unauthorized error and no data leakage.",
+            "status": "passed",
+            "attemptCount": 0,
+            "startedAt": "2026-02-24T03:40:37.191Z",
+            "endedAt": "2026-02-24T03:40:37.191Z",
+            "failureCode": null,
+            "failureMessage": null,
+            "resultPayload": {
+              "note": "Cross-biz read blocked for non-member account.",
+              "evidence": {
+                "adversaryUserId": "kuV8kf6TMTqjNpvd5jJXrWhD1ADQVVhA"
+              }
+            },
+            "assertionSummary": {
+              "status": "passed",
+              "hasFailure": false
+            },
+            "metadata": {},
+            "createdAt": "2026-02-24T03:40:22.864Z",
+            "updatedAt": "2026-02-24T03:40:22.864Z",
+            "deletedAt": null,
+            "createdBy": null,
+            "updatedBy": null,
+            "deletedBy": null
+          },
+          "meta": {
+            "requestId": "924f8ffc-250c-4cc9-8235-a6c16fbbca28",
+            "timestamp": "2026-02-24T03:40:37.488Z"
+          }
+        },
+        "at": "2026-02-24T03:40:37.490Z"
+      },
+      {
+        "method": "POST",
+        "path": "/api/v1/bizes/3A6E3vdmtVfSwrYKMIkWUcZEWmq/booking-orders",
+        "status": 403,
+        "requestBody": {
+          "offerId": "offer_3A6E4dbamUCfafc6MeGXHTPeapG",
+          "offerVersionId": "offer_version_3A6E4lexYpK7F5I6ZfKK7LcsxHx",
+          "status": "draft",
+          "subtotalMinor": 1000,
+          "taxMinor": 0,
+          "feeMinor": 0,
+          "discountMinor": 0,
+          "totalMinor": 1000,
+          "currency": "USD"
+        },
+        "responseBody": {
+          "success": false,
+          "error": {
+            "code": "FORBIDDEN",
+            "message": "You are not a member of this biz."
+          },
+          "meta": {
+            "requestId": "ae2474b6-d086-4683-b0d2-453db90f08b3",
+            "timestamp": "2026-02-24T03:40:37.585Z"
+          }
+        },
+        "at": "2026-02-24T03:40:37.586Z"
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/bizes/3A6E3z8Jt5jlXemh0s2fH2jksQ7/booking-orders",
+        "status": 403,
+        "responseBody": {
+          "success": false,
+          "error": {
+            "code": "FORBIDDEN",
+            "message": "You are not a member of this biz."
+          },
+          "meta": {
+            "requestId": "cf2e8131-077f-4544-90cf-b3b12e62c960",
+            "timestamp": "2026-02-24T03:40:37.591Z"
+          }
+        },
+        "at": "2026-02-24T03:40:37.601Z"
+      }
+    ]
+  },
+  "metadata": {}
+}

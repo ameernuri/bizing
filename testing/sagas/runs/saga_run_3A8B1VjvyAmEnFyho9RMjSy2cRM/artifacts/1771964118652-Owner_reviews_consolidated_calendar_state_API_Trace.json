@@ -1,0 +1,336 @@
+{
+  "stepKey": "owner-calendar-review",
+  "callCount": 5,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs",
+      "status": 201,
+      "requestBody": {
+        "sagaKey": "uc-157-the-black-hat-hacker-spectre",
+        "mode": "dry_run",
+        "runnerLabel": "codex-rerun-all",
+        "runContext": {
+          "createdBy": "apps/api/src/scripts/rerun-sagas.ts"
+        }
+      },
+      "responseBody": {
+        "_truncated": true,
+        "_preview": "{\"success\":true,\"data\":{\"run\":{\"id\":\"saga_run_3A8B3czRdEGaFVSOyocb4Rn0QXa\",\"sagaDefinitionId\":\"saga_definition_3A7asRnTJt4me53jjD2Uy43oYuR\",\"sagaKey\":\"uc-157-the-black-hat-hacker-spectre\",\"bizId\":null,\"status\":\"pending\",\"mode\":\"dry_run\",\"requestedByUserId\":\"5AuNRNOppdGiLM0XbqF5a3TD5aqoINDZ\",\"runnerLabel\":\"codex-rerun-all\",\"definitionChecksum\":\"a201cef10b896d5154464d6af30f1eff8030a68df07478c27729e440c5341393\",\"startedAt\":null,\"endedAt\":null,\"lastHeartbeatAt\":null,\"totalSteps\":20,\"passedSteps\":0,\"failedSteps\":0,\"skippedSteps\":0,\"runContext\":{\"createdBy\":\"apps/api/src/scripts/rerun-sagas.ts\"},\"runSummary\":{},\"metadata\":{\"tags\":[\"uc-derived\",\"persona-derived\",\"lifecycle\",\"api-first\",\"agents\"],\"title\":\"UC-157 • The Security Incident + Breach Notification Workflow • The Black Hat Hacker (Spectre)\"},\"createdAt\":\"2026-02-24T20:15:18.576Z\",\"updatedAt\":\"2026-02-24T20:15:18.576Z\",\"deletedAt\":null,\"createdBy\":null,\"updatedBy\":null,\"deletedBy\":null},\"definition\":{\"id\":\"saga_definition_3A7asRnTJt4me53jjD2Uy43oYuR\",\"bizId\":null,\"sagaKey\":\"uc-157-the-black-hat-hacker-spectre\",\"title\":\"UC-157 • The Security Incident + Breach Notification Workflow • The Black Hat Hacker (Spectre)\",\"description\":\"Comprehensive lifecycle saga derived from UC-157 and persona P-10. Needs summary: Incident record with severity and status lifecycle; Containment and resolution timestamps; Affected record count estimate; Notification tasks by recipient class (individuals, regulator, media, BA); Due dates and sent timestamps; Evidence/audit trail of response actions\",\"status\":\"active\",\"sourceUseCaseRef\":\"UC-157\",\"sourcePersonaRef\":\"P-10\",\"sourceUseCaseFile\":\"/Users/ameer/bizing/mind/workspace/documentation/use-cases-comprehensive.md\",\"sourcePersonaFile\":\"/Users/ameer/bizing/mind/workspace/documentation/tester-personas.md\",\"specVersion\":\"saga.v0\",\"specFilePath\":\"testing/sagas/specs/uc-157-the-black-hat-hacker-spectre.json\",\"specChecksum\":\"a201cef10b896d5154464d6af30f1eff8030a68df07478c27729e440c5341393\",\"metadata\":{\"tags\":[\"uc-derived\",\"persona-derived\",\"lifecycle\",\"api-first\",\"agents\"],\"generatedAt\":\"2026-02-24T20:12:26.465Z\"},\"createdAt\":\"2026-02-24T15:17:48.967Z\",\"updatedAt\":\"2026-02-24T15:17:48.967Z\",\"deletedAt\":null,\"createdBy\":null,\"updatedBy\":null,\"deletedBy\":null},\"spec\":{\"schemaVersion\":\"saga.v0\",\"sagaKey\":\"uc-157-the-black-hat-hacker-spectre\",\"title\":\"UC-157 • The Security Incident + Breach Notification Workflow • The Black Hat Hacker (Spectre)\",\"description\":\"Comprehensive lifecycle saga derived from UC-157 and persona P-10. Needs summary: Incident record with severity and status lifecycle; Containment and resolution timestamps; Affected record count estimate; Notification tasks by recipient class (individuals, regulator, media, BA); Due dates and sent timestamps; Evidence/audit trail of response actions\",\"tags\":[\"uc-derived\",\"persona-derived\",\"lifecycle\",\"api-first\",\"agents\"],\"defaults\":{\"runMode\":\"dry_run\",\"continueOnFailure\":false},\"source\":{\"useCaseRef\":\"UC-157\",\"personaRef\":\"P-10\",\"useCaseFile\":\"/Users/ameer/bizing/mind/workspace/documentation/use-cases-comprehensive.md\",\"personaFile\":\"/Users/ameer/bizing/mind/workspace/documentation/tester-personas.md\",\"generatedAt\":\"2026-02-24T20:12:26.465Z\"},\"objectives\":[\"Validate UC-157 lifecycle end-to-end using persona The Black Hat Hacker (Spectre).\",\"Exercise owner setup, team setup, catalog publishing, and customer journeys.\",\"Stress ACL/security edge cases and verify expected denials are enforced.\",\"Collect snapshots and report artifacts for every critical milestone.\"],\"actors\":[{\"actorKey\":\"biz_owner\",\"name\":\"The Black Hat Hacker (Spectre)\",\"role\":\"owner\",\"description\":\"Professional attacker, targeting customer PII and payment data\",\"personaRef\":\"P-10\"},{\"actorKey\":\"biz_member\",\"name\":\"Operations Team Member\",\"role\":\"manager\",\"description\":\"Business member invited by owner to assist with operations and booking flow.\"},{\"actorKey\":\"customer_1\",\"name\":\"Customer One\",\"role\":\"customer\",\"description\":\"Primary customer exploring catalog, booking services, and purchasing products.\"},{\"actorKey\":\"customer_2\",\"name\":\"Customer Two\",\"role\":\"customer\",\"description\":\"Concurrent customer used to simulate realistic demand and race conditions.\"},{\"actorKey\":\"adversary\",\"name\":\"Adversarial User\",\"role\":\"malicious_actor\",\"description\":\"Actor intentionally attempting unauthorized or abusive actions.\"}],\"phases\":[{\"phaseKey\":\"owner-onboarding\",\"order\":1,\"title\":\"Owner Onboarding\",\"description\":\"Business owner signs up, authenticates, and establishes tenant root.\",\"steps\":[{\"stepKey\":\"owner-sign-up\",\"order\":1,\"title\":\"Owner signs up and authenticates\",\"actorKey\":\"biz_owner\",\"intent\":\"Establish authenticated owner identity for the lifecycle.\",\"instruction\":\"Create or login the owner account through Better Auth endpoints, then verify session context can call authenticated API routes.\",\"expectedResult\":\"Owner session exists and authenticated routes return success for this user.\",\"toolHints\":[],\"assertions\":[{\"kind\":\"api_response\",\"description\":\"API call returns success and includes stable ids for created entities.\"},{\"kind\":\"acl_guard\",\"description\":\"Actor permissions are honored for this step context.\"}],\"evidenceRequired\":[{\"kind\":\"api_trace\",\"label\":\"Request/response trace for this step\"},{\"kind\":\"snapshot\",\"label\":\"Structured snapshot.v1 screen blocks (what user saw) with real API-backed data\"}],\"guardrails\":[],\"tags\":[\"auth\",\"setup\"]},{\"stepKey\":\"owner-create-biz\",\"order\":2,\"title\":\"Owner creates business tenant\",\"actorKey\":\"biz_owner\",\"intent\":\"Create the biz root for all subsequent configuration.\",\"instruction\":\"Using agents tools, create a biz representing The Security Incident + Breach Notification Workflow. Use name/slug derived from saga context.\",\"expectedResult\":\"Biz is created, owner is auto-added as member with owner role, and biz id is captured.\",\"toolHints\":[\"bizing.bizes.create\"],\"assertions\":[{\"kind\":\"api_response\",\"description\":\"API call returns success and includes stable ids for created entities.\"},{\"kind\":\"acl_guard\",\"description\":\"Actor permissions are honored for this step context.\"}],\"evidenceRequired\":[{\"kind\":\"api_trace\",\"label\":\"Request/response trace for this step\"},{\"kind\":\"snapshot\",\"label\":\"Structured snapshot.v1 screen blocks (what user saw) with real API-backed data\"}],\"guardrails\":[],\"tags\":[\"biz\",\"setup\"]},{\"stepKey\":\"owner-create-location\",\"order\":3,\"title\":\"Owner creates primary location\",\"actorKey\":\"biz_owner\",\"intent\":\"Establish operational location for services/resources.\",\"instruction\":\"Create a primary location for the biz and set timezone aligned with scenario context.\",\"expectedResult\":\"Location exists and is associated with the new biz.\",\"toolHints\":[\"bizing.locations.create\"],\"assertions\":[{\"kind\":\"api_response\",\"description\":\"API call returns success and includes stable ids for created entities.\"},{\"kind\":\"acl_guard\",\"description\":\"Actor permissions are honored for this step context.\"}],\"evidenceRequired\":[{\"kind\":\"api_trace\",\"label\":\"Request/response trace for this step\"},{\"kind\":\"snapshot\",\"label\":\"Structured snapshot.v1 screen blocks (what user saw) with real API-backed data\"}],\"guardrails\":[],\"tags\":[\"location\",\"setup\"]}]},{\"phaseKey\":\"business-configuration\",\"order\":2,\"title\":\"Business Configuration\",\"description\":\"Owner configures scheduling, pricing baseline, and operational defaults.\",\"steps\":[{\"stepKey\":\"owner-configure-hours\",\"order\":4,\"title\":\"Configure default hours and availability mode\",\"actorKey\":\"biz_owner\",\"intent\":\"Set baseline availability without forcing advanced complexity.\",\"instruction\":\"Create baseline availability and lead-time rules representing the UC default business hours and booking window behavior.\",\"expectedResult\":\"Availability defaults and rules are stored and can be referenced by calendars.\",\"toolHints\":[],\"assertions\":[{\"kind\":\"api_response\",\"description\":\"API call returns success and includes stable ids for created entities.\"},{\"kind\":\"acl_guard\",\"description\":\"Actor permissions are honored for this step context.\"}],\"evidenceRequired\":[{\"kind\":\"api_trace\",\"label\":\"Request/response trace for this step\"},{\"kind\":\"snapshot\",\"label\":\"Structured snapshot.v1 screen blocks (what user saw) with real API-backed data\"}],\"guardrails\":[],\"tags\":[\"availability\",\"policy\"]},{\"stepKey\":\"owner-configure-pricing\",\"order\":5,\"title\":\"Configure default pricing rules\",\"actorKey\":\"biz_owner\",\"intent\":\"Set base pricing and optional manual demand overrides.\",\"instruction\":\"Configure pricing defaults for the offer lifecycle including call fees/manual surge if UC needs imply it.\",\"expectedResult\":\"Pricing model persists and future bookings can calculate totals deterministically.\",\"toolHints\":[],\"assertions\":[{\"kind\":\"api_response\",\"description\":\"API call returns success and includes stable ids for created entities.\"},{\"kind\":\"acl_guard\",\"description\":\"Actor permissions are honored for this step context.\"}],\"evidenceRequired\":[{\"kind\":\"api_trace\",\"label\":\"Request/response trace for this step\"},{\"kind\":\"snapshot\",\"label\":\"Structured snapshot.v1 screen blocks (what user saw) with real API-backed data\"}],\"guardrails\":[],\"tags\":[\"pricing\"]}]},{\"phaseKey\":\"supply-and-team-setup\",\"order\":3,\"title\":\"Supply And Team Setup\",\"description\":\"Business owner sets up hosts/assets/venues/resources and invites members.\",\"steps\":[{\"stepKey\":\"owner-create-resources\",\"order\":6,\"title\":\"Create resources representing hosts/assets/venues\",\"actorKey\":\"biz_owner\",\"intent\":\"Model real-world supply that bookings will consume.\",\"instruction\":\"Create at least one host resource and one non-host resource (asset or venue) suitable for the UC.\",\"expectedResult\":\"Resources are created with expected type, location, and buffers.\",\"toolHints\":[\"bizing.resources.create\"],\"assertions\":[{\"kind\":\"api_response\",\"description\":\"API call returns success and includes stable ids for created entities.\"},{\"kind\":\"acl_guard\",\"description\":\"Actor permissions are honored for this step context.\"}],\"evidenceRequired\":[{\"kind\":\"api_trace\",\"label\":\"Request/response trace for this step\"},{\"kind\":\"snapshot\",\"label\":\"Structured snapshot.v1 screen blocks (what user saw) with real API-backed data\"}],\"guardrails\":[],\"tags\":[\"resources\"]},{\"stepKey\":\"owner-invite-member\",\"order\":7,\"title\":\"Invite and provision business member\",\"actorKey\":\"biz_owner\",\"intent\":\"Validate collaboration and role assignment.\",\"instruction\":\"Invite a biz member, assign an operational role, and verify that member can authenticate into the same biz.\",\"expectedResult\":\"Biz member account/session exists with scoped role permissions.\",\"toolHints\":[],\"assertions\":[{\"kind\":\"api_response\",\"description\":\"API call returns success and includes stable ids for created entities.\"},{\"kind\":\"acl_guard\",\"description\":\"Actor permissions are honored for this step context.\"}],\"evidenceRequired\":[{\"kind\":\"api_trace\",\"label\":\"Request/response trace for this step\"},{\"kind\":\"snapshot\",\"label\":\"Structured snapshot.v1 screen blocks (what user saw) with real API-backed data\"}],\"guardrails\":[],\"tags\":[\"team\",\"acl\"]}]},{\"phaseKey\":\"catalog-publish\",\"order\":4,\"title\":\"Catalog And Publish\",\"description\":\"Owner creates services/offers/products and publishes sellable catalog entries.\",\"steps\":[{\"stepKey\":\"owner-create-offer\",\"order\":8,\"title\":\"Create offer shell\",\"actorKey\":\"biz_owner\",\"intent\":\"Define sellable service/catalog entry.\",\"instruction\":\"Create an offer representing the UC primary service; choose execution mode matching the scenario.\",\"expectedResult\":\"Offer is created in draft state with captured id.\",\"toolHints\":[\"bizing.offers.create\"],\"assertions\":[{\"kind\":\"api_response\",\"description\":\"API call returns success and includes stable ids for created entities.\"},{\"kind\":\"acl_guard\",\"description\":\"Actor permissions are honored for this step context.\"}],\"evidenceRequired\":[{\"kind\":\"api_trace\",\"label\":\"Request/response trace for this step\"},{\"kind\":\"snapshot\",\"label\":\"Structured snapshot.v1 screen blocks (what user saw) with real",
+        "_size": 47018
+      },
+      "at": "2026-02-24T20:15:18.610Z"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3A8B1cuEevIHFeQQ3ERYwXGYzlR/steps/adversary-hold-abuse/result",
+      "status": 200,
+      "requestBody": {
+        "status": "in_progress",
+        "startedAt": "2026-02-24T20:15:18.564Z",
+        "resultPayload": {
+          "note": "Started adversary-hold-abuse"
+        },
+        "assertionSummary": {
+          "status": "in_progress"
+        }
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "id": "saga_run_step_3A8B1Vypucb1hADjYJClttoHM5r",
+          "sagaRunId": "saga_run_3A8B1cuEevIHFeQQ3ERYwXGYzlR",
+          "phaseKey": "security-and-abuse",
+          "phaseOrder": 6,
+          "phaseTitle": "Security And Abuse Checks",
+          "stepKey": "adversary-hold-abuse",
+          "stepOrder": 15,
+          "actorKey": "adversary",
+          "instruction": "Trigger repeated booking/hold-like attempts to validate throttling, expiry, or non-blocking demand visibility behavior.",
+          "expectedResult": "Abusive attempts are rate-limited or isolated without blocking legitimate customer flow.",
+          "status": "in_progress",
+          "attemptCount": 1,
+          "startedAt": "2026-02-24T20:15:18.564Z",
+          "endedAt": null,
+          "failureCode": null,
+          "failureMessage": null,
+          "resultPayload": {
+            "note": "Started adversary-hold-abuse"
+          },
+          "assertionSummary": {
+            "status": "in_progress"
+          },
+          "metadata": {},
+          "createdAt": "2026-02-24T20:15:02.112Z",
+          "updatedAt": "2026-02-24T20:15:02.112Z",
+          "deletedAt": null,
+          "createdBy": null,
+          "updatedBy": null,
+          "deletedBy": null
+        },
+        "meta": {
+          "requestId": "f8c0bfbb-7e46-4267-8b83-4e098779402c",
+          "timestamp": "2026-02-24T20:15:18.612Z"
+        }
+      },
+      "at": "2026-02-24T20:15:18.613Z"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3A8B1auXN840x5q95RAJJdUy6Tx/steps/adversary-hold-abuse/result",
+      "status": 200,
+      "requestBody": {
+        "status": "in_progress",
+        "startedAt": "2026-02-24T20:15:18.569Z",
+        "resultPayload": {
+          "note": "Started adversary-hold-abuse"
+        },
+        "assertionSummary": {
+          "status": "in_progress"
+        }
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "id": "saga_run_step_3A8B1akdXxPTNVHzRNQe0tAAqhi",
+          "sagaRunId": "saga_run_3A8B1auXN840x5q95RAJJdUy6Tx",
+          "phaseKey": "security-and-abuse",
+          "phaseOrder": 6,
+          "phaseTitle": "Security And Abuse Checks",
+          "stepKey": "adversary-hold-abuse",
+          "stepOrder": 15,
+          "actorKey": "adversary",
+          "instruction": "Trigger repeated booking/hold-like attempts to validate throttling, expiry, or non-blocking demand visibility behavior.",
+          "expectedResult": "Abusive attempts are rate-limited or isolated without blocking legitimate customer flow.",
+          "status": "in_progress",
+          "attemptCount": 1,
+          "startedAt": "2026-02-24T20:15:18.569Z",
+          "endedAt": null,
+          "failureCode": null,
+          "failureMessage": null,
+          "resultPayload": {
+            "note": "Started adversary-hold-abuse"
+          },
+          "assertionSummary": {
+            "status": "in_progress"
+          },
+          "metadata": {},
+          "createdAt": "2026-02-24T20:15:02.792Z",
+          "updatedAt": "2026-02-24T20:15:02.792Z",
+          "deletedAt": null,
+          "createdBy": null,
+          "updatedBy": null,
+          "deletedBy": null
+        },
+        "meta": {
+          "requestId": "a01641df-c2e6-48f0-a74e-7c10515e96e5",
+          "timestamp": "2026-02-24T20:15:18.615Z"
+        }
+      },
+      "at": "2026-02-24T20:15:18.615Z"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3A8B1I2MErmjYYoHriYisG37ChD/steps/owner-validate-compliance-controls/result",
+      "status": 200,
+      "requestBody": {
+        "status": "in_progress",
+        "startedAt": "2026-02-24T20:15:18.570Z",
+        "resultPayload": {
+          "note": "Started owner-validate-compliance-controls"
+        },
+        "assertionSummary": {
+          "status": "in_progress"
+        }
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "id": "saga_run_step_3A8B1N1kHKoB4yCK7ss3hQkjzOo",
+          "sagaRunId": "saga_run_3A8B1I2MErmjYYoHriYisG37ChD",
+          "phaseKey": "operations-and-follow-up",
+          "phaseOrder": 7,
+          "phaseTitle": "Operations And Follow-up",
+          "stepKey": "owner-validate-compliance-controls",
+          "stepOrder": 18,
+          "actorKey": "biz_owner",
+          "instruction": "Run compliance workflow checks (credential sharing/access control/privacy constraints) for this scenario.",
+          "expectedResult": "Access is scoped correctly and compliance workflow state is traceable in operational records.",
+          "status": "in_progress",
+          "attemptCount": 1,
+          "startedAt": "2026-02-24T20:15:18.570Z",
+          "endedAt": null,
+          "failureCode": null,
+          "failureMessage": null,
+          "resultPayload": {
+            "note": "Started owner-validate-compliance-controls"
+          },
+          "assertionSummary": {
+            "status": "in_progress"
+          },
+          "metadata": {},
+          "createdAt": "2026-02-24T20:15:00.917Z",
+          "updatedAt": "2026-02-24T20:15:00.917Z",
+          "deletedAt": null,
+          "createdBy": null,
+          "updatedBy": null,
+          "deletedBy": null
+        },
+        "meta": {
+          "requestId": "6f562a85-7df5-477c-bb89-266f01185f53",
+          "timestamp": "2026-02-24T20:15:18.618Z"
+        }
+      },
+      "at": "2026-02-24T20:15:18.619Z"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3A8B1NGmBRdFqOkKe75BAH8lKXe/snapshots",
+      "status": 201,
+      "requestBody": {
+        "stepKey": "owner-revenue-sanity",
+        "screenKey": "owner-revenue-sanity-1771964118563",
+        "title": "Owner validates financial/reporting outputs Snapshot",
+        "status": "passed",
+        "route": "/sagas/saga_run_3A8B1NGmBRdFqOkKe75BAH8lKXe/owner-revenue-sanity",
+        "format": "json",
+        "view": {
+          "title": "Owner validates financial/reporting outputs",
+          "subtitle": "Revenue sanity computed from booking orders.",
+          "blocks": [
+            {
+              "type": "alert",
+              "title": "Owner Revenue Sanity completed",
+              "message": "Revenue sanity computed from booking orders.",
+              "tone": "success"
+            },
+            {
+              "type": "stats",
+              "title": "What user sees at a glance",
+              "items": [
+                {
+                  "label": "BookingCount",
+                  "value": "2"
+                },
+                {
+                  "label": "TotalMinor",
+                  "value": "30000"
+                }
+              ]
+            },
+            {
+              "type": "key_value",
+              "title": "Screen details",
+              "items": [
+                {
+                  "label": "BookingCount",
+                  "value": "2"
+                },
+                {
+                  "label": "TotalMinor",
+                  "value": "30000"
+                },
+                {
+                  "label": "Currency",
+                  "value": "USD"
+                }
+              ]
+            }
+          ]
+        },
+        "rawData": {
+          "stepKey": "owner-revenue-sanity",
+          "resultPayload": {
+            "note": "Revenue sanity computed from booking orders.",
+            "evidence": {
+              "bookingCount": 2,
+              "totalMinor": 30000,
+              "currency": "USD"
+            }
+          },
+          "apiCalls": [
+            {
+              "method": "PATCH",
+              "path": "/api/v1/bizes/3A8B1ZWyRsJhw1q3AKy3JMb9m0y/booking-orders/booking_order_3A8B2mbLBns0xgVNEB9hj5M01GW/status",
+              "status": 200,
+              "requestBody": {
+                "status": "in_progress"
+              },
+              "responseBody": {
+                "success": true,
+                "data": {
+                  "id": "booking_order_3A8B2mbLBns0xgVNEB9hj5M01GW",
+                  "bizId": "3A8B1ZWyRsJhw1q3AKy3JMb9m0y",
+                  "offerId": "offer_3A8B24d7h3BAZp4B0lB42eYEPo4",
+                  "offerVersionId": "offer_version_3A8B26lHZFSDdi4rerWvwK3ThUw",
+                  "customerUserId": "q9fTdaTOBK8My3odIl8zjITVblFKWEZZ",
+                  "customerGroupAccountId": null,
+                  "status": "in_progress",
+                  "statusConfigValueId": null,
+                  "currency": "USD",
+                  "subtotalMinor": 15000,
+                  "taxMinor": 0,
+                  "feeMinor": 0,
+                  "discountMinor": 0,
+                  "totalMinor": 15000,
+                  "requestedStartAt": "2026-02-25T20:15:12.208Z",
+                  "requestedEndAt": "2026-02-25T21:05:12.208Z",
+                  "confirmedStartAt": "2026-02-25T20:15:12.208Z",
+                  "confirmedEndAt": "2026-02-25T21:05:12.208Z",
+                  "pricingSnapshot": {},
+                  "policySnapshot": {},
+                  "metadata": {},
+                  "createdAt": "2026-02-24T20:15:12.228Z",
+                  "updatedAt": "2026-02-24T20:15:12.228Z",
+                  "deletedAt": null,
+                  "createdBy": null,
+                  "updatedBy": null,
+                  "deletedBy": null
+                },
+                "meta": {
+                  "requestId": "57ee67a3-9c8c-4ee2-aaff-d95e8f558745",
+                  "timestamp": "2026-02-24T20:15:18.364Z"
+                }
+              },
+              "at": "2026-02-24T20:15:18.368Z"
+            }
+          ]
+        }
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "id": "saga_artifact_3A8B3WxoLCdZfff1U37cQxNAj6Q",
+          "sagaRunId": "saga_run_3A8B1NGmBRdFqOkKe75BAH8lKXe",
+          "sagaRunStepId": "saga_run_step_3A8B1NDFMwALuffSouh2HIBeNIc",
+          "artifactType": "snapshot",
+          "title": "Owner validates financial/reporting outputs Snapshot",
+          "storagePath": "testing/sagas/runs/saga_run_3A8B1NGmBRdFqOkKe75BAH8lKXe/snapshots/2026-02-24T20-15-18-577Z-owner-revenue-sanity-1771964118563.json",
+          "contentType": "application/json",
+          "bodyText": "{\n  \"schemaVersion\": \"snapshot.v1\",\n  \"screenKey\": \"owner-revenue-sanity-1771964118563\",\n  \"title\": \"Owner validates financial/reporting outputs Snapshot\",\n  \"generatedAt\": \"2026-02-24T20:15:18.575Z\",\n  \"stepKey\": \"owner-revenue-sanity\",\n  \"status\": \"passed\",\n  \"view\": {\n    \"title\": \"Owner validates financial/reporting outputs\",\n    \"subtitle\": \"Revenue sanity computed from booking orders.\",\n    \"blocks\": [\n      {\n        \"type\": \"alert\",\n        \"title\": \"Owner Revenue Sanity completed\",\n        \"message\": \"Revenue sanity computed from booking orders.\",\n        \"tone\": \"success\"\n      },\n      {\n        \"type\": \"stats\",\n        \"title\": \"What user sees at a glance\",\n        \"items\": [\n          {\n            \"label\": \"BookingCount\",\n            \"value\": \"2\"\n          },\n          {\n            \"label\": \"TotalMinor\",\n            \"value\": \"30000\"\n          }\n        ]\n      },\n      {\n        \"type\": \"key_value\",\n        \"title\": \"Screen details\",\n        \"items\": [\n          {\n            \"label\": \"BookingCount\",\n            \"value\": \"2\"\n          },\n          {\n            \"label\": \"TotalMinor\",\n            \"value\": \"30000\"\n          },\n          {\n            \"label\": \"Currency\",\n            \"value\": \"USD\"\n          }\n        ]\n      }\n    ]\n  },\n  \"rawData\": {\n    \"stepKey\": \"owner-revenue-sanity\",\n    \"resultPayload\": {\n      \"note\": \"Revenue sanity computed from booking orders.\",\n      \"evidence\": {\n        \"bookingCount\": 2,\n        \"totalMinor\": 30000,\n        \"currency\": \"USD\"\n      }\n    },\n    \"apiCalls\": [\n      {\n        \"method\": \"PATCH\",\n        \"path\": \"/api/v1/bizes/3A8B1ZWyRsJhw1q3AKy3JMb9m0y/booking-orders/booking_order_3A8B2mbLBns0xgVNEB9hj5M01GW/status\",\n        \"status\": 200,\n        \"requestBody\": {\n          \"status\": \"in_progress\"\n        },\n        \"responseBody\": {\n          \"success\": true,\n          \"data\": {\n            \"id\": \"booking_order_3A8B2mbLBns0xgVNEB9hj5M01GW\",\n            \"bizId\": \"3A8B1ZWyRsJhw1q3AKy3JMb9m0y\",\n            \"offerId\": \"offer_3A8B24d7h3BAZp4B0lB42eYEPo4\",\n            \"offerVersionId\": \"offer_version_3A8B26lHZFSDdi4rerWvwK3ThUw\",\n            \"customerUserId\": \"q9fTdaTOBK8My3odIl8zjITVblFKWEZZ\",\n            \"customerGroupAccountId\": null,\n            \"status\": \"in_progress\",\n            \"statusConfigValueId\": null,\n            \"currency\": \"USD\",\n            \"subtotalMinor\": 15000,\n            \"taxMinor\": 0,\n            \"feeMinor\": 0,\n            \"discountMinor\": 0,\n            \"totalMinor\": 15000,\n            \"requestedStartAt\": \"2026-02-25T20:15:12.208Z\",\n            \"requestedEndAt\": \"2026-02-25T21:05:12.208Z\",\n            \"confirmedStartAt\": \"2026-02-25T20:15:12.208Z\",\n            \"confirmedEndAt\": \"2026-02-25T21:05:12.208Z\",\n            \"pricingSnapshot\": {},\n            \"policySnapshot\": {},\n            \"metadata\": {},\n            \"createdAt\": \"2026-02-24T20:15:12.228Z\",\n            \"updatedAt\": \"2026-02-24T20:15:12.228Z\",\n            \"deletedAt\": null,\n            \"createdBy\": null,\n            \"updatedBy\": null,\n            \"deletedBy\": null\n          },\n          \"meta\": {\n            \"requestId\": \"57ee67a3-9c8c-4ee2-aaff-d95e8f558745\",\n            \"timestamp\": \"2026-02-24T20:15:18.364Z\"\n          }\n        },\n        \"at\": \"2026-02-24T20:15:18.368Z\"\n      }\n    ]\n  },\n  \"metadata\": {}\n}\n",
+          "byteSize": 3309,
+          "checksum": "d8d9b119d5bdb4d4c435beae3c728c2531c354f622372bacba691120d730448b",
+          "capturedAt": "2026-02-24T20:15:18.583Z",
+          "metadata": {
+            "format": "json",
+            "stepKey": "owner-revenue-sanity",
+            "screenKey": "owner-revenue-sanity-1771964118563",
+            "sourceFormat": "v1",
+            "schemaVersion": "snapshot.v1"
+          },
+          "createdAt": "2026-02-24T20:15:18.583Z",
+          "updatedAt": "2026-02-24T20:15:18.583Z",
+          "deletedAt": null,
+          "createdBy": null,
+          "updatedBy": null,
+          "deletedBy": null
+        },
+        "meta": {
+          "requestId": "0e65da59-a7a2-4e56-8774-ad74c79d3e4e",
+          "timestamp": "2026-02-24T20:15:18.619Z"
+        }
+      },
+      "at": "2026-02-24T20:15:18.621Z"
+    }
+  ]
+}

@@ -1,0 +1,473 @@
+{
+  "stepKey": "customer-two-concurrent",
+  "callCount": 4,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs",
+      "status": 201,
+      "requestBody": {
+        "sagaKey": "uc-142-the-multi-location-owner-marcus",
+        "mode": "dry_run",
+        "runnerLabel": "codex-rerun-all",
+        "runContext": {
+          "createdBy": "apps/api/src/scripts/rerun-sagas.ts"
+        }
+      },
+      "responseBody": {
+        "_truncated": true,
+        "_preview": "{\"success\":true,\"data\":{\"run\":{\"id\":\"saga_run_3AAMNdcD6m7LGNQcPFCWhHlxt3U\",\"sagaDefinitionId\":\"saga_definition_3A8fQ6t4LWDUeottyoI2INEs3OH\",\"sagaKey\":\"uc-142-the-multi-location-owner-marcus\",\"bizId\":null,\"status\":\"pending\",\"mode\":\"dry_run\",\"requestedByUserId\":\"n1sZmxkoRU3I056ePPa62zeC77c08bew\",\"runnerLabel\":\"codex-rerun-all\",\"definitionChecksum\":\"2020142d48b229cd5eec2319df01442993b741abd0d97f3992c35ac995400c04\",\"startedAt\":null,\"endedAt\":null,\"lastHeartbeatAt\":null,\"totalSteps\":39,\"passedSteps\":0,\"failedSteps\":0,\"skippedSteps\":0,\"runContext\":{\"createdBy\":\"apps/api/src/scripts/rerun-sagas.ts\"},\"runSummary\":{},\"metadata\":{\"tags\":[\"uc-derived\",\"persona-derived\",\"lifecycle\",\"api-first\",\"agents\"],\"title\":\"UC-142 • The Contractor/Subcontractor Timesheet & Invoice • The Multi-Location Owner (Marcus)\"},\"createdAt\":\"2026-02-25T14:48:02.247Z\",\"updatedAt\":\"2026-02-25T14:48:02.247Z\",\"deletedAt\":null,\"createdBy\":null,\"updatedBy\":null,\"deletedBy\":null},\"definition\":{\"id\":\"saga_definition_3A8fQ6t4LWDUeottyoI2INEs3OH\",\"bizId\":null,\"sagaKey\":\"uc-142-the-multi-location-owner-marcus\",\"title\":\"UC-142 • The Contractor/Subcontractor Timesheet & Invoice • The Multi-Location Owner (Marcus)\",\"description\":\"Comprehensive lifecycle saga derived from UC-142 and persona P-2. Needs summary: Contractor-specific profiles (tax ID, insurance verification); Time tracking by project phase and deliverable; Materials used tracking (with receipt photo upload); Mileage tracking for reimbursement; Expense capture (meals, lodging for out-of-town work); Milestone-based billing (% complete invoicing); Retainage tracking (hold back 10% until completion); Invoice generation from approved timesheet; Payment terms (Net-15, Net-30, upon completion); 1099 reporting integration; License and certification expiration tracking; Performance rating by contractor\",\"status\":\"active\",\"sourceUseCaseRef\":\"UC-142\",\"sourcePersonaRef\":\"P-2\",\"sourceUseCaseFile\":\"/Users/ameer/bizing/mind/workspace/documentation/use-cases-comprehensive.md\",\"sourcePersonaFile\":\"/Users/ameer/bizing/mind/workspace/documentation/tester-personas.md\",\"specVersion\":\"saga.v0\",\"specFilePath\":\"testing/sagas/specs/uc-142-the-multi-location-owner-marcus.json\",\"specChecksum\":\"2020142d48b229cd5eec2319df01442993b741abd0d97f3992c35ac995400c04\",\"metadata\":{\"tags\":[\"uc-derived\",\"persona-derived\",\"lifecycle\",\"api-first\",\"agents\"],\"generatedAt\":\"2026-02-25T06:41:05.043Z\"},\"createdAt\":\"2026-02-25T00:24:58.579Z\",\"updatedAt\":\"2026-02-25T00:24:58.579Z\",\"deletedAt\":null,\"createdBy\":null,\"updatedBy\":null,\"deletedBy\":null},\"spec\":{\"schemaVersion\":\"saga.v0\",\"sagaKey\":\"uc-142-the-multi-location-owner-marcus\",\"title\":\"UC-142 • The Contractor/Subcontractor Timesheet & Invoice • The Multi-Location Owner (Marcus)\",\"description\":\"Comprehensive lifecycle saga derived from UC-142 and persona P-2. Needs summary: Contractor-specific profiles (tax ID, insurance verification); Time tracking by project phase and deliverable; Materials used tracking (with receipt photo upload); Mileage tracking for reimbursement; Expense capture (meals, lodging for out-of-town work); Milestone-based billing (% complete invoicing); Retainage tracking (hold back 10% until completion); Invoice generation from approved timesheet; Payment terms (Net-15, Net-30, upon completion); 1099 reporting integration; License and certification expiration tracking; Performance rating by contractor\",\"tags\":[\"uc-derived\",\"persona-derived\",\"lifecycle\",\"api-first\",\"agents\"],\"defaults\":{\"runMode\":\"dry_run\",\"continueOnFailure\":false},\"source\":{\"useCaseRef\":\"UC-142\",\"personaRef\":\"P-2\",\"useCaseFile\":\"/Users/ameer/bizing/mind/workspace/documentation/use-cases-comprehensive.md\",\"personaFile\":\"/Users/ameer/bizing/mind/workspace/documentation/tester-personas.md\",\"generatedAt\":\"2026-02-25T06:41:05.043Z\"},\"objectives\":[\"Validate UC-142 lifecycle end-to-end using persona The Multi-Location Owner (Marcus).\",\"Exercise owner setup, team setup, catalog publishing, and customer journeys.\",\"Stress ACL/security edge cases and verify expected denials are enforced.\",\"Collect snapshots and report artifacts for every critical milestone.\"],\"actors\":[{\"actorKey\":\"biz_owner\",\"name\":\"The Multi-Location Owner (Marcus)\",\"role\":\"owner\",\"description\":\"3-5 locations, managing from central office\",\"personaRef\":\"P-2\"},{\"actorKey\":\"biz_member\",\"name\":\"Operations Team Member\",\"role\":\"manager\",\"description\":\"Business member invited by owner to assist with operations and booking flow.\"},{\"actorKey\":\"customer_1\",\"name\":\"Customer One\",\"role\":\"customer\",\"description\":\"Primary customer exploring catalog, booking services, and purchasing products.\"},{\"actorKey\":\"customer_2\",\"name\":\"Customer Two\",\"role\":\"customer\",\"description\":\"Concurrent customer used to simulate realistic demand and race conditions.\"},{\"actorKey\":\"adversary\",\"name\":\"Adversarial User\",\"role\":\"malicious_actor\",\"description\":\"Actor intentionally attempting unauthorized or abusive actions.\"}],\"phases\":[{\"phaseKey\":\"owner-onboarding\",\"order\":1,\"title\":\"Owner Onboarding\",\"description\":\"Business owner signs up, authenticates, and establishes tenant root.\",\"steps\":[{\"stepKey\":\"owner-sign-up\",\"order\":1,\"title\":\"Owner signs up and authenticates\",\"actorKey\":\"biz_owner\",\"intent\":\"Establish authenticated owner identity for the lifecycle.\",\"instruction\":\"Create or login the owner account through Better Auth endpoints, then verify session context can call authenticated API routes.\",\"expectedResult\":\"Owner session exists and authenticated routes return success for this user.\",\"toolHints\":[],\"assertions\":[{\"kind\":\"api_response\",\"description\":\"API call returns success and includes stable ids for created entities.\"},{\"kind\":\"acl_guard\",\"description\":\"Actor permissions are honored for this step context.\"}],\"evidenceRequired\":[{\"kind\":\"api_trace\",\"label\":\"Request/response trace for this step\"},{\"kind\":\"snapshot\",\"label\":\"Structured snapshot.v1 screen blocks (what user saw) with real API-backed data\"}],\"guardrails\":[],\"tags\":[\"auth\",\"setup\"],\"delay\":{\"mode\":\"none\",\"jitterMs\":0}},{\"stepKey\":\"owner-create-biz\",\"order\":2,\"title\":\"Owner creates business tenant\",\"actorKey\":\"biz_owner\",\"intent\":\"Create the biz root for all subsequent configuration.\",\"instruction\":\"Using agents tools, create a biz representing The Contractor/Subcontractor Timesheet & Invoice. Use name/slug derived from saga context.\",\"expectedResult\":\"Biz is created, owner is auto-added as member with owner role, and biz id is captured.\",\"toolHints\":[\"bizing.bizes.create\"],\"assertions\":[{\"kind\":\"api_response\",\"description\":\"API call returns success and includes stable ids for created entities.\"},{\"kind\":\"acl_guard\",\"description\":\"Actor permissions are honored for this step context.\"}],\"evidenceRequired\":[{\"kind\":\"api_trace\",\"label\":\"Request/response trace for this step\"},{\"kind\":\"snapshot\",\"label\":\"Structured snapshot.v1 screen blocks (what user saw) with real API-backed data\"}],\"guardrails\":[],\"tags\":[\"biz\",\"setup\"],\"delay\":{\"mode\":\"none\",\"jitterMs\":0}},{\"stepKey\":\"owner-create-location\",\"order\":3,\"title\":\"Owner creates primary location\",\"actorKey\":\"biz_owner\",\"intent\":\"Establish operational location for services/resources.\",\"instruction\":\"Create a primary location for the biz and set timezone aligned with scenario context.\",\"expectedResult\":\"Location exists and is associated with the new biz.\",\"toolHints\":[\"bizing.locations.create\"],\"assertions\":[{\"kind\":\"api_response\",\"description\":\"API call returns success and includes stable ids for created entities.\"},{\"kind\":\"acl_guard\",\"description\":\"Actor permissions are honored for this step context.\"}],\"evidenceRequired\":[{\"kind\":\"api_trace\",\"label\":\"Request/response trace for this step\"},{\"kind\":\"snapshot\",\"label\":\"Structured snapshot.v1 screen blocks (what user saw) with real API-backed data\"}],\"guardrails\":[],\"tags\":[\"location\",\"setup\"],\"delay\":{\"mode\":\"none\",\"jitterMs\":0}}]},{\"phaseKey\":\"business-configuration\",\"order\":2,\"title\":\"Business Configuration\",\"description\":\"Owner configures scheduling, pricing baseline, and operational defaults.\",\"steps\":[{\"stepKey\":\"owner-configure-hours\",\"order\":4,\"title\":\"Configure default hours and availability mode\",\"actorKey\":\"biz_owner\",\"intent\":\"Set baseline availability without forcing advanced complexity.\",\"instruction\":\"Create baseline availability and lead-time rules representing the UC default business hours and booking window behavior.\",\"expectedResult\":\"Availability defaults and rules are stored and can be referenced by calendars.\",\"toolHints\":[],\"assertions\":[{\"kind\":\"api_response\",\"description\":\"API call returns success and includes stable ids for created entities.\"},{\"kind\":\"acl_guard\",\"description\":\"Actor permissions are honored for this step context.\"}],\"evidenceRequired\":[{\"kind\":\"api_trace\",\"label\":\"Request/response trace for this step\"},{\"kind\":\"snapshot\",\"label\":\"Structured snapshot.v1 screen blocks (what user saw) with real API-backed data\"}],\"guardrails\":[],\"tags\":[\"availability\",\"policy\"],\"delay\":{\"mode\":\"none\",\"jitterMs\":0}},{\"stepKey\":\"owner-configure-pricing\",\"order\":5,\"title\":\"Configure default pricing rules\",\"actorKey\":\"biz_owner\",\"intent\":\"Set base pricing and optional manual demand overrides.\",\"instruction\":\"Configure pricing defaults for the offer lifecycle including call fees/manual surge if UC needs imply it.\",\"expectedResult\":\"Pricing model persists and future bookings can calculate totals deterministically.\",\"toolHints\":[],\"assertions\":[{\"kind\":\"api_response\",\"description\":\"API call returns success and includes stable ids for created entities.\"},{\"kind\":\"acl_guard\",\"description\":\"Actor permissions are honored for this step context.\"}],\"evidenceRequired\":[{\"kind\":\"api_trace\",\"label\":\"Request/response trace for this step\"},{\"kind\":\"snapshot\",\"label\":\"Structured snapshot.v1 screen blocks (what user saw) with real API-backed data\"}],\"guardrails\":[],\"tags\":[\"pricing\"],\"delay\":{\"mode\":\"none\",\"jitterMs\":0}}]},{\"phaseKey\":\"supply-and-team-setup\",\"order\":3,\"title\":\"Supply And Team Setup\",\"description\":\"Business owner sets up hosts/assets/venues/resources and invites members.\",\"steps\":[{\"stepKey\":\"owner-create-resources\",\"order\":6,\"title\":\"Create resources representing hosts/assets/venues\",\"actorKey\":\"biz_owner\",\"intent\":\"Model real-world supply that bookings will consume.\",\"instruction\":\"Create at least one host resource and one non-host resource (asset or venue) suitable for the UC.\",\"expectedResult\":\"Resources are created with expected type, location, and buffers.\",\"toolHints\":[\"bizing.resources.create\"],\"assertions\":[{\"kind\":\"api_response\",\"description\":\"API call returns success and includes stable ids for created entities.\"},{\"kind\":\"acl_guard\",\"description\":\"Actor permissions are honored for this step context.\"}],\"evidenceRequired\":[{\"kind\":\"api_trace\",\"label\":\"Request/response trace for this step\"},{\"kind\":\"snapshot\",\"label\":\"Structured snapshot.v1 screen blocks (what user saw) with real API-backed data\"}],\"guardrails\":[],\"tags\":[\"resources\"],\"delay\":{\"mode\":\"none\",\"jitterMs\":0}},{\"stepKey\":\"owner-invite-member\",\"order\":7,\"title\":\"Invite and provision business member\",\"actorKey\":\"biz_owner\",\"intent\":\"Validate collaboration and role assignment.\",\"instruction\":\"Invite a biz member, assign an operational role, and verify that member can authenticate into the same biz.\",\"expectedResult\":\"Biz member account/session exists with scoped role permissions.\",\"toolHints\":[],\"assertions\":[{\"kind\":\"api_response\",\"description\":\"API call returns success and includes stable ids for created entities.\"},{\"kind\":\"acl_guard\",\"description\":\"Actor permissions are honored for this step context.\"}],\"evidenceRequired\":[{\"kind\":\"api_trace\",\"label\":\"Request/response trace for this step\"},{\"kind\":\"snapshot\",\"label\":\"Structured snapshot.v1 screen blocks (what user saw) with real API-backed data\"}],\"guardrails\":[],\"tags\":[\"team\",\"acl\"],\"delay\":{\"mode\":\"none\",\"jitterMs\":0}}]},{\"phaseKey\":\"catalog-publish\",\"order\":4,\"title\":\"Catalog And Publish\",\"description\":\"Owner creates services/offe",
+        "_size": 102212
+      },
+      "at": "2026-02-25T14:48:02.327Z"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AAMLszhzhYGyDzn9SqW8Lcf3iU/steps/owner-calendar-review/result",
+      "status": 200,
+      "requestBody": {
+        "status": "in_progress",
+        "startedAt": "2026-02-25T14:48:02.172Z",
+        "resultPayload": {
+          "note": "Started owner-calendar-review"
+        },
+        "assertionSummary": {
+          "status": "in_progress"
+        }
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "id": "saga_run_step_3AAMLrvNXidXsDAP3mkXsrvjsMO",
+          "sagaRunId": "saga_run_3AAMLszhzhYGyDzn9SqW8Lcf3iU",
+          "phaseKey": "operations-and-follow-up",
+          "phaseOrder": 7,
+          "phaseTitle": "Operations And Follow-up",
+          "stepKey": "owner-calendar-review",
+          "stepOrder": 17,
+          "actorKey": "biz_owner",
+          "instruction": "Query and compare availability + bookings timeline for the entities involved in this scenario.",
+          "expectedResult": "Calendar state reflects booked slots, blocks, and any conflict outcomes from previous steps.",
+          "delayMode": "none",
+          "delayMs": null,
+          "delayConditionKey": null,
+          "delayTimeoutMs": null,
+          "delayPollMs": null,
+          "delayJitterMs": 0,
+          "status": "in_progress",
+          "attemptCount": 1,
+          "startedAt": "2026-02-25T14:48:02.172Z",
+          "endedAt": null,
+          "failureCode": null,
+          "failureMessage": null,
+          "resultPayload": {
+            "note": "Started owner-calendar-review"
+          },
+          "assertionSummary": {
+            "status": "in_progress"
+          },
+          "metadata": {},
+          "createdAt": "2026-02-25T14:47:48.204Z",
+          "updatedAt": "2026-02-25T14:47:48.204Z",
+          "deletedAt": null,
+          "createdBy": null,
+          "updatedBy": null,
+          "deletedBy": null
+        },
+        "meta": {
+          "requestId": "f2a1211d-4075-45ac-b28e-6e60656af598",
+          "timestamp": "2026-02-25T14:48:02.487Z"
+        }
+      },
+      "at": "2026-02-25T14:48:02.488Z"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AAMMzl9Q7dJCSMhcPRQYoHBUuR/traces",
+      "status": 201,
+      "requestBody": {
+        "_truncated": true,
+        "_preview": "{\"stepKey\":\"owner-configure-pricing\",\"title\":\"Configure default pricing rules API Trace\",\"trace\":{\"stepKey\":\"owner-configure-pricing\",\"callCount\":3,\"calls\":[{\"method\":\"POST\",\"path\":\"/api/v1/sagas/runs/saga_run_3AAMMXq52hkiM4yxeYylKTgY87k/traces\",\"status\":201,\"requestBody\":{\"_truncated\":true,\"_preview\":\"{\\\"stepKey\\\":\\\"owner-publish-catalog\\\",\\\"title\\\":\\\"Publish catalog visibility API Trace\\\",\\\"trace\\\":{\\\"stepKey\\\":\\\"owner-publish-catalog\\\",\\\"callCount\\\":5,\\\"calls\\\":[{\\\"method\\\":\\\"POST\\\",\\\"path\\\":\\\"/api/v1/sagas/runs/saga_run_3AAMLXFO5XQIN32tjF4woIzkJBS/steps/uc-need-validate-2/result\\\",\\\"status\\\":200,\\\"requestBody\\\":{\\\"status\\\":\\\"skipped\\\",\\\"startedAt\\\":\\\"2026-02-25T14:48:01.376Z\\\",\\\"endedAt\\\":\\\"2026-02-25T14:48:01.376Z\\\",\\\"failureMessage\\\":\\\"Exploratory validation step skipped by deterministic runner (semantic/manual review step).\\\",\\\"resultPayload\\\":{\\\"note\\\":\\\"Step skipped: Exploratory validation step skipped by deterministic runner (semantic/manual review step).\\\",\\\"evidence\\\":{\\\"error\\\":\\\"Exploratory validation step skipped by deterministic runner (semantic/manual review step).\\\",\\\"failed\\\":false,\\\"blocked\\\":false,\\\"skipped\\\":true,\\\"stepFamily\\\":\\\"uc-need-validation\\\",\\\"reasonCode\\\":\\\"DETERMINISTIC_RUNNER_SKIPS_EXPLORATORY_STEP\\\"}},\\\"assertionSummary\\\":{\\\"status\\\":\\\"skipped\\\",\\\"hasFailure\\\":true,\\\"assertionsPassed\\\":0}},\\\"responseBody\\\":{\\\"success\\\":true,\\\"data\\\":{\\\"id\\\":\\\"saga_run_step_3AAMLWIAbe3dJsohmEkImyfLM3R\\\",\\\"sagaRunId\\\":\\\"saga_run_3AAMLXFO5XQIN32tjF4woIzkJBS\\\",\\\"phaseKey\\\":\\\"reporting-and-closeout\\\",\\\"phaseOrder\\\":8,\\\"phaseTitle\\\":\\\"Reporting And Closeout\\\",\\\"stepKey\\\":\\\"uc-need-validate-2\\\",\\\"stepOrder\\\":20,\\\"actorKey\\\":\\\"biz_owner\\\",\\\"instruction\\\":\\\"Using concrete API reads and persisted state checks, validate this requirement is satisfied: \\\\\\\"Code-based (CUSTOMER20) or automatic (happy hour pricing)\\\\\\\". If not satisfied, record exact gap and failing entities/endpoints.\\\",\\\"expectedResult\\\":\\\"Evidence either confirms requirement coverage or captures a precise, reproducible gap.\\\",\\\"delayMode\\\":\\\"none\\\",\\\"delayMs\\\":null,\\\"delayConditionKey\\\":null,\\\"delayTimeoutMs\\\":null,\\\"delayPollMs\\\":null,\\\"delayJitterMs\\\":0,\\\"status\\\":\\\"skipped\\\",\\\"attemptCount\\\":1,\\\"startedAt\\\":\\\"2026-02-25T14:48:01.376Z\\\",\\\"endedAt\\\":\\\"2026-02-25T14:48:01.376Z\\\",\\\"failureCode\\\":null,\\\"failureMessage\\\":\\\"Exploratory validation step skipped by deterministic runner (semantic/manual review step).\\\",\\\"resultPayload\\\":{\\\"note\\\":\\\"Step skipped: Exploratory validation step skipped by deterministic runner (semantic/manual review step).\\\",\\\"evidence\\\":{\\\"error\\\":\\\"Exploratory validation step skipped by deterministic runner (semantic/manual review step).\\\",\\\"failed\\\":false,\\\"blocked\\\":false,\\\"skipped\\\":true,\\\"reasonCode\\\":\\\"DETERMINISTIC_RUNNER_SKIPS_EXPLORATORY_STEP\\\",\\\"stepFamily\\\":\\\"uc-need-validation\\\"}},\\\"assertionSummary\\\":{\\\"status\\\":\\\"skipped\\\",\\\"hasFailure\\\":true,\\\"assertionsPassed\\\":0},\\\"metadata\\\":{},\\\"createdAt\\\":\\\"2026-02-25T14:47:45.688Z\\\",\\\"updatedAt\\\":\\\"2026-02-25T14:47:45.688Z\\\",\\\"deletedAt\\\":null,\\\"createdBy\\\":null,\\\"updatedBy\\\":null,\\\"deletedBy\\\":null},\\\"meta\\\":{\\\"requestId\\\":\\\"2871a4af-d0ee-4c69-bf1a-7aea145d2877\\\",\\\"timestamp\\\":\\\"2026-02-25T14:48:01.796Z\\\"}},\\\"at\\\":\\\"2026-02-25T14:48:01.798Z\\\"},{\\\"method\\\":\\\"POST\\\",\\\"path\\\":\\\"/api/v1/sagas/runs/saga_run_3AAMKSn6TDspNbMJXCNUcJp574C/steps/uc-need-validate-6/result\\\",\\\"status\\\":200,\\\"requestBody\\\":{\\\"status\\\":\\\"skipped\\\",\\\"startedAt\\\":\\\"2026-02-25T14:48:01.278Z\\\",\\\"endedAt\\\":\\\"2026-02-25T14:48:01.278Z\\\",\\\"failureMessage\\\":\\\"Exploratory validation step skipped by deterministic runner (semantic/manual review step).\\\",\\\"resultPayload\\\":{\\\"note\\\":\\\"Step skipped: Exploratory validation step skipped by deterministic runner (semantic/manual review step).\\\",\\\"evidence\\\":{\\\"error\\\":\\\"Exploratory validation step skipped by deterministic runner (semantic/manual review step).\\\",\\\"failed\\\":false,\\\"blocked\\\":false,\\\"skipped\\\":true,\\\"stepFamily\\\":\\\"uc-need-validation\\\",\\\"reasonCode\\\":\\\"DETERMINISTIC_RUNNER_SKIPS_EXPLORATORY_STEP\\\"}},\\\"assertionSummary\\\":{\\\"status\\\":\\\"skipped\\\",\\\"hasFailure\\\":true,\\\"assertionsPassed\\\":0}},\\\"responseBody\\\":{\\\"success\\\":true,\\\"data\\\":{\\\"id\\\":\\\"saga_run_step_3AAMKT0F49cBql7ClnIJSjWYDRT\\\",\\\"sagaRunId\\\":\\\"saga_run_3AAMKSn6TDspNbMJXCNUcJp574C\\\",\\\"phaseKey\\\":\\\"reporting-and-closeout\\\",\\\"phaseOrder\\\":8,\\\"phaseTitle\\\":\\\"Reporting And Closeout\\\",\\\"stepKey\\\":\\\"uc-need-validate-6\\\",\\\"stepOrder\\\":24,\\\"actorKey\\\":\\\"biz_owner\\\",\\\"instruction\\\":\\\"Using concrete API reads and persisted state checks, validate this requirement is satisfied: \\\\\\\"Minimum purchase requirements\\\\\\\". If not satisfied, record exact gap and failing entities/endpoints.\\\",\\\"expectedResult\\\":\\\"Evidence either confirms requirement coverage or captures a precise, reproducible gap.\\\",\\\"delayMode\\\":\\\"none\\\",\\\"delayMs\\\":null,\\\"delayConditionKey\\\":null,\\\"delayTimeoutMs\\\":null,\\\"delayPollMs\\\":null,\\\"delayJitterMs\\\":0,\\\"status\\\":\\\"skipped\\\",\\\"attemptCount\\\":1,\\\"startedAt\\\":\\\"2026-02-25T14:48:01.278Z\\\",\\\"endedAt\\\":\\\"2026-02-25T14:48:01.278Z\\\",\\\"failureCode\\\":null,\\\"failureMessage\\\":\\\"Exploratory validation step skipped by deterministic runner (semantic/manual review step).\\\",\\\"resultPayload\\\":{\\\"note\\\":\\\"Step skipped: Exploratory validation step skipped by deterministic runner (semantic/manual review step).\\\",\\\"evidence\\\":{\\\"error\\\":\\\"Exploratory validation step skipped by deterministic runner (semantic/manual review step).\\\",\\\"failed\\\":false,\\\"blocked\\\":false,\\\"skipped\\\":true,\\\"reasonCode\\\":\\\"DETERMINISTIC_RUNNER_SKIPS_EXPLORATORY_STEP\\\",\\\"stepFamily\\\":\\\"uc-need-validation\\\"}},\\\"assertionSummary\\\":{\\\"status\\\":\\\"skipped\\\",\\\"hasFailure\\\":true,\\\"assertionsPassed\\\":0},\\\"metadata\\\":{},\\\"createdAt\\\":\\\"2026-02-25T14:47:37.883Z\\\",\\\"updatedAt\\\":\\\"2026-02-25T14:47:37.883Z\\\",\\\"deletedAt\\\":null,\\\"createdBy\\\":null,\\\"updatedBy\\\":null,\\\"deletedBy\\\":null},\\\"meta\\\":{\\\"requestId\\\":\\\"f72e9114-90d5-44d7-8c9e-7742eee551f5\\\",\\\"timestamp\\\":\\\"2026-02-25T14:48:01.799Z\\\"}},\\\"at\\\":\\\"2026-02-25T14:48:01.803Z\\\"},{\\\"method\\\":\\\"POST\\\",\\\"path\\\":\\\"/api/v1/sagas/runs/saga_run_3AAMMaqX1DQ37FQ9vgvXmHPLrKp/traces\\\",\\\"status\\\":201,\\\"requestBody\\\":{\\\"stepKey\\\":\\\"owner-create-offer-version\\\",\\\"title\\\":\\\"Create and publish offer version API Trace\\\",\\\"trace\\\":{\\\"stepKey\\\":\\\"owner-create-offer-version\\\",\\\"callCount\\\":5,\\\"calls\\\":[{\\\"method\\\":\\\"POST\\\",\\\"path\\\":\\\"/api/v1/sagas/runs/saga_run_3AAMLszhzhYGyDzn9SqW8Lcf3iU/steps/member-review-bookings/result\\\",\\\"status\\\":200,\\\"requestBody\\\":{\\\"status\\\":\\\"in_progress\\\",\\\"startedAt\\\":\\\"2026-02-25T14:48:01.249Z\\\",\\\"resultPayload\\\":{\\\"note\\\":\\\"Started member-review-bookings\\\"},\\\"assertionSummary\\\":{\\\"status\\\":\\\"in_progress\\\"}},\\\"responseBody\\\":{\\\"success\\\":true,\\\"data\\\":{\\\"id\\\":\\\"saga_run_step_3AAMLqGqfblubL4jidTv0mkxdf6\\\",\\\"sagaRunId\\\":\\\"saga_run_3AAMLszhzhYGyDzn9SqW8Lcf3iU\\\",\\\"phaseKey\\\":\\\"operations-and-follow-up\\\",\\\"phaseOrder\\\":7,\\\"phaseTitle\\\":\\\"Operations And Follow-up\\\",\\\"stepKey\\\":\\\"member-review-bookings\\\",\\\"stepOrder\\\":16,\\\"actorKey\\\":\\\"biz_member\\\",\\\"instruction\\\":\\\"As biz member, list bookings and progress one booking through operational status updates.\\\",\\\"expectedResult\\\":\\\"Authorized role can update status while preserving auditability and lifecycle consistency.\\\",\\\"delayMode\\\":\\\"none\\\",\\\"delayMs\\\":null,\\\"delayConditionKey\\\":null,\\\"delayTimeoutMs\\\":null,\\\"delayPollMs\\\":null,\\\"delayJitterMs\\\":0,\\\"status\\\":\\\"in_progress\\\",\\\"attemptCount\\\":1,\\\"startedAt\\\":\\\"2026-02-25T14:48:01.249Z\\\",\\\"endedAt\\\":null,\\\"failureCode\\\":null,\\\"failureMessage\\\":null,\\\"resultPayload\\\":{\\\"note\\\":\\\"Started member-review-bookings\\\"},\\\"assertionSummary\\\":{\\\"status\\\":\\\"in_progress\\\"},\\\"metadata\\\":{},\\\"createdAt\\\":\\\"2026-02-25T14:47:48.204Z\\\",\\\"updatedAt\\\":\\\"2026-02-25T14:47:48.204Z\\\",\\\"deletedAt\\\":null,\\\"createdBy\\\":null,\\\"updatedBy\\\":null,\\\"deletedBy\\\":null},\\\"meta\\\":{\\\"requestId\\\":\\\"37159d56-2ae2-4e19-8472-3742adc83630\\\",\\\"timestamp\\\":\\\"2026-02-25T14:48:01.449Z\\\"}},\\\"at\\\":\\\"2026-02-25T14:48:01.450Z\\\"},{\\\"method\\\":\\\"POST\\\",\\\"path\\\":\\\"/api/v1/sagas/runs/saga_run_3AAMMXq52hkiM4yxeYylKTgY87k/steps/owner-create-offer-version/result\\\",\\\"status\\\":200,\\\"requestBody\\\":{\\\"status\\\":\\\"passed\\\",\\\"startedAt\\\":\\\"2026-02-25T14:48:01.171Z\\\",\\\"endedAt\\\":\\\"2026-02-25T14:48:01.171Z\\\",\\\"failureMessage\\\":null,\\\"resultPayload\\\":{\\\"note\\\":\\\"Offer version created.\\\",\\\"evidence\\\":{\\\"offerVersionId\\\":\\\"offer_version_3AAMNTjjCQQ9V6vTz09wA6s3jN7\\\"}},\\\"assertionSummary\\\":{\\\"status\\\":\\\"passed\\\",\\\"hasFailure\\\":false,\\\"assertionsPassed\\\":1}},\\\"responseBody\\\":{\\\"success\\\":true,\\\"data\\\":{\\\"id\\\":\\\"saga_run_step_3AAMMVRgacjIunN1hkkS9HeMP00\\\",\\\"sagaRunId\\\":\\\"saga_run_3AAMMXq52hkiM4yxeYylKTgY87k\\\",\\\"phaseKey\\\":\\\"catalog-publish\\\",\\\"phaseOrder\\\":4,\\\"phaseTitle\\\":\\\"Catalog And Publish\\\",\\\"stepKey\\\":\\\"owner-create-offer-version\\\",\\\"stepOrder\\\":9,\\\"actorKey\\\":\\\"biz_owner\\\",\\\"instruction\\\":\\\"Create a published offer version with realistic duration and base price for this UC.\\\",\\\"expectedResult\\\":\\\"Offer version exists and is ready for booking order references.\\\",\\\"delayMode\\\":\\\"none\\\",\\\"delayMs\\\":null,\\\"delayConditionKey\\\":null,\\\"delayTimeoutMs\\\":null,\\\"delayPollMs\\\":null,\\\"delayJitterMs\\\":0,\\\"status\\\":\\\"passed\\\",\\\"attemptCount\\\":1,\\\"startedAt\\\":\\\"2026-02-25T14:48:01.171Z\\\",\\\"endedAt\\\":\\\"2026-02-25T14:48:01.171Z\\\",\\\"failureCode\\\":null,\\\"failureMessage\\\":null,\\\"resultPayload\\\":{\\\"note\\\":\\\"Offer version created.\\\",\\\"evidence\\\":{\\\"offerVersionId\\\":\\\"offer_version_3AAMNTjjCQQ9V6vTz09wA6s3jN7\\\"}},\\\"assertionSummary\\\":{\\\"status\\\":\\\"passed\\\",\\\"hasFailure\\\":false,\\\"assertionsPassed\\\":1},\\\"metadata\\\":{},\\\"createdAt\\\":\\\"2026-02-25T14:47:53.406Z\\\",\\\"updatedAt\\\":\\\"2026-02-25T14:47:53.406Z\\\",\\\"deletedAt\\\":null,\\\"createdBy\\\":null,\\\"updatedBy\\\":null,\\\"deletedBy\\\":null},\\\"meta\\\":{\\\"requestId\\\":\\\"bb275d17-168d-452c-9347-dc91a9fd6840\\\",\\\"timestamp\\\":\\\"2026-02-25T14:48:01.470Z\\\"}},\\\"at\\\":\\\"2026-02-25T14:48:01.472Z\\\"},{\\\"method\\\":\\\"POST\\\",\\\"path\\\":\\\"/api/v1/sagas/runs/saga_run_3AAMMC4ZIc5kafIrduuPPY47W6q/steps/owner-create-offer-version/result\\\",\\\"status\\\":200,\\\"requestBody\\\":{\\\"status\\\":\\\"passed\\\",\\\"startedAt\\\":\\\"2026-02-25T14:48:01.088Z\\\",\\\"endedAt\\\":\\\"2026-02-25T14:48:01.089Z\\\",\\\"failureMessage\\\":null,\\\"resultPayload\\\":{\\\"note\\\":\\\"Offer version created.\\\",\\\"evidence\\\":{\\\"offerVersionId\\\":\\\"offer_version_3AAMNRVM8ZEJiYOJRoy0m41YeSh\\\"}},\\\"assertionSummary\\\":{\\\"status\\\":\\\"passed\\\",\\\"hasFailure\\\":false,\\\"assertionsPassed\\\":1}},\\\"responseBody\\\":{\\\"success\\\":true,\\\"data\\\":{\\\"id\\\":\\\"saga_run_step_3AAMMC2U1rTOdwSO5dXZh5rxkJR\\\",\\\"sagaRunId\\\":\\\"saga_run_3AAMMC4ZIc5kafIrduuPPY47W6q\\\",\\\"phaseKey\\\":\\\"catalog-publish\\\",\\\"phaseOrder\\\":4,\\\"phaseTitle\\\":\\\"Catalog And Publish\\\",\\\"stepKey\\\":\\\"owner-create-offer-version\\\",\\\"stepOrder\\\":9,\\\"actorKey\\\":\\\"biz_owner\\\",\\\"instruction\\\":\\\"Create a published offer version with realistic duration and base price for this UC.\\\",\\\"expectedResult\\\":\\\"Offer version exists and is ready for booking order references.\\\",\\\"delayMode\\\":\\\"none\\\",\\\"delayMs\\\":null,\\\"delayConditionKey\\\":null,\\\"delayTimeoutMs\\\":null,\\\"delayPollMs\\\":null,\\\"delayJitterMs\\\":0,\\\"status\\\":\\\"passed\\\",\\\"attemptCount\\\":1,\\\"startedAt\\\":\\\"2026-02-25T14:48:01.088Z\\\",\\\"endedAt\\\":\\\"2026-02-25T14:48:01.089Z\\\",\\\"failureCode\\\":null,\\\"failureMessage\\\":null,\\\"resultPayload\\\":{\\\"note\\\":\\\"Offer version created.\\\",\\\"evidence\\\":{\\\"offerVersionId\\\":\\\"offer_version_3AAMNRVM8ZEJiYOJRoy0m41YeSh\\\"}},\\\"assertionSummary\\\":{\\\"status\\\":\\\"passed\\\",\\\"hasFailure\\\":false,\\\"assertionsPassed\\\":1},\\\"metadata\\\":{},\\\"createdAt\\\":\\\"2026-02-25T14:47:51.845Z\\\",\\\"updatedAt\\\":\\\"2026-02-25T14:47:51.845Z\\\",\\\"deletedAt\\\":null,\\\"createdBy\\\":null,\\\"updatedBy\\\":null,\\\"deletedBy\\\":null},\\\"meta\\\":{\\\"requestId\\\":\\\"716e6bbd-436b-4149-b693-4dff2873cb74\\\",\\\"timestamp\\\":\\\"2026-02-25T14:48:01.479Z\\\"}},\\\"at\\\":\\\"2026-02-25T14:48:01.480Z\\\"},{\\\"method\\\":\\\"POST\\\",\\\"path\\\":\\\"/api/v1/sagas/runs/saga_run_3AAMMnPa9vlGZldb1Z1sqLFoNcA/steps/owner-configure-pricing/result\\\",\\\"status\\\":200,\\\"requestBody\\\":{\\\"status\\\":\\\"passed\\\",\\\"startedAt\\\":\\\"2026-02-25T14:48:01.086Z\\\",\\\"endedAt\\\":\\\"2026-02-25T14:48:01.086Z\\\",\\\"fai",
+        "_size": 31644
+      },
+      "responseBody": {
+        "_truncated": true,
+        "_preview": "{\"success\":true,\"data\":{\"id\":\"saga_artifact_3AAMNZzIiAaEZh6GCaidUpR8abA\",\"sagaRunId\":\"saga_run_3AAMMzl9Q7dJCSMhcPRQYoHBUuR\",\"sagaRunStepId\":\"saga_run_step_3AAMN06UZywXYg7OugdXDPLZVft\",\"artifactType\":\"api_trace\",\"title\":\"Configure default pricing rules API Trace\",\"storagePath\":\"testing/sagas/runs/saga_run_3AAMMzl9Q7dJCSMhcPRQYoHBUuR/artifacts/1772030882149-Configure_default_pricing_rules_API_Trace.json\",\"contentType\":\"application/json\",\"bodyText\":\"{\\n  \\\"stepKey\\\": \\\"owner-configure-pricing\\\",\\n  \\\"callCount\\\": 3,\\n  \\\"calls\\\": [\\n    {\\n      \\\"method\\\": \\\"POST\\\",\\n      \\\"path\\\": \\\"/api/v1/sagas/runs/saga_run_3AAMMXq52hkiM4yxeYylKTgY87k/traces\\\",\\n      \\\"status\\\": 201,\\n      \\\"requestBody\\\": {\\n        \\\"_truncated\\\": true,\\n        \\\"_preview\\\": \\\"{\\\\\\\"stepKey\\\\\\\":\\\\\\\"owner-publish-catalog\\\\\\\",\\\\\\\"title\\\\\\\":\\\\\\\"Publish catalog visibility API Trace\\\\\\\",\\\\\\\"trace\\\\\\\":{\\\\\\\"stepKey\\\\\\\":\\\\\\\"owner-publish-catalog\\\\\\\",\\\\\\\"callCount\\\\\\\":5,\\\\\\\"calls\\\\\\\":[{\\\\\\\"method\\\\\\\":\\\\\\\"POST\\\\\\\",\\\\\\\"path\\\\\\\":\\\\\\\"/api/v1/sagas/runs/saga_run_3AAMLXFO5XQIN32tjF4woIzkJBS/steps/uc-need-validate-2/result\\\\\\\",\\\\\\\"status\\\\\\\":200,\\\\\\\"requestBody\\\\\\\":{\\\\\\\"status\\\\\\\":\\\\\\\"skipped\\\\\\\",\\\\\\\"startedAt\\\\\\\":\\\\\\\"2026-02-25T14:48:01.376Z\\\\\\\",\\\\\\\"endedAt\\\\\\\":\\\\\\\"2026-02-25T14:48:01.376Z\\\\\\\",\\\\\\\"failureMessage\\\\\\\":\\\\\\\"Exploratory validation step skipped by deterministic runner (semantic/manual review step).\\\\\\\",\\\\\\\"resultPayload\\\\\\\":{\\\\\\\"note\\\\\\\":\\\\\\\"Step skipped: Exploratory validation step skipped by deterministic runner (semantic/manual review step).\\\\\\\",\\\\\\\"evidence\\\\\\\":{\\\\\\\"error\\\\\\\":\\\\\\\"Exploratory validation step skipped by deterministic runner (semantic/manual review step).\\\\\\\",\\\\\\\"failed\\\\\\\":false,\\\\\\\"blocked\\\\\\\":false,\\\\\\\"skipped\\\\\\\":true,\\\\\\\"stepFamily\\\\\\\":\\\\\\\"uc-need-validation\\\\\\\",\\\\\\\"reasonCode\\\\\\\":\\\\\\\"DETERMINISTIC_RUNNER_SKIPS_EXPLORATORY_STEP\\\\\\\"}},\\\\\\\"assertionSummary\\\\\\\":{\\\\\\\"status\\\\\\\":\\\\\\\"skipped\\\\\\\",\\\\\\\"hasFailure\\\\\\\":true,\\\\\\\"assertionsPassed\\\\\\\":0}},\\\\\\\"responseBody\\\\\\\":{\\\\\\\"success\\\\\\\":true,\\\\\\\"data\\\\\\\":{\\\\\\\"id\\\\\\\":\\\\\\\"saga_run_step_3AAMLWIAbe3dJsohmEkImyfLM3R\\\\\\\",\\\\\\\"sagaRunId\\\\\\\":\\\\\\\"saga_run_3AAMLXFO5XQIN32tjF4woIzkJBS\\\\\\\",\\\\\\\"phaseKey\\\\\\\":\\\\\\\"reporting-and-closeout\\\\\\\",\\\\\\\"phaseOrder\\\\\\\":8,\\\\\\\"phaseTitle\\\\\\\":\\\\\\\"Reporting And Closeout\\\\\\\",\\\\\\\"stepKey\\\\\\\":\\\\\\\"uc-need-validate-2\\\\\\\",\\\\\\\"stepOrder\\\\\\\":20,\\\\\\\"actorKey\\\\\\\":\\\\\\\"biz_owner\\\\\\\",\\\\\\\"instruction\\\\\\\":\\\\\\\"Using concrete API reads and persisted state checks, validate this requirement is satisfied: \\\\\\\\\\\\\\\"Code-based (CUSTOMER20) or automatic (happy hour pricing)\\\\\\\\\\\\\\\". If not satisfied, record exact gap and failing entities/endpoints.\\\\\\\",\\\\\\\"expectedResult\\\\\\\":\\\\\\\"Evidence either confirms requirement coverage or captures a precise, reproducible gap.\\\\\\\",\\\\\\\"delayMode\\\\\\\":\\\\\\\"none\\\\\\\",\\\\\\\"delayMs\\\\\\\":null,\\\\\\\"delayConditionKey\\\\\\\":null,\\\\\\\"delayTimeoutMs\\\\\\\":null,\\\\\\\"delayPollMs\\\\\\\":null,\\\\\\\"delayJitterMs\\\\\\\":0,\\\\\\\"status\\\\\\\":\\\\\\\"skipped\\\\\\\",\\\\\\\"attemptCount\\\\\\\":1,\\\\\\\"startedAt\\\\\\\":\\\\\\\"2026-02-25T14:48:01.376Z\\\\\\\",\\\\\\\"endedAt\\\\\\\":\\\\\\\"2026-02-25T14:48:01.376Z\\\\\\\",\\\\\\\"failureCode\\\\\\\":null,\\\\\\\"failureMessage\\\\\\\":\\\\\\\"Exploratory validation step skipped by deterministic runner (semantic/manual review step).\\\\\\\",\\\\\\\"resultPayload\\\\\\\":{\\\\\\\"note\\\\\\\":\\\\\\\"Step skipped: Exploratory validation step skipped by deterministic runner (semantic/manual review step).\\\\\\\",\\\\\\\"evidence\\\\\\\":{\\\\\\\"error\\\\\\\":\\\\\\\"Exploratory validation step skipped by deterministic runner (semantic/manual review step).\\\\\\\",\\\\\\\"failed\\\\\\\":false,\\\\\\\"blocked\\\\\\\":false,\\\\\\\"skipped\\\\\\\":true,\\\\\\\"reasonCode\\\\\\\":\\\\\\\"DETERMINISTIC_RUNNER_SKIPS_EXPLORATORY_STEP\\\\\\\",\\\\\\\"stepFamily\\\\\\\":\\\\\\\"uc-need-validation\\\\\\\"}},\\\\\\\"assertionSummary\\\\\\\":{\\\\\\\"status\\\\\\\":\\\\\\\"skipped\\\\\\\",\\\\\\\"hasFailure\\\\\\\":true,\\\\\\\"assertionsPassed\\\\\\\":0},\\\\\\\"metadata\\\\\\\":{},\\\\\\\"createdAt\\\\\\\":\\\\\\\"2026-02-25T14:47:45.688Z\\\\\\\",\\\\\\\"updatedAt\\\\\\\":\\\\\\\"2026-02-25T14:47:45.688Z\\\\\\\",\\\\\\\"deletedAt\\\\\\\":null,\\\\\\\"createdBy\\\\\\\":null,\\\\\\\"updatedBy\\\\\\\":null,\\\\\\\"deletedBy\\\\\\\":null},\\\\\\\"meta\\\\\\\":{\\\\\\\"requestId\\\\\\\":\\\\\\\"2871a4af-d0ee-4c69-bf1a-7aea145d2877\\\\\\\",\\\\\\\"timestamp\\\\\\\":\\\\\\\"2026-02-25T14:48:01.796Z\\\\\\\"}},\\\\\\\"at\\\\\\\":\\\\\\\"2026-02-25T14:48:01.798Z\\\\\\\"},{\\\\\\\"method\\\\\\\":\\\\\\\"POST\\\\\\\",\\\\\\\"path\\\\\\\":\\\\\\\"/api/v1/sagas/runs/saga_run_3AAMKSn6TDspNbMJXCNUcJp574C/steps/uc-need-validate-6/result\\\\\\\",\\\\\\\"status\\\\\\\":200,\\\\\\\"requestBody\\\\\\\":{\\\\\\\"status\\\\\\\":\\\\\\\"skipped\\\\\\\",\\\\\\\"startedAt\\\\\\\":\\\\\\\"2026-02-25T14:48:01.278Z\\\\\\\",\\\\\\\"endedAt\\\\\\\":\\\\\\\"2026-02-25T14:48:01.278Z\\\\\\\",\\\\\\\"failureMessage\\\\\\\":\\\\\\\"Exploratory validation step skipped by deterministic runner (semantic/manual review step).\\\\\\\",\\\\\\\"resultPayload\\\\\\\":{\\\\\\\"note\\\\\\\":\\\\\\\"Step skipped: Exploratory validation step skipped by deterministic runner (semantic/manual review step).\\\\\\\",\\\\\\\"evidence\\\\\\\":{\\\\\\\"error\\\\\\\":\\\\\\\"Exploratory validation step skipped by deterministic runner (semantic/manual review step).\\\\\\\",\\\\\\\"failed\\\\\\\":false,\\\\\\\"blocked\\\\\\\":false,\\\\\\\"skipped\\\\\\\":true,\\\\\\\"stepFamily\\\\\\\":\\\\\\\"uc-need-validation\\\\\\\",\\\\\\\"reasonCode\\\\\\\":\\\\\\\"DETERMINISTIC_RUNNER_SKIPS_EXPLORATORY_STEP\\\\\\\"}},\\\\\\\"assertionSummary\\\\\\\":{\\\\\\\"status\\\\\\\":\\\\\\\"skipped\\\\\\\",\\\\\\\"hasFailure\\\\\\\":true,\\\\\\\"assertionsPassed\\\\\\\":0}},\\\\\\\"responseBody\\\\\\\":{\\\\\\\"success\\\\\\\":true,\\\\\\\"data\\\\\\\":{\\\\\\\"id\\\\\\\":\\\\\\\"saga_run_step_3AAMKT0F49cBql7ClnIJSjWYDRT\\\\\\\",\\\\\\\"sagaRunId\\\\\\\":\\\\\\\"saga_run_3AAMKSn6TDspNbMJXCNUcJp574C\\\\\\\",\\\\\\\"phaseKey\\\\\\\":\\\\\\\"reporting-and-closeout\\\\\\\",\\\\\\\"phaseOrder\\\\\\\":8,\\\\\\\"phaseTitle\\\\\\\":\\\\\\\"Reporting And Closeout\\\\\\\",\\\\\\\"stepKey\\\\\\\":\\\\\\\"uc-need-validate-6\\\\\\\",\\\\\\\"stepOrder\\\\\\\":24,\\\\\\\"actorKey\\\\\\\":\\\\\\\"biz_owner\\\\\\\",\\\\\\\"instruction\\\\\\\":\\\\\\\"Using concrete API reads and persisted state checks, validate this requirement is satisfied: \\\\\\\\\\\\\\\"Minimum purchase requirements\\\\\\\\\\\\\\\". If not satisfied, record exact gap and failing entities/endpoints.\\\\\\\",\\\\\\\"expectedResult\\\\\\\":\\\\\\\"Evidence either confirms requirement coverage or captures a precise, reproducible gap.\\\\\\\",\\\\\\\"delayMode\\\\\\\":\\\\\\\"none\\\\\\\",\\\\\\\"delayMs\\\\\\\":null,\\\\\\\"delayConditionKey\\\\\\\":null,\\\\\\\"delayTimeoutMs\\\\\\\":null,\\\\\\\"delayPollMs\\\\\\\":null,\\\\\\\"delayJitterMs\\\\\\\":0,\\\\\\\"status\\\\\\\":\\\\\\\"skipped\\\\\\\",\\\\\\\"attemptCount\\\\\\\":1,\\\\\\\"startedAt\\\\\\\":\\\\\\\"2026-02-25T14:48:01.278Z\\\\\\\",\\\\\\\"endedAt\\\\\\\":\\\\\\\"2026-02-25T14:48:01.278Z\\\\\\\",\\\\\\\"failureCode\\\\\\\":null,\\\\\\\"failureMessage\\\\\\\":\\\\\\\"Exploratory validation step skipped by deterministic runner (semantic/manual review step).\\\\\\\",\\\\\\\"resultPayload\\\\\\\":{\\\\\\\"note\\\\\\\":\\\\\\\"Step skipped: Exploratory validation step skipped by deterministic runner (semantic/manual review step).\\\\\\\",\\\\\\\"evidence\\\\\\\":{\\\\\\\"error\\\\\\\":\\\\\\\"Exploratory validation step skipped by deterministic runner (semantic/manual review step).\\\\\\\",\\\\\\\"failed\\\\\\\":false,\\\\\\\"blocked\\\\\\\":false,\\\\\\\"skipped\\\\\\\":true,\\\\\\\"reasonCode\\\\\\\":\\\\\\\"DETERMINISTIC_RUNNER_SKIPS_EXPLORATORY_STEP\\\\\\\",\\\\\\\"stepFamily\\\\\\\":\\\\\\\"uc-need-validation\\\\\\\"}},\\\\\\\"assertionSummary\\\\\\\":{\\\\\\\"status\\\\\\\":\\\\\\\"skipped\\\\\\\",\\\\\\\"hasFailure\\\\\\\":true,\\\\\\\"assertionsPassed\\\\\\\":0},\\\\\\\"metadata\\\\\\\":{},\\\\\\\"createdAt\\\\\\\":\\\\\\\"2026-02-25T14:47:37.883Z\\\\\\\",\\\\\\\"updatedAt\\\\\\\":\\\\\\\"2026-02-25T14:47:37.883Z\\\\\\\",\\\\\\\"deletedAt\\\\\\\":null,\\\\\\\"createdBy\\\\\\\":null,\\\\\\\"updatedBy\\\\\\\":null,\\\\\\\"deletedBy\\\\\\\":null},\\\\\\\"meta\\\\\\\":{\\\\\\\"requestId\\\\\\\":\\\\\\\"f72e9114-90d5-44d7-8c9e-7742eee551f5\\\\\\\",\\\\\\\"timestamp\\\\\\\":\\\\\\\"2026-02-25T14:48:01.799Z\\\\\\\"}},\\\\\\\"at\\\\\\\":\\\\\\\"2026-02-25T14:48:01.803Z\\\\\\\"},{\\\\\\\"method\\\\\\\":\\\\\\\"POST\\\\\\\",\\\\\\\"path\\\\\\\":\\\\\\\"/api/v1/sagas/runs/saga_run_3AAMMaqX1DQ37FQ9vgvXmHPLrKp/traces\\\\\\\",\\\\\\\"status\\\\\\\":201,\\\\\\\"requestBody\\\\\\\":{\\\\\\\"stepKey\\\\\\\":\\\\\\\"owner-create-offer-version\\\\\\\",\\\\\\\"title\\\\\\\":\\\\\\\"Create and publish offer version API Trace\\\\\\\",\\\\\\\"trace\\\\\\\":{\\\\\\\"stepKey\\\\\\\":\\\\\\\"owner-create-offer-version\\\\\\\",\\\\\\\"callCount\\\\\\\":5,\\\\\\\"calls\\\\\\\":[{\\\\\\\"method\\\\\\\":\\\\\\\"POST\\\\\\\",\\\\\\\"path\\\\\\\":\\\\\\\"/api/v1/sagas/runs/saga_run_3AAMLszhzhYGyDzn9SqW8Lcf3iU/steps/member-review-bookings/result\\\\\\\",\\\\\\\"status\\\\\\\":200,\\\\\\\"requestBody\\\\\\\":{\\\\\\\"status\\\\\\\":\\\\\\\"in_progress\\\\\\\",\\\\\\\"startedAt\\\\\\\":\\\\\\\"2026-02-25T14:48:01.249Z\\\\\\\",\\\\\\\"resultPayload\\\\\\\":{\\\\\\\"note\\\\\\\":\\\\\\\"Started member-review-bookings\\\\\\\"},\\\\\\\"assertionSummary\\\\\\\":{\\\\\\\"status\\\\\\\":\\\\\\\"in_progress\\\\\\\"}},\\\\\\\"responseBody\\\\\\\":{\\\\\\\"success\\\\\\\":true,\\\\\\\"data\\\\\\\":{\\\\\\\"id\\\\\\\":\\\\\\\"saga_run_step_3AAMLqGqfblubL4jidTv0mkxdf6\\\\\\\",\\\\\\\"sagaRunId\\\\\\\":\\\\\\\"saga_run_3AAMLszhzhYGyDzn9SqW8Lcf3iU\\\\\\\",\\\\\\\"phaseKey\\\\\\\":\\\\\\\"operations-and-follow-up\\\\\\\",\\\\\\\"phaseOrder\\\\\\\":7,\\\\\\\"phaseTitle\\\\\\\":\\\\\\\"Operations And Follow-up\\\\\\\",\\\\\\\"stepKey\\\\\\\":\\\\\\\"member-review-bookings\\\\\\\",\\\\\\\"stepOrder\\\\\\\":16,\\\\\\\"actorKey\\\\\\\":\\\\\\\"biz_member\\\\\\\",\\\\\\\"instruction\\\\\\\":\\\\\\\"As biz member, list bookings and progress one booking through operational status updates.\\\\\\\",\\\\\\\"expectedResult\\\\\\\":\\\\\\\"Authorized role can update status while preserving auditability and lifecycle consistency.\\\\\\\",\\\\\\\"delayMode\\\\\\\":\\\\\\\"none\\\\\\\",\\\\\\\"delayMs\\\\\\\":null,\\\\\\\"delayConditionKey\\\\\\\":null,\\\\\\\"delayTimeoutMs\\\\\\\":null,\\\\\\\"delayPollMs\\\\\\\":null,\\\\\\\"delayJitterMs\\\\\\\":0,\\\\\\\"status\\\\\\\":\\\\\\\"in_progress\\\\\\\",\\\\\\\"attemptCount\\\\\\\":1,\\\\\\\"startedAt\\\\\\\":\\\\\\\"2026-02-25T14:48:01.249Z\\\\\\\",\\\\\\\"endedAt\\\\\\\":null,\\\\\\\"failureCode\\\\\\\":null,\\\\\\\"failureMessage\\\\\\\":null,\\\\\\\"resultPayload\\\\\\\":{\\\\\\\"note\\\\\\\":\\\\\\\"Started member-review-bookings\\\\\\\"},\\\\\\\"assertionSummary\\\\\\\":{\\\\\\\"status\\\\\\\":\\\\\\\"in_progress\\\\\\\"},\\\\\\\"metadata\\\\\\\":{},\\\\\\\"createdAt\\\\\\\":\\\\\\\"2026-02-25T14:47:48.204Z\\\\\\\",\\\\\\\"updatedAt\\\\\\\":\\\\\\\"2026-02-25T14:47:48.204Z\\\\\\\",\\\\\\\"deletedAt\\\\\\\":null,\\\\\\\"createdBy\\\\\\\":null,\\\\\\\"updatedBy\\\\\\\":null,\\\\\\\"deletedBy\\\\\\\":null},\\\\\\\"meta\\\\\\\":{\\\\\\\"requestId\\\\\\\":\\\\\\\"37159d56-2ae2-4e19-8472-3742adc83630\\\\\\\",\\\\\\\"timestamp\\\\\\\":\\\\\\\"2026-02-25T14:48:01.449Z\\\\\\\"}},\\\\\\\"at\\\\\\\":\\\\\\\"2026-02-25T14:48:01.450Z\\\\\\\"},{\\\\\\\"method\\\\\\\":\\\\\\\"POST\\\\\\\",\\\\\\\"path\\\\\\\":\\\\\\\"/api/v1/sagas/runs/saga_run_3AAMMXq52hkiM4yxeYylKTgY87k/steps/owner-create-offer-version/result\\\\\\\",\\\\\\\"status\\\\\\\":200,\\\\\\\"requestBody\\\\\\\":{\\\\\\\"status\\\\\\\":\\\\\\\"passed\\\\\\\",\\\\\\\"startedAt\\\\\\\":\\\\\\\"2026-02-25T14:48:01.171Z\\\\\\\",\\\\\\\"endedAt\\\\\\\":\\\\\\\"2026-02-25T14:48:01.171Z\\\\\\\",\\\\\\\"failureMessage\\\\\\\":null,\\\\\\\"resultPayload\\\\\\\":{\\\\\\\"note\\\\\\\":\\\\\\\"Offer version created.\\\\\\\",\\\\\\\"evidence\\\\\\\":{\\\\\\\"offerVersionId\\\\\\\":\\\\\\\"offer_version_3AAMNTjjCQQ9V6vTz09wA6s3jN7\\\\\\\"}},\\\\\\\"assertionSummary\\\\\\\":{\\\\\\\"status\\\\\\\":\\\\\\\"passed\\\\\\\",\\\\\\\"hasFailure\\\\\\\":false,\\\\\\\"assertionsPassed\\\\\\\":1}},\\\\\\\"responseBody\\\\\\\":{\\\\\\\"success\\\\\\\":true,\\\\\\\"data\\\\\\\":{\\\\\\\"id\\\\\\\":\\\\\\\"saga_run_step_3AAMMVRgacjIunN1hkkS9HeMP00\\\\\\\",\\\\\\\"sagaRunId\\\\\\\":\\\\\\\"saga_run_3AAMMXq52hkiM4yxeYylKTgY87k\\\\\\\",\\\\\\\"phaseKey\\\\\\\":\\\\\\\"catalog-publish\\\\\\\",\\\\\\\"phaseOrder\\\\\\\":4,\\\\\\\"phaseTitle\\\\\\\":\\\\\\\"Catalog And Publish\\\\\\\",\\\\\\\"stepKey\\\\\\\":\\\\\\\"owner-create-offer-version\\\\\\\",\\\\\\\"stepOrder\\\\\\\":9,\\\\\\\"actorKey\\\\\\\":\\\\\\\"biz_owner\\\\\\\",\\\\\\\"instruction\\\\\\\":\\\\\\\"Create a published offer version with realistic duration and base price for this UC.\\\\\\\",\\\\\\\"expectedResult\\\\\\\":\\\\\\\"Offer version exists and is ready for booking order references.\\\\\\\",\\\\\\\"delayMode\\\\\\\":\\\\\\\"none\\\\\\\",\\\\\\\"delayMs\\\\\\\":null,\\\\\\\"delayConditionKey\\\\\\\":null,\\\\\\\"delayTimeoutMs\\\\\\\":null,\\\\\\\"delayPollMs\\\\\\\":null,\\\\\\\"delayJitterMs\\\\\\\":0,\\\\\\\"status\\\\\\\":\\\\\\\"passed\\\\\\\",\\\\\\\"attemptCount\\\\\\\":1,\\\\\\\"startedAt\\\\\\\":\\\\\\\"2026-02-25T14:48:01.171Z\\\\\\\",\\\\\\\"endedAt\\\\\\\":\\\\\\\"2026-02-25T14:48:01.171Z\\\\\\\",\\\\\\\"failureCode\\\\\\\":null,\\\\\\\"failureMessage\\\\\\\":null,\\\\\\\"resultPayload\\\\\\\":{\\\\\\\"note\\\\\\\":\\\\\\\"Offer version created.\\\\\\\",\\\\\\\"evidence\\\\\\\":{\\\\\\\"offerVersionId\\\\\\\":\\\\\\\"offer_version_3AAMNTjjCQQ9V6vTz09wA6s3jN7\\\\\\\"}},\\\\\\\"assertionSummary\\\\\\\":{\\\\\\\"status\\\\\\\":\\\\\\\"passed\\\\\\\",\\\\\\\"hasFailure\\\\\\\":false,\\\\\\\"assertionsPassed\\\\\\\":1},\\\\\\\"metadata\\\\\\\":{},\\\\\\\"createdAt\\\\\\\":\\\\\\\"2026-02-25T14:47:53.406Z\\\\\\\",\\\\\\\"updatedAt\\\\\\\":\\\\\\\"2026-02-25T14:47:53.406Z\\\\\\\",\\\\\\\"deletedAt\\\\\\\":null,\\\\\\\"createdBy\\\\\\\":null,\\\\\\\"updatedBy\\\\\\\":null,\\\\\\\"deletedBy\\\\\\\":null},\\\\\\\"meta\\\\\\\":{\\\\\\\"requestId\\\\\\\":\\\\\\\"bb275d17-168d-452c-9347-dc91a9fd6840\\\\\\\",\\\\\\\"timestamp\\\\\\\":\\\\\\\"2026-02-25T14:48:01.470Z\\\\\\\"}},\\\\\\\"at\\\\\\\":\\\\\\\"2026-02-25T14:48:01.472Z\\\\\\\"},{\\\\\\\"method\\\\\\\":\\\\\\\"POST\\\\\\\",\\\\\\\"path\\\\\\\":\\\\\\\"/api/v1/sagas/runs/saga_run_3AAMMC4ZIc5kafIrduuPPY47W6q/steps/own",
+        "_size": 41496
+      },
+      "at": "2026-02-25T14:48:02.501Z"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AAMMaqX1DQ37FQ9vgvXmHPLrKp/snapshots",
+      "status": 201,
+      "requestBody": {
+        "stepKey": "owner-create-offer-version",
+        "screenKey": "owner-create-offer-version-1772030882156",
+        "title": "Create and publish offer version Snapshot",
+        "status": "passed",
+        "route": "/sagas/saga_run_3AAMMaqX1DQ37FQ9vgvXmHPLrKp/owner-create-offer-version",
+        "format": "json",
+        "view": {
+          "title": "Create and publish offer version",
+          "subtitle": "Offer version created.",
+          "blocks": [
+            {
+              "type": "alert",
+              "title": "Owner Create Offer Version completed",
+              "message": "Offer version created.",
+              "tone": "success"
+            },
+            {
+              "type": "key_value",
+              "title": "Screen details",
+              "items": [
+                {
+                  "label": "OfferVersionId",
+                  "value": "offer_version_3AAMNUTchiHH3kw3priXPL30lYL"
+                }
+              ]
+            }
+          ]
+        },
+        "rawData": {
+          "stepKey": "owner-create-offer-version",
+          "resultPayload": {
+            "note": "Offer version created.",
+            "evidence": {
+              "offerVersionId": "offer_version_3AAMNUTchiHH3kw3priXPL30lYL"
+            }
+          },
+          "apiCalls": [
+            {
+              "method": "POST",
+              "path": "/api/v1/sagas/runs/saga_run_3AAMLszhzhYGyDzn9SqW8Lcf3iU/steps/member-review-bookings/result",
+              "status": 200,
+              "requestBody": {
+                "status": "in_progress",
+                "startedAt": "2026-02-25T14:48:01.249Z",
+                "resultPayload": {
+                  "note": "Started member-review-bookings"
+                },
+                "assertionSummary": {
+                  "status": "in_progress"
+                }
+              },
+              "responseBody": {
+                "success": true,
+                "data": {
+                  "id": "saga_run_step_3AAMLqGqfblubL4jidTv0mkxdf6",
+                  "sagaRunId": "saga_run_3AAMLszhzhYGyDzn9SqW8Lcf3iU",
+                  "phaseKey": "operations-and-follow-up",
+                  "phaseOrder": 7,
+                  "phaseTitle": "Operations And Follow-up",
+                  "stepKey": "member-review-bookings",
+                  "stepOrder": 16,
+                  "actorKey": "biz_member",
+                  "instruction": "As biz member, list bookings and progress one booking through operational status updates.",
+                  "expectedResult": "Authorized role can update status while preserving auditability and lifecycle consistency.",
+                  "delayMode": "none",
+                  "delayMs": null,
+                  "delayConditionKey": null,
+                  "delayTimeoutMs": null,
+                  "delayPollMs": null,
+                  "delayJitterMs": 0,
+                  "status": "in_progress",
+                  "attemptCount": 1,
+                  "startedAt": "2026-02-25T14:48:01.249Z",
+                  "endedAt": null,
+                  "failureCode": null,
+                  "failureMessage": null,
+                  "resultPayload": {
+                    "note": "Started member-review-bookings"
+                  },
+                  "assertionSummary": {
+                    "status": "in_progress"
+                  },
+                  "metadata": {},
+                  "createdAt": "2026-02-25T14:47:48.204Z",
+                  "updatedAt": "2026-02-25T14:47:48.204Z",
+                  "deletedAt": null,
+                  "createdBy": null,
+                  "updatedBy": null,
+                  "deletedBy": null
+                },
+                "meta": {
+                  "requestId": "37159d56-2ae2-4e19-8472-3742adc83630",
+                  "timestamp": "2026-02-25T14:48:01.449Z"
+                }
+              },
+              "at": "2026-02-25T14:48:01.450Z"
+            },
+            {
+              "method": "POST",
+              "path": "/api/v1/sagas/runs/saga_run_3AAMMXq52hkiM4yxeYylKTgY87k/steps/owner-create-offer-version/result",
+              "status": 200,
+              "requestBody": {
+                "status": "passed",
+                "startedAt": "2026-02-25T14:48:01.171Z",
+                "endedAt": "2026-02-25T14:48:01.171Z",
+                "failureMessage": null,
+                "resultPayload": {
+                  "note": "Offer version created.",
+                  "evidence": {
+                    "offerVersionId": "offer_version_3AAMNTjjCQQ9V6vTz09wA6s3jN7"
+                  }
+                },
+                "assertionSummary": {
+                  "status": "passed",
+                  "hasFailure": false,
+                  "assertionsPassed": 1
+                }
+              },
+              "responseBody": {
+                "success": true,
+                "data": {
+                  "id": "saga_run_step_3AAMMVRgacjIunN1hkkS9HeMP00",
+                  "sagaRunId": "saga_run_3AAMMXq52hkiM4yxeYylKTgY87k",
+                  "phaseKey": "catalog-publish",
+                  "phaseOrder": 4,
+                  "phaseTitle": "Catalog And Publish",
+                  "stepKey": "owner-create-offer-version",
+                  "stepOrder": 9,
+                  "actorKey": "biz_owner",
+                  "instruction": "Create a published offer version with realistic duration and base price for this UC.",
+                  "expectedResult": "Offer version exists and is ready for booking order references.",
+                  "delayMode": "none",
+                  "delayMs": null,
+                  "delayConditionKey": null,
+                  "delayTimeoutMs": null,
+                  "delayPollMs": null,
+                  "delayJitterMs": 0,
+                  "status": "passed",
+                  "attemptCount": 1,
+                  "startedAt": "2026-02-25T14:48:01.171Z",
+                  "endedAt": "2026-02-25T14:48:01.171Z",
+                  "failureCode": null,
+                  "failureMessage": null,
+                  "resultPayload": {
+                    "note": "Offer version created.",
+                    "evidence": {
+                      "offerVersionId": "offer_version_3AAMNTjjCQQ9V6vTz09wA6s3jN7"
+                    }
+                  },
+                  "assertionSummary": {
+                    "status": "passed",
+                    "hasFailure": false,
+                    "assertionsPassed": 1
+                  },
+                  "metadata": {},
+                  "createdAt": "2026-02-25T14:47:53.406Z",
+                  "updatedAt": "2026-02-25T14:47:53.406Z",
+                  "deletedAt": null,
+                  "createdBy": null,
+                  "updatedBy": null,
+                  "deletedBy": null
+                },
+                "meta": {
+                  "requestId": "bb275d17-168d-452c-9347-dc91a9fd6840",
+                  "timestamp": "2026-02-25T14:48:01.470Z"
+                }
+              },
+              "at": "2026-02-25T14:48:01.472Z"
+            },
+            {
+              "method": "POST",
+              "path": "/api/v1/sagas/runs/saga_run_3AAMMC4ZIc5kafIrduuPPY47W6q/steps/owner-create-offer-version/result",
+              "status": 200,
+              "requestBody": {
+                "status": "passed",
+                "startedAt": "2026-02-25T14:48:01.088Z",
+                "endedAt": "2026-02-25T14:48:01.089Z",
+                "failureMessage": null,
+                "resultPayload": {
+                  "note": "Offer version created.",
+                  "evidence": {
+                    "offerVersionId": "offer_version_3AAMNRVM8ZEJiYOJRoy0m41YeSh"
+                  }
+                },
+                "assertionSummary": {
+                  "status": "passed",
+                  "hasFailure": false,
+                  "assertionsPassed": 1
+                }
+              },
+              "responseBody": {
+                "success": true,
+                "data": {
+                  "id": "saga_run_step_3AAMMC2U1rTOdwSO5dXZh5rxkJR",
+                  "sagaRunId": "saga_run_3AAMMC4ZIc5kafIrduuPPY47W6q",
+                  "phaseKey": "catalog-publish",
+                  "phaseOrder": 4,
+                  "phaseTitle": "Catalog And Publish",
+                  "stepKey": "owner-create-offer-version",
+                  "stepOrder": 9,
+                  "actorKey": "biz_owner",
+                  "instruction": "Create a published offer version with realistic duration and base price for this UC.",
+                  "expectedResult": "Offer version exists and is ready for booking order references.",
+                  "delayMode": "none",
+                  "delayMs": null,
+                  "delayConditionKey": null,
+                  "delayTimeoutMs": null,
+                  "delayPollMs": null,
+                  "delayJitterMs": 0,
+                  "status": "passed",
+                  "attemptCount": 1,
+                  "startedAt": "2026-02-25T14:48:01.088Z",
+                  "endedAt": "2026-02-25T14:48:01.089Z",
+                  "failureCode": null,
+                  "failureMessage": null,
+                  "resultPayload": {
+                    "note": "Offer version created.",
+                    "evidence": {
+                      "offerVersionId": "offer_version_3AAMNRVM8ZEJiYOJRoy0m41YeSh"
+                    }
+                  },
+                  "assertionSummary": {
+                    "status": "passed",
+                    "hasFailure": false,
+                    "assertionsPassed": 1
+                  },
+                  "metadata": {},
+                  "createdAt": "2026-02-25T14:47:51.845Z",
+                  "updatedAt": "2026-02-25T14:47:51.845Z",
+                  "deletedAt": null,
+                  "createdBy": null,
+                  "updatedBy": null,
+                  "deletedBy": null
+                },
+                "meta": {
+                  "requestId": "716e6bbd-436b-4149-b693-4dff2873cb74",
+                  "timestamp": "2026-02-25T14:48:01.479Z"
+                }
+              },
+              "at": "2026-02-25T14:48:01.480Z"
+            },
+            {
+              "method": "POST",
+              "path": "/api/v1/sagas/runs/saga_run_3AAMMnPa9vlGZldb1Z1sqLFoNcA/steps/owner-configure-pricing/result",
+              "status": 200,
+              "requestBody": {
+                "status": "passed",
+                "startedAt": "2026-02-25T14:48:01.086Z",
+                "endedAt": "2026-02-25T14:48:01.086Z",
+                "failureMessage": null,
+                "resultPayload": {
+                  "note": "Pricing baseline configured on biz metadata."
+                },
+                "assertionSummary": {
+                  "status": "passed",
+                  "hasFailure": false,
+                  "assertionsPassed": 1
+                }
+              },
+              "responseBody": {
+                "success": true,
+                "data": {
+                  "id": "saga_run_step_3AAMMn7ltkLkSq8cfKvP8xbeRlJ",
+                  "sagaRunId": "saga_run_3AAMMnPa9vlGZldb1Z1sqLFoNcA",
+                  "phaseKey": "business-configuration",
+                  "phaseOrder": 2,
+                  "phaseTitle": "Business Configuration",
+                  "stepKey": "owner-configure-pricing",
+                  "stepOrder": 5,
+                  "actorKey": "biz_owner",
+                  "instruction": "Configure pricing defaults for the offer lifecycle including call fees/manual surge if UC needs imply it.",
+                  "expectedResult": "Pricing model persists and future bookings can calculate totals deterministically.",
+                  "delayMode": "none",
+                  "delayMs": null,
+                  "delayConditionKey": null,
+                  "delayTimeoutMs": null,
+                  "delayPollMs": null,
+                  "delayJitterMs": 0,
+                  "status": "passed",
+                  "attemptCount": 1,
+                  "startedAt": "2026-02-25T14:48:01.086Z",
+                  "endedAt": "2026-02-25T14:48:01.086Z",
+                  "failureCode": null,
+                  "failureMessage": null,
+                  "resultPayload": {
+                    "note": "Pricing baseline configured on biz metadata."
+                  },
+                  "assertionSummary": {
+                    "status": "passed",
+                    "hasFailure": false,
+                    "assertionsPassed": 1
+                  },
+                  "metadata": {},
+                  "createdAt": "2026-02-25T14:47:55.465Z",
+                  "updatedAt": "2026-02-25T14:47:55.465Z",
+                  "deletedAt": null,
+                  "createdBy": null,
+                  "updatedBy": null,
+                  "deletedBy": null
+                },
+                "meta": {
+                  "requestId": "a68eb445-23e1-497f-89af-7dc74db487fd",
+                  "timestamp": "2026-02-25T14:48:01.479Z"
+                }
+              },
+              "at": "2026-02-25T14:48:01.481Z"
+            },
+            {
+              "method": "POST",
+              "path": "/api/v1/bizes/3AAMMhVESNZGlLzQXRlXJe0HgYu/offers/offer_3AAMNLDqsg88nUYTQwUnFatBC9u/versions",
+              "status": 201,
+              "requestBody": {
+                "version": 1,
+                "status": "published",
+                "durationMode": "fixed",
+                "defaultDurationMin": 50,
+                "basePriceMinor": 15000,
+                "currency": "USD"
+              },
+              "responseBody": {
+                "success": true,
+                "data": {
+                  "id": "offer_version_3AAMNUTchiHH3kw3priXPL30lYL",
+                  "bizId": "3AAMMhVESNZGlLzQXRlXJe0HgYu",
+                  "offerId": "offer_3AAMNLDqsg88nUYTQwUnFatBC9u",
+                  "version": 1,
+                  "status": "published",
+                  "statusConfigValueId": null,
+                  "publishAt": null,
+                  "retireAt": null,
+                  "durationMode": "fixed",
+                  "durationModeConfigValueId": null,
+                  "defaultDurationMin": 50,
+                  "minDurationMin": null,
+                  "maxDurationMin": null,
+                  "durationStepMin": 15,
+                  "basePriceMinor": 15000,
+                  "currency": "USD",
+                  "pricingModel": {},
+                  "policyModel": {},
+                  "capacityModel": {},
+                  "revisionHash": null,
+                  "metadata": {},
+                  "createdAt": "2026-02-25T14:48:01.448Z",
+                  "updatedAt": "2026-02-25T14:48:01.448Z",
+                  "deletedAt": null,
+                  "createdBy": null,
+                  "updatedBy": null,
+                  "deletedBy": null
+                },
+                "meta": {
+                  "requestId": "2f94d98a-e59f-49c1-a860-be065045a3dc",
+                  "timestamp": "2026-02-25T14:48:01.479Z"
+                }
+              },
+              "at": "2026-02-25T14:48:01.482Z"
+            }
+          ]
+        }
+      },
+      "responseBody": {
+        "_truncated": true,
+        "_preview": "{\"success\":true,\"data\":{\"id\":\"saga_artifact_3AAMNcOxmC4ZO8NJO0Hgq6v458m\",\"sagaRunId\":\"saga_run_3AAMMaqX1DQ37FQ9vgvXmHPLrKp\",\"sagaRunStepId\":\"saga_run_step_3AAMMbWUhK83tRrmAUsIrxJrY78\",\"artifactType\":\"snapshot\",\"title\":\"Create and publish offer version Snapshot\",\"storagePath\":\"testing/sagas/runs/saga_run_3AAMMaqX1DQ37FQ9vgvXmHPLrKp/snapshots/2026-02-25T14-48-02-181Z-owner-create-offer-version-1772030882156.json\",\"contentType\":\"application/json\",\"bodyText\":\"{\\n  \\\"schemaVersion\\\": \\\"snapshot.v1\\\",\\n  \\\"screenKey\\\": \\\"owner-create-offer-version-1772030882156\\\",\\n  \\\"title\\\": \\\"Create and publish offer version Snapshot\\\",\\n  \\\"generatedAt\\\": \\\"2026-02-25T14:48:02.173Z\\\",\\n  \\\"stepKey\\\": \\\"owner-create-offer-version\\\",\\n  \\\"status\\\": \\\"passed\\\",\\n  \\\"view\\\": {\\n    \\\"title\\\": \\\"Create and publish offer version\\\",\\n    \\\"subtitle\\\": \\\"Offer version created.\\\",\\n    \\\"blocks\\\": [\\n      {\\n        \\\"type\\\": \\\"alert\\\",\\n        \\\"title\\\": \\\"Owner Create Offer Version completed\\\",\\n        \\\"message\\\": \\\"Offer version created.\\\",\\n        \\\"tone\\\": \\\"success\\\"\\n      },\\n      {\\n        \\\"type\\\": \\\"key_value\\\",\\n        \\\"title\\\": \\\"Screen details\\\",\\n        \\\"items\\\": [\\n          {\\n            \\\"label\\\": \\\"OfferVersionId\\\",\\n            \\\"value\\\": \\\"offer_version_3AAMNUTchiHH3kw3priXPL30lYL\\\"\\n          }\\n        ]\\n      }\\n    ]\\n  },\\n  \\\"rawData\\\": {\\n    \\\"stepKey\\\": \\\"owner-create-offer-version\\\",\\n    \\\"resultPayload\\\": {\\n      \\\"note\\\": \\\"Offer version created.\\\",\\n      \\\"evidence\\\": {\\n        \\\"offerVersionId\\\": \\\"offer_version_3AAMNUTchiHH3kw3priXPL30lYL\\\"\\n      }\\n    },\\n    \\\"apiCalls\\\": [\\n      {\\n        \\\"method\\\": \\\"POST\\\",\\n        \\\"path\\\": \\\"/api/v1/sagas/runs/saga_run_3AAMLszhzhYGyDzn9SqW8Lcf3iU/steps/member-review-bookings/result\\\",\\n        \\\"status\\\": 200,\\n        \\\"requestBody\\\": {\\n          \\\"status\\\": \\\"in_progress\\\",\\n          \\\"startedAt\\\": \\\"2026-02-25T14:48:01.249Z\\\",\\n          \\\"resultPayload\\\": {\\n            \\\"note\\\": \\\"Started member-review-bookings\\\"\\n          },\\n          \\\"assertionSummary\\\": {\\n            \\\"status\\\": \\\"in_progress\\\"\\n          }\\n        },\\n        \\\"responseBody\\\": {\\n          \\\"success\\\": true,\\n          \\\"data\\\": {\\n            \\\"id\\\": \\\"saga_run_step_3AAMLqGqfblubL4jidTv0mkxdf6\\\",\\n            \\\"sagaRunId\\\": \\\"saga_run_3AAMLszhzhYGyDzn9SqW8Lcf3iU\\\",\\n            \\\"phaseKey\\\": \\\"operations-and-follow-up\\\",\\n            \\\"phaseOrder\\\": 7,\\n            \\\"phaseTitle\\\": \\\"Operations And Follow-up\\\",\\n            \\\"stepKey\\\": \\\"member-review-bookings\\\",\\n            \\\"stepOrder\\\": 16,\\n            \\\"actorKey\\\": \\\"biz_member\\\",\\n            \\\"instruction\\\": \\\"As biz member, list bookings and progress one booking through operational status updates.\\\",\\n            \\\"expectedResult\\\": \\\"Authorized role can update status while preserving auditability and lifecycle consistency.\\\",\\n            \\\"delayMode\\\": \\\"none\\\",\\n            \\\"delayMs\\\": null,\\n            \\\"delayConditionKey\\\": null,\\n            \\\"delayTimeoutMs\\\": null,\\n            \\\"delayPollMs\\\": null,\\n            \\\"delayJitterMs\\\": 0,\\n            \\\"status\\\": \\\"in_progress\\\",\\n            \\\"attemptCount\\\": 1,\\n            \\\"startedAt\\\": \\\"2026-02-25T14:48:01.249Z\\\",\\n            \\\"endedAt\\\": null,\\n            \\\"failureCode\\\": null,\\n            \\\"failureMessage\\\": null,\\n            \\\"resultPayload\\\": {\\n              \\\"note\\\": \\\"Started member-review-bookings\\\"\\n            },\\n            \\\"assertionSummary\\\": {\\n              \\\"status\\\": \\\"in_progress\\\"\\n            },\\n            \\\"metadata\\\": {},\\n            \\\"createdAt\\\": \\\"2026-02-25T14:47:48.204Z\\\",\\n            \\\"updatedAt\\\": \\\"2026-02-25T14:47:48.204Z\\\",\\n            \\\"deletedAt\\\": null,\\n            \\\"createdBy\\\": null,\\n            \\\"updatedBy\\\": null,\\n            \\\"deletedBy\\\": null\\n          },\\n          \\\"meta\\\": {\\n            \\\"requestId\\\": \\\"37159d56-2ae2-4e19-8472-3742adc83630\\\",\\n            \\\"timestamp\\\": \\\"2026-02-25T14:48:01.449Z\\\"\\n          }\\n        },\\n        \\\"at\\\": \\\"2026-02-25T14:48:01.450Z\\\"\\n      },\\n      {\\n        \\\"method\\\": \\\"POST\\\",\\n        \\\"path\\\": \\\"/api/v1/sagas/runs/saga_run_3AAMMXq52hkiM4yxeYylKTgY87k/steps/owner-create-offer-version/result\\\",\\n        \\\"status\\\": 200,\\n        \\\"requestBody\\\": {\\n          \\\"status\\\": \\\"passed\\\",\\n          \\\"startedAt\\\": \\\"2026-02-25T14:48:01.171Z\\\",\\n          \\\"endedAt\\\": \\\"2026-02-25T14:48:01.171Z\\\",\\n          \\\"failureMessage\\\": null,\\n          \\\"resultPayload\\\": {\\n            \\\"note\\\": \\\"Offer version created.\\\",\\n            \\\"evidence\\\": {\\n              \\\"offerVersionId\\\": \\\"offer_version_3AAMNTjjCQQ9V6vTz09wA6s3jN7\\\"\\n            }\\n          },\\n          \\\"assertionSummary\\\": {\\n            \\\"status\\\": \\\"passed\\\",\\n            \\\"hasFailure\\\": false,\\n            \\\"assertionsPassed\\\": 1\\n          }\\n        },\\n        \\\"responseBody\\\": {\\n          \\\"success\\\": true,\\n          \\\"data\\\": {\\n            \\\"id\\\": \\\"saga_run_step_3AAMMVRgacjIunN1hkkS9HeMP00\\\",\\n            \\\"sagaRunId\\\": \\\"saga_run_3AAMMXq52hkiM4yxeYylKTgY87k\\\",\\n            \\\"phaseKey\\\": \\\"catalog-publish\\\",\\n            \\\"phaseOrder\\\": 4,\\n            \\\"phaseTitle\\\": \\\"Catalog And Publish\\\",\\n            \\\"stepKey\\\": \\\"owner-create-offer-version\\\",\\n            \\\"stepOrder\\\": 9,\\n            \\\"actorKey\\\": \\\"biz_owner\\\",\\n            \\\"instruction\\\": \\\"Create a published offer version with realistic duration and base price for this UC.\\\",\\n            \\\"expectedResult\\\": \\\"Offer version exists and is ready for booking order references.\\\",\\n            \\\"delayMode\\\": \\\"none\\\",\\n            \\\"delayMs\\\": null,\\n            \\\"delayConditionKey\\\": null,\\n            \\\"delayTimeoutMs\\\": null,\\n            \\\"delayPollMs\\\": null,\\n            \\\"delayJitterMs\\\": 0,\\n            \\\"status\\\": \\\"passed\\\",\\n            \\\"attemptCount\\\": 1,\\n            \\\"startedAt\\\": \\\"2026-02-25T14:48:01.171Z\\\",\\n            \\\"endedAt\\\": \\\"2026-02-25T14:48:01.171Z\\\",\\n            \\\"failureCode\\\": null,\\n            \\\"failureMessage\\\": null,\\n            \\\"resultPayload\\\": {\\n              \\\"note\\\": \\\"Offer version created.\\\",\\n              \\\"evidence\\\": {\\n                \\\"offerVersionId\\\": \\\"offer_version_3AAMNTjjCQQ9V6vTz09wA6s3jN7\\\"\\n              }\\n            },\\n            \\\"assertionSummary\\\": {\\n              \\\"status\\\": \\\"passed\\\",\\n              \\\"hasFailure\\\": false,\\n              \\\"assertionsPassed\\\": 1\\n            },\\n            \\\"metadata\\\": {},\\n            \\\"createdAt\\\": \\\"2026-02-25T14:47:53.406Z\\\",\\n            \\\"updatedAt\\\": \\\"2026-02-25T14:47:53.406Z\\\",\\n            \\\"deletedAt\\\": null,\\n            \\\"createdBy\\\": null,\\n            \\\"updatedBy\\\": null,\\n            \\\"deletedBy\\\": null\\n          },\\n          \\\"meta\\\": {\\n            \\\"requestId\\\": \\\"bb275d17-168d-452c-9347-dc91a9fd6840\\\",\\n            \\\"timestamp\\\": \\\"2026-02-25T14:48:01.470Z\\\"\\n          }\\n        },\\n        \\\"at\\\": \\\"2026-02-25T14:48:01.472Z\\\"\\n      },\\n      {\\n        \\\"method\\\": \\\"POST\\\",\\n        \\\"path\\\": \\\"/api/v1/sagas/runs/saga_run_3AAMMC4ZIc5kafIrduuPPY47W6q/steps/owner-create-offer-version/result\\\",\\n        \\\"status\\\": 200,\\n        \\\"requestBody\\\": {\\n          \\\"status\\\": \\\"passed\\\",\\n          \\\"startedAt\\\": \\\"2026-02-25T14:48:01.088Z\\\",\\n          \\\"endedAt\\\": \\\"2026-02-25T14:48:01.089Z\\\",\\n          \\\"failureMessage\\\": null,\\n          \\\"resultPayload\\\": {\\n            \\\"note\\\": \\\"Offer version created.\\\",\\n            \\\"evidence\\\": {\\n              \\\"offerVersionId\\\": \\\"offer_version_3AAMNRVM8ZEJiYOJRoy0m41YeSh\\\"\\n            }\\n          },\\n          \\\"assertionSummary\\\": {\\n            \\\"status\\\": \\\"passed\\\",\\n            \\\"hasFailure\\\": false,\\n            \\\"assertionsPassed\\\": 1\\n          }\\n        },\\n        \\\"responseBody\\\": {\\n          \\\"success\\\": true,\\n          \\\"data\\\": {\\n            \\\"id\\\": \\\"saga_run_step_3AAMMC2U1rTOdwSO5dXZh5rxkJR\\\",\\n            \\\"sagaRunId\\\": \\\"saga_run_3AAMMC4ZIc5kafIrduuPPY47W6q\\\",\\n            \\\"phaseKey\\\": \\\"catalog-publish\\\",\\n            \\\"phaseOrder\\\": 4,\\n            \\\"phaseTitle\\\": \\\"Catalog And Publish\\\",\\n            \\\"stepKey\\\": \\\"owner-create-offer-version\\\",\\n            \\\"stepOrder\\\": 9,\\n            \\\"actorKey\\\": \\\"biz_owner\\\",\\n            \\\"instruction\\\": \\\"Create a published offer version with realistic duration and base price for this UC.\\\",\\n            \\\"expectedResult\\\": \\\"Offer version exists and is ready for booking order references.\\\",\\n            \\\"delayMode\\\": \\\"none\\\",\\n            \\\"delayMs\\\": null,\\n            \\\"delayConditionKey\\\": null,\\n            \\\"delayTimeoutMs\\\": null,\\n            \\\"delayPollMs\\\": null,\\n            \\\"delayJitterMs\\\": 0,\\n            \\\"status\\\": \\\"passed\\\",\\n            \\\"attemptCount\\\": 1,\\n            \\\"startedAt\\\": \\\"2026-02-25T14:48:01.088Z\\\",\\n            \\\"endedAt\\\": \\\"2026-02-25T14:48:01.089Z\\\",\\n            \\\"failureCode\\\": null,\\n            \\\"failureMessage\\\": null,\\n            \\\"resultPayload\\\": {\\n              \\\"note\\\": \\\"Offer version created.\\\",\\n              \\\"evidence\\\": {\\n                \\\"offerVersionId\\\": \\\"offer_version_3AAMNRVM8ZEJiYOJRoy0m41YeSh\\\"\\n              }\\n            },\\n            \\\"assertionSummary\\\": {\\n              \\\"status\\\": \\\"passed\\\",\\n              \\\"hasFailure\\\": false,\\n              \\\"assertionsPassed\\\": 1\\n            },\\n            \\\"metadata\\\": {},\\n            \\\"createdAt\\\": \\\"2026-02-25T14:47:51.845Z\\\",\\n            \\\"updatedAt\\\": \\\"2026-02-25T14:47:51.845Z\\\",\\n            \\\"deletedAt\\\": null,\\n            \\\"createdBy\\\": null,\\n            \\\"updatedBy\\\": null,\\n            \\\"deletedBy\\\": null\\n          },\\n          \\\"meta\\\": {\\n            \\\"requestId\\\": \\\"716e6bbd-436b-4149-b693-4dff2873cb74\\\",\\n            \\\"timestamp\\\": \\\"2026-02-25T14:48:01.479Z\\\"\\n          }\\n        },\\n        \\\"at\\\": \\\"2026-02-25T14:48:01.480Z\\\"\\n      },\\n      {\\n        \\\"method\\\": \\\"POST\\\",\\n        \\\"path\\\": \\\"/api/v1/sagas/runs/saga_run_3AAMMnPa9vlGZldb1Z1sqLFoNcA/steps/owner-configure-pricing/result\\\",\\n        \\\"status\\\": 200,\\n        \\\"requestBody\\\": {\\n          \\\"status\\\": \\\"passed\\\",\\n          \\\"startedAt\\\": \\\"2026-02-25T14:48:01.086Z\\\",\\n          \\\"endedAt\\\": \\\"2026-02-25T14:48:01.086Z\\\",\\n          \\\"failureMessage\\\": null,\\n          \\\"resultPayload\\\": {\\n            \\\"note\\\": \\\"Pricing baseline configured on biz metadata.\\\"\\n          },\\n          \\\"assertionSummary\\\": {\\n            \\\"status\\\": \\\"passed\\\",\\n            \\\"hasFailure\\\": false,\\n            \\\"assertionsPassed\\\": 1\\n          }\\n        },\\n        \\\"responseBody\\\": {\\n          \\\"success\\\": true,\\n          \\\"data\\\": {\\n            \\\"id\\\": \\\"saga_run_step_3AAMMn7ltkLkSq8cfKvP8xbeRlJ\\\",\\n            \\\"sagaRunId\\\": \\\"saga_run_3AAMMnPa9vlGZldb1Z1sqLFoNcA\\\",\\n            \\\"phaseKey\\\": \\\"business-configuration\\\",\\n            \\\"phaseOrder\\\": 2,\\n            \\\"phaseTitle\\\": \\\"Business Configuration\\\",\\n            \\\"stepKey\\\": \\\"owner-configure-pricing\\\",\\n            \\\"stepOrder\\\": 5,\\n            \\\"actorKey\\\": \\\"biz_owner\\\",\\n            \\\"instruction\\\": \\\"Configure pricing defaults for the offer lifecycle including call fees/manual surge if UC needs imply it.\\\",\\n            \\\"expectedResult\\\": \\\"Pricing model persists and future bookings can calculate totals deterministically.\\\",\\n            \\\"delayMode\\\": \\\"none\\\",\\n            \\\"delayMs\\\": null,\\n            \\\"delayConditionKey\\\": null,\\n            \\\"delayTimeoutMs\\\": null,\\n            \\\"delayPollMs\\\": null,\\n            \\\"delayJitterMs\\\": 0,\\n            \\\"status\\\": \\\"passed\\\",\\n            \\\"attemptCount\\\": 1,\\n            \\\"startedAt\\\": \\\"2026-02-25T14:48:01.086Z\\\",\\n            \\\"endedAt\\\": \\\"2026-02-25T14:48:01.086Z\\\",\\n            \\\"failureCode\\\": null,\\n            \\\"failureMessage\\\": null,\\n            \\\"resultPayload\\\": {\\n              \\\"note\\\": \\\"Pricing baseline configured on biz metadata.\\\"\\n            },\\n            \\\"assertionSummary\\\": {\\n              \\\"st",
+        "_size": 15115
+      },
+      "at": "2026-02-25T14:48:02.515Z"
+    }
+  ]
+}

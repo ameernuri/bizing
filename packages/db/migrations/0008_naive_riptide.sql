@@ -1,0 +1,1 @@
+ALTER TABLE "saga_run_artifacts" ADD COLUMN "body_text" text;

@@ -6,10 +6,35 @@ import dbPackage from '@bizing/db'
 
 const { db, authSchema, bizes, users } = dbPackage
 
-const trustedOrigins = (process.env.BETTER_AUTH_TRUSTED_ORIGINS || '')
-  .split(',')
-  .map((origin) => origin.trim())
-  .filter(Boolean)
+function normalizeOrigin(origin: string): string {
+  return origin.trim().replace(/\/+$/, '')
+}
+
+/**
+ * Better Auth validates request `Origin` for some state-changing endpoints
+ * (for example sign-out).
+ *
+ * In local development, the admin client runs on `localhost:9000` while API
+ * runs on `localhost:6129`. We include both by default so auth flows work
+ * without requiring manual env edits each time.
+ */
+const trustedOrigins = Array.from(
+  new Set(
+    [
+      ...(process.env.BETTER_AUTH_TRUSTED_ORIGINS || '').split(','),
+      process.env.BETTER_AUTH_URL || '',
+      process.env.BETTER_AUTH_BASE_URL || '',
+      process.env.ADMIN_APP_ORIGIN || '',
+      'http://localhost:9000',
+      'http://127.0.0.1:9000',
+      'http://localhost:6129',
+      'http://127.0.0.1:6129',
+    ]
+      .map((origin) => origin.trim())
+      .filter(Boolean)
+      .map(normalizeOrigin),
+  ),
+)
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, {

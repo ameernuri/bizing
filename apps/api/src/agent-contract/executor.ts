@@ -509,11 +509,22 @@ export async function executePseudoApiRequestInOpenTransaction(
 ): Promise<PseudoApiResponse> {
   const parsed = pseudoApiRequestSchema.parse(rawInput)
   const requestId = parsed.requestId ?? randomUUID()
+  const savepointName = `agent_req_${requestId.replace(/[^a-zA-Z0-9_]/g, '').slice(0, 24)}`
 
   const trace: ExecutionTraceStep[] = []
   const warnings: string[] = []
 
   try {
+    /**
+     * Keep parent transaction healthy even when one request fails.
+     *
+     * ELI5:
+     * Postgres marks the whole transaction as "broken" after one SQL error.
+     * Savepoints let us rewind just this request so lifecycle/scenario runners
+     * can keep executing later steps and report precise failures.
+     */
+    await client.query(`SAVEPOINT ${savepointName}`)
+
     const result = await executeCommandRecursive(
       client,
       parsed.command,
@@ -522,6 +533,8 @@ export async function executePseudoApiRequestInOpenTransaction(
       trace,
       { value: 0 },
     )
+
+    await client.query(`RELEASE SAVEPOINT ${savepointName}`)
 
     return {
       requestId,
@@ -533,6 +546,13 @@ export async function executePseudoApiRequestInOpenTransaction(
       result,
     }
   } catch (error) {
+    try {
+      await client.query(`ROLLBACK TO SAVEPOINT ${savepointName}`)
+      await client.query(`RELEASE SAVEPOINT ${savepointName}`)
+    } catch {
+      // If savepoint rollback itself fails, parent caller will handle outer tx.
+    }
+
     return {
       requestId,
       dryRun: false,

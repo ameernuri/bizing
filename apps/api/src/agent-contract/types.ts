@@ -179,6 +179,116 @@ export const scenarioRunRequestSchema = z.object({
     .default({ dryRun: true, scope: {} }),
 })
 
+/**
+ * Lifecycle runner assertion against one extracted value path.
+ *
+ * Path is evaluated against a step context object:
+ * {
+ *   prompt, translation, request, response, result, error, captures
+ * }
+ */
+export const lifecyclePathAssertSchema = z
+  .object({
+    path: z.string().min(1),
+    equals: commandScalarValueSchema.optional(),
+    exists: z.boolean().optional(),
+    contains: z.string().min(1).optional(),
+  })
+  .refine(
+    (value) =>
+      value.equals !== undefined || value.exists !== undefined || value.contains !== undefined,
+    { message: 'Lifecycle path assert needs at least one check: equals, exists, or contains.' },
+  )
+
+/**
+ * Expectations for one lifecycle step execution.
+ *
+ * ELI5:
+ * This lets tests say "this should pass" or "this should fail in this exact way"
+ * without writing custom code per use case.
+ */
+export const lifecycleStepExpectationSchema = z.object({
+  success: z.boolean().optional(),
+  rowCountEq: z.number().int().min(0).optional(),
+  rowCountGte: z.number().int().min(0).optional(),
+  rowCountLte: z.number().int().min(0).optional(),
+  errorContains: z.union([z.string(), z.array(z.string().min(1))]).optional(),
+  asserts: z.array(lifecyclePathAssertSchema).default([]),
+})
+
+/**
+ * Variable capture instruction for one lifecycle step.
+ *
+ * Captured values are stored in a shared `variables` bag and can be referenced
+ * in later steps with `{{variableKey}}` templates.
+ */
+export const lifecycleStepCaptureSchema = z.object({
+  key: z.string().min(1),
+  from: z.enum(['translation', 'request', 'response', 'result', 'error']).default('response'),
+  path: z.string().min(1),
+  required: z.boolean().default(true),
+  defaultValue: z.unknown().optional(),
+})
+
+/**
+ * One lifecycle step.
+ *
+ * A step can be natural language (`prompt`) or strict canonical command (`request`).
+ */
+export const lifecycleStepSchema = z
+  .object({
+    id: z.string().min(1).optional(),
+    name: z.string().min(1),
+    description: z.string().optional(),
+    prompt: z.string().min(1).optional(),
+    request: pseudoApiRequestSchema.optional(),
+    execute: z.boolean().default(true),
+    scope: agentRequestScopeSchema.optional(),
+    expect: lifecycleStepExpectationSchema.optional(),
+    captures: z.array(lifecycleStepCaptureSchema).default([]),
+    tags: z.array(z.string().min(1)).default([]),
+  })
+  .refine((value) => Boolean(value.prompt || value.request), {
+    message: 'Lifecycle step must provide either prompt or request.',
+  })
+
+/**
+ * Logical phase grouping for lifecycle tests.
+ */
+export const lifecyclePhaseSchema = z.object({
+  id: z.string().min(1).optional(),
+  name: z.string().min(1),
+  description: z.string().optional(),
+  continueOnFailure: z.boolean().default(true),
+  steps: z.array(lifecycleStepSchema).min(1),
+})
+
+/**
+ * Top-level lifecycle run request.
+ *
+ * Key behavior:
+ * - Executes all steps in one SQL transaction for realistic stateful simulation.
+ * - Rolls back at end when `defaults.dryRun = true`.
+ * - Commits when `defaults.dryRun = false`.
+ */
+export const lifecycleRunRequestSchema = z.object({
+  defaults: z
+    .object({
+      dryRun: z.boolean().default(true),
+      scope: agentRequestScopeSchema.default({}),
+      continueOnFailure: z.boolean().default(true),
+    })
+    .default({ dryRun: true, scope: {}, continueOnFailure: true }),
+  variables: z.record(z.unknown()).default({}),
+  phases: z.array(lifecyclePhaseSchema).min(1),
+  options: z
+    .object({
+      rollbackOnFailure: z.boolean().default(false),
+      includeStepTrace: z.boolean().default(true),
+    })
+    .default({ rollbackOnFailure: false, includeStepTrace: true }),
+})
+
 export type CommandScalarValue = z.infer<typeof commandScalarValueSchema>
 export type CommandFilter = z.infer<typeof commandFilterSchema>
 export type CommandSort = z.infer<typeof commandSortSchema>
@@ -190,6 +300,12 @@ export type AgentRequestScope = z.infer<typeof agentRequestScopeSchema>
 export type PseudoApiRequest = z.infer<typeof pseudoApiRequestSchema>
 export type NLTranslationRequest = z.infer<typeof nlTranslationRequestSchema>
 export type ScenarioRunRequest = z.infer<typeof scenarioRunRequestSchema>
+export type LifecyclePathAssert = z.infer<typeof lifecyclePathAssertSchema>
+export type LifecycleStepExpectation = z.infer<typeof lifecycleStepExpectationSchema>
+export type LifecycleStepCapture = z.infer<typeof lifecycleStepCaptureSchema>
+export type LifecycleStep = z.infer<typeof lifecycleStepSchema>
+export type LifecyclePhase = z.infer<typeof lifecyclePhaseSchema>
+export type LifecycleRunRequest = z.infer<typeof lifecycleRunRequestSchema>
 
 /**
  * Trace row emitted by the executor for explainability.

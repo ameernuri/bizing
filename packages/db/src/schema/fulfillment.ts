@@ -1244,9 +1244,10 @@ export const fulfillmentAssignments = pgTable(
      *   for the same resource.
      * - `allow_overlap`: overlap is intentionally allowed.
      *
-     * Runtime note:
-     * - migration-level trigger keeps this value aligned with
-     *   `resources.allow_simultaneous_bookings` by default.
+     * Important:
+     * - this is assignment-level control. It does not auto-copy from
+     *   `resources.allow_simultaneous_bookings`; API/workflows should set it
+     *   explicitly when creating assignments.
      */
     conflictPolicy: fulfillmentAssignmentConflictPolicyEnum("conflict_policy")
       .default("enforce_no_overlap")

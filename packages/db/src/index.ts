@@ -21,7 +21,9 @@ export * from './schema/venues'
 export * from './schema/resources'
 export * from './schema/stripe'
 export * from './schema/social_graph'
+export * from './schema/api_credentials'
 export * from './schema/ref_keys'
+export * from './schema/sagas'
 /**
  * Canonical booking architecture.
  *
@@ -49,6 +51,8 @@ import * as venuesSchema from './schema/venues'
 import * as resourcesSchema from './schema/resources'
 import * as stripeSchema from './schema/stripe'
 import * as socialGraphSchema from './schema/social_graph'
+import * as apiCredentialsSchema from './schema/api_credentials'
+import * as sagasSchema from './schema/sagas'
 import * as canonicalSchemaModules from './schema/canonical'
 
 /**
@@ -71,6 +75,8 @@ const schemaCore = {
   ...resourcesSchema,
   ...stripeSchema,
   ...socialGraphSchema,
+  ...apiCredentialsSchema,
+  ...sagasSchema,
 }
 
 /**
@@ -110,9 +116,70 @@ const dbPackage = {
   checkDatabaseConnection,
   authSchema: authSchema.authSchema,
   bizes: bizesSchema.bizes,
+  members: authSchema.members,
+  invitations: authSchema.invitations,
+  sessions: authSchema.sessions,
+  accounts: authSchema.accounts,
+  verifications: authSchema.verifications,
+  locations: locationsSchema.locations,
+  resources: resourcesSchema.resources,
   bookingOrders: canonicalSchemaModules.bookingOrders,
+  bookingOrderLines: canonicalSchemaModules.bookingOrderLines,
   offers: canonicalSchemaModules.offers,
+  offerVersions: canonicalSchemaModules.offerVersions,
+  paymentProcessorAccounts: canonicalSchemaModules.paymentProcessorAccounts,
+  paymentMethods: canonicalSchemaModules.paymentMethods,
+  paymentIntents: canonicalSchemaModules.paymentIntents,
+  paymentIntentEvents: canonicalSchemaModules.paymentIntentEvents,
+  paymentIntentTenders: canonicalSchemaModules.paymentIntentTenders,
+  paymentIntentLineAllocations: canonicalSchemaModules.paymentIntentLineAllocations,
+  paymentTransactions: canonicalSchemaModules.paymentTransactions,
+  paymentTransactionLineAllocations: canonicalSchemaModules.paymentTransactionLineAllocations,
+  queues: canonicalSchemaModules.queues,
+  queueEntries: canonicalSchemaModules.queueEntries,
+  channelAccounts: canonicalSchemaModules.channelAccounts,
+  channelSyncStates: canonicalSchemaModules.channelSyncStates,
+  channelEntityLinks: canonicalSchemaModules.channelEntityLinks,
+  channelSyncJobs: canonicalSchemaModules.channelSyncJobs,
+  channelSyncItems: canonicalSchemaModules.channelSyncItems,
+  graphIdentities: socialGraphSchema.graphIdentities,
+  graphSubjectSubscriptions: socialGraphSchema.graphSubjectSubscriptions,
+  graphIdentityNotificationEndpoints: socialGraphSchema.graphIdentityNotificationEndpoints,
+  subjects: canonicalSchemaModules.subjects,
+  transportRoutes: canonicalSchemaModules.transportRoutes,
+  transportTrips: canonicalSchemaModules.transportTrips,
+  dispatchTasks: canonicalSchemaModules.dispatchTasks,
+  demandSignalDefinitions: canonicalSchemaModules.demandSignalDefinitions,
+  demandSignalObservations: canonicalSchemaModules.demandSignalObservations,
+  demandPricingPolicies: canonicalSchemaModules.demandPricingPolicies,
+  demandPricingPolicySignals: canonicalSchemaModules.demandPricingPolicySignals,
+  demandPricingPolicyTiers: canonicalSchemaModules.demandPricingPolicyTiers,
+  demandPricingEvaluations: canonicalSchemaModules.demandPricingEvaluations,
+  demandPricingApplications: canonicalSchemaModules.demandPricingApplications,
   users: usersSchema.users,
+  apiCredentials: apiCredentialsSchema.apiCredentials,
+  apiAccessTokens: apiCredentialsSchema.apiAccessTokens,
+  sagaDefinitions: sagasSchema.sagaDefinitions,
+  sagaDefinitionRevisions: sagasSchema.sagaDefinitionRevisions,
+  sagaRuns: sagasSchema.sagaRuns,
+  sagaRunSteps: sagasSchema.sagaRunSteps,
+  sagaRunArtifacts: sagasSchema.sagaRunArtifacts,
+  sagaRunActorProfiles: sagasSchema.sagaRunActorProfiles,
+  sagaRunActorMessages: sagasSchema.sagaRunActorMessages,
+  sagaUseCases: sagasSchema.sagaUseCases,
+  sagaUseCaseVersions: sagasSchema.sagaUseCaseVersions,
+  sagaPersonas: sagasSchema.sagaPersonas,
+  sagaPersonaVersions: sagasSchema.sagaPersonaVersions,
+  sagaDefinitionLinks: sagasSchema.sagaDefinitionLinks,
+  sagaCoverageReports: sagasSchema.sagaCoverageReports,
+  sagaCoverageItems: sagasSchema.sagaCoverageItems,
+  sagaTags: sagasSchema.sagaTags,
+  sagaTagBindings: sagasSchema.sagaTagBindings,
+  authzPermissionDefinitions: canonicalSchemaModules.authzPermissionDefinitions,
+  authzRoleDefinitions: canonicalSchemaModules.authzRoleDefinitions,
+  authzRolePermissions: canonicalSchemaModules.authzRolePermissions,
+  authzMembershipRoleMappings: canonicalSchemaModules.authzMembershipRoleMappings,
+  authzRoleAssignments: canonicalSchemaModules.authzRoleAssignments,
 }
 
 export default dbPackage

@@ -1,0 +1,499 @@
+{
+  "schemaVersion": "snapshot.v1",
+  "screenKey": "adversary-cross-biz-read-1771948159561",
+  "title": "Adversary attempts unauthorized cross-biz read Snapshot",
+  "generatedAt": "2026-02-24T15:49:19.570Z",
+  "stepKey": "adversary-cross-biz-read",
+  "status": "passed",
+  "view": {
+    "title": "Adversary attempts unauthorized cross-biz read",
+    "subtitle": "Cross-biz read blocked for non-member account.",
+    "blocks": [
+      {
+        "type": "alert",
+        "title": "Adversary Cross Biz Read completed",
+        "message": "Cross-biz read blocked for non-member account.",
+        "tone": "success"
+      },
+      {
+        "type": "key_value",
+        "title": "Screen details",
+        "items": [
+          {
+            "label": "AdversaryUserId",
+            "value": "bqWi9YcoyKND5ny1DDZk1Ba2SWjjCG97"
+          }
+        ]
+      }
+    ]
+  },
+  "rawData": {
+    "stepKey": "adversary-cross-biz-read",
+    "resultPayload": {
+      "note": "Cross-biz read blocked for non-member account.",
+      "evidence": {
+        "adversaryUserId": "bqWi9YcoyKND5ny1DDZk1Ba2SWjjCG97"
+      }
+    },
+    "apiCalls": [
+      {
+        "method": "POST",
+        "path": "/api/v1/sagas/runs/saga_run_3A7ehM957Ia6zVtNGiJAfvTsrCz/traces",
+        "status": 201,
+        "requestBody": {
+          "stepKey": "adversary-cross-biz-read",
+          "title": "Adversary attempts unauthorized cross-biz read API Trace",
+          "trace": {
+            "stepKey": "adversary-cross-biz-read",
+            "callCount": 6,
+            "calls": [
+              {
+                "method": "POST",
+                "path": "/api/v1/bizes/3A7ehFHFBYq7oKL4oaFxWUOm73N/booking-orders",
+                "status": 403,
+                "requestBody": {
+                  "offerId": "offer_3A7ehV0INWh0Qp7O7yWCSwX0t5z",
+                  "offerVersionId": "offer_version_3A7ehZygTWP8CZe1D3EN8LU05L6",
+                  "status": "draft",
+                  "subtotalMinor": 1000,
+                  "taxMinor": 0,
+                  "feeMinor": 0,
+                  "discountMinor": 0,
+                  "totalMinor": 1000,
+                  "currency": "USD"
+                },
+                "responseBody": {
+                  "success": false,
+                  "error": {
+                    "code": "FORBIDDEN",
+                    "message": "You are not a member of this biz."
+                  },
+                  "meta": {
+                    "requestId": "66f488bb-f7c4-48f9-b83d-91be96e5397e",
+                    "timestamp": "2026-02-24T15:49:19.145Z"
+                  }
+                },
+                "at": "2026-02-24T15:49:19.145Z"
+              },
+              {
+                "method": "POST",
+                "path": "/api/v1/sagas/runs/saga_run_3A7ehGSF84fLuG98iFLJRpl1NlY/steps/customer-two-concurrent/result",
+                "status": 200,
+                "requestBody": {
+                  "status": "in_progress",
+                  "startedAt": "2026-02-24T15:49:19.118Z",
+                  "resultPayload": {
+                    "note": "Started customer-two-concurrent"
+                  },
+                  "assertionSummary": {
+                    "status": "in_progress"
+                  }
+                },
+                "responseBody": {
+                  "success": true,
+                  "data": {
+                    "id": "saga_run_step_3A7ehJZH1NNX2QCpLTFrRuPqRRq",
+                    "sagaRunId": "saga_run_3A7ehGSF84fLuG98iFLJRpl1NlY",
+                    "phaseKey": "customer-lifecycle",
+                    "phaseOrder": 5,
+                    "phaseTitle": "Customer Lifecycle",
+                    "stepKey": "customer-two-concurrent",
+                    "stepOrder": 13,
+                    "actorKey": "customer_2",
+                    "instruction": "Customer two attempts booking overlapping demand for the same offer/resource window.",
+                    "expectedResult": "System either books correctly under capacity rules or rejects with deterministic conflict response.",
+                    "status": "in_progress",
+                    "attemptCount": 1,
+                    "startedAt": "2026-02-24T15:49:19.118Z",
+                    "endedAt": null,
+                    "failureCode": null,
+                    "failureMessage": null,
+                    "resultPayload": {
+                      "note": "Started customer-two-concurrent"
+                    },
+                    "assertionSummary": {
+                      "status": "in_progress"
+                    },
+                    "metadata": {},
+                    "createdAt": "2026-02-24T15:49:13.849Z",
+                    "updatedAt": "2026-02-24T15:49:13.849Z",
+                    "deletedAt": null,
+                    "createdBy": null,
+                    "updatedBy": null,
+                    "deletedBy": null
+                  },
+                  "meta": {
+                    "requestId": "5adc6b74-4439-4421-87bf-10ad4bc05eac",
+                    "timestamp": "2026-02-24T15:49:19.146Z"
+                  }
+                },
+                "at": "2026-02-24T15:49:19.146Z"
+              },
+              {
+                "method": "GET",
+                "path": "/api/v1/bizes/3A7ehJXXWL73Uy5lCimYXU3z6CZ/booking-orders?perPage=20",
+                "status": 200,
+                "responseBody": {
+                  "success": true,
+                  "data": [
+                    {
+                      "id": "booking_order_3A7ehqv7MGcjXzKsSYxfQJPLm6k",
+                      "bizId": "3A7ehJXXWL73Uy5lCimYXU3z6CZ",
+                      "offerId": "offer_3A7ehNxpExcOgiBjMSXQtTnBVcY",
+                      "offerVersionId": "offer_version_3A7ehZJfAIIvp3zv5Ww2Y5wTedU",
+                      "customerUserId": "vAoqQZUezh0DaEeTn1b1aQKqISCjYJh9",
+                      "customerGroupAccountId": null,
+                      "status": "confirmed",
+                      "statusConfigValueId": null,
+                      "currency": "USD",
+                      "subtotalMinor": 15000,
+                      "taxMinor": 0,
+                      "feeMinor": 0,
+                      "discountMinor": 0,
+                      "totalMinor": 15000,
+                      "requestedStartAt": "2026-02-25T15:49:17.084Z",
+                      "requestedEndAt": "2026-02-25T16:39:17.084Z",
+                      "confirmedStartAt": "2026-02-25T15:49:17.084Z",
+                      "confirmedEndAt": "2026-02-25T16:39:17.084Z",
+                      "pricingSnapshot": {},
+                      "policySnapshot": {},
+                      "metadata": {},
+                      "createdAt": "2026-02-24T15:49:17.099Z",
+                      "updatedAt": "2026-02-24T15:49:17.099Z",
+                      "deletedAt": null,
+                      "createdBy": null,
+                      "updatedBy": null,
+                      "deletedBy": null
+                    },
+                    {
+                      "id": "booking_order_3A7eheenOOpcesopKVJxapKEkth",
+                      "bizId": "3A7ehJXXWL73Uy5lCimYXU3z6CZ",
+                      "offerId": "offer_3A7ehNxpExcOgiBjMSXQtTnBVcY",
+                      "offerVersionId": "offer_version_3A7ehZJfAIIvp3zv5Ww2Y5wTedU",
+                      "customerUserId": "DV2TNjO5cSccCcHrqwTjatWMWNvRoZeU",
+                      "customerGroupAccountId": null,
+                      "status": "confirmed",
+                      "statusConfigValueId": null,
+                      "currency": "USD",
+                      "subtotalMinor": 15000,
+                      "taxMinor": 0,
+                      "feeMinor": 0,
+                      "discountMinor": 0,
+                      "totalMinor": 15000,
+                      "requestedStartAt": "2026-02-25T15:49:16.305Z",
+                      "requestedEndAt": "2026-02-25T16:39:16.305Z",
+                      "confirmedStartAt": "2026-02-25T15:49:16.305Z",
+                      "confirmedEndAt": "2026-02-25T16:39:16.305Z",
+                      "pricingSnapshot": {},
+                      "policySnapshot": {},
+                      "metadata": {},
+                      "createdAt": "2026-02-24T15:49:16.312Z",
+                      "updatedAt": "2026-02-24T15:49:16.312Z",
+                      "deletedAt": null,
+                      "createdBy": null,
+                      "updatedBy": null,
+                      "deletedBy": null
+                    }
+                  ],
+                  "meta": {
+                    "requestId": "8ae91707-604a-459e-9668-6501c15768ba",
+                    "timestamp": "2026-02-24T15:49:19.146Z"
+                  },
+                  "pagination": {
+                    "page": 1,
+                    "perPage": 20,
+                    "total": 2,
+                    "hasMore": false
+                  }
+                },
+                "at": "2026-02-24T15:49:19.147Z"
+              },
+              {
+                "method": "POST",
+                "path": "/api/v1/bizes/3A7ehFHFBYq7oKL4oaFxWUOm73N/booking-orders",
+                "status": 403,
+                "requestBody": {
+                  "offerId": "offer_3A7ehV0INWh0Qp7O7yWCSwX0t5z",
+                  "offerVersionId": "offer_version_3A7ehZygTWP8CZe1D3EN8LU05L6",
+                  "status": "draft",
+                  "subtotalMinor": 1000,
+                  "taxMinor": 0,
+                  "feeMinor": 0,
+                  "discountMinor": 0,
+                  "totalMinor": 1000,
+                  "currency": "USD"
+                },
+                "responseBody": {
+                  "success": false,
+                  "error": {
+                    "code": "FORBIDDEN",
+                    "message": "You are not a member of this biz."
+                  },
+                  "meta": {
+                    "requestId": "d74e85dd-ae30-4b65-aabd-98935c470d2e",
+                    "timestamp": "2026-02-24T15:49:19.244Z"
+                  }
+                },
+                "at": "2026-02-24T15:49:19.245Z"
+              },
+              {
+                "method": "POST",
+                "path": "/api/v1/sagas/runs/saga_run_3A7ehIervs1KqxEZJ91fQlXjdkh/steps/adversary-cross-biz-read/result",
+                "status": 200,
+                "requestBody": {
+                  "status": "in_progress",
+                  "startedAt": "2026-02-24T15:49:19.131Z",
+                  "resultPayload": {
+                    "note": "Started adversary-cross-biz-read"
+                  },
+                  "assertionSummary": {
+                    "status": "in_progress"
+                  }
+                },
+                "responseBody": {
+                  "success": true,
+                  "data": {
+                    "id": "saga_run_step_3A7ehGHbyBB2VwKbbSE2SqLfFY9",
+                    "sagaRunId": "saga_run_3A7ehIervs1KqxEZJ91fQlXjdkh",
+                    "phaseKey": "security-and-abuse",
+                    "phaseOrder": 6,
+                    "phaseTitle": "Security And Abuse Checks",
+                    "stepKey": "adversary-cross-biz-read",
+                    "stepOrder": 14,
+                    "actorKey": "adversary",
+                    "instruction": "Using credentials from another context, attempt to read or mutate booking/order resources for this biz.",
+                    "expectedResult": "Request is rejected with forbidden/unauthorized error and no data leakage.",
+                    "status": "in_progress",
+                    "attemptCount": 1,
+                    "startedAt": "2026-02-24T15:49:19.131Z",
+                    "endedAt": null,
+                    "failureCode": null,
+                    "failureMessage": null,
+                    "resultPayload": {
+                      "note": "Started adversary-cross-biz-read"
+                    },
+                    "assertionSummary": {
+                      "status": "in_progress"
+                    },
+                    "metadata": {},
+                    "createdAt": "2026-02-24T15:49:13.631Z",
+                    "updatedAt": "2026-02-24T15:49:13.631Z",
+                    "deletedAt": null,
+                    "createdBy": null,
+                    "updatedBy": null,
+                    "deletedBy": null
+                  },
+                  "meta": {
+                    "requestId": "e253a527-40a5-4dc2-ba6b-c652cd304807",
+                    "timestamp": "2026-02-24T15:49:19.249Z"
+                  }
+                },
+                "at": "2026-02-24T15:49:19.251Z"
+              },
+              {
+                "method": "POST",
+                "path": "/api/v1/bizes/3A7ehFHFBYq7oKL4oaFxWUOm73N/booking-orders",
+                "status": 403,
+                "requestBody": {
+                  "offerId": "offer_3A7ehV0INWh0Qp7O7yWCSwX0t5z",
+                  "offerVersionId": "offer_version_3A7ehZygTWP8CZe1D3EN8LU05L6",
+                  "status": "draft",
+                  "subtotalMinor": 1000,
+                  "taxMinor": 0,
+                  "feeMinor": 0,
+                  "discountMinor": 0,
+                  "totalMinor": 1000,
+                  "currency": "USD"
+                },
+                "responseBody": {
+                  "success": false,
+                  "error": {
+                    "code": "FORBIDDEN",
+                    "message": "You are not a member of this biz."
+                  },
+                  "meta": {
+                    "requestId": "66ff2a2e-121a-459a-aa31-76c6ca559124",
+                    "timestamp": "2026-02-24T15:49:19.253Z"
+                  }
+                },
+                "at": "2026-02-24T15:49:19.253Z"
+              }
+            ]
+          },
+          "metadata": {
+            "source": "rerun-sagas.ts"
+          }
+        },
+        "responseBody": {
+          "success": true,
+          "data": {
+            "id": "saga_artifact_3A7ei5x7Uuy2Zm4R0i9GFDJXw6C",
+            "sagaRunId": "saga_run_3A7ehM957Ia6zVtNGiJAfvTsrCz",
+            "sagaRunStepId": "saga_run_step_3A7ehKsTojzKVCOSEFJAUPKn00P",
+            "artifactType": "api_trace",
+            "title": "Adversary attempts unauthorized cross-biz read API Trace",
+            "storagePath": "testing/sagas/runs/saga_run_3A7ehM957Ia6zVtNGiJAfvTsrCz/artifacts/1771948159286-Adversary_attempts_unauthorized_cross-biz_read_API_Trace.json",
+            "contentType": "application/json",
+            "bodyText": "{\n  \"stepKey\": \"adversary-cross-biz-read\",\n  \"callCount\": 6,\n  \"calls\": [\n    {\n      \"method\": \"POST\",\n      \"path\": \"/api/v1/bizes/3A7ehFHFBYq7oKL4oaFxWUOm73N/booking-orders\",\n      \"status\": 403,\n      \"requestBody\": {\n        \"offerId\": \"offer_3A7ehV0INWh0Qp7O7yWCSwX0t5z\",\n        \"offerVersionId\": \"offer_version_3A7ehZygTWP8CZe1D3EN8LU05L6\",\n        \"status\": \"draft\",\n        \"subtotalMinor\": 1000,\n        \"taxMinor\": 0,\n        \"feeMinor\": 0,\n        \"discountMinor\": 0,\n        \"totalMinor\": 1000,\n        \"currency\": \"USD\"\n      },\n      \"responseBody\": {\n        \"success\": false,\n        \"error\": {\n          \"code\": \"FORBIDDEN\",\n          \"message\": \"You are not a member of this biz.\"\n        },\n        \"meta\": {\n          \"requestId\": \"66f488bb-f7c4-48f9-b83d-91be96e5397e\",\n          \"timestamp\": \"2026-02-24T15:49:19.145Z\"\n        }\n      },\n      \"at\": \"2026-02-24T15:49:19.145Z\"\n    },\n    {\n      \"method\": \"POST\",\n      \"path\": \"/api/v1/sagas/runs/saga_run_3A7ehGSF84fLuG98iFLJRpl1NlY/steps/customer-two-concurrent/result\",\n      \"status\": 200,\n      \"requestBody\": {\n        \"status\": \"in_progress\",\n        \"startedAt\": \"2026-02-24T15:49:19.118Z\",\n        \"resultPayload\": {\n          \"note\": \"Started customer-two-concurrent\"\n        },\n        \"assertionSummary\": {\n          \"status\": \"in_progress\"\n        }\n      },\n      \"responseBody\": {\n        \"success\": true,\n        \"data\": {\n          \"id\": \"saga_run_step_3A7ehJZH1NNX2QCpLTFrRuPqRRq\",\n          \"sagaRunId\": \"saga_run_3A7ehGSF84fLuG98iFLJRpl1NlY\",\n          \"phaseKey\": \"customer-lifecycle\",\n          \"phaseOrder\": 5,\n          \"phaseTitle\": \"Customer Lifecycle\",\n          \"stepKey\": \"customer-two-concurrent\",\n          \"stepOrder\": 13,\n          \"actorKey\": \"customer_2\",\n          \"instruction\": \"Customer two attempts booking overlapping demand for the same offer/resource window.\",\n          \"expectedResult\": \"System either books correctly under capacity rules or rejects with deterministic conflict response.\",\n          \"status\": \"in_progress\",\n          \"attemptCount\": 1,\n          \"startedAt\": \"2026-02-24T15:49:19.118Z\",\n          \"endedAt\": null,\n          \"failureCode\": null,\n          \"failureMessage\": null,\n          \"resultPayload\": {\n            \"note\": \"Started customer-two-concurrent\"\n          },\n          \"assertionSummary\": {\n            \"status\": \"in_progress\"\n          },\n          \"metadata\": {},\n          \"createdAt\": \"2026-02-24T15:49:13.849Z\",\n          \"updatedAt\": \"2026-02-24T15:49:13.849Z\",\n          \"deletedAt\": null,\n          \"createdBy\": null,\n          \"updatedBy\": null,\n          \"deletedBy\": null\n        },\n        \"meta\": {\n          \"requestId\": \"5adc6b74-4439-4421-87bf-10ad4bc05eac\",\n          \"timestamp\": \"2026-02-24T15:49:19.146Z\"\n        }\n      },\n      \"at\": \"2026-02-24T15:49:19.146Z\"\n    },\n    {\n      \"method\": \"GET\",\n      \"path\": \"/api/v1/bizes/3A7ehJXXWL73Uy5lCimYXU3z6CZ/booking-orders?perPage=20\",\n      \"status\": 200,\n      \"responseBody\": {\n        \"success\": true,\n        \"data\": [\n          {\n            \"id\": \"booking_order_3A7ehqv7MGcjXzKsSYxfQJPLm6k\",\n            \"bizId\": \"3A7ehJXXWL73Uy5lCimYXU3z6CZ\",\n            \"offerId\": \"offer_3A7ehNxpExcOgiBjMSXQtTnBVcY\",\n            \"offerVersionId\": \"offer_version_3A7ehZJfAIIvp3zv5Ww2Y5wTedU\",\n            \"customerUserId\": \"vAoqQZUezh0DaEeTn1b1aQKqISCjYJh9\",\n            \"customerGroupAccountId\": null,\n            \"status\": \"confirmed\",\n            \"statusConfigValueId\": null,\n            \"currency\": \"USD\",\n            \"subtotalMinor\": 15000,\n            \"taxMinor\": 0,\n            \"feeMinor\": 0,\n            \"discountMinor\": 0,\n            \"totalMinor\": 15000,\n            \"requestedStartAt\": \"2026-02-25T15:49:17.084Z\",\n            \"requestedEndAt\": \"2026-02-25T16:39:17.084Z\",\n            \"confirmedStartAt\": \"2026-02-25T15:49:17.084Z\",\n            \"confirmedEndAt\": \"2026-02-25T16:39:17.084Z\",\n            \"pricingSnapshot\": {},\n            \"policySnapshot\": {},\n            \"metadata\": {},\n            \"createdAt\": \"2026-02-24T15:49:17.099Z\",\n            \"updatedAt\": \"2026-02-24T15:49:17.099Z\",\n            \"deletedAt\": null,\n            \"createdBy\": null,\n            \"updatedBy\": null,\n            \"deletedBy\": null\n          },\n          {\n            \"id\": \"booking_order_3A7eheenOOpcesopKVJxapKEkth\",\n            \"bizId\": \"3A7ehJXXWL73Uy5lCimYXU3z6CZ\",\n            \"offerId\": \"offer_3A7ehNxpExcOgiBjMSXQtTnBVcY\",\n            \"offerVersionId\": \"offer_version_3A7ehZJfAIIvp3zv5Ww2Y5wTedU\",\n            \"customerUserId\": \"DV2TNjO5cSccCcHrqwTjatWMWNvRoZeU\",\n            \"customerGroupAccountId\": null,\n            \"status\": \"confirmed\",\n            \"statusConfigValueId\": null,\n            \"currency\": \"USD\",\n            \"subtotalMinor\": 15000,\n            \"taxMinor\": 0,\n            \"feeMinor\": 0,\n            \"discountMinor\": 0,\n            \"totalMinor\": 15000,\n            \"requestedStartAt\": \"2026-02-25T15:49:16.305Z\",\n            \"requestedEndAt\": \"2026-02-25T16:39:16.305Z\",\n            \"confirmedStartAt\": \"2026-02-25T15:49:16.305Z\",\n            \"confirmedEndAt\": \"2026-02-25T16:39:16.305Z\",\n            \"pricingSnapshot\": {},\n            \"policySnapshot\": {},\n            \"metadata\": {},\n            \"createdAt\": \"2026-02-24T15:49:16.312Z\",\n            \"updatedAt\": \"2026-02-24T15:49:16.312Z\",\n            \"deletedAt\": null,\n            \"createdBy\": null,\n            \"updatedBy\": null,\n            \"deletedBy\": null\n          }\n        ],\n        \"meta\": {\n          \"requestId\": \"8ae91707-604a-459e-9668-6501c15768ba\",\n          \"timestamp\": \"2026-02-24T15:49:19.146Z\"\n        },\n        \"pagination\": {\n          \"page\": 1,\n          \"perPage\": 20,\n          \"total\": 2,\n          \"hasMore\": false\n        }\n      },\n      \"at\": \"2026-02-24T15:49:19.147Z\"\n    },\n    {\n      \"method\": \"POST\",\n      \"path\": \"/api/v1/bizes/3A7ehFHFBYq7oKL4oaFxWUOm73N/booking-orders\",\n      \"status\": 403,\n      \"requestBody\": {\n        \"offerId\": \"offer_3A7ehV0INWh0Qp7O7yWCSwX0t5z\",\n        \"offerVersionId\": \"offer_version_3A7ehZygTWP8CZe1D3EN8LU05L6\",\n        \"status\": \"draft\",\n        \"subtotalMinor\": 1000,\n        \"taxMinor\": 0,\n        \"feeMinor\": 0,\n        \"discountMinor\": 0,\n        \"totalMinor\": 1000,\n        \"currency\": \"USD\"\n      },\n      \"responseBody\": {\n        \"success\": false,\n        \"error\": {\n          \"code\": \"FORBIDDEN\",\n          \"message\": \"You are not a member of this biz.\"\n        },\n        \"meta\": {\n          \"requestId\": \"d74e85dd-ae30-4b65-aabd-98935c470d2e\",\n          \"timestamp\": \"2026-02-24T15:49:19.244Z\"\n        }\n      },\n      \"at\": \"2026-02-24T15:49:19.245Z\"\n    },\n    {\n      \"method\": \"POST\",\n      \"path\": \"/api/v1/sagas/runs/saga_run_3A7ehIervs1KqxEZJ91fQlXjdkh/steps/adversary-cross-biz-read/result\",\n      \"status\": 200,\n      \"requestBody\": {\n        \"status\": \"in_progress\",\n        \"startedAt\": \"2026-02-24T15:49:19.131Z\",\n        \"resultPayload\": {\n          \"note\": \"Started adversary-cross-biz-read\"\n        },\n        \"assertionSummary\": {\n          \"status\": \"in_progress\"\n        }\n      },\n      \"responseBody\": {\n        \"success\": true,\n        \"data\": {\n          \"id\": \"saga_run_step_3A7ehGHbyBB2VwKbbSE2SqLfFY9\",\n          \"sagaRunId\": \"saga_run_3A7ehIervs1KqxEZJ91fQlXjdkh\",\n          \"phaseKey\": \"security-and-abuse\",\n          \"phaseOrder\": 6,\n          \"phaseTitle\": \"Security And Abuse Checks\",\n          \"stepKey\": \"adversary-cross-biz-read\",\n          \"stepOrder\": 14,\n          \"actorKey\": \"adversary\",\n          \"instruction\": \"Using credentials from another context, attempt to read or mutate booking/order resources for this biz.\",\n          \"expectedResult\": \"Request is rejected with forbidden/unauthorized error and no data leakage.\",\n          \"status\": \"in_progress\",\n          \"attemptCount\": 1,\n          \"startedAt\": \"2026-02-24T15:49:19.131Z\",\n          \"endedAt\": null,\n          \"failureCode\": null,\n          \"failureMessage\": null,\n          \"resultPayload\": {\n            \"note\": \"Started adversary-cross-biz-read\"\n          },\n          \"assertionSummary\": {\n            \"status\": \"in_progress\"\n          },\n          \"metadata\": {},\n          \"createdAt\": \"2026-02-24T15:49:13.631Z\",\n          \"updatedAt\": \"2026-02-24T15:49:13.631Z\",\n          \"deletedAt\": null,\n          \"createdBy\": null,\n          \"updatedBy\": null,\n          \"deletedBy\": null\n        },\n        \"meta\": {\n          \"requestId\": \"e253a527-40a5-4dc2-ba6b-c652cd304807\",\n          \"timestamp\": \"2026-02-24T15:49:19.249Z\"\n        }\n      },\n      \"at\": \"2026-02-24T15:49:19.251Z\"\n    },\n    {\n      \"method\": \"POST\",\n      \"path\": \"/api/v1/bizes/3A7ehFHFBYq7oKL4oaFxWUOm73N/booking-orders\",\n      \"status\": 403,\n      \"requestBody\": {\n        \"offerId\": \"offer_3A7ehV0INWh0Qp7O7yWCSwX0t5z\",\n        \"offerVersionId\": \"offer_version_3A7ehZygTWP8CZe1D3EN8LU05L6\",\n        \"status\": \"draft\",\n        \"subtotalMinor\": 1000,\n        \"taxMinor\": 0,\n        \"feeMinor\": 0,\n        \"discountMinor\": 0,\n        \"totalMinor\": 1000,\n        \"currency\": \"USD\"\n      },\n      \"responseBody\": {\n        \"success\": false,\n        \"error\": {\n          \"code\": \"FORBIDDEN\",\n          \"message\": \"You are not a member of this biz.\"\n        },\n        \"meta\": {\n          \"requestId\": \"66ff2a2e-121a-459a-aa31-76c6ca559124\",\n          \"timestamp\": \"2026-02-24T15:49:19.253Z\"\n        }\n      },\n      \"at\": \"2026-02-24T15:49:19.253Z\"\n    }\n  ]\n}\n",
+            "byteSize": 9413,
+            "checksum": "53bc5c28cface51cd13a330450bb509bd25703ede92efafc0396a60e4353ca1c",
+            "capturedAt": "2026-02-24T15:49:19.296Z",
+            "metadata": {
+              "source": "rerun-sagas.ts"
+            },
+            "createdAt": "2026-02-24T15:49:19.296Z",
+            "updatedAt": "2026-02-24T15:49:19.296Z",
+            "deletedAt": null,
+            "createdBy": null,
+            "updatedBy": null,
+            "deletedBy": null
+          },
+          "meta": {
+            "requestId": "7b042803-9387-439e-a6da-2d239616d8af",
+            "timestamp": "2026-02-24T15:49:19.315Z"
+          }
+        },
+        "at": "2026-02-24T15:49:19.318Z"
+      },
+      {
+        "method": "POST",
+        "path": "/api/v1/sagas/runs/saga_run_3A7ehJegTp0NLo2Tv8tTlFTr8Gt/steps/member-review-bookings/result",
+        "status": 200,
+        "requestBody": {
+          "status": "in_progress",
+          "startedAt": "2026-02-24T15:49:19.289Z",
+          "resultPayload": {
+            "note": "Started member-review-bookings"
+          },
+          "assertionSummary": {
+            "status": "in_progress"
+          }
+        },
+        "responseBody": {
+          "success": true,
+          "data": {
+            "id": "saga_run_step_3A7ehMDJtNgKS0FQe9hAugSK4XB",
+            "sagaRunId": "saga_run_3A7ehJegTp0NLo2Tv8tTlFTr8Gt",
+            "phaseKey": "operations-and-follow-up",
+            "phaseOrder": 7,
+            "phaseTitle": "Operations And Follow-up",
+            "stepKey": "member-review-bookings",
+            "stepOrder": 16,
+            "actorKey": "biz_member",
+            "instruction": "As biz member, list bookings and progress one booking through operational status updates.",
+            "expectedResult": "Authorized role can update status while preserving auditability and lifecycle consistency.",
+            "status": "in_progress",
+            "attemptCount": 1,
+            "startedAt": "2026-02-24T15:49:19.289Z",
+            "endedAt": null,
+            "failureCode": null,
+            "failureMessage": null,
+            "resultPayload": {
+              "note": "Started member-review-bookings"
+            },
+            "assertionSummary": {
+              "status": "in_progress"
+            },
+            "metadata": {},
+            "createdAt": "2026-02-24T15:49:13.161Z",
+            "updatedAt": "2026-02-24T15:49:13.161Z",
+            "deletedAt": null,
+            "createdBy": null,
+            "updatedBy": null,
+            "deletedBy": null
+          },
+          "meta": {
+            "requestId": "03d6cfbc-1909-4a8c-a6fd-851e24f9e17a",
+            "timestamp": "2026-02-24T15:49:19.316Z"
+          }
+        },
+        "at": "2026-02-24T15:49:19.319Z"
+      },
+      {
+        "method": "POST",
+        "path": "/api/v1/bizes/3A7ehP6w7ql8Hc9ExP5N29MWGYx/booking-orders",
+        "status": 403,
+        "requestBody": {
+          "offerId": "offer_3A7ehVymdFtOsJZDGXe2xzAZ41B",
+          "offerVersionId": "offer_version_3A7ehiMT67UGwyvmNRxW2KuNPj8",
+          "status": "draft",
+          "subtotalMinor": 1000,
+          "taxMinor": 0,
+          "feeMinor": 0,
+          "discountMinor": 0,
+          "totalMinor": 1000,
+          "currency": "USD"
+        },
+        "responseBody": {
+          "success": false,
+          "error": {
+            "code": "FORBIDDEN",
+            "message": "You are not a member of this biz."
+          },
+          "meta": {
+            "requestId": "8ec10288-10bf-435a-9fab-d42e6d71188a",
+            "timestamp": "2026-02-24T15:49:19.317Z"
+          }
+        },
+        "at": "2026-02-24T15:49:19.320Z"
+      },
+      {
+        "method": "POST",
+        "path": "/api/v1/bizes/3A7ehS8UDUPvZIVKLSrJvGPSgkw/booking-orders",
+        "status": 403,
+        "requestBody": {
+          "offerId": "offer_3A7eha4evOytd2Caa84FPyG1f7e",
+          "offerVersionId": "offer_version_3A7ehjEqa7DdzROobib49sx5mVu",
+          "status": "draft",
+          "subtotalMinor": 1000,
+          "taxMinor": 0,
+          "feeMinor": 0,
+          "discountMinor": 0,
+          "totalMinor": 1000,
+          "currency": "USD"
+        },
+        "responseBody": {
+          "success": false,
+          "error": {
+            "code": "FORBIDDEN",
+            "message": "You are not a member of this biz."
+          },
+          "meta": {
+            "requestId": "ad03215d-9f69-4bd8-82c6-4f65d05abd44",
+            "timestamp": "2026-02-24T15:49:19.319Z"
+          }
+        },
+        "at": "2026-02-24T15:49:19.322Z"
+      },
+      {
+        "method": "POST",
+        "path": "/api/v1/bizes/3A7ehS8UDUPvZIVKLSrJvGPSgkw/booking-orders",
+        "status": 403,
+        "requestBody": {
+          "offerId": "offer_3A7eha4evOytd2Caa84FPyG1f7e",
+          "offerVersionId": "offer_version_3A7ehjEqa7DdzROobib49sx5mVu",
+          "status": "draft",
+          "subtotalMinor": 1000,
+          "taxMinor": 0,
+          "feeMinor": 0,
+          "discountMinor": 0,
+          "totalMinor": 1000,
+          "currency": "USD"
+        },
+        "responseBody": {
+          "success": false,
+          "error": {
+            "code": "FORBIDDEN",
+            "message": "You are not a member of this biz."
+          },
+          "meta": {
+            "requestId": "515ba913-6901-4853-a492-fd4ed575bb85",
+            "timestamp": "2026-02-24T15:49:19.424Z"
+          }
+        },
+        "at": "2026-02-24T15:49:19.433Z"
+      }
+    ]
+  },
+  "metadata": {}
+}

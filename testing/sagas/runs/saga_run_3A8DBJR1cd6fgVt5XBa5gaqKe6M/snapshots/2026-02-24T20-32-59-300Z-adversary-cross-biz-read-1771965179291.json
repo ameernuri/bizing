@@ -1,0 +1,198 @@
+{
+  "schemaVersion": "snapshot.v1",
+  "screenKey": "adversary-cross-biz-read-1771965179291",
+  "title": "Adversary attempts unauthorized cross-biz read Snapshot",
+  "generatedAt": "2026-02-24T20:32:59.298Z",
+  "stepKey": "adversary-cross-biz-read",
+  "status": "passed",
+  "view": {
+    "title": "Adversary attempts unauthorized cross-biz read",
+    "subtitle": "Cross-biz read blocked for non-member account.",
+    "blocks": [
+      {
+        "type": "alert",
+        "title": "Adversary Cross Biz Read completed",
+        "message": "Cross-biz read blocked for non-member account.",
+        "tone": "success"
+      },
+      {
+        "type": "key_value",
+        "title": "Screen details",
+        "items": [
+          {
+            "label": "AdversaryUserId",
+            "value": "3PcVG20slDyGz91bEvqMWpgRW02RYT2V"
+          }
+        ]
+      }
+    ]
+  },
+  "rawData": {
+    "stepKey": "adversary-cross-biz-read",
+    "resultPayload": {
+      "note": "Cross-biz read blocked for non-member account.",
+      "evidence": {
+        "adversaryUserId": "3PcVG20slDyGz91bEvqMWpgRW02RYT2V"
+      }
+    },
+    "apiCalls": [
+      {
+        "method": "POST",
+        "path": "/api/v1/sagas/runs/saga_run_3A8DAjrTfq6UGdXV9GFgDNHyPz0/steps/owner-revenue-sanity/result",
+        "status": 200,
+        "requestBody": {
+          "status": "passed",
+          "startedAt": "2026-02-24T20:32:58.847Z",
+          "endedAt": "2026-02-24T20:32:58.847Z",
+          "failureMessage": null,
+          "resultPayload": {
+            "note": "Revenue sanity computed from booking orders.",
+            "evidence": {
+              "bookingCount": 2,
+              "totalMinor": 30000,
+              "currency": "USD"
+            }
+          },
+          "assertionSummary": {
+            "status": "passed",
+            "hasFailure": false,
+            "assertionsPassed": 1
+          }
+        },
+        "responseBody": {
+          "success": true,
+          "data": {
+            "id": "saga_run_step_3A8DAl9Qmf62Xpl61O2u6OfmW37",
+            "sagaRunId": "saga_run_3A8DAjrTfq6UGdXV9GFgDNHyPz0",
+            "phaseKey": "reporting-and-closeout",
+            "phaseOrder": 8,
+            "phaseTitle": "Reporting And Closeout",
+            "stepKey": "owner-revenue-sanity",
+            "stepOrder": 18,
+            "actorKey": "biz_owner",
+            "instruction": "Read reporting endpoints and verify booking totals, counts, and statuses align with saga actions.",
+            "expectedResult": "Reported metrics match booking actions and highlight any discrepancies for schema/API iteration.",
+            "status": "passed",
+            "attemptCount": 1,
+            "startedAt": "2026-02-24T20:32:58.847Z",
+            "endedAt": "2026-02-24T20:32:58.847Z",
+            "failureCode": null,
+            "failureMessage": null,
+            "resultPayload": {
+              "note": "Revenue sanity computed from booking orders.",
+              "evidence": {
+                "currency": "USD",
+                "totalMinor": 30000,
+                "bookingCount": 2
+              }
+            },
+            "assertionSummary": {
+              "status": "passed",
+              "hasFailure": false,
+              "assertionsPassed": 1
+            },
+            "metadata": {},
+            "createdAt": "2026-02-24T20:32:42.429Z",
+            "updatedAt": "2026-02-24T20:32:42.429Z",
+            "deletedAt": null,
+            "createdBy": null,
+            "updatedBy": null,
+            "deletedBy": null
+          },
+          "meta": {
+            "requestId": "4dce953c-e045-4d20-8cc4-29934c463650",
+            "timestamp": "2026-02-24T20:32:59.023Z"
+          }
+        },
+        "at": "2026-02-24T20:32:59.025Z"
+      },
+      {
+        "method": "POST",
+        "path": "/api/v1/bizes/3A8DBxQ8BsncEMjwEsr12BPL3MS/booking-orders",
+        "status": 403,
+        "requestBody": {
+          "offerId": "offer_3A8DCOh43MQiImYFiEvA3uPIEJN",
+          "offerVersionId": "offer_version_3A8DCZxOXZNl8wXzvOuTNVAt712",
+          "status": "draft",
+          "subtotalMinor": 1000,
+          "taxMinor": 0,
+          "feeMinor": 0,
+          "discountMinor": 0,
+          "totalMinor": 1000,
+          "currency": "USD"
+        },
+        "responseBody": {
+          "success": false,
+          "error": {
+            "code": "FORBIDDEN",
+            "message": "You are not a member of this biz."
+          },
+          "meta": {
+            "requestId": "5d1b7dc8-c970-4f8d-b24a-b3c06f3ca4f1",
+            "timestamp": "2026-02-24T20:32:59.024Z"
+          }
+        },
+        "at": "2026-02-24T20:32:59.028Z"
+      },
+      {
+        "method": "POST",
+        "path": "/api/v1/public/bizes/3A8DCSRSnGKS43tSFaAy5fZrp8W/booking-orders",
+        "status": 201,
+        "requestBody": {
+          "offerId": "offer_3A8DCh6JZguUaHoGcYLuI8S15dz",
+          "offerVersionId": "offer_version_3A8DCjTBZuBVTHlhH3O67PBdFJe",
+          "customerUserId": "Fibr89OvJrAi6R6wqZqJZgEftYJGz6eM",
+          "status": "confirmed",
+          "subtotalMinor": 15000,
+          "taxMinor": 0,
+          "feeMinor": 0,
+          "discountMinor": 0,
+          "totalMinor": 15000,
+          "currency": "USD",
+          "requestedStartAt": "2026-02-25T20:32:58.917Z",
+          "requestedEndAt": "2026-02-25T21:22:58.917Z",
+          "confirmedStartAt": "2026-02-25T20:32:58.917Z",
+          "confirmedEndAt": "2026-02-25T21:22:58.917Z"
+        },
+        "responseBody": {
+          "success": true,
+          "data": {
+            "id": "booking_order_3A8DCw1DaWFDmoe10YtMAbysOWI",
+            "bizId": "3A8DCSRSnGKS43tSFaAy5fZrp8W",
+            "offerId": "offer_3A8DCh6JZguUaHoGcYLuI8S15dz",
+            "offerVersionId": "offer_version_3A8DCjTBZuBVTHlhH3O67PBdFJe",
+            "customerUserId": "Fibr89OvJrAi6R6wqZqJZgEftYJGz6eM",
+            "customerGroupAccountId": null,
+            "status": "confirmed",
+            "statusConfigValueId": null,
+            "currency": "USD",
+            "subtotalMinor": 15000,
+            "taxMinor": 0,
+            "feeMinor": 0,
+            "discountMinor": 0,
+            "totalMinor": 15000,
+            "requestedStartAt": "2026-02-25T20:32:58.917Z",
+            "requestedEndAt": "2026-02-25T21:22:58.917Z",
+            "confirmedStartAt": "2026-02-25T20:32:58.917Z",
+            "confirmedEndAt": "2026-02-25T21:22:58.917Z",
+            "pricingSnapshot": {},
+            "policySnapshot": {},
+            "metadata": {},
+            "createdAt": "2026-02-24T20:32:59.022Z",
+            "updatedAt": "2026-02-24T20:32:59.022Z",
+            "deletedAt": null,
+            "createdBy": null,
+            "updatedBy": null,
+            "deletedBy": null
+          },
+          "meta": {
+            "requestId": "1d72fc5e-41b9-4a36-8900-5afd36546cc5",
+            "timestamp": "2026-02-24T20:32:59.027Z"
+          }
+        },
+        "at": "2026-02-24T20:32:59.028Z"
+      }
+    ]
+  },
+  "metadata": {}
+}

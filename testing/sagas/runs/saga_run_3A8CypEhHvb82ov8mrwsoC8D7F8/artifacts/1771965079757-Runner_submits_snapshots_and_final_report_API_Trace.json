@@ -1,0 +1,427 @@
+{
+  "stepKey": "runner-submit-artifacts",
+  "callCount": 2,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs",
+      "status": 201,
+      "requestBody": {
+        "sagaKey": "uc-254-the-solo-entrepreneur-sarah",
+        "mode": "dry_run",
+        "runnerLabel": "codex-rerun-all",
+        "runContext": {
+          "createdBy": "apps/api/src/scripts/rerun-sagas.ts"
+        }
+      },
+      "responseBody": {
+        "_truncated": true,
+        "_preview": "{\"success\":true,\"data\":{\"run\":{\"id\":\"saga_run_3A8D0Owc18Lwwg1OOF3JjUFTId2\",\"sagaDefinitionId\":\"saga_definition_3A7asaQeTRLPzimCoAN0BxwQMNL\",\"sagaKey\":\"uc-254-the-solo-entrepreneur-sarah\",\"bizId\":null,\"status\":\"pending\",\"mode\":\"dry_run\",\"requestedByUserId\":\"vJUXCpuOSnzw3Ip5DMcOKoeo7d2V6Hwc\",\"runnerLabel\":\"codex-rerun-all\",\"definitionChecksum\":\"c69d8e8d89e66f0ec61c49b3a47ed87fe005f5a9aec7d798729534d2b7a6b690\",\"startedAt\":null,\"endedAt\":null,\"lastHeartbeatAt\":null,\"totalSteps\":19,\"passedSteps\":0,\"failedSteps\":0,\"skippedSteps\":0,\"runContext\":{\"createdBy\":\"apps/api/src/scripts/rerun-sagas.ts\"},\"runSummary\":{},\"metadata\":{\"tags\":[\"uc-derived\",\"persona-derived\",\"lifecycle\",\"api-first\",\"agents\"],\"title\":\"UC-254 • The Proposal + E-Sign + Order Conversion Flow • The Solo Entrepreneur (Sarah)\"},\"createdAt\":\"2026-02-24T20:31:19.665Z\",\"updatedAt\":\"2026-02-24T20:31:19.665Z\",\"deletedAt\":null,\"createdBy\":null,\"updatedBy\":null,\"deletedBy\":null},\"definition\":{\"id\":\"saga_definition_3A7asaQeTRLPzimCoAN0BxwQMNL\",\"bizId\":null,\"sagaKey\":\"uc-254-the-solo-entrepreneur-sarah\",\"title\":\"UC-254 • The Proposal + E-Sign + Order Conversion Flow • The Solo Entrepreneur (Sarah)\",\"description\":\"Comprehensive lifecycle saga derived from UC-254 and persona P-1. Needs summary: Proposal/quote versioning with status and expiry; Signature capture and signer role verification; Acceptance event with actor and timestamp; Deterministic conversion mapping to order/fulfillment entities; Revision and rejection handling\",\"status\":\"active\",\"sourceUseCaseRef\":\"UC-254\",\"sourcePersonaRef\":\"P-1\",\"sourceUseCaseFile\":\"/Users/ameer/bizing/mind/workspace/documentation/use-cases-comprehensive.md\",\"sourcePersonaFile\":\"/Users/ameer/bizing/mind/workspace/documentation/tester-personas.md\",\"specVersion\":\"saga.v0\",\"specFilePath\":\"testing/sagas/specs/uc-254-the-solo-entrepreneur-sarah.json\",\"specChecksum\":\"c69d8e8d89e66f0ec61c49b3a47ed87fe005f5a9aec7d798729534d2b7a6b690\",\"metadata\":{\"tags\":[\"uc-derived\",\"persona-derived\",\"lifecycle\",\"api-first\",\"agents\"],\"generatedAt\":\"2026-02-24T20:23:29.602Z\"},\"createdAt\":\"2026-02-24T15:17:49.230Z\",\"updatedAt\":\"2026-02-24T15:17:49.230Z\",\"deletedAt\":null,\"createdBy\":null,\"updatedBy\":null,\"deletedBy\":null},\"spec\":{\"schemaVersion\":\"saga.v0\",\"sagaKey\":\"uc-254-the-solo-entrepreneur-sarah\",\"title\":\"UC-254 • The Proposal + E-Sign + Order Conversion Flow • The Solo Entrepreneur (Sarah)\",\"description\":\"Comprehensive lifecycle saga derived from UC-254 and persona P-1. Needs summary: Proposal/quote versioning with status and expiry; Signature capture and signer role verification; Acceptance event with actor and timestamp; Deterministic conversion mapping to order/fulfillment entities; Revision and rejection handling\",\"tags\":[\"uc-derived\",\"persona-derived\",\"lifecycle\",\"api-first\",\"agents\"],\"defaults\":{\"runMode\":\"dry_run\",\"continueOnFailure\":false},\"source\":{\"useCaseRef\":\"UC-254\",\"personaRef\":\"P-1\",\"useCaseFile\":\"/Users/ameer/bizing/mind/workspace/documentation/use-cases-comprehensive.md\",\"personaFile\":\"/Users/ameer/bizing/mind/workspace/documentation/tester-personas.md\",\"generatedAt\":\"2026-02-24T20:23:29.602Z\"},\"objectives\":[\"Validate UC-254 lifecycle end-to-end using persona The Solo Entrepreneur (Sarah).\",\"Exercise owner setup, team setup, catalog publishing, and customer journeys.\",\"Stress ACL/security edge cases and verify expected denials are enforced.\",\"Collect snapshots and report artifacts for every critical milestone.\"],\"actors\":[{\"actorKey\":\"biz_owner\",\"name\":\"The Solo Entrepreneur (Sarah)\",\"role\":\"owner\",\"description\":\"Just starting out, wearing all hats\",\"personaRef\":\"P-1\"},{\"actorKey\":\"biz_member\",\"name\":\"Operations Team Member\",\"role\":\"manager\",\"description\":\"Business member invited by owner to assist with operations and booking flow.\"},{\"actorKey\":\"customer_1\",\"name\":\"Customer One\",\"role\":\"customer\",\"description\":\"Primary customer exploring catalog, booking services, and purchasing products.\"},{\"actorKey\":\"customer_2\",\"name\":\"Customer Two\",\"role\":\"customer\",\"description\":\"Concurrent customer used to simulate realistic demand and race conditions.\"},{\"actorKey\":\"adversary\",\"name\":\"Adversarial User\",\"role\":\"malicious_actor\",\"description\":\"Actor intentionally attempting unauthorized or abusive actions.\"}],\"phases\":[{\"phaseKey\":\"owner-onboarding\",\"order\":1,\"title\":\"Owner Onboarding\",\"description\":\"Business owner signs up, authenticates, and establishes tenant root.\",\"steps\":[{\"stepKey\":\"owner-sign-up\",\"order\":1,\"title\":\"Owner signs up and authenticates\",\"actorKey\":\"biz_owner\",\"intent\":\"Establish authenticated owner identity for the lifecycle.\",\"instruction\":\"Create or login the owner account through Better Auth endpoints, then verify session context can call authenticated API routes.\",\"expectedResult\":\"Owner session exists and authenticated routes return success for this user.\",\"toolHints\":[],\"assertions\":[{\"kind\":\"api_response\",\"description\":\"API call returns success and includes stable ids for created entities.\"},{\"kind\":\"acl_guard\",\"description\":\"Actor permissions are honored for this step context.\"}],\"evidenceRequired\":[{\"kind\":\"api_trace\",\"label\":\"Request/response trace for this step\"},{\"kind\":\"snapshot\",\"label\":\"Structured snapshot.v1 screen blocks (what user saw) with real API-backed data\"}],\"guardrails\":[],\"tags\":[\"auth\",\"setup\"]},{\"stepKey\":\"owner-create-biz\",\"order\":2,\"title\":\"Owner creates business tenant\",\"actorKey\":\"biz_owner\",\"intent\":\"Create the biz root for all subsequent configuration.\",\"instruction\":\"Using agents tools, create a biz representing The Proposal + E-Sign + Order Conversion Flow. Use name/slug derived from saga context.\",\"expectedResult\":\"Biz is created, owner is auto-added as member with owner role, and biz id is captured.\",\"toolHints\":[\"bizing.bizes.create\"],\"assertions\":[{\"kind\":\"api_response\",\"description\":\"API call returns success and includes stable ids for created entities.\"},{\"kind\":\"acl_guard\",\"description\":\"Actor permissions are honored for this step context.\"}],\"evidenceRequired\":[{\"kind\":\"api_trace\",\"label\":\"Request/response trace for this step\"},{\"kind\":\"snapshot\",\"label\":\"Structured snapshot.v1 screen blocks (what user saw) with real API-backed data\"}],\"guardrails\":[],\"tags\":[\"biz\",\"setup\"]},{\"stepKey\":\"owner-create-location\",\"order\":3,\"title\":\"Owner creates primary location\",\"actorKey\":\"biz_owner\",\"intent\":\"Establish operational location for services/resources.\",\"instruction\":\"Create a primary location for the biz and set timezone aligned with scenario context.\",\"expectedResult\":\"Location exists and is associated with the new biz.\",\"toolHints\":[\"bizing.locations.create\"],\"assertions\":[{\"kind\":\"api_response\",\"description\":\"API call returns success and includes stable ids for created entities.\"},{\"kind\":\"acl_guard\",\"description\":\"Actor permissions are honored for this step context.\"}],\"evidenceRequired\":[{\"kind\":\"api_trace\",\"label\":\"Request/response trace for this step\"},{\"kind\":\"snapshot\",\"label\":\"Structured snapshot.v1 screen blocks (what user saw) with real API-backed data\"}],\"guardrails\":[],\"tags\":[\"location\",\"setup\"]}]},{\"phaseKey\":\"business-configuration\",\"order\":2,\"title\":\"Business Configuration\",\"description\":\"Owner configures scheduling, pricing baseline, and operational defaults.\",\"steps\":[{\"stepKey\":\"owner-configure-hours\",\"order\":4,\"title\":\"Configure default hours and availability mode\",\"actorKey\":\"biz_owner\",\"intent\":\"Set baseline availability without forcing advanced complexity.\",\"instruction\":\"Create baseline availability and lead-time rules representing the UC default business hours and booking window behavior.\",\"expectedResult\":\"Availability defaults and rules are stored and can be referenced by calendars.\",\"toolHints\":[],\"assertions\":[{\"kind\":\"api_response\",\"description\":\"API call returns success and includes stable ids for created entities.\"},{\"kind\":\"acl_guard\",\"description\":\"Actor permissions are honored for this step context.\"}],\"evidenceRequired\":[{\"kind\":\"api_trace\",\"label\":\"Request/response trace for this step\"},{\"kind\":\"snapshot\",\"label\":\"Structured snapshot.v1 screen blocks (what user saw) with real API-backed data\"}],\"guardrails\":[],\"tags\":[\"availability\",\"policy\"]},{\"stepKey\":\"owner-configure-pricing\",\"order\":5,\"title\":\"Configure default pricing rules\",\"actorKey\":\"biz_owner\",\"intent\":\"Set base pricing and optional manual demand overrides.\",\"instruction\":\"Configure pricing defaults for the offer lifecycle including call fees/manual surge if UC needs imply it.\",\"expectedResult\":\"Pricing model persists and future bookings can calculate totals deterministically.\",\"toolHints\":[],\"assertions\":[{\"kind\":\"api_response\",\"description\":\"API call returns success and includes stable ids for created entities.\"},{\"kind\":\"acl_guard\",\"description\":\"Actor permissions are honored for this step context.\"}],\"evidenceRequired\":[{\"kind\":\"api_trace\",\"label\":\"Request/response trace for this step\"},{\"kind\":\"snapshot\",\"label\":\"Structured snapshot.v1 screen blocks (what user saw) with real API-backed data\"}],\"guardrails\":[],\"tags\":[\"pricing\"]}]},{\"phaseKey\":\"supply-and-team-setup\",\"order\":3,\"title\":\"Supply And Team Setup\",\"description\":\"Business owner sets up hosts/assets/venues/resources and invites members.\",\"steps\":[{\"stepKey\":\"owner-create-resources\",\"order\":6,\"title\":\"Create resources representing hosts/assets/venues\",\"actorKey\":\"biz_owner\",\"intent\":\"Model real-world supply that bookings will consume.\",\"instruction\":\"Create at least one host resource and one non-host resource (asset or venue) suitable for the UC.\",\"expectedResult\":\"Resources are created with expected type, location, and buffers.\",\"toolHints\":[\"bizing.resources.create\"],\"assertions\":[{\"kind\":\"api_response\",\"description\":\"API call returns success and includes stable ids for created entities.\"},{\"kind\":\"acl_guard\",\"description\":\"Actor permissions are honored for this step context.\"}],\"evidenceRequired\":[{\"kind\":\"api_trace\",\"label\":\"Request/response trace for this step\"},{\"kind\":\"snapshot\",\"label\":\"Structured snapshot.v1 screen blocks (what user saw) with real API-backed data\"}],\"guardrails\":[],\"tags\":[\"resources\"]},{\"stepKey\":\"owner-invite-member\",\"order\":7,\"title\":\"Invite and provision business member\",\"actorKey\":\"biz_owner\",\"intent\":\"Validate collaboration and role assignment.\",\"instruction\":\"Invite a biz member, assign an operational role, and verify that member can authenticate into the same biz.\",\"expectedResult\":\"Biz member account/session exists with scoped role permissions.\",\"toolHints\":[],\"assertions\":[{\"kind\":\"api_response\",\"description\":\"API call returns success and includes stable ids for created entities.\"},{\"kind\":\"acl_guard\",\"description\":\"Actor permissions are honored for this step context.\"}],\"evidenceRequired\":[{\"kind\":\"api_trace\",\"label\":\"Request/response trace for this step\"},{\"kind\":\"snapshot\",\"label\":\"Structured snapshot.v1 screen blocks (what user saw) with real API-backed data\"}],\"guardrails\":[],\"tags\":[\"team\",\"acl\"]}]},{\"phaseKey\":\"catalog-publish\",\"order\":4,\"title\":\"Catalog And Publish\",\"description\":\"Owner creates services/offers/products and publishes sellable catalog entries.\",\"steps\":[{\"stepKey\":\"owner-create-offer\",\"order\":8,\"title\":\"Create offer shell\",\"actorKey\":\"biz_owner\",\"intent\":\"Define sellable service/catalog entry.\",\"instruction\":\"Create an offer representing the UC primary service; choose execution mode matching the scenario.\",\"expectedResult\":\"Offer is created in draft state with captured id.\",\"toolHints\":[\"bizing.offers.create\"],\"assertions\":[{\"kind\":\"api_response\",\"description\":\"API call returns success and includes stable ids for created entities.\"},{\"kind\":\"acl_guard\",\"description\":\"Actor permissions are honored for this step context.\"}],\"evidenceRequired\":[{\"kind\":\"api_trace\",\"label\":\"Request/response trace for this step\"},{\"kind\":\"snapshot\",\"label\":\"Structured snapshot.v1 screen blocks (what user saw) with real API-backed data\"}],\"guardrails\":[],\"tags\":[\"offer\",\"catalog\"]},{\"stepKey\":\"owner-create-offer-version\",\"order\":9,\"title\":\"Create and p",
+        "_size": 44698
+      },
+      "at": "2026-02-24T20:31:19.709Z"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3A8Czts5HDlkgbeETbbSodeEKMG/snapshots",
+      "status": 201,
+      "requestBody": {
+        "stepKey": "owner-create-biz",
+        "screenKey": "owner-create-biz-1771965079680",
+        "title": "Owner creates business tenant Snapshot",
+        "status": "passed",
+        "route": "/sagas/saga_run_3A8Czts5HDlkgbeETbbSodeEKMG/owner-create-biz",
+        "format": "json",
+        "view": {
+          "title": "Owner creates business tenant",
+          "subtitle": "Biz created.",
+          "blocks": [
+            {
+              "type": "alert",
+              "title": "Owner Create Biz completed",
+              "message": "Biz created.",
+              "tone": "success"
+            },
+            {
+              "type": "key_value",
+              "title": "Business profile",
+              "items": [
+                {
+                  "label": "Name",
+                  "value": "Saga uc-253-the-solo-entrepreneur-sarah"
+                },
+                {
+                  "label": "Slug",
+                  "value": "uc-253-the-solo-entrepreneur-sarah-kfy9mj31"
+                },
+                {
+                  "label": "Timezone",
+                  "value": "UTC"
+                },
+                {
+                  "label": "Currency",
+                  "value": "USD"
+                }
+              ]
+            },
+            {
+              "type": "actions",
+              "title": "Visible actions",
+              "items": [
+                {
+                  "label": "Edit business settings",
+                  "kind": "primary",
+                  "enabled": true
+                },
+                {
+                  "label": "Add location",
+                  "kind": "secondary",
+                  "enabled": true
+                }
+              ]
+            },
+            {
+              "type": "key_value",
+              "title": "Screen details",
+              "items": [
+                {
+                  "label": "Id",
+                  "value": "3A8D0KonGueP0qcNySkHq5q63Fm"
+                },
+                {
+                  "label": "Name",
+                  "value": "Saga uc-253-the-solo-entrepreneur-sarah"
+                },
+                {
+                  "label": "Slug",
+                  "value": "uc-253-the-solo-entrepreneur-sarah-kfy9mj31"
+                },
+                {
+                  "label": "Type",
+                  "value": "small_business"
+                },
+                {
+                  "label": "LogoUrl",
+                  "value": "null"
+                },
+                {
+                  "label": "Timezone",
+                  "value": "UTC"
+                },
+                {
+                  "label": "Currency",
+                  "value": "USD"
+                },
+                {
+                  "label": "Status",
+                  "value": "active"
+                },
+                {
+                  "label": "CreatedAt",
+                  "value": "2026-02-24T20:31:19.204Z"
+                },
+                {
+                  "label": "UpdatedAt",
+                  "value": "2026-02-24T20:31:19.204Z"
+                },
+                {
+                  "label": "DeletedAt",
+                  "value": "null"
+                },
+                {
+                  "label": "CreatedBy",
+                  "value": "null"
+                },
+                {
+                  "label": "UpdatedBy",
+                  "value": "null"
+                },
+                {
+                  "label": "DeletedBy",
+                  "value": "null"
+                }
+              ]
+            }
+          ]
+        },
+        "rawData": {
+          "stepKey": "owner-create-biz",
+          "resultPayload": {
+            "note": "Biz created.",
+            "evidence": {
+              "id": "3A8D0KonGueP0qcNySkHq5q63Fm",
+              "name": "Saga uc-253-the-solo-entrepreneur-sarah",
+              "slug": "uc-253-the-solo-entrepreneur-sarah-kfy9mj31",
+              "type": "small_business",
+              "logoUrl": null,
+              "timezone": "UTC",
+              "currency": "USD",
+              "status": "active",
+              "metadata": {},
+              "createdAt": "2026-02-24T20:31:19.204Z",
+              "updatedAt": "2026-02-24T20:31:19.204Z",
+              "deletedAt": null,
+              "createdBy": null,
+              "updatedBy": null,
+              "deletedBy": null
+            }
+          },
+          "apiCalls": [
+            {
+              "method": "POST",
+              "path": "/api/v1/sagas/runs/saga_run_3A8CyqN5Sok8x9E9DgI7T02pGus/steps/owner-revenue-sanity/result",
+              "status": 200,
+              "requestBody": {
+                "status": "passed",
+                "startedAt": "2026-02-24T20:31:18.578Z",
+                "endedAt": "2026-02-24T20:31:18.578Z",
+                "failureMessage": null,
+                "resultPayload": {
+                  "note": "Revenue sanity computed from booking orders.",
+                  "evidence": {
+                    "bookingCount": 2,
+                    "totalMinor": 30000,
+                    "currency": "USD"
+                  }
+                },
+                "assertionSummary": {
+                  "status": "passed",
+                  "hasFailure": false,
+                  "assertionsPassed": 1
+                }
+              },
+              "responseBody": {
+                "success": true,
+                "data": {
+                  "id": "saga_run_step_3A8CyrfYJN54OrUa9DfHWAcE9vc",
+                  "sagaRunId": "saga_run_3A8CyqN5Sok8x9E9DgI7T02pGus",
+                  "phaseKey": "reporting-and-closeout",
+                  "phaseOrder": 8,
+                  "phaseTitle": "Reporting And Closeout",
+                  "stepKey": "owner-revenue-sanity",
+                  "stepOrder": 19,
+                  "actorKey": "biz_owner",
+                  "instruction": "Read reporting endpoints and verify booking totals, counts, and statuses align with saga actions.",
+                  "expectedResult": "Reported metrics match booking actions and highlight any discrepancies for schema/API iteration.",
+                  "status": "passed",
+                  "attemptCount": 1,
+                  "startedAt": "2026-02-24T20:31:18.578Z",
+                  "endedAt": "2026-02-24T20:31:18.578Z",
+                  "failureCode": null,
+                  "failureMessage": null,
+                  "resultPayload": {
+                    "note": "Revenue sanity computed from booking orders.",
+                    "evidence": {
+                      "currency": "USD",
+                      "totalMinor": 30000,
+                      "bookingCount": 2
+                    }
+                  },
+                  "assertionSummary": {
+                    "status": "passed",
+                    "hasFailure": false,
+                    "assertionsPassed": 1
+                  },
+                  "metadata": {},
+                  "createdAt": "2026-02-24T20:31:07.230Z",
+                  "updatedAt": "2026-02-24T20:31:07.230Z",
+                  "deletedAt": null,
+                  "createdBy": null,
+                  "updatedBy": null,
+                  "deletedBy": null
+                },
+                "meta": {
+                  "requestId": "3eef9501-4306-4373-91eb-961cb4a86f72",
+                  "timestamp": "2026-02-24T20:31:19.147Z"
+                }
+              },
+              "at": "2026-02-24T20:31:19.195Z"
+            },
+            {
+              "method": "POST",
+              "path": "/api/v1/sagas/runs/saga_run_3A8Cyn95VPX9JxUTIHhDJSlGj5I/traces",
+              "status": 201,
+              "requestBody": {
+                "stepKey": "runner-submit-artifacts",
+                "title": "Runner submits snapshots and final report API Trace",
+                "trace": {
+                  "stepKey": "runner-submit-artifacts",
+                  "callCount": 1,
+                  "calls": [
+                    {
+                      "method": "POST",
+                      "path": "/api/v1/bizes/3A8CzzwEiXZrOdUCFoZm4Thi75d/locations",
+                      "status": 201,
+                      "requestBody": {
+                        "name": "Primary Location",
+                        "slug": "loc-tctmzsu9",
+                        "type": "physical",
+                        "timezone": "UTC"
+                      },
+                      "responseBody": {
+                        "success": true,
+                        "data": {
+                          "id": "3A8D0CxJ9Uji91Yl9A5dGPPd4eh",
+                          "bizId": "3A8CzzwEiXZrOdUCFoZm4Thi75d",
+                          "name": "Primary Location",
+                          "slug": "loc-tctmzsu9",
+                          "type": "physical",
+                          "timezone": "UTC",
+                          "address": {},
+                          "operatingHours": {},
+                          "configOverride": {},
+                          "serviceArea": {},
+                          "status": "active",
+                          "isDefault": false,
+                          "metadata": {},
+                          "createdAt": "2026-02-24T20:31:18.603Z",
+                          "updatedAt": "2026-02-24T20:31:18.603Z",
+                          "deletedAt": null
+                        },
+                        "meta": {
+                          "requestId": "53d64cd7-5351-4430-9a90-c69e57bf263d",
+                          "timestamp": "2026-02-24T20:31:18.607Z"
+                        }
+                      },
+                      "at": "2026-02-24T20:31:19.039Z"
+                    }
+                  ]
+                },
+                "metadata": {
+                  "source": "rerun-sagas.ts"
+                }
+              },
+              "responseBody": {
+                "success": true,
+                "data": {
+                  "id": "saga_artifact_3A8D0NApqHjxeTeq9e8KO1BbN1e",
+                  "sagaRunId": "saga_run_3A8Cyn95VPX9JxUTIHhDJSlGj5I",
+                  "sagaRunStepId": "saga_run_step_3A8CynNQGmNFZGljL5ZQrxNX8OA",
+                  "artifactType": "api_trace",
+                  "title": "Runner submits snapshots and final report API Trace",
+                  "storagePath": "testing/sagas/runs/saga_run_3A8Cyn95VPX9JxUTIHhDJSlGj5I/artifacts/1771965079118-Runner_submits_snapshots_and_final_report_API_Trace.json",
+                  "contentType": "application/json",
+                  "bodyText": "{\n  \"stepKey\": \"runner-submit-artifacts\",\n  \"callCount\": 1,\n  \"calls\": [\n    {\n      \"method\": \"POST\",\n      \"path\": \"/api/v1/bizes/3A8CzzwEiXZrOdUCFoZm4Thi75d/locations\",\n      \"status\": 201,\n      \"requestBody\": {\n        \"name\": \"Primary Location\",\n        \"slug\": \"loc-tctmzsu9\",\n        \"type\": \"physical\",\n        \"timezone\": \"UTC\"\n      },\n      \"responseBody\": {\n        \"success\": true,\n        \"data\": {\n          \"id\": \"3A8D0CxJ9Uji91Yl9A5dGPPd4eh\",\n          \"bizId\": \"3A8CzzwEiXZrOdUCFoZm4Thi75d\",\n          \"name\": \"Primary Location\",\n          \"slug\": \"loc-tctmzsu9\",\n          \"type\": \"physical\",\n          \"timezone\": \"UTC\",\n          \"address\": {},\n          \"operatingHours\": {},\n          \"configOverride\": {},\n          \"serviceArea\": {},\n          \"status\": \"active\",\n          \"isDefault\": false,\n          \"metadata\": {},\n          \"createdAt\": \"2026-02-24T20:31:18.603Z\",\n          \"updatedAt\": \"2026-02-24T20:31:18.603Z\",\n          \"deletedAt\": null\n        },\n        \"meta\": {\n          \"requestId\": \"53d64cd7-5351-4430-9a90-c69e57bf263d\",\n          \"timestamp\": \"2026-02-24T20:31:18.607Z\"\n        }\n      },\n      \"at\": \"2026-02-24T20:31:19.039Z\"\n    }\n  ]\n}\n",
+                  "byteSize": 1188,
+                  "checksum": "06348b58351895a63f0b451975a5203c0ac7dda9feea9139cbf0b170ec43c605",
+                  "capturedAt": "2026-02-24T20:31:19.124Z",
+                  "metadata": {
+                    "source": "rerun-sagas.ts"
+                  },
+                  "createdAt": "2026-02-24T20:31:19.124Z",
+                  "updatedAt": "2026-02-24T20:31:19.124Z",
+                  "deletedAt": null,
+                  "createdBy": null,
+                  "updatedBy": null,
+                  "deletedBy": null
+                },
+                "meta": {
+                  "requestId": "2755b19f-4e4e-4d00-9159-59dada11a19e",
+                  "timestamp": "2026-02-24T20:31:19.149Z"
+                }
+              },
+              "at": "2026-02-24T20:31:19.195Z"
+            },
+            {
+              "method": "POST",
+              "path": "/api/v1/sagas/runs/saga_run_3A8CzhXChqtkjfPdb30CX8r8KaY/steps/owner-create-location/result",
+              "status": 200,
+              "requestBody": {
+                "status": "in_progress",
+                "startedAt": "2026-02-24T20:31:19.106Z",
+                "resultPayload": {
+                  "note": "Started owner-create-location"
+                },
+                "assertionSummary": {
+                  "status": "in_progress"
+                }
+              },
+              "responseBody": {
+                "success": true,
+                "data": {
+                  "id": "saga_run_step_3A8Czm7Sr1YYh9hlv6SsuWRpyH6",
+                  "sagaRunId": "saga_run_3A8CzhXChqtkjfPdb30CX8r8KaY",
+                  "phaseKey": "owner-onboarding",
+                  "phaseOrder": 1,
+                  "phaseTitle": "Owner Onboarding",
+                  "stepKey": "owner-create-location",
+                  "stepOrder": 3,
+                  "actorKey": "biz_owner",
+                  "instruction": "Create a primary location for the biz and set timezone aligned with scenario context.",
+                  "expectedResult": "Location exists and is associated with the new biz.",
+                  "status": "in_progress",
+                  "attemptCount": 1,
+                  "startedAt": "2026-02-24T20:31:19.106Z",
+                  "endedAt": null,
+                  "failureCode": null,
+                  "failureMessage": null,
+                  "resultPayload": {
+                    "note": "Started owner-create-location"
+                  },
+                  "assertionSummary": {
+                    "status": "in_progress"
+                  },
+                  "metadata": {},
+                  "createdAt": "2026-02-24T20:31:14.353Z",
+                  "updatedAt": "2026-02-24T20:31:14.353Z",
+                  "deletedAt": null,
+                  "createdBy": null,
+                  "updatedBy": null,
+                  "deletedBy": null
+                },
+                "meta": {
+                  "requestId": "d6309e63-333e-4c4f-aef2-999fe4489a39",
+                  "timestamp": "2026-02-24T20:31:19.149Z"
+                }
+              },
+              "at": "2026-02-24T20:31:19.195Z"
+            },
+            {
+              "method": "POST",
+              "path": "/api/v1/bizes",
+              "status": 201,
+              "requestBody": {
+                "name": "Saga uc-253-the-solo-entrepreneur-sarah",
+                "slug": "uc-253-the-solo-entrepreneur-sarah-kfy9mj31",
+                "type": "small_business",
+                "timezone": "UTC",
+                "currency": "USD"
+              },
+              "responseBody": {
+                "success": true,
+                "data": {
+                  "id": "3A8D0KonGueP0qcNySkHq5q63Fm",
+                  "name": "Saga uc-253-the-solo-entrepreneur-sarah",
+                  "slug": "uc-253-the-solo-entrepreneur-sarah-kfy9mj31",
+                  "type": "small_business",
+                  "logoUrl": null,
+                  "timezone": "UTC",
+                  "currency": "USD",
+                  "status": "active",
+                  "metadata": {},
+                  "createdAt": "2026-02-24T20:31:19.204Z",
+                  "updatedAt": "2026-02-24T20:31:19.204Z",
+                  "deletedAt": null,
+                  "createdBy": null,
+                  "updatedBy": null,
+                  "deletedBy": null
+                },
+                "meta": {
+                  "requestId": "bcedefe2-91fc-4ada-8929-93e1e9cbca2e",
+                  "timestamp": "2026-02-24T20:31:19.212Z"
+                }
+              },
+              "at": "2026-02-24T20:31:19.265Z"
+            }
+          ]
+        }
+      },
+      "responseBody": {
+        "_truncated": true,
+        "_preview": "{\"success\":true,\"data\":{\"id\":\"saga_artifact_3A8D0LYAi5MXCm9jDe2aOwZx5F1\",\"sagaRunId\":\"saga_run_3A8Czts5HDlkgbeETbbSodeEKMG\",\"sagaRunStepId\":\"saga_run_step_3A8CzrAb6EP2iky6L0M0a337Dy4\",\"artifactType\":\"snapshot\",\"title\":\"Owner creates business tenant Snapshot\",\"storagePath\":\"testing/sagas/runs/saga_run_3A8Czts5HDlkgbeETbbSodeEKMG/snapshots/2026-02-24T20-31-19-686Z-owner-create-biz-1771965079680.json\",\"contentType\":\"application/json\",\"bodyText\":\"{\\n  \\\"schemaVersion\\\": \\\"snapshot.v1\\\",\\n  \\\"screenKey\\\": \\\"owner-create-biz-1771965079680\\\",\\n  \\\"title\\\": \\\"Owner creates business tenant Snapshot\\\",\\n  \\\"generatedAt\\\": \\\"2026-02-24T20:31:19.685Z\\\",\\n  \\\"stepKey\\\": \\\"owner-create-biz\\\",\\n  \\\"status\\\": \\\"passed\\\",\\n  \\\"view\\\": {\\n    \\\"title\\\": \\\"Owner creates business tenant\\\",\\n    \\\"subtitle\\\": \\\"Biz created.\\\",\\n    \\\"blocks\\\": [\\n      {\\n        \\\"type\\\": \\\"alert\\\",\\n        \\\"title\\\": \\\"Owner Create Biz completed\\\",\\n        \\\"message\\\": \\\"Biz created.\\\",\\n        \\\"tone\\\": \\\"success\\\"\\n      },\\n      {\\n        \\\"type\\\": \\\"key_value\\\",\\n        \\\"title\\\": \\\"Business profile\\\",\\n        \\\"items\\\": [\\n          {\\n            \\\"label\\\": \\\"Name\\\",\\n            \\\"value\\\": \\\"Saga uc-253-the-solo-entrepreneur-sarah\\\"\\n          },\\n          {\\n            \\\"label\\\": \\\"Slug\\\",\\n            \\\"value\\\": \\\"uc-253-the-solo-entrepreneur-sarah-kfy9mj31\\\"\\n          },\\n          {\\n            \\\"label\\\": \\\"Timezone\\\",\\n            \\\"value\\\": \\\"UTC\\\"\\n          },\\n          {\\n            \\\"label\\\": \\\"Currency\\\",\\n            \\\"value\\\": \\\"USD\\\"\\n          }\\n        ]\\n      },\\n      {\\n        \\\"type\\\": \\\"actions\\\",\\n        \\\"title\\\": \\\"Visible actions\\\",\\n        \\\"items\\\": [\\n          {\\n            \\\"label\\\": \\\"Edit business settings\\\",\\n            \\\"kind\\\": \\\"primary\\\",\\n            \\\"enabled\\\": true\\n          },\\n          {\\n            \\\"label\\\": \\\"Add location\\\",\\n            \\\"kind\\\": \\\"secondary\\\",\\n            \\\"enabled\\\": true\\n          }\\n        ]\\n      },\\n      {\\n        \\\"type\\\": \\\"key_value\\\",\\n        \\\"title\\\": \\\"Screen details\\\",\\n        \\\"items\\\": [\\n          {\\n            \\\"label\\\": \\\"Id\\\",\\n            \\\"value\\\": \\\"3A8D0KonGueP0qcNySkHq5q63Fm\\\"\\n          },\\n          {\\n            \\\"label\\\": \\\"Name\\\",\\n            \\\"value\\\": \\\"Saga uc-253-the-solo-entrepreneur-sarah\\\"\\n          },\\n          {\\n            \\\"label\\\": \\\"Slug\\\",\\n            \\\"value\\\": \\\"uc-253-the-solo-entrepreneur-sarah-kfy9mj31\\\"\\n          },\\n          {\\n            \\\"label\\\": \\\"Type\\\",\\n            \\\"value\\\": \\\"small_business\\\"\\n          },\\n          {\\n            \\\"label\\\": \\\"LogoUrl\\\",\\n            \\\"value\\\": \\\"null\\\"\\n          },\\n          {\\n            \\\"label\\\": \\\"Timezone\\\",\\n            \\\"value\\\": \\\"UTC\\\"\\n          },\\n          {\\n            \\\"label\\\": \\\"Currency\\\",\\n            \\\"value\\\": \\\"USD\\\"\\n          },\\n          {\\n            \\\"label\\\": \\\"Status\\\",\\n            \\\"value\\\": \\\"active\\\"\\n          },\\n          {\\n            \\\"label\\\": \\\"CreatedAt\\\",\\n            \\\"value\\\": \\\"2026-02-24T20:31:19.204Z\\\"\\n          },\\n          {\\n            \\\"label\\\": \\\"UpdatedAt\\\",\\n            \\\"value\\\": \\\"2026-02-24T20:31:19.204Z\\\"\\n          },\\n          {\\n            \\\"label\\\": \\\"DeletedAt\\\",\\n            \\\"value\\\": \\\"null\\\"\\n          },\\n          {\\n            \\\"label\\\": \\\"CreatedBy\\\",\\n            \\\"value\\\": \\\"null\\\"\\n          },\\n          {\\n            \\\"label\\\": \\\"UpdatedBy\\\",\\n            \\\"value\\\": \\\"null\\\"\\n          },\\n          {\\n            \\\"label\\\": \\\"DeletedBy\\\",\\n            \\\"value\\\": \\\"null\\\"\\n          }\\n        ]\\n      }\\n    ]\\n  },\\n  \\\"rawData\\\": {\\n    \\\"stepKey\\\": \\\"owner-create-biz\\\",\\n    \\\"resultPayload\\\": {\\n      \\\"note\\\": \\\"Biz created.\\\",\\n      \\\"evidence\\\": {\\n        \\\"id\\\": \\\"3A8D0KonGueP0qcNySkHq5q63Fm\\\",\\n        \\\"name\\\": \\\"Saga uc-253-the-solo-entrepreneur-sarah\\\",\\n        \\\"slug\\\": \\\"uc-253-the-solo-entrepreneur-sarah-kfy9mj31\\\",\\n        \\\"type\\\": \\\"small_business\\\",\\n        \\\"logoUrl\\\": null,\\n        \\\"timezone\\\": \\\"UTC\\\",\\n        \\\"currency\\\": \\\"USD\\\",\\n        \\\"status\\\": \\\"active\\\",\\n        \\\"metadata\\\": {},\\n        \\\"createdAt\\\": \\\"2026-02-24T20:31:19.204Z\\\",\\n        \\\"updatedAt\\\": \\\"2026-02-24T20:31:19.204Z\\\",\\n        \\\"deletedAt\\\": null,\\n        \\\"createdBy\\\": null,\\n        \\\"updatedBy\\\": null,\\n        \\\"deletedBy\\\": null\\n      }\\n    },\\n    \\\"apiCalls\\\": [\\n      {\\n        \\\"method\\\": \\\"POST\\\",\\n        \\\"path\\\": \\\"/api/v1/sagas/runs/saga_run_3A8CyqN5Sok8x9E9DgI7T02pGus/steps/owner-revenue-sanity/result\\\",\\n        \\\"status\\\": 200,\\n        \\\"requestBody\\\": {\\n          \\\"status\\\": \\\"passed\\\",\\n          \\\"startedAt\\\": \\\"2026-02-24T20:31:18.578Z\\\",\\n          \\\"endedAt\\\": \\\"2026-02-24T20:31:18.578Z\\\",\\n          \\\"failureMessage\\\": null,\\n          \\\"resultPayload\\\": {\\n            \\\"note\\\": \\\"Revenue sanity computed from booking orders.\\\",\\n            \\\"evidence\\\": {\\n              \\\"bookingCount\\\": 2,\\n              \\\"totalMinor\\\": 30000,\\n              \\\"currency\\\": \\\"USD\\\"\\n            }\\n          },\\n          \\\"assertionSummary\\\": {\\n            \\\"status\\\": \\\"passed\\\",\\n            \\\"hasFailure\\\": false,\\n            \\\"assertionsPassed\\\": 1\\n          }\\n        },\\n        \\\"responseBody\\\": {\\n          \\\"success\\\": true,\\n          \\\"data\\\": {\\n            \\\"id\\\": \\\"saga_run_step_3A8CyrfYJN54OrUa9DfHWAcE9vc\\\",\\n            \\\"sagaRunId\\\": \\\"saga_run_3A8CyqN5Sok8x9E9DgI7T02pGus\\\",\\n            \\\"phaseKey\\\": \\\"reporting-and-closeout\\\",\\n            \\\"phaseOrder\\\": 8,\\n            \\\"phaseTitle\\\": \\\"Reporting And Closeout\\\",\\n            \\\"stepKey\\\": \\\"owner-revenue-sanity\\\",\\n            \\\"stepOrder\\\": 19,\\n            \\\"actorKey\\\": \\\"biz_owner\\\",\\n            \\\"instruction\\\": \\\"Read reporting endpoints and verify booking totals, counts, and statuses align with saga actions.\\\",\\n            \\\"expectedResult\\\": \\\"Reported metrics match booking actions and highlight any discrepancies for schema/API iteration.\\\",\\n            \\\"status\\\": \\\"passed\\\",\\n            \\\"attemptCount\\\": 1,\\n            \\\"startedAt\\\": \\\"2026-02-24T20:31:18.578Z\\\",\\n            \\\"endedAt\\\": \\\"2026-02-24T20:31:18.578Z\\\",\\n            \\\"failureCode\\\": null,\\n            \\\"failureMessage\\\": null,\\n            \\\"resultPayload\\\": {\\n              \\\"note\\\": \\\"Revenue sanity computed from booking orders.\\\",\\n              \\\"evidence\\\": {\\n                \\\"currency\\\": \\\"USD\\\",\\n                \\\"totalMinor\\\": 30000,\\n                \\\"bookingCount\\\": 2\\n              }\\n            },\\n            \\\"assertionSummary\\\": {\\n              \\\"status\\\": \\\"passed\\\",\\n              \\\"hasFailure\\\": false,\\n              \\\"assertionsPassed\\\": 1\\n            },\\n            \\\"metadata\\\": {},\\n            \\\"createdAt\\\": \\\"2026-02-24T20:31:07.230Z\\\",\\n            \\\"updatedAt\\\": \\\"2026-02-24T20:31:07.230Z\\\",\\n            \\\"deletedAt\\\": null,\\n            \\\"createdBy\\\": null,\\n            \\\"updatedBy\\\": null,\\n            \\\"deletedBy\\\": null\\n          },\\n          \\\"meta\\\": {\\n            \\\"requestId\\\": \\\"3eef9501-4306-4373-91eb-961cb4a86f72\\\",\\n            \\\"timestamp\\\": \\\"2026-02-24T20:31:19.147Z\\\"\\n          }\\n        },\\n        \\\"at\\\": \\\"2026-02-24T20:31:19.195Z\\\"\\n      },\\n      {\\n        \\\"method\\\": \\\"POST\\\",\\n        \\\"path\\\": \\\"/api/v1/sagas/runs/saga_run_3A8Cyn95VPX9JxUTIHhDJSlGj5I/traces\\\",\\n        \\\"status\\\": 201,\\n        \\\"requestBody\\\": {\\n          \\\"stepKey\\\": \\\"runner-submit-artifacts\\\",\\n          \\\"title\\\": \\\"Runner submits snapshots and final report API Trace\\\",\\n          \\\"trace\\\": {\\n            \\\"stepKey\\\": \\\"runner-submit-artifacts\\\",\\n            \\\"callCount\\\": 1,\\n            \\\"calls\\\": [\\n              {\\n                \\\"method\\\": \\\"POST\\\",\\n                \\\"path\\\": \\\"/api/v1/bizes/3A8CzzwEiXZrOdUCFoZm4Thi75d/locations\\\",\\n                \\\"status\\\": 201,\\n                \\\"requestBody\\\": {\\n                  \\\"name\\\": \\\"Primary Location\\\",\\n                  \\\"slug\\\": \\\"loc-tctmzsu9\\\",\\n                  \\\"type\\\": \\\"physical\\\",\\n                  \\\"timezone\\\": \\\"UTC\\\"\\n                },\\n                \\\"responseBody\\\": {\\n                  \\\"success\\\": true,\\n                  \\\"data\\\": {\\n                    \\\"id\\\": \\\"3A8D0CxJ9Uji91Yl9A5dGPPd4eh\\\",\\n                    \\\"bizId\\\": \\\"3A8CzzwEiXZrOdUCFoZm4Thi75d\\\",\\n                    \\\"name\\\": \\\"Primary Location\\\",\\n                    \\\"slug\\\": \\\"loc-tctmzsu9\\\",\\n                    \\\"type\\\": \\\"physical\\\",\\n                    \\\"timezone\\\": \\\"UTC\\\",\\n                    \\\"address\\\": {},\\n                    \\\"operatingHours\\\": {},\\n                    \\\"configOverride\\\": {},\\n                    \\\"serviceArea\\\": {},\\n                    \\\"status\\\": \\\"active\\\",\\n                    \\\"isDefault\\\": false,\\n                    \\\"metadata\\\": {},\\n                    \\\"createdAt\\\": \\\"2026-02-24T20:31:18.603Z\\\",\\n                    \\\"updatedAt\\\": \\\"2026-02-24T20:31:18.603Z\\\",\\n                    \\\"deletedAt\\\": null\\n                  },\\n                  \\\"meta\\\": {\\n                    \\\"requestId\\\": \\\"53d64cd7-5351-4430-9a90-c69e57bf263d\\\",\\n                    \\\"timestamp\\\": \\\"2026-02-24T20:31:18.607Z\\\"\\n                  }\\n                },\\n                \\\"at\\\": \\\"2026-02-24T20:31:19.039Z\\\"\\n              }\\n            ]\\n          },\\n          \\\"metadata\\\": {\\n            \\\"source\\\": \\\"rerun-sagas.ts\\\"\\n          }\\n        },\\n        \\\"responseBody\\\": {\\n          \\\"success\\\": true,\\n          \\\"data\\\": {\\n            \\\"id\\\": \\\"saga_artifact_3A8D0NApqHjxeTeq9e8KO1BbN1e\\\",\\n            \\\"sagaRunId\\\": \\\"saga_run_3A8Cyn95VPX9JxUTIHhDJSlGj5I\\\",\\n            \\\"sagaRunStepId\\\": \\\"saga_run_step_3A8CynNQGmNFZGljL5ZQrxNX8OA\\\",\\n            \\\"artifactType\\\": \\\"api_trace\\\",\\n            \\\"title\\\": \\\"Runner submits snapshots and final report API Trace\\\",\\n            \\\"storagePath\\\": \\\"testing/sagas/runs/saga_run_3A8Cyn95VPX9JxUTIHhDJSlGj5I/artifacts/1771965079118-Runner_submits_snapshots_and_final_report_API_Trace.json\\\",\\n            \\\"contentType\\\": \\\"application/json\\\",\\n            \\\"bodyText\\\": \\\"{\\\\n  \\\\\\\"stepKey\\\\\\\": \\\\\\\"runner-submit-artifacts\\\\\\\",\\\\n  \\\\\\\"callCount\\\\\\\": 1,\\\\n  \\\\\\\"calls\\\\\\\": [\\\\n    {\\\\n      \\\\\\\"method\\\\\\\": \\\\\\\"POST\\\\\\\",\\\\n      \\\\\\\"path\\\\\\\": \\\\\\\"/api/v1/bizes/3A8CzzwEiXZrOdUCFoZm4Thi75d/locations\\\\\\\",\\\\n      \\\\\\\"status\\\\\\\": 201,\\\\n      \\\\\\\"requestBody\\\\\\\": {\\\\n        \\\\\\\"name\\\\\\\": \\\\\\\"Primary Location\\\\\\\",\\\\n        \\\\\\\"slug\\\\\\\": \\\\\\\"loc-tctmzsu9\\\\\\\",\\\\n        \\\\\\\"type\\\\\\\": \\\\\\\"physical\\\\\\\",\\\\n        \\\\\\\"timezone\\\\\\\": \\\\\\\"UTC\\\\\\\"\\\\n      },\\\\n      \\\\\\\"responseBody\\\\\\\": {\\\\n        \\\\\\\"success\\\\\\\": true,\\\\n        \\\\\\\"data\\\\\\\": {\\\\n          \\\\\\\"id\\\\\\\": \\\\\\\"3A8D0CxJ9Uji91Yl9A5dGPPd4eh\\\\\\\",\\\\n          \\\\\\\"bizId\\\\\\\": \\\\\\\"3A8CzzwEiXZrOdUCFoZm4Thi75d\\\\\\\",\\\\n          \\\\\\\"name\\\\\\\": \\\\\\\"Primary Location\\\\\\\",\\\\n          \\\\\\\"slug\\\\\\\": \\\\\\\"loc-tctmzsu9\\\\\\\",\\\\n          \\\\\\\"type\\\\\\\": \\\\\\\"physical\\\\\\\",\\\\n          \\\\\\\"timezone\\\\\\\": \\\\\\\"UTC\\\\\\\",\\\\n          \\\\\\\"address\\\\\\\": {},\\\\n          \\\\\\\"operatingHours\\\\\\\": {},\\\\n          \\\\\\\"configOverride\\\\\\\": {},\\\\n          \\\\\\\"serviceArea\\\\\\\": {},\\\\n          \\\\\\\"status\\\\\\\": \\\\\\\"active\\\\\\\",\\\\n          \\\\\\\"isDefault\\\\\\\": false,\\\\n          \\\\\\\"metadata\\\\\\\": {},\\\\n          \\\\\\\"createdAt\\\\\\\": \\\\\\\"2026-02-24T20:31:18.603Z\\\\\\\",\\\\n          \\\\\\\"updatedAt\\\\\\\": \\\\\\\"2026-02-24T20:31:18.603Z\\\\\\\",\\\\n          \\\\\\\"deletedAt\\\\\\\": null\\\\n        },\\\\n        \\\\\\\"meta\\\\\\\": {\\\\n          \\\\\\\"requestId\\\\\\\": \\\\\\\"53d64cd7-5351-4430-9a90-c69e57bf263d\\\\\\\",\\\\n          \\\\\\\"timestamp\\\\\\\": \\\\\\\"2026-02-24T20:31:18.607Z\\\\\\\"\\\\n        }\\\\n      },\\\\n      \\\\\\\"at\\\\\\\": \\\\\\\"2026-02-24T20:31:19.039Z\\\\\\\"\\\\n    }\\\\n  ]\\\\n}\\\\n\\\",\\n            \\\"byteSize\\\": 1188,\\n            \\\"checksum\\\": \\\"06348b58351895a63f0b451975a5203c0ac7dda9feea9139cbf0b170ec43c605\\\",\\n            \\\"capturedAt\\\": \\\"2026-02-24T20:31:19.124Z\\\",\\n            \\\"metadata\\\": {\\n              \\\"source\\\": \\\"rerun-sagas.ts\\\"\\n            }",
+        "_size": 16616
+      },
+      "at": "2026-02-24T20:31:19.710Z"
+    }
+  ]
+}

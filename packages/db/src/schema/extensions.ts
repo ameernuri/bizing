@@ -2210,3 +2210,160 @@ export type NewCustomFieldDefinitionOption =
 
 export type CustomFieldValue = typeof customFieldValues.$inferSelect;
 export type NewCustomFieldValue = typeof customFieldValues.$inferInsert;
+
+/**
+ * extension_instances
+ *
+ * ELI5:
+ * Stores extension-specific data instances for individual entities.
+ * One row = one extension data record attached to one entity (user, booking, etc.)
+ *
+ * Why it exists:
+ * - allows extensions to store structured data per-entity without schema migrations,
+ * - keeps extension data isolated but queryable,
+ * - enables use cases like insurance profiles, patient records, custom attributes.
+ *
+ * Example uses:
+ * - insurance profile data attached to a user
+ * - medical record summary attached to a patient
+ * - loyalty program data attached to a customer
+ * - custom configuration per booking order
+ *
+ * Design decisions:
+ * - Separate from `custom_field_values` because extension data has its own lifecycle
+ *   and is managed by extensions, not admins.
+ * - JSONB `data` field allows flexible schemas per extension without table churn.
+ * - Unique constraint on (entity, extension) prevents duplicate active instances.
+ *
+ * Usage pattern:
+ *   // Create insurance profile for patient
+ *   INSERT INTO extension_instances (
+ *     biz_id, extension_definition_id, entity_type, entity_id, data
+ *   ) VALUES (
+ *     'biz_123', 'ext_insurance', 'user', 'usr_456',
+ *     '{"provider": "BlueCross", "policy": "BC789"}'
+ *   );
+ *
+ * @see extensionDefinitions - for the extension metadata/schema
+ * @see customFieldValues - for admin-managed custom fields (different use case)
+ */
+export const extensionInstances = pgTable(
+  "extension_instances",
+  {
+    /** Stable primary key for this extension instance (ext_instance_xxx). */
+    id: idWithTag("ext_instance"),
+
+    /** 
+     * Tenant boundary. 
+     * All instances are scoped to a business for data isolation.
+     */
+    bizId: idRef("biz_id")
+      .references(() => bizes.id)
+      .notNull(),
+
+    /** 
+     * Pointer to the extension definition this instance belongs to.
+     * FK to extension_definitions.id (global catalog, no biz_id FK).
+     */
+    extensionDefinitionId: idRef("extension_definition_id")
+      .references(() => extensionDefinitions.id)
+      .notNull(),
+
+    /** 
+     * Entity type this instance is attached to.
+     * Examples: 'user', 'booking_order', 'fulfillment_unit', 'location'
+     * This enables polymorphic attachments without separate join tables.
+     */
+    entityType: varchar("entity_type", { length: 120 }).notNull(),
+
+    /** 
+     * Entity ID this instance is attached to.
+     * References the primary key of the entity_type table.
+     * Combined with entityType, forms a composite foreign key pattern.
+     */
+    entityId: varchar("entity_id", { length: 140 }).notNull(),
+
+    /** 
+     * Instance status for soft-lifecycle management.
+     * 'active' = currently in use
+     * 'inactive' = temporarily disabled
+     * 'archived' = retained for history but not active
+     */
+    status: lifecycleStatusEnum("status").default("active").notNull(),
+
+    /** 
+     * Structured data payload (schema validated by extension).
+     * JSONB allows flexible, queryable storage of extension-specific data.
+     * Extensions should version their data schema internally.
+     * Example: {"provider": "BlueCross", "policy": "BC123", "verified": true}
+     */
+    data: jsonb("data").default({}).notNull(),
+
+    /** 
+     * Optional display label for admin UIs.
+     * Human-readable description of this instance.
+     * Example: "Primary Insurance", "VIP Loyalty Status"
+     */
+    label: varchar("label", { length: 200 }),
+
+    /** 
+     * Extension-defined metadata.
+     * For internal extension use (versioning, source tracking, etc).
+     * Not used by core platform.
+     */
+    metadata: jsonb("metadata").default({}),
+
+    /** Full audit metadata (created_by, updated_by, timestamps). */
+    ...withAuditRefs(() => users.id),
+  },
+  (table) => ({
+    /** 
+     * Composite unique key for tenant-safe child FKs.
+     * Standard pattern across all tenant-scoped tables.
+     */
+    extensionInstancesBizIdIdUnique: uniqueIndex(
+      "extension_instances_biz_id_id_unique",
+    ).on(table.bizId, table.id),
+
+    /** 
+     * One active instance per (entity, extension) to prevent duplicates.
+     * A user should only have one active insurance profile per extension.
+     * Partial index only covers active instances to allow historical duplicates.
+     */
+    extensionInstancesBizEntityExtensionUnique: uniqueIndex(
+      "extension_instances_biz_entity_extension_unique",
+    )
+      .on(table.bizId, table.entityType, table.entityId, table.extensionDefinitionId)
+      .where(sql`"status" = 'active'`),
+
+    /** 
+     * Common query path: lookup all extension data for an entity.
+     * Used when loading a user/booking and fetching all attached extension data.
+     */
+    extensionInstancesBizEntityIdx: index("extension_instances_biz_entity_idx").on(
+      table.bizId,
+      table.entityType,
+      table.entityId,
+    ),
+
+    /** 
+     * Common query path: lookup all instances of a specific extension type.
+     * Used by extensions to find all their data across entities.
+     */
+    extensionInstancesBizExtensionIdx: index(
+      "extension_instances_biz_extension_idx",
+    ).on(table.bizId, table.extensionDefinitionId, table.status),
+
+    /** 
+     * Tenant-safe FK to extension definition (global catalog).
+     * Note: extension_definitions has no biz_id, so this is a single-column FK.
+     */
+    extensionInstancesExtensionDefFk: foreignKey({
+      columns: [table.extensionDefinitionId],
+      foreignColumns: [extensionDefinitions.id],
+      name: "extension_instances_extension_def_fk",
+    }),
+  }),
+);
+export type ExtensionInstance = typeof extensionInstances.$inferSelect;
+export type NewExtensionInstance = typeof extensionInstances.$inferInsert;

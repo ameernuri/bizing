@@ -1,0 +1,370 @@
+{
+  "schemaVersion": "snapshot.v1",
+  "screenKey": "owner-sign-up-1771948063297",
+  "title": "Owner signs up and authenticates Snapshot",
+  "generatedAt": "2026-02-24T15:47:43.308Z",
+  "stepKey": "owner-sign-up",
+  "status": "passed",
+  "view": {
+    "title": "Owner signs up and authenticates",
+    "subtitle": "Owner session is active.",
+    "blocks": [
+      {
+        "type": "alert",
+        "title": "Owner Sign Up completed",
+        "message": "Owner session is active.",
+        "tone": "success"
+      },
+      {
+        "type": "form",
+        "title": "Account session state",
+        "fields": [
+          {
+            "label": "Owner user id",
+            "value": "4HsyT5uSUhPNb5qRge6JDqL33oXCb2Io",
+            "state": "default"
+          },
+          {
+            "label": "Email",
+            "value": "owner-runner-1771947845480-xwnaqi@example.com",
+            "state": "default"
+          },
+          {
+            "label": "Session",
+            "value": "Active",
+            "state": "success"
+          }
+        ],
+        "submitLabel": "Authenticated"
+      },
+      {
+        "type": "key_value",
+        "title": "Screen details",
+        "items": [
+          {
+            "label": "OwnerUserId",
+            "value": "4HsyT5uSUhPNb5qRge6JDqL33oXCb2Io"
+          },
+          {
+            "label": "OwnerEmail",
+            "value": "owner-runner-1771947845480-xwnaqi@example.com"
+          }
+        ]
+      }
+    ]
+  },
+  "rawData": {
+    "stepKey": "owner-sign-up",
+    "resultPayload": {
+      "note": "Owner session is active.",
+      "evidence": {
+        "ownerUserId": "4HsyT5uSUhPNb5qRge6JDqL33oXCb2Io",
+        "ownerEmail": "owner-runner-1771947845480-xwnaqi@example.com"
+      }
+    },
+    "apiCalls": [
+      {
+        "method": "POST",
+        "path": "/api/v1/sagas/runs/saga_run_3A7eVaNphhZA1uz3oZuWeKmq0TH/snapshots",
+        "status": 201,
+        "requestBody": {
+          "stepKey": "owner-configure-pricing",
+          "screenKey": "owner-configure-pricing-1771948062829",
+          "title": "Configure default pricing rules Snapshot",
+          "status": "passed",
+          "route": "/sagas/saga_run_3A7eVaNphhZA1uz3oZuWeKmq0TH/owner-configure-pricing",
+          "format": "json",
+          "view": {
+            "title": "Configure default pricing rules",
+            "subtitle": "Pricing baseline configured on biz metadata.",
+            "blocks": [
+              {
+                "type": "alert",
+                "title": "Owner Configure Pricing completed",
+                "message": "Pricing baseline configured on biz metadata.",
+                "tone": "success"
+              }
+            ]
+          },
+          "rawData": {
+            "stepKey": "owner-configure-pricing",
+            "resultPayload": {
+              "note": "Pricing baseline configured on biz metadata."
+            },
+            "apiCalls": [
+              {
+                "method": "POST",
+                "path": "/api/v1/bizes/3A7eVGM4sH7N2qunIzgaEgZdRLd/booking-orders",
+                "status": 403,
+                "requestBody": {
+                  "offerId": "offer_3A7eVdI2VaZqdoPZ7wNazcmfFaJ",
+                  "offerVersionId": "offer_version_3A7eVg41p6X4L3KLz5s1Lyr68nz",
+                  "status": "draft",
+                  "subtotalMinor": 1000,
+                  "taxMinor": 0,
+                  "feeMinor": 0,
+                  "discountMinor": 0,
+                  "totalMinor": 1000,
+                  "currency": "USD"
+                },
+                "responseBody": {
+                  "success": false,
+                  "error": {
+                    "code": "FORBIDDEN",
+                    "message": "You are not a member of this biz."
+                  },
+                  "meta": {
+                    "requestId": "db1243fa-5315-4506-9861-82f960aecf78",
+                    "timestamp": "2026-02-24T15:47:42.607Z"
+                  }
+                },
+                "at": "2026-02-24T15:47:42.608Z"
+              },
+              {
+                "method": "POST",
+                "path": "/api/v1/sagas/runs/saga_run_3A7eVGslvvS91nN9GGI68cjk1Xi/steps/customer-advanced-payment-flow/result",
+                "status": 200,
+                "requestBody": {
+                  "status": "blocked",
+                  "startedAt": "2026-02-24T15:47:42.460Z",
+                  "endedAt": "2026-02-24T15:47:42.460Z",
+                  "failureMessage": "customer-advanced-payment-flow: Advanced payment/tender allocation API is not exposed yet.",
+                  "resultPayload": {
+                    "note": "Step blocked: customer-advanced-payment-flow: Advanced payment/tender allocation API is not exposed yet.",
+                    "evidence": {
+                      "error": "customer-advanced-payment-flow: Advanced payment/tender allocation API is not exposed yet.",
+                      "failed": false,
+                      "blocked": true,
+                      "expected": "Split tender + gift/credit/payment allocation tools",
+                      "foundToolCount": 43
+                    }
+                  },
+                  "assertionSummary": {
+                    "status": "blocked",
+                    "hasFailure": true,
+                    "assertionsPassed": 0
+                  }
+                },
+                "responseBody": {
+                  "success": true,
+                  "data": {
+                    "id": "saga_run_step_3A7eVGAmxBMHYTuXQb1HcTkKwR2",
+                    "sagaRunId": "saga_run_3A7eVGslvvS91nN9GGI68cjk1Xi",
+                    "phaseKey": "customer-lifecycle",
+                    "phaseOrder": 5,
+                    "phaseTitle": "Customer Lifecycle",
+                    "stepKey": "customer-advanced-payment-flow",
+                    "stepOrder": 15,
+                    "actorKey": "customer_1",
+                    "instruction": "Execute advanced payment path (split tender and/or tip/gift/credit entitlement usage) and persist allocation evidence.",
+                    "expectedResult": "Payment trace clearly links payer, tender mix, and booking/order amounts with no ambiguity.",
+                    "status": "blocked",
+                    "attemptCount": 1,
+                    "startedAt": "2026-02-24T15:47:42.460Z",
+                    "endedAt": "2026-02-24T15:47:42.460Z",
+                    "failureCode": null,
+                    "failureMessage": "customer-advanced-payment-flow: Advanced payment/tender allocation API is not exposed yet.",
+                    "resultPayload": {
+                      "note": "Step blocked: customer-advanced-payment-flow: Advanced payment/tender allocation API is not exposed yet.",
+                      "evidence": {
+                        "error": "customer-advanced-payment-flow: Advanced payment/tender allocation API is not exposed yet.",
+                        "failed": false,
+                        "blocked": true,
+                        "expected": "Split tender + gift/credit/payment allocation tools",
+                        "foundToolCount": 43
+                      }
+                    },
+                    "assertionSummary": {
+                      "status": "blocked",
+                      "hasFailure": true,
+                      "assertionsPassed": 0
+                    },
+                    "metadata": {},
+                    "createdAt": "2026-02-24T15:47:37.379Z",
+                    "updatedAt": "2026-02-24T15:47:37.379Z",
+                    "deletedAt": null,
+                    "createdBy": null,
+                    "updatedBy": null,
+                    "deletedBy": null
+                  },
+                  "meta": {
+                    "requestId": "9d36ecce-6c47-48a5-8c11-f88a005ff886",
+                    "timestamp": "2026-02-24T15:47:42.609Z"
+                  }
+                },
+                "at": "2026-02-24T15:47:42.609Z"
+              },
+              {
+                "method": "GET",
+                "path": "/api/auth/get-session",
+                "status": 200,
+                "responseBody": {
+                  "session": {
+                    "expiresAt": "2026-03-03T15:47:42.596Z",
+                    "token": "QIV2gUwV1q2fip2aVP6u3VKo98IqLZP4",
+                    "createdAt": "2026-02-24T15:47:42.596Z",
+                    "updatedAt": "2026-02-24T15:47:42.596Z",
+                    "ipAddress": "",
+                    "userAgent": "node",
+                    "userId": "JjCcf3BkUrL8JwPzXSMKVcVB2dU4xLWa",
+                    "activeOrganizationId": null,
+                    "impersonatedBy": null,
+                    "id": "g4V5wm6DTKmCfCAeKAGzgXruMAWZO9JS"
+                  },
+                  "user": {
+                    "name": "adversary-uc-83-the-solo-entrepreneur-sarah",
+                    "email": "adversary-uc-83-the-solo-entrepreneur-sarah-1771948062489-nmtdmn@example.com",
+                    "emailVerified": false,
+                    "image": null,
+                    "createdAt": "2026-02-24T15:47:42.589Z",
+                    "updatedAt": "2026-02-24T15:47:42.589Z",
+                    "role": "user",
+                    "banned": false,
+                    "banReason": null,
+                    "banExpires": null,
+                    "id": "JjCcf3BkUrL8JwPzXSMKVcVB2dU4xLWa"
+                  }
+                },
+                "at": "2026-02-24T15:47:42.614Z"
+              },
+              {
+                "method": "POST",
+                "path": "/api/v1/sagas/runs/saga_run_3A7eV4cygSj3V6q7JR0RWxl2dwA/steps/owner-revenue-sanity/result",
+                "status": 200,
+                "requestBody": {
+                  "status": "in_progress",
+                  "startedAt": "2026-02-24T15:47:42.491Z",
+                  "resultPayload": {
+                    "note": "Started owner-revenue-sanity"
+                  },
+                  "assertionSummary": {
+                    "status": "in_progress"
+                  }
+                },
+                "responseBody": {
+                  "success": true,
+                  "data": {
+                    "id": "saga_run_step_3A7eV5tOvDCwBlKyZJ9gUdXeCBi",
+                    "sagaRunId": "saga_run_3A7eV4cygSj3V6q7JR0RWxl2dwA",
+                    "phaseKey": "reporting-and-closeout",
+                    "phaseOrder": 8,
+                    "phaseTitle": "Reporting And Closeout",
+                    "stepKey": "owner-revenue-sanity",
+                    "stepOrder": 18,
+                    "actorKey": "biz_owner",
+                    "instruction": "Read reporting endpoints and verify booking totals, counts, and statuses align with saga actions.",
+                    "expectedResult": "Reported metrics match booking actions and highlight any discrepancies for schema/API iteration.",
+                    "status": "in_progress",
+                    "attemptCount": 1,
+                    "startedAt": "2026-02-24T15:47:42.491Z",
+                    "endedAt": null,
+                    "failureCode": null,
+                    "failureMessage": null,
+                    "resultPayload": {
+                      "note": "Started owner-revenue-sanity"
+                    },
+                    "assertionSummary": {
+                      "status": "in_progress"
+                    },
+                    "metadata": {},
+                    "createdAt": "2026-02-24T15:47:36.649Z",
+                    "updatedAt": "2026-02-24T15:47:36.649Z",
+                    "deletedAt": null,
+                    "createdBy": null,
+                    "updatedBy": null,
+                    "deletedBy": null
+                  },
+                  "meta": {
+                    "requestId": "ab135caf-be29-4316-ad3e-07207c9b4b45",
+                    "timestamp": "2026-02-24T15:47:42.612Z"
+                  }
+                },
+                "at": "2026-02-24T15:47:42.615Z"
+              },
+              {
+                "method": "POST",
+                "path": "/api/v1/bizes/3A7eVGM4sH7N2qunIzgaEgZdRLd/booking-orders",
+                "status": 403,
+                "requestBody": {
+                  "offerId": "offer_3A7eVdI2VaZqdoPZ7wNazcmfFaJ",
+                  "offerVersionId": "offer_version_3A7eVg41p6X4L3KLz5s1Lyr68nz",
+                  "status": "draft",
+                  "subtotalMinor": 1000,
+                  "taxMinor": 0,
+                  "feeMinor": 0,
+                  "discountMinor": 0,
+                  "totalMinor": 1000,
+                  "currency": "USD"
+                },
+                "responseBody": {
+                  "success": false,
+                  "error": {
+                    "code": "FORBIDDEN",
+                    "message": "You are not a member of this biz."
+                  },
+                  "meta": {
+                    "requestId": "0d22ae62-7647-4597-bb70-3472304e19ed",
+                    "timestamp": "2026-02-24T15:47:42.613Z"
+                  }
+                },
+                "at": "2026-02-24T15:47:42.616Z"
+              },
+              {
+                "method": "GET",
+                "path": "/api/v1/bizes/3A7eVECt9DUwxAQq1Lt0OqkBhL4/booking-orders",
+                "status": 403,
+                "responseBody": {
+                  "success": false,
+                  "error": {
+                    "code": "FORBIDDEN",
+                    "message": "You are not a member of this biz."
+                  },
+                  "meta": {
+                    "requestId": "e2378604-469e-4f62-8238-3deb73615694",
+                    "timestamp": "2026-02-24T15:47:42.618Z"
+                  }
+                },
+                "at": "2026-02-24T15:47:42.621Z"
+              }
+            ]
+          }
+        },
+        "responseBody": {
+          "success": true,
+          "data": {
+            "id": "saga_artifact_3A7eVrFtxogonQFq59yM9tdxrKG",
+            "sagaRunId": "saga_run_3A7eVaNphhZA1uz3oZuWeKmq0TH",
+            "sagaRunStepId": "saga_run_step_3A7eVZsAIcmSh1GLHoaOrUDygiD",
+            "artifactType": "snapshot",
+            "title": "Configure default pricing rules Snapshot",
+            "storagePath": "testing/sagas/runs/saga_run_3A7eVaNphhZA1uz3oZuWeKmq0TH/snapshots/2026-02-24T15-47-42-839Z-owner-configure-pricing-1771948062829.json",
+            "contentType": "application/json",
+            "bodyText": "{\n  \"schemaVersion\": \"snapshot.v1\",\n  \"screenKey\": \"owner-configure-pricing-1771948062829\",\n  \"title\": \"Configure default pricing rules Snapshot\",\n  \"generatedAt\": \"2026-02-24T15:47:42.836Z\",\n  \"stepKey\": \"owner-configure-pricing\",\n  \"status\": \"passed\",\n  \"view\": {\n    \"title\": \"Configure default pricing rules\",\n    \"subtitle\": \"Pricing baseline configured on biz metadata.\",\n    \"blocks\": [\n      {\n        \"type\": \"alert\",\n        \"title\": \"Owner Configure Pricing completed\",\n        \"message\": \"Pricing baseline configured on biz metadata.\",\n        \"tone\": \"success\"\n      }\n    ]\n  },\n  \"rawData\": {\n    \"stepKey\": \"owner-configure-pricing\",\n    \"resultPayload\": {\n      \"note\": \"Pricing baseline configured on biz metadata.\"\n    },\n    \"apiCalls\": [\n      {\n        \"method\": \"POST\",\n        \"path\": \"/api/v1/bizes/3A7eVGM4sH7N2qunIzgaEgZdRLd/booking-orders\",\n        \"status\": 403,\n        \"requestBody\": {\n          \"offerId\": \"offer_3A7eVdI2VaZqdoPZ7wNazcmfFaJ\",\n          \"offerVersionId\": \"offer_version_3A7eVg41p6X4L3KLz5s1Lyr68nz\",\n          \"status\": \"draft\",\n          \"subtotalMinor\": 1000,\n          \"taxMinor\": 0,\n          \"feeMinor\": 0,\n          \"discountMinor\": 0,\n          \"totalMinor\": 1000,\n          \"currency\": \"USD\"\n        },\n        \"responseBody\": {\n          \"success\": false,\n          \"error\": {\n            \"code\": \"FORBIDDEN\",\n            \"message\": \"You are not a member of this biz.\"\n          },\n          \"meta\": {\n            \"requestId\": \"db1243fa-5315-4506-9861-82f960aecf78\",\n            \"timestamp\": \"2026-02-24T15:47:42.607Z\"\n          }\n        },\n        \"at\": \"2026-02-24T15:47:42.608Z\"\n      },\n      {\n        \"method\": \"POST\",\n        \"path\": \"/api/v1/sagas/runs/saga_run_3A7eVGslvvS91nN9GGI68cjk1Xi/steps/customer-advanced-payment-flow/result\",\n        \"status\": 200,\n        \"requestBody\": {\n          \"status\": \"blocked\",\n          \"startedAt\": \"2026-02-24T15:47:42.460Z\",\n          \"endedAt\": \"2026-02-24T15:47:42.460Z\",\n          \"failureMessage\": \"customer-advanced-payment-flow: Advanced payment/tender allocation API is not exposed yet.\",\n          \"resultPayload\": {\n            \"note\": \"Step blocked: customer-advanced-payment-flow: Advanced payment/tender allocation API is not exposed yet.\",\n            \"evidence\": {\n              \"error\": \"customer-advanced-payment-flow: Advanced payment/tender allocation API is not exposed yet.\",\n              \"failed\": false,\n              \"blocked\": true,\n              \"expected\": \"Split tender + gift/credit/payment allocation tools\",\n              \"foundToolCount\": 43\n            }\n          },\n          \"assertionSummary\": {\n            \"status\": \"blocked\",\n            \"hasFailure\": true,\n            \"assertionsPassed\": 0\n          }\n        },\n        \"responseBody\": {\n          \"success\": true,\n          \"data\": {\n            \"id\": \"saga_run_step_3A7eVGAmxBMHYTuXQb1HcTkKwR2\",\n            \"sagaRunId\": \"saga_run_3A7eVGslvvS91nN9GGI68cjk1Xi\",\n            \"phaseKey\": \"customer-lifecycle\",\n            \"phaseOrder\": 5,\n            \"phaseTitle\": \"Customer Lifecycle\",\n            \"stepKey\": \"customer-advanced-payment-flow\",\n            \"stepOrder\": 15,\n            \"actorKey\": \"customer_1\",\n            \"instruction\": \"Execute advanced payment path (split tender and/or tip/gift/credit entitlement usage) and persist allocation evidence.\",\n            \"expectedResult\": \"Payment trace clearly links payer, tender mix, and booking/order amounts with no ambiguity.\",\n            \"status\": \"blocked\",\n            \"attemptCount\": 1,\n            \"startedAt\": \"2026-02-24T15:47:42.460Z\",\n            \"endedAt\": \"2026-02-24T15:47:42.460Z\",\n            \"failureCode\": null,\n            \"failureMessage\": \"customer-advanced-payment-flow: Advanced payment/tender allocation API is not exposed yet.\",\n            \"resultPayload\": {\n              \"note\": \"Step blocked: customer-advanced-payment-flow: Advanced payment/tender allocation API is not exposed yet.\",\n              \"evidence\": {\n                \"error\": \"customer-advanced-payment-flow: Advanced payment/tender allocation API is not exposed yet.\",\n                \"failed\": false,\n                \"blocked\": true,\n                \"expected\": \"Split tender + gift/credit/payment allocation tools\",\n                \"foundToolCount\": 43\n              }\n            },\n            \"assertionSummary\": {\n              \"status\": \"blocked\",\n              \"hasFailure\": true,\n              \"assertionsPassed\": 0\n            },\n            \"metadata\": {},\n            \"createdAt\": \"2026-02-24T15:47:37.379Z\",\n            \"updatedAt\": \"2026-02-24T15:47:37.379Z\",\n            \"deletedAt\": null,\n            \"createdBy\": null,\n            \"updatedBy\": null,\n            \"deletedBy\": null\n          },\n          \"meta\": {\n            \"requestId\": \"9d36ecce-6c47-48a5-8c11-f88a005ff886\",\n            \"timestamp\": \"2026-02-24T15:47:42.609Z\"\n          }\n        },\n        \"at\": \"2026-02-24T15:47:42.609Z\"\n      },\n      {\n        \"method\": \"GET\",\n        \"path\": \"/api/auth/get-session\",\n        \"status\": 200,\n        \"responseBody\": {\n          \"session\": {\n            \"expiresAt\": \"2026-03-03T15:47:42.596Z\",\n            \"token\": \"QIV2gUwV1q2fip2aVP6u3VKo98IqLZP4\",\n            \"createdAt\": \"2026-02-24T15:47:42.596Z\",\n            \"updatedAt\": \"2026-02-24T15:47:42.596Z\",\n            \"ipAddress\": \"\",\n            \"userAgent\": \"node\",\n            \"userId\": \"JjCcf3BkUrL8JwPzXSMKVcVB2dU4xLWa\",\n            \"activeOrganizationId\": null,\n            \"impersonatedBy\": null,\n            \"id\": \"g4V5wm6DTKmCfCAeKAGzgXruMAWZO9JS\"\n          },\n          \"user\": {\n            \"name\": \"adversary-uc-83-the-solo-entrepreneur-sarah\",\n            \"email\": \"adversary-uc-83-the-solo-entrepreneur-sarah-1771948062489-nmtdmn@example.com\",\n            \"emailVerified\": false,\n            \"image\": null,\n            \"createdAt\": \"2026-02-24T15:47:42.589Z\",\n            \"updatedAt\": \"2026-02-24T15:47:42.589Z\",\n            \"role\": \"user\",\n            \"banned\": false,\n            \"banReason\": null,\n            \"banExpires\": null,\n            \"id\": \"JjCcf3BkUrL8JwPzXSMKVcVB2dU4xLWa\"\n          }\n        },\n        \"at\": \"2026-02-24T15:47:42.614Z\"\n      },\n      {\n        \"method\": \"POST\",\n        \"path\": \"/api/v1/sagas/runs/saga_run_3A7eV4cygSj3V6q7JR0RWxl2dwA/steps/owner-revenue-sanity/result\",\n        \"status\": 200,\n        \"requestBody\": {\n          \"status\": \"in_progress\",\n          \"startedAt\": \"2026-02-24T15:47:42.491Z\",\n          \"resultPayload\": {\n            \"note\": \"Started owner-revenue-sanity\"\n          },\n          \"assertionSummary\": {\n            \"status\": \"in_progress\"\n          }\n        },\n        \"responseBody\": {\n          \"success\": true,\n          \"data\": {\n            \"id\": \"saga_run_step_3A7eV5tOvDCwBlKyZJ9gUdXeCBi\",\n            \"sagaRunId\": \"saga_run_3A7eV4cygSj3V6q7JR0RWxl2dwA\",\n            \"phaseKey\": \"reporting-and-closeout\",\n            \"phaseOrder\": 8,\n            \"phaseTitle\": \"Reporting And Closeout\",\n            \"stepKey\": \"owner-revenue-sanity\",\n            \"stepOrder\": 18,\n            \"actorKey\": \"biz_owner\",\n            \"instruction\": \"Read reporting endpoints and verify booking totals, counts, and statuses align with saga actions.\",\n            \"expectedResult\": \"Reported metrics match booking actions and highlight any discrepancies for schema/API iteration.\",\n            \"status\": \"in_progress\",\n            \"attemptCount\": 1,\n            \"startedAt\": \"2026-02-24T15:47:42.491Z\",\n            \"endedAt\": null,\n            \"failureCode\": null,\n            \"failureMessage\": null,\n            \"resultPayload\": {\n              \"note\": \"Started owner-revenue-sanity\"\n            },\n            \"assertionSummary\": {\n              \"status\": \"in_progress\"\n            },\n            \"metadata\": {},\n            \"createdAt\": \"2026-02-24T15:47:36.649Z\",\n            \"updatedAt\": \"2026-02-24T15:47:36.649Z\",\n            \"deletedAt\": null,\n            \"createdBy\": null,\n            \"updatedBy\": null,\n            \"deletedBy\": null\n          },\n          \"meta\": {\n            \"requestId\": \"ab135caf-be29-4316-ad3e-07207c9b4b45\",\n            \"timestamp\": \"2026-02-24T15:47:42.612Z\"\n          }\n        },\n        \"at\": \"2026-02-24T15:47:42.615Z\"\n      },\n      {\n        \"method\": \"POST\",\n        \"path\": \"/api/v1/bizes/3A7eVGM4sH7N2qunIzgaEgZdRLd/booking-orders\",\n        \"status\": 403,\n        \"requestBody\": {\n          \"offerId\": \"offer_3A7eVdI2VaZqdoPZ7wNazcmfFaJ\",\n          \"offerVersionId\": \"offer_version_3A7eVg41p6X4L3KLz5s1Lyr68nz\",\n          \"status\": \"draft\",\n          \"subtotalMinor\": 1000,\n          \"taxMinor\": 0,\n          \"feeMinor\": 0,\n          \"discountMinor\": 0,\n          \"totalMinor\": 1000,\n          \"currency\": \"USD\"\n        },\n        \"responseBody\": {\n          \"success\": false,\n          \"error\": {\n            \"code\": \"FORBIDDEN\",\n            \"message\": \"You are not a member of this biz.\"\n          },\n          \"meta\": {\n            \"requestId\": \"0d22ae62-7647-4597-bb70-3472304e19ed\",\n            \"timestamp\": \"2026-02-24T15:47:42.613Z\"\n          }\n        },\n        \"at\": \"2026-02-24T15:47:42.616Z\"\n      },\n      {\n        \"method\": \"GET\",\n        \"path\": \"/api/v1/bizes/3A7eVECt9DUwxAQq1Lt0OqkBhL4/booking-orders\",\n        \"status\": 403,\n        \"responseBody\": {\n          \"success\": false,\n          \"error\": {\n            \"code\": \"FORBIDDEN\",\n            \"message\": \"You are not a member of this biz.\"\n          },\n          \"meta\": {\n            \"requestId\": \"e2378604-469e-4f62-8238-3deb73615694\",\n            \"timestamp\": \"2026-02-24T15:47:42.618Z\"\n          }\n        },\n        \"at\": \"2026-02-24T15:47:42.621Z\"\n      }\n    ]\n  },\n  \"metadata\": {}\n}\n",
+            "byteSize": 9687,
+            "checksum": "548531ed6fee3023e16ac55a6e5ba1deb08e81470cb8e770cb5a87f8a1c1be1b",
+            "capturedAt": "2026-02-24T15:47:42.848Z",
+            "metadata": {
+              "format": "json",
+              "stepKey": "owner-configure-pricing",
+              "screenKey": "owner-configure-pricing-1771948062829",
+              "sourceFormat": "v1",
+              "schemaVersion": "snapshot.v1"
+            },
+            "createdAt": "2026-02-24T15:47:42.848Z",
+            "updatedAt": "2026-02-24T15:47:42.848Z",
+            "deletedAt": null,
+            "createdBy": null,
+            "updatedBy": null,
+            "deletedBy": null
+          },
+          "meta": {
+            "requestId": "36e459cf-6fa3-42e3-9a26-87f1f330f7f2",
+            "timestamp": "2026-02-24T15:47:42.864Z"
+          }
+        },
+        "at": "2026-02-24T15:47:42.866Z"
+      }
+    ]
+  },
+  "metadata": {}
+}

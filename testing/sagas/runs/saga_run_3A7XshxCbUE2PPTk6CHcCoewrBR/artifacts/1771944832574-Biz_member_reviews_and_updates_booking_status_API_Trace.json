@@ -1,0 +1,521 @@
+{
+  "stepKey": "member-review-bookings",
+  "callCount": 4,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs",
+      "status": 201,
+      "requestBody": {
+        "sagaKey": "uc-215-the-solo-entrepreneur-sarah",
+        "mode": "dry_run",
+        "runnerLabel": "codex-rerun-all",
+        "runContext": {
+          "createdBy": "apps/api/src/scripts/rerun-sagas.ts"
+        }
+      },
+      "responseBody": {
+        "_truncated": true,
+        "_preview": "{\"success\":true,\"data\":{\"run\":{\"id\":\"saga_run_3A7XxqvoR6GGoX4qkLgb3nVJDxb\",\"sagaDefinitionId\":\"saga_definition_3A4n3JaxlMNSjVsmx0ohTlnG3EX\",\"sagaKey\":\"uc-215-the-solo-entrepreneur-sarah\",\"bizId\":null,\"status\":\"pending\",\"mode\":\"dry_run\",\"requestedByUserId\":\"fiS214bYiINkmqusKTlAAewJJDlzHM4I\",\"runnerLabel\":\"codex-rerun-all\",\"definitionChecksum\":\"f96590abd6cefe6f7dbdcbf734adc10f6da59bbbda08306b05010263610624a4\",\"startedAt\":null,\"endedAt\":null,\"lastHeartbeatAt\":null,\"totalSteps\":20,\"passedSteps\":0,\"failedSteps\":0,\"skippedSteps\":0,\"runContext\":{\"createdBy\":\"apps/api/src/scripts/rerun-sagas.ts\"},\"runSummary\":{},\"metadata\":{\"tags\":[\"uc-derived\",\"persona-derived\",\"lifecycle\",\"api-first\",\"agents\"],\"title\":\"UC-215 • The Biz-Safe Audience Fanout for Subject Events • The Solo Entrepreneur (Sarah)\"},\"createdAt\":\"2026-02-24T14:53:51.685Z\",\"updatedAt\":\"2026-02-24T14:53:51.685Z\",\"deletedAt\":null,\"createdBy\":null,\"updatedBy\":null,\"deletedBy\":null},\"definition\":{\"id\":\"saga_definition_3A4n3JaxlMNSjVsmx0ohTlnG3EX\",\"bizId\":null,\"sagaKey\":\"uc-215-the-solo-entrepreneur-sarah\",\"title\":\"UC-215 • The Biz-Safe Audience Fanout for Subject Events • The Solo Entrepreneur (Sarah)\",\"description\":\"Comprehensive lifecycle saga derived from UC-215 and persona P-1. Needs summary: Tenant-safe foreign keys from delivery rows to events/subscriptions; Subscriber-to-endpoint ownership checks; Subscription status gates during fanout; Event-to-delivery lineage for auditability; Support for subject entities beyond built-in domain tables\",\"status\":\"active\",\"sourceUseCaseRef\":\"UC-215\",\"sourcePersonaRef\":\"P-1\",\"sourceUseCaseFile\":\"/Users/ameer/bizing/mind/workspace/documentation/use-cases-comprehensive.md\",\"sourcePersonaFile\":\"/Users/ameer/bizing/mind/workspace/documentation/tester-personas.md\",\"specVersion\":\"saga.v0\",\"specFilePath\":\"testing/sagas/specs/uc-215-the-solo-entrepreneur-sarah.json\",\"specChecksum\":\"f96590abd6cefe6f7dbdcbf734adc10f6da59bbbda08306b05010263610624a4\",\"metadata\":{\"tags\":[\"uc-derived\",\"persona-derived\",\"lifecycle\",\"api-first\",\"agents\"],\"generatedAt\":\"2026-02-24T14:45:06.976Z\"},\"createdAt\":\"2026-02-23T15:28:29.325Z\",\"updatedAt\":\"2026-02-23T15:28:29.325Z\",\"deletedAt\":null,\"createdBy\":null,\"updatedBy\":null,\"deletedBy\":null},\"spec\":{\"schemaVersion\":\"saga.v0\",\"sagaKey\":\"uc-215-the-solo-entrepreneur-sarah\",\"title\":\"UC-215 • The Biz-Safe Audience Fanout for Subject Events • The Solo Entrepreneur (Sarah)\",\"description\":\"Comprehensive lifecycle saga derived from UC-215 and persona P-1. Needs summary: Tenant-safe foreign keys from delivery rows to events/subscriptions; Subscriber-to-endpoint ownership checks; Subscription status gates during fanout; Event-to-delivery lineage for auditability; Support for subject entities beyond built-in domain tables\",\"tags\":[\"uc-derived\",\"persona-derived\",\"lifecycle\",\"api-first\",\"agents\"],\"defaults\":{\"runMode\":\"dry_run\",\"continueOnFailure\":false},\"source\":{\"useCaseRef\":\"UC-215\",\"personaRef\":\"P-1\",\"useCaseFile\":\"/Users/ameer/bizing/mind/workspace/documentation/use-cases-comprehensive.md\",\"personaFile\":\"/Users/ameer/bizing/mind/workspace/documentation/tester-personas.md\",\"generatedAt\":\"2026-02-24T14:45:06.976Z\"},\"objectives\":[\"Validate UC-215 lifecycle end-to-end using persona The Solo Entrepreneur (Sarah).\",\"Exercise owner setup, team setup, catalog publishing, and customer journeys.\",\"Stress ACL/security edge cases and verify expected denials are enforced.\",\"Collect snapshots and report artifacts for every critical milestone.\"],\"actors\":[{\"actorKey\":\"biz_owner\",\"name\":\"The Solo Entrepreneur (Sarah)\",\"role\":\"owner\",\"description\":\"Just starting out, wearing all hats\",\"personaRef\":\"P-1\"},{\"actorKey\":\"biz_member\",\"name\":\"Operations Team Member\",\"role\":\"manager\",\"description\":\"Business member invited by owner to assist with operations and booking flow.\"},{\"actorKey\":\"customer_1\",\"name\":\"Customer One\",\"role\":\"customer\",\"description\":\"Primary customer exploring catalog, booking services, and purchasing products.\"},{\"actorKey\":\"customer_2\",\"name\":\"Customer Two\",\"role\":\"customer\",\"description\":\"Concurrent customer used to simulate realistic demand and race conditions.\"},{\"actorKey\":\"adversary\",\"name\":\"Adversarial User\",\"role\":\"malicious_actor\",\"description\":\"Actor intentionally attempting unauthorized or abusive actions.\"}],\"phases\":[{\"phaseKey\":\"owner-onboarding\",\"order\":1,\"title\":\"Owner Onboarding\",\"description\":\"Business owner signs up, authenticates, and establishes tenant root.\",\"steps\":[{\"stepKey\":\"owner-sign-up\",\"order\":1,\"title\":\"Owner signs up and authenticates\",\"actorKey\":\"biz_owner\",\"intent\":\"Establish authenticated owner identity for the lifecycle.\",\"instruction\":\"Create or login the owner account through Better Auth endpoints, then verify session context can call authenticated API routes.\",\"expectedResult\":\"Owner session exists and authenticated routes return success for this user.\",\"toolHints\":[],\"assertions\":[{\"kind\":\"api_response\",\"description\":\"API call returns success and includes stable ids for created entities.\"},{\"kind\":\"acl_guard\",\"description\":\"Actor permissions are honored for this step context.\"}],\"evidenceRequired\":[{\"kind\":\"api_trace\",\"label\":\"Request/response trace for this step\"},{\"kind\":\"snapshot\",\"label\":\"Structured snapshot.v1 screen blocks (what user saw) with real API-backed data\"}],\"guardrails\":[],\"tags\":[\"auth\",\"setup\"]},{\"stepKey\":\"owner-create-biz\",\"order\":2,\"title\":\"Owner creates business tenant\",\"actorKey\":\"biz_owner\",\"intent\":\"Create the biz root for all subsequent configuration.\",\"instruction\":\"Using agents tools, create a biz representing The Biz-Safe Audience Fanout for Subject Events. Use name/slug derived from saga context.\",\"expectedResult\":\"Biz is created, owner is auto-added as member with owner role, and biz id is captured.\",\"toolHints\":[\"bizing.bizes.create\"],\"assertions\":[{\"kind\":\"api_response\",\"description\":\"API call returns success and includes stable ids for created entities.\"},{\"kind\":\"acl_guard\",\"description\":\"Actor permissions are honored for this step context.\"}],\"evidenceRequired\":[{\"kind\":\"api_trace\",\"label\":\"Request/response trace for this step\"},{\"kind\":\"snapshot\",\"label\":\"Structured snapshot.v1 screen blocks (what user saw) with real API-backed data\"}],\"guardrails\":[],\"tags\":[\"biz\",\"setup\"]},{\"stepKey\":\"owner-create-location\",\"order\":3,\"title\":\"Owner creates primary location\",\"actorKey\":\"biz_owner\",\"intent\":\"Establish operational location for services/resources.\",\"instruction\":\"Create a primary location for the biz and set timezone aligned with scenario context.\",\"expectedResult\":\"Location exists and is associated with the new biz.\",\"toolHints\":[\"bizing.locations.create\"],\"assertions\":[{\"kind\":\"api_response\",\"description\":\"API call returns success and includes stable ids for created entities.\"},{\"kind\":\"acl_guard\",\"description\":\"Actor permissions are honored for this step context.\"}],\"evidenceRequired\":[{\"kind\":\"api_trace\",\"label\":\"Request/response trace for this step\"},{\"kind\":\"snapshot\",\"label\":\"Structured snapshot.v1 screen blocks (what user saw) with real API-backed data\"}],\"guardrails\":[],\"tags\":[\"location\",\"setup\"]}]},{\"phaseKey\":\"business-configuration\",\"order\":2,\"title\":\"Business Configuration\",\"description\":\"Owner configures scheduling, pricing baseline, and operational defaults.\",\"steps\":[{\"stepKey\":\"owner-configure-hours\",\"order\":4,\"title\":\"Configure default hours and availability mode\",\"actorKey\":\"biz_owner\",\"intent\":\"Set baseline availability without forcing advanced complexity.\",\"instruction\":\"Create baseline availability and lead-time rules representing the UC default business hours and booking window behavior.\",\"expectedResult\":\"Availability defaults and rules are stored and can be referenced by calendars.\",\"toolHints\":[],\"assertions\":[{\"kind\":\"api_response\",\"description\":\"API call returns success and includes stable ids for created entities.\"},{\"kind\":\"acl_guard\",\"description\":\"Actor permissions are honored for this step context.\"}],\"evidenceRequired\":[{\"kind\":\"api_trace\",\"label\":\"Request/response trace for this step\"},{\"kind\":\"snapshot\",\"label\":\"Structured snapshot.v1 screen blocks (what user saw) with real API-backed data\"}],\"guardrails\":[],\"tags\":[\"availability\",\"policy\"]},{\"stepKey\":\"owner-configure-pricing\",\"order\":5,\"title\":\"Configure default pricing rules\",\"actorKey\":\"biz_owner\",\"intent\":\"Set base pricing and optional manual demand overrides.\",\"instruction\":\"Configure pricing defaults for the offer lifecycle including call fees/manual surge if UC needs imply it.\",\"expectedResult\":\"Pricing model persists and future bookings can calculate totals deterministically.\",\"toolHints\":[],\"assertions\":[{\"kind\":\"api_response\",\"description\":\"API call returns success and includes stable ids for created entities.\"},{\"kind\":\"acl_guard\",\"description\":\"Actor permissions are honored for this step context.\"}],\"evidenceRequired\":[{\"kind\":\"api_trace\",\"label\":\"Request/response trace for this step\"},{\"kind\":\"snapshot\",\"label\":\"Structured snapshot.v1 screen blocks (what user saw) with real API-backed data\"}],\"guardrails\":[],\"tags\":[\"pricing\"]}]},{\"phaseKey\":\"supply-and-team-setup\",\"order\":3,\"title\":\"Supply And Team Setup\",\"description\":\"Business owner sets up hosts/assets/venues/resources and invites members.\",\"steps\":[{\"stepKey\":\"owner-create-resources\",\"order\":6,\"title\":\"Create resources representing hosts/assets/venues\",\"actorKey\":\"biz_owner\",\"intent\":\"Model real-world supply that bookings will consume.\",\"instruction\":\"Create at least one host resource and one non-host resource (asset or venue) suitable for the UC.\",\"expectedResult\":\"Resources are created with expected type, location, and buffers.\",\"toolHints\":[\"bizing.resources.create\"],\"assertions\":[{\"kind\":\"api_response\",\"description\":\"API call returns success and includes stable ids for created entities.\"},{\"kind\":\"acl_guard\",\"description\":\"Actor permissions are honored for this step context.\"}],\"evidenceRequired\":[{\"kind\":\"api_trace\",\"label\":\"Request/response trace for this step\"},{\"kind\":\"snapshot\",\"label\":\"Structured snapshot.v1 screen blocks (what user saw) with real API-backed data\"}],\"guardrails\":[],\"tags\":[\"resources\"]},{\"stepKey\":\"owner-invite-member\",\"order\":7,\"title\":\"Invite and provision business member\",\"actorKey\":\"biz_owner\",\"intent\":\"Validate collaboration and role assignment.\",\"instruction\":\"Invite a biz member, assign an operational role, and verify that member can authenticate into the same biz.\",\"expectedResult\":\"Biz member account/session exists with scoped role permissions.\",\"toolHints\":[],\"assertions\":[{\"kind\":\"api_response\",\"description\":\"API call returns success and includes stable ids for created entities.\"},{\"kind\":\"acl_guard\",\"description\":\"Actor permissions are honored for this step context.\"}],\"evidenceRequired\":[{\"kind\":\"api_trace\",\"label\":\"Request/response trace for this step\"},{\"kind\":\"snapshot\",\"label\":\"Structured snapshot.v1 screen blocks (what user saw) with real API-backed data\"}],\"guardrails\":[],\"tags\":[\"team\",\"acl\"]}]},{\"phaseKey\":\"catalog-publish\",\"order\":4,\"title\":\"Catalog And Publish\",\"description\":\"Owner creates services/offers/products and publishes sellable catalog entries.\",\"steps\":[{\"stepKey\":\"owner-create-offer\",\"order\":8,\"title\":\"Create offer shell\",\"actorKey\":\"biz_owner\",\"intent\":\"Define sellable service/catalog entry.\",\"instruction\":\"Create an offer representing the UC primary service; choose execution mode matching the scenario.\",\"expectedResult\":\"Offer is created in draft state with captured id.\",\"toolHints\":[\"bizing.offers.create\"],\"assertions\":[{\"kind\":\"api_response\",\"description\":\"API call returns success and includes stable ids for created entities.\"},{\"kind\":\"acl_guard\",\"description\":\"Actor permissions are honored for this step context.\"}],\"evidenceRequired\":[{\"kind\":\"api_trace\",\"label\":\"Request/response trace for this step\"},{\"kind\":\"snapshot\",\"label\":\"Structured snapshot.v1 screen blocks (what user saw) with real API-backed data\"}],\"guardrails\":[],\"tags\":[\"offer\",\"catalog\"]},{\"stepKey\":\"owner-create-offe",
+        "_size": 46996
+      },
+      "at": "2026-02-24T14:53:51.854Z"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3A7Xs2Z0JoxjLYScazC6fMs041h/steps/owner-calendar-review/result",
+      "status": 200,
+      "requestBody": {
+        "status": "passed",
+        "startedAt": "2026-02-24T14:53:50.920Z",
+        "endedAt": "2026-02-24T14:53:50.920Z",
+        "failureMessage": null,
+        "resultPayload": {
+          "note": "Operational timeline inputs fetched (bookings/resources/offers).",
+          "evidence": {
+            "bookingCount": 2,
+            "resourceCount": 2,
+            "offerCount": 1,
+            "timezone": "UTC",
+            "rangeLabel": "Upcoming schedule window",
+            "bookingPreview": [
+              {
+                "id": "booking_order_3A7XwNnTZLN9qmW4ZETLKAxkurK",
+                "bizId": "3A7XtEtHStc6lCjkUN0qQi1t3sO",
+                "offerId": "offer_3A7Xuuu4VEzjSLoMaYweFDSUVHE",
+                "offerVersionId": "offer_version_3A7XvBPyWmuj8cDvoOgzzyYmLC7",
+                "customerUserId": "5hwMNvJ44BysemEng29eedOhxRosgej9",
+                "customerGroupAccountId": null,
+                "status": "in_progress",
+                "statusConfigValueId": null,
+                "currency": "USD",
+                "subtotalMinor": 15000,
+                "taxMinor": 0,
+                "feeMinor": 0,
+                "discountMinor": 0,
+                "totalMinor": 15000,
+                "requestedStartAt": "2026-02-25T14:53:39.799Z",
+                "requestedEndAt": "2026-02-25T15:43:39.799Z",
+                "confirmedStartAt": "2026-02-25T14:53:39.799Z",
+                "confirmedEndAt": "2026-02-25T15:43:39.799Z",
+                "pricingSnapshot": {},
+                "policySnapshot": {},
+                "metadata": {},
+                "createdAt": "2026-02-24T14:53:39.995Z",
+                "updatedAt": "2026-02-24T14:53:39.995Z",
+                "deletedAt": null,
+                "createdBy": null,
+                "updatedBy": null,
+                "deletedBy": null
+              },
+              {
+                "id": "booking_order_3A7Xw1xRibQBgDx747t3PHyxVVL",
+                "bizId": "3A7XtEtHStc6lCjkUN0qQi1t3sO",
+                "offerId": "offer_3A7Xuuu4VEzjSLoMaYweFDSUVHE",
+                "offerVersionId": "offer_version_3A7XvBPyWmuj8cDvoOgzzyYmLC7",
+                "customerUserId": "gVfE7Z3eLOzrZyyfweRwV8dlAMeE48of",
+                "customerGroupAccountId": null,
+                "status": "confirmed",
+                "statusConfigValueId": null,
+                "currency": "USD",
+                "subtotalMinor": 15000,
+                "taxMinor": 0,
+                "feeMinor": 0,
+                "discountMinor": 0,
+                "totalMinor": 15000,
+                "requestedStartAt": "2026-02-25T14:53:37.137Z",
+                "requestedEndAt": "2026-02-25T15:43:37.137Z",
+                "confirmedStartAt": "2026-02-25T14:53:37.137Z",
+                "confirmedEndAt": "2026-02-25T15:43:37.137Z",
+                "pricingSnapshot": {},
+                "policySnapshot": {},
+                "metadata": {},
+                "createdAt": "2026-02-24T14:53:37.355Z",
+                "updatedAt": "2026-02-24T14:53:37.355Z",
+                "deletedAt": null,
+                "createdBy": null,
+                "updatedBy": null,
+                "deletedBy": null
+              }
+            ]
+          }
+        },
+        "assertionSummary": {
+          "status": "passed",
+          "hasFailure": false,
+          "assertionsPassed": 1
+        }
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "id": "saga_run_step_3A7Xs5u9ByDBf7AYzGfLfNenGSG",
+          "sagaRunId": "saga_run_3A7Xs2Z0JoxjLYScazC6fMs041h",
+          "phaseKey": "operations-and-follow-up",
+          "phaseOrder": 7,
+          "phaseTitle": "Operations And Follow-up",
+          "stepKey": "owner-calendar-review",
+          "stepOrder": 17,
+          "actorKey": "biz_owner",
+          "instruction": "Query and compare availability + bookings timeline for the entities involved in this scenario.",
+          "expectedResult": "Calendar state reflects booked slots, blocks, and any conflict outcomes from previous steps.",
+          "status": "passed",
+          "attemptCount": 1,
+          "startedAt": "2026-02-24T14:53:50.920Z",
+          "endedAt": "2026-02-24T14:53:50.920Z",
+          "failureCode": null,
+          "failureMessage": null,
+          "resultPayload": {
+            "note": "Operational timeline inputs fetched (bookings/resources/offers).",
+            "evidence": {
+              "timezone": "UTC",
+              "offerCount": 1,
+              "rangeLabel": "Upcoming schedule window",
+              "bookingCount": 2,
+              "resourceCount": 2,
+              "bookingPreview": [
+                {
+                  "id": "booking_order_3A7XwNnTZLN9qmW4ZETLKAxkurK",
+                  "bizId": "3A7XtEtHStc6lCjkUN0qQi1t3sO",
+                  "status": "in_progress",
+                  "offerId": "offer_3A7Xuuu4VEzjSLoMaYweFDSUVHE",
+                  "currency": "USD",
+                  "feeMinor": 0,
+                  "metadata": {},
+                  "taxMinor": 0,
+                  "createdAt": "2026-02-24T14:53:39.995Z",
+                  "createdBy": null,
+                  "deletedAt": null,
+                  "deletedBy": null,
+                  "updatedAt": "2026-02-24T14:53:39.995Z",
+                  "updatedBy": null,
+                  "totalMinor": 15000,
+                  "discountMinor": 0,
+                  "subtotalMinor": 15000,
+                  "confirmedEndAt": "2026-02-25T15:43:39.799Z",
+                  "customerUserId": "5hwMNvJ44BysemEng29eedOhxRosgej9",
+                  "offerVersionId": "offer_version_3A7XvBPyWmuj8cDvoOgzzyYmLC7",
+                  "policySnapshot": {},
+                  "requestedEndAt": "2026-02-25T15:43:39.799Z",
+                  "pricingSnapshot": {},
+                  "confirmedStartAt": "2026-02-25T14:53:39.799Z",
+                  "requestedStartAt": "2026-02-25T14:53:39.799Z",
+                  "statusConfigValueId": null,
+                  "customerGroupAccountId": null
+                },
+                {
+                  "id": "booking_order_3A7Xw1xRibQBgDx747t3PHyxVVL",
+                  "bizId": "3A7XtEtHStc6lCjkUN0qQi1t3sO",
+                  "status": "confirmed",
+                  "offerId": "offer_3A7Xuuu4VEzjSLoMaYweFDSUVHE",
+                  "currency": "USD",
+                  "feeMinor": 0,
+                  "metadata": {},
+                  "taxMinor": 0,
+                  "createdAt": "2026-02-24T14:53:37.355Z",
+                  "createdBy": null,
+                  "deletedAt": null,
+                  "deletedBy": null,
+                  "updatedAt": "2026-02-24T14:53:37.355Z",
+                  "updatedBy": null,
+                  "totalMinor": 15000,
+                  "discountMinor": 0,
+                  "subtotalMinor": 15000,
+                  "confirmedEndAt": "2026-02-25T15:43:37.137Z",
+                  "customerUserId": "gVfE7Z3eLOzrZyyfweRwV8dlAMeE48of",
+                  "offerVersionId": "offer_version_3A7XvBPyWmuj8cDvoOgzzyYmLC7",
+                  "policySnapshot": {},
+                  "requestedEndAt": "2026-02-25T15:43:37.137Z",
+                  "pricingSnapshot": {},
+                  "confirmedStartAt": "2026-02-25T14:53:37.137Z",
+                  "requestedStartAt": "2026-02-25T14:53:37.137Z",
+                  "statusConfigValueId": null,
+                  "customerGroupAccountId": null
+                }
+              ]
+            }
+          },
+          "assertionSummary": {
+            "status": "passed",
+            "hasFailure": false,
+            "assertionsPassed": 1
+          },
+          "metadata": {},
+          "createdAt": "2026-02-24T14:53:06.042Z",
+          "updatedAt": "2026-02-24T14:53:06.042Z",
+          "deletedAt": null,
+          "createdBy": null,
+          "updatedBy": null,
+          "deletedBy": null
+        },
+        "meta": {
+          "requestId": "07dc2990-2b3b-44d5-ba3c-d8e35d465154",
+          "timestamp": "2026-02-24T14:53:51.914Z"
+        }
+      },
+      "at": "2026-02-24T14:53:51.914Z"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3A7XsBphjjj1QofTbkpl85kcjZL/steps/owner-calendar-review/result",
+      "status": 200,
+      "requestBody": {
+        "status": "passed",
+        "startedAt": "2026-02-24T14:53:51.103Z",
+        "endedAt": "2026-02-24T14:53:51.103Z",
+        "failureMessage": null,
+        "resultPayload": {
+          "note": "Operational timeline inputs fetched (bookings/resources/offers).",
+          "evidence": {
+            "bookingCount": 2,
+            "resourceCount": 2,
+            "offerCount": 1,
+            "timezone": "UTC",
+            "rangeLabel": "Upcoming schedule window",
+            "bookingPreview": [
+              {
+                "id": "booking_order_3A7XwRaJXqrOk3ybT9EgRXkmPwz",
+                "bizId": "3A7Xt86kB21BNlUBqxHtlIXkSzX",
+                "offerId": "offer_3A7XuwhpprOv6f6eBMJ5vFZwSui",
+                "offerVersionId": "offer_version_3A7XvHD8r5l6Tzf1AsplRuB2BIb",
+                "customerUserId": "r7882fiqM6JILR662zsZ4vqUPdW6rGQc",
+                "customerGroupAccountId": null,
+                "status": "in_progress",
+                "statusConfigValueId": null,
+                "currency": "USD",
+                "subtotalMinor": 15000,
+                "taxMinor": 0,
+                "feeMinor": 0,
+                "discountMinor": 0,
+                "totalMinor": 15000,
+                "requestedStartAt": "2026-02-25T14:53:40.479Z",
+                "requestedEndAt": "2026-02-25T15:43:40.479Z",
+                "confirmedStartAt": "2026-02-25T14:53:40.479Z",
+                "confirmedEndAt": "2026-02-25T15:43:40.479Z",
+                "pricingSnapshot": {},
+                "policySnapshot": {},
+                "metadata": {},
+                "createdAt": "2026-02-24T14:53:40.676Z",
+                "updatedAt": "2026-02-24T14:53:40.676Z",
+                "deletedAt": null,
+                "createdBy": null,
+                "updatedBy": null,
+                "deletedBy": null
+              },
+              {
+                "id": "booking_order_3A7XwDLSUu6GIZzbTlhkUt8kpqe",
+                "bizId": "3A7Xt86kB21BNlUBqxHtlIXkSzX",
+                "offerId": "offer_3A7XuwhpprOv6f6eBMJ5vFZwSui",
+                "offerVersionId": "offer_version_3A7XvHD8r5l6Tzf1AsplRuB2BIb",
+                "customerUserId": "dIiWXDsOnzBneK0dTnvRCzWsp5B5tl4i",
+                "customerGroupAccountId": null,
+                "status": "confirmed",
+                "statusConfigValueId": null,
+                "currency": "USD",
+                "subtotalMinor": 15000,
+                "taxMinor": 0,
+                "feeMinor": 0,
+                "discountMinor": 0,
+                "totalMinor": 15000,
+                "requestedStartAt": "2026-02-25T14:53:37.921Z",
+                "requestedEndAt": "2026-02-25T15:43:37.921Z",
+                "confirmedStartAt": "2026-02-25T14:53:37.921Z",
+                "confirmedEndAt": "2026-02-25T15:43:37.921Z",
+                "pricingSnapshot": {},
+                "policySnapshot": {},
+                "metadata": {},
+                "createdAt": "2026-02-24T14:53:38.113Z",
+                "updatedAt": "2026-02-24T14:53:38.113Z",
+                "deletedAt": null,
+                "createdBy": null,
+                "updatedBy": null,
+                "deletedBy": null
+              }
+            ]
+          }
+        },
+        "assertionSummary": {
+          "status": "passed",
+          "hasFailure": false,
+          "assertionsPassed": 1
+        }
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "id": "saga_run_step_3A7XsCh7npssizehdjgQHjJoMHv",
+          "sagaRunId": "saga_run_3A7XsBphjjj1QofTbkpl85kcjZL",
+          "phaseKey": "operations-and-follow-up",
+          "phaseOrder": 7,
+          "phaseTitle": "Operations And Follow-up",
+          "stepKey": "owner-calendar-review",
+          "stepOrder": 17,
+          "actorKey": "biz_owner",
+          "instruction": "Query and compare availability + bookings timeline for the entities involved in this scenario.",
+          "expectedResult": "Calendar state reflects booked slots, blocks, and any conflict outcomes from previous steps.",
+          "status": "passed",
+          "attemptCount": 1,
+          "startedAt": "2026-02-24T14:53:51.103Z",
+          "endedAt": "2026-02-24T14:53:51.103Z",
+          "failureCode": null,
+          "failureMessage": null,
+          "resultPayload": {
+            "note": "Operational timeline inputs fetched (bookings/resources/offers).",
+            "evidence": {
+              "timezone": "UTC",
+              "offerCount": 1,
+              "rangeLabel": "Upcoming schedule window",
+              "bookingCount": 2,
+              "resourceCount": 2,
+              "bookingPreview": [
+                {
+                  "id": "booking_order_3A7XwRaJXqrOk3ybT9EgRXkmPwz",
+                  "bizId": "3A7Xt86kB21BNlUBqxHtlIXkSzX",
+                  "status": "in_progress",
+                  "offerId": "offer_3A7XuwhpprOv6f6eBMJ5vFZwSui",
+                  "currency": "USD",
+                  "feeMinor": 0,
+                  "metadata": {},
+                  "taxMinor": 0,
+                  "createdAt": "2026-02-24T14:53:40.676Z",
+                  "createdBy": null,
+                  "deletedAt": null,
+                  "deletedBy": null,
+                  "updatedAt": "2026-02-24T14:53:40.676Z",
+                  "updatedBy": null,
+                  "totalMinor": 15000,
+                  "discountMinor": 0,
+                  "subtotalMinor": 15000,
+                  "confirmedEndAt": "2026-02-25T15:43:40.479Z",
+                  "customerUserId": "r7882fiqM6JILR662zsZ4vqUPdW6rGQc",
+                  "offerVersionId": "offer_version_3A7XvHD8r5l6Tzf1AsplRuB2BIb",
+                  "policySnapshot": {},
+                  "requestedEndAt": "2026-02-25T15:43:40.479Z",
+                  "pricingSnapshot": {},
+                  "confirmedStartAt": "2026-02-25T14:53:40.479Z",
+                  "requestedStartAt": "2026-02-25T14:53:40.479Z",
+                  "statusConfigValueId": null,
+                  "customerGroupAccountId": null
+                },
+                {
+                  "id": "booking_order_3A7XwDLSUu6GIZzbTlhkUt8kpqe",
+                  "bizId": "3A7Xt86kB21BNlUBqxHtlIXkSzX",
+                  "status": "confirmed",
+                  "offerId": "offer_3A7XuwhpprOv6f6eBMJ5vFZwSui",
+                  "currency": "USD",
+                  "feeMinor": 0,
+                  "metadata": {},
+                  "taxMinor": 0,
+                  "createdAt": "2026-02-24T14:53:38.113Z",
+                  "createdBy": null,
+                  "deletedAt": null,
+                  "deletedBy": null,
+                  "updatedAt": "2026-02-24T14:53:38.113Z",
+                  "updatedBy": null,
+                  "totalMinor": 15000,
+                  "discountMinor": 0,
+                  "subtotalMinor": 15000,
+                  "confirmedEndAt": "2026-02-25T15:43:37.921Z",
+                  "customerUserId": "dIiWXDsOnzBneK0dTnvRCzWsp5B5tl4i",
+                  "offerVersionId": "offer_version_3A7XvHD8r5l6Tzf1AsplRuB2BIb",
+                  "policySnapshot": {},
+                  "requestedEndAt": "2026-02-25T15:43:37.921Z",
+                  "pricingSnapshot": {},
+                  "confirmedStartAt": "2026-02-25T14:53:37.921Z",
+                  "requestedStartAt": "2026-02-25T14:53:37.921Z",
+                  "statusConfigValueId": null,
+                  "customerGroupAccountId": null
+                }
+              ]
+            }
+          },
+          "assertionSummary": {
+            "status": "passed",
+            "hasFailure": false,
+            "assertionsPassed": 1
+          },
+          "metadata": {},
+          "createdAt": "2026-02-24T14:53:06.785Z",
+          "updatedAt": "2026-02-24T14:53:06.785Z",
+          "deletedAt": null,
+          "createdBy": null,
+          "updatedBy": null,
+          "deletedBy": null
+        },
+        "meta": {
+          "requestId": "db73c61d-98dd-41dd-9ee4-b100c14561d2",
+          "timestamp": "2026-02-24T14:53:52.008Z"
+        }
+      },
+      "at": "2026-02-24T14:53:52.010Z"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3A7XsweTmtJiDJlAw11C5tWxf8O/snapshots",
+      "status": 201,
+      "requestBody": {
+        "stepKey": "adversary-cross-biz-read",
+        "screenKey": "adversary-cross-biz-read-1771944831605",
+        "title": "Adversary attempts unauthorized cross-biz read Snapshot",
+        "status": "passed",
+        "route": "/sagas/saga_run_3A7XsweTmtJiDJlAw11C5tWxf8O/adversary-cross-biz-read",
+        "format": "json",
+        "view": {
+          "title": "Adversary attempts unauthorized cross-biz read",
+          "subtitle": "Cross-biz read blocked for non-member account.",
+          "blocks": [
+            {
+              "type": "alert",
+              "title": "Adversary Cross Biz Read completed",
+              "message": "Cross-biz read blocked for non-member account.",
+              "tone": "success"
+            },
+            {
+              "type": "key_value",
+              "title": "Screen details",
+              "items": [
+                {
+                  "label": "AdversaryUserId",
+                  "value": "VcZiCDKhDSlR99vAXQMNKzhE1bssMXCH"
+                }
+              ]
+            }
+          ]
+        },
+        "rawData": {
+          "stepKey": "adversary-cross-biz-read",
+          "resultPayload": {
+            "note": "Cross-biz read blocked for non-member account.",
+            "evidence": {
+              "adversaryUserId": "VcZiCDKhDSlR99vAXQMNKzhE1bssMXCH"
+            }
+          },
+          "apiCalls": [
+            {
+              "method": "POST",
+              "path": "/api/v1/bizes/3A7XteTq8aphO3g7ScDaeQGcrVt/booking-orders",
+              "status": 403,
+              "requestBody": {
+                "offerId": "offer_3A7XvUP0GTB9gKTfK0YC1yy44IE",
+                "offerVersionId": "offer_version_3A7Xvq5RfkMYUYhqZ7ZxwyKVXDF",
+                "status": "draft",
+                "subtotalMinor": 1000,
+                "taxMinor": 0,
+                "feeMinor": 0,
+                "discountMinor": 0,
+                "totalMinor": 1000,
+                "currency": "USD"
+              },
+              "responseBody": {
+                "success": false,
+                "error": {
+                  "code": "FORBIDDEN",
+                  "message": "You are not a member of this biz."
+                },
+                "meta": {
+                  "requestId": "67614f09-1d83-4532-8443-250e092e25b7",
+                  "timestamp": "2026-02-24T14:53:49.765Z"
+                }
+              },
+              "at": "2026-02-24T14:53:49.766Z"
+            }
+          ]
+        }
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "id": "saga_artifact_3A7XxnDiLgB0NC4c7MzomMgPZrP",
+          "sagaRunId": "saga_run_3A7XsweTmtJiDJlAw11C5tWxf8O",
+          "sagaRunStepId": "saga_run_step_3A7Xsz44hgKQFLDCEhR0RMp2UOI",
+          "artifactType": "snapshot",
+          "title": "Adversary attempts unauthorized cross-biz read Snapshot",
+          "storagePath": "testing/sagas/runs/saga_run_3A7XsweTmtJiDJlAw11C5tWxf8O/snapshots/2026-02-24T14-53-51-705Z-adversary-cross-biz-read-1771944831605.json",
+          "contentType": "application/json",
+          "bodyText": "{\n  \"schemaVersion\": \"snapshot.v1\",\n  \"screenKey\": \"adversary-cross-biz-read-1771944831605\",\n  \"title\": \"Adversary attempts unauthorized cross-biz read Snapshot\",\n  \"generatedAt\": \"2026-02-24T14:53:51.705Z\",\n  \"stepKey\": \"adversary-cross-biz-read\",\n  \"status\": \"passed\",\n  \"view\": {\n    \"title\": \"Adversary attempts unauthorized cross-biz read\",\n    \"subtitle\": \"Cross-biz read blocked for non-member account.\",\n    \"blocks\": [\n      {\n        \"type\": \"alert\",\n        \"title\": \"Adversary Cross Biz Read completed\",\n        \"message\": \"Cross-biz read blocked for non-member account.\",\n        \"tone\": \"success\"\n      },\n      {\n        \"type\": \"key_value\",\n        \"title\": \"Screen details\",\n        \"items\": [\n          {\n            \"label\": \"AdversaryUserId\",\n            \"value\": \"VcZiCDKhDSlR99vAXQMNKzhE1bssMXCH\"\n          }\n        ]\n      }\n    ]\n  },\n  \"rawData\": {\n    \"stepKey\": \"adversary-cross-biz-read\",\n    \"resultPayload\": {\n      \"note\": \"Cross-biz read blocked for non-member account.\",\n      \"evidence\": {\n        \"adversaryUserId\": \"VcZiCDKhDSlR99vAXQMNKzhE1bssMXCH\"\n      }\n    },\n    \"apiCalls\": [\n      {\n        \"method\": \"POST\",\n        \"path\": \"/api/v1/bizes/3A7XteTq8aphO3g7ScDaeQGcrVt/booking-orders\",\n        \"status\": 403,\n        \"requestBody\": {\n          \"offerId\": \"offer_3A7XvUP0GTB9gKTfK0YC1yy44IE\",\n          \"offerVersionId\": \"offer_version_3A7Xvq5RfkMYUYhqZ7ZxwyKVXDF\",\n          \"status\": \"draft\",\n          \"subtotalMinor\": 1000,\n          \"taxMinor\": 0,\n          \"feeMinor\": 0,\n          \"discountMinor\": 0,\n          \"totalMinor\": 1000,\n          \"currency\": \"USD\"\n        },\n        \"responseBody\": {\n          \"success\": false,\n          \"error\": {\n            \"code\": \"FORBIDDEN\",\n            \"message\": \"You are not a member of this biz.\"\n          },\n          \"meta\": {\n            \"requestId\": \"67614f09-1d83-4532-8443-250e092e25b7\",\n            \"timestamp\": \"2026-02-24T14:53:49.765Z\"\n          }\n        },\n        \"at\": \"2026-02-24T14:53:49.766Z\"\n      }\n    ]\n  },\n  \"metadata\": {}\n}\n",
+          "byteSize": 2039,
+          "checksum": "abfc916a68142495275a5d640daad0eaebf4630468fbcc343e162b1e25b7e260",
+          "capturedAt": "2026-02-24T14:53:51.804Z",
+          "metadata": {
+            "format": "json",
+            "stepKey": "adversary-cross-biz-read",
+            "screenKey": "adversary-cross-biz-read-1771944831605",
+            "sourceFormat": "v1",
+            "schemaVersion": "snapshot.v1"
+          },
+          "createdAt": "2026-02-24T14:53:51.804Z",
+          "updatedAt": "2026-02-24T14:53:51.804Z",
+          "deletedAt": null,
+          "createdBy": null,
+          "updatedBy": null,
+          "deletedBy": null
+        },
+        "meta": {
+          "requestId": "01baafbf-d08c-45d0-baad-fe6ac30dfd91",
+          "timestamp": "2026-02-24T14:53:52.035Z"
+        }
+      },
+      "at": "2026-02-24T14:53:52.036Z"
+    }
+  ]
+}

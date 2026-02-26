@@ -1,0 +1,283 @@
+{
+  "stepKey": "owner-create-offer-version",
+  "callCount": 3,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs",
+      "status": 201,
+      "requestBody": {
+        "sagaKey": "uc-227-the-solo-entrepreneur-sarah",
+        "mode": "dry_run",
+        "runnerLabel": "codex-rerun-all",
+        "runContext": {
+          "createdBy": "apps/api/src/scripts/rerun-sagas.ts"
+        }
+      },
+      "responseBody": {
+        "_truncated": true,
+        "_preview": "{\"success\":true,\"data\":{\"run\":{\"id\":\"saga_run_3A8BNJOTeLTQWtldA0EuHapLKxt\",\"sagaDefinitionId\":\"saga_definition_3A7asZRSUMzgTLcQ2OhlKSd6iwS\",\"sagaKey\":\"uc-227-the-solo-entrepreneur-sarah\",\"bizId\":null,\"status\":\"pending\",\"mode\":\"dry_run\",\"requestedByUserId\":\"5AuNRNOppdGiLM0XbqF5a3TD5aqoINDZ\",\"runnerLabel\":\"codex-rerun-all\",\"definitionChecksum\":\"390fc7b1caad9e08787318da77420410954f09313a5e599e02eb804be066df26\",\"startedAt\":null,\"endedAt\":null,\"lastHeartbeatAt\":null,\"totalSteps\":19,\"passedSteps\":0,\"failedSteps\":0,\"skippedSteps\":0,\"runContext\":{\"createdBy\":\"apps/api/src/scripts/rerun-sagas.ts\"},\"runSummary\":{},\"metadata\":{\"tags\":[\"uc-derived\",\"persona-derived\",\"lifecycle\",\"api-first\",\"agents\"],\"title\":\"UC-227 • The Reverification and Expiry Gate for Assignment Eligibility • The Solo Entrepreneur (Sarah)\"},\"createdAt\":\"2026-02-24T20:17:55.079Z\",\"updatedAt\":\"2026-02-24T20:17:55.079Z\",\"deletedAt\":null,\"createdBy\":null,\"updatedBy\":null,\"deletedBy\":null},\"definition\":{\"id\":\"saga_definition_3A7asZRSUMzgTLcQ2OhlKSd6iwS\",\"bizId\":null,\"sagaKey\":\"uc-227-the-solo-entrepreneur-sarah\",\"title\":\"UC-227 • The Reverification and Expiry Gate for Assignment Eligibility • The Solo Entrepreneur (Sarah)\",\"description\":\"Comprehensive lifecycle saga derived from UC-227 and persona P-1. Needs summary: Credential expiry dates and reverification timestamps; Verification records with expiry and confidence; Requirement items with minimum remaining-validity days; Status-driven eligibility checks for assignment pipelines\",\"status\":\"active\",\"sourceUseCaseRef\":\"UC-227\",\"sourcePersonaRef\":\"P-1\",\"sourceUseCaseFile\":\"/Users/ameer/bizing/mind/workspace/documentation/use-cases-comprehensive.md\",\"sourcePersonaFile\":\"/Users/ameer/bizing/mind/workspace/documentation/tester-personas.md\",\"specVersion\":\"saga.v0\",\"specFilePath\":\"testing/sagas/specs/uc-227-the-solo-entrepreneur-sarah.json\",\"specChecksum\":\"390fc7b1caad9e08787318da77420410954f09313a5e599e02eb804be066df26\",\"metadata\":{\"tags\":[\"uc-derived\",\"persona-derived\",\"lifecycle\",\"api-first\",\"agents\"],\"generatedAt\":\"2026-02-24T20:12:26.520Z\"},\"createdAt\":\"2026-02-24T15:17:49.174Z\",\"updatedAt\":\"2026-02-24T15:17:49.174Z\",\"deletedAt\":null,\"createdBy\":null,\"updatedBy\":null,\"deletedBy\":null},\"spec\":{\"schemaVersion\":\"saga.v0\",\"sagaKey\":\"uc-227-the-solo-entrepreneur-sarah\",\"title\":\"UC-227 • The Reverification and Expiry Gate for Assignment Eligibility • The Solo Entrepreneur (Sarah)\",\"description\":\"Comprehensive lifecycle saga derived from UC-227 and persona P-1. Needs summary: Credential expiry dates and reverification timestamps; Verification records with expiry and confidence; Requirement items with minimum remaining-validity days; Status-driven eligibility checks for assignment pipelines\",\"tags\":[\"uc-derived\",\"persona-derived\",\"lifecycle\",\"api-first\",\"agents\"],\"defaults\":{\"runMode\":\"dry_run\",\"continueOnFailure\":false},\"source\":{\"useCaseRef\":\"UC-227\",\"personaRef\":\"P-1\",\"useCaseFile\":\"/Users/ameer/bizing/mind/workspace/documentation/use-cases-comprehensive.md\",\"personaFile\":\"/Users/ameer/bizing/mind/workspace/documentation/tester-personas.md\",\"generatedAt\":\"2026-02-24T20:12:26.520Z\"},\"objectives\":[\"Validate UC-227 lifecycle end-to-end using persona The Solo Entrepreneur (Sarah).\",\"Exercise owner setup, team setup, catalog publishing, and customer journeys.\",\"Stress ACL/security edge cases and verify expected denials are enforced.\",\"Collect snapshots and report artifacts for every critical milestone.\"],\"actors\":[{\"actorKey\":\"biz_owner\",\"name\":\"The Solo Entrepreneur (Sarah)\",\"role\":\"owner\",\"description\":\"Just starting out, wearing all hats\",\"personaRef\":\"P-1\"},{\"actorKey\":\"biz_member\",\"name\":\"Operations Team Member\",\"role\":\"manager\",\"description\":\"Business member invited by owner to assist with operations and booking flow.\"},{\"actorKey\":\"customer_1\",\"name\":\"Customer One\",\"role\":\"customer\",\"description\":\"Primary customer exploring catalog, booking services, and purchasing products.\"},{\"actorKey\":\"customer_2\",\"name\":\"Customer Two\",\"role\":\"customer\",\"description\":\"Concurrent customer used to simulate realistic demand and race conditions.\"},{\"actorKey\":\"adversary\",\"name\":\"Adversarial User\",\"role\":\"malicious_actor\",\"description\":\"Actor intentionally attempting unauthorized or abusive actions.\"}],\"phases\":[{\"phaseKey\":\"owner-onboarding\",\"order\":1,\"title\":\"Owner Onboarding\",\"description\":\"Business owner signs up, authenticates, and establishes tenant root.\",\"steps\":[{\"stepKey\":\"owner-sign-up\",\"order\":1,\"title\":\"Owner signs up and authenticates\",\"actorKey\":\"biz_owner\",\"intent\":\"Establish authenticated owner identity for the lifecycle.\",\"instruction\":\"Create or login the owner account through Better Auth endpoints, then verify session context can call authenticated API routes.\",\"expectedResult\":\"Owner session exists and authenticated routes return success for this user.\",\"toolHints\":[],\"assertions\":[{\"kind\":\"api_response\",\"description\":\"API call returns success and includes stable ids for created entities.\"},{\"kind\":\"acl_guard\",\"description\":\"Actor permissions are honored for this step context.\"}],\"evidenceRequired\":[{\"kind\":\"api_trace\",\"label\":\"Request/response trace for this step\"},{\"kind\":\"snapshot\",\"label\":\"Structured snapshot.v1 screen blocks (what user saw) with real API-backed data\"}],\"guardrails\":[],\"tags\":[\"auth\",\"setup\"]},{\"stepKey\":\"owner-create-biz\",\"order\":2,\"title\":\"Owner creates business tenant\",\"actorKey\":\"biz_owner\",\"intent\":\"Create the biz root for all subsequent configuration.\",\"instruction\":\"Using agents tools, create a biz representing The Reverification and Expiry Gate for Assignment Eligibility. Use name/slug derived from saga context.\",\"expectedResult\":\"Biz is created, owner is auto-added as member with owner role, and biz id is captured.\",\"toolHints\":[\"bizing.bizes.create\"],\"assertions\":[{\"kind\":\"api_response\",\"description\":\"API call returns success and includes stable ids for created entities.\"},{\"kind\":\"acl_guard\",\"description\":\"Actor permissions are honored for this step context.\"}],\"evidenceRequired\":[{\"kind\":\"api_trace\",\"label\":\"Request/response trace for this step\"},{\"kind\":\"snapshot\",\"label\":\"Structured snapshot.v1 screen blocks (what user saw) with real API-backed data\"}],\"guardrails\":[],\"tags\":[\"biz\",\"setup\"]},{\"stepKey\":\"owner-create-location\",\"order\":3,\"title\":\"Owner creates primary location\",\"actorKey\":\"biz_owner\",\"intent\":\"Establish operational location for services/resources.\",\"instruction\":\"Create a primary location for the biz and set timezone aligned with scenario context.\",\"expectedResult\":\"Location exists and is associated with the new biz.\",\"toolHints\":[\"bizing.locations.create\"],\"assertions\":[{\"kind\":\"api_response\",\"description\":\"API call returns success and includes stable ids for created entities.\"},{\"kind\":\"acl_guard\",\"description\":\"Actor permissions are honored for this step context.\"}],\"evidenceRequired\":[{\"kind\":\"api_trace\",\"label\":\"Request/response trace for this step\"},{\"kind\":\"snapshot\",\"label\":\"Structured snapshot.v1 screen blocks (what user saw) with real API-backed data\"}],\"guardrails\":[],\"tags\":[\"location\",\"setup\"]}]},{\"phaseKey\":\"business-configuration\",\"order\":2,\"title\":\"Business Configuration\",\"description\":\"Owner configures scheduling, pricing baseline, and operational defaults.\",\"steps\":[{\"stepKey\":\"owner-configure-hours\",\"order\":4,\"title\":\"Configure default hours and availability mode\",\"actorKey\":\"biz_owner\",\"intent\":\"Set baseline availability without forcing advanced complexity.\",\"instruction\":\"Create baseline availability and lead-time rules representing the UC default business hours and booking window behavior.\",\"expectedResult\":\"Availability defaults and rules are stored and can be referenced by calendars.\",\"toolHints\":[],\"assertions\":[{\"kind\":\"api_response\",\"description\":\"API call returns success and includes stable ids for created entities.\"},{\"kind\":\"acl_guard\",\"description\":\"Actor permissions are honored for this step context.\"}],\"evidenceRequired\":[{\"kind\":\"api_trace\",\"label\":\"Request/response trace for this step\"},{\"kind\":\"snapshot\",\"label\":\"Structured snapshot.v1 screen blocks (what user saw) with real API-backed data\"}],\"guardrails\":[],\"tags\":[\"availability\",\"policy\"]},{\"stepKey\":\"owner-configure-pricing\",\"order\":5,\"title\":\"Configure default pricing rules\",\"actorKey\":\"biz_owner\",\"intent\":\"Set base pricing and optional manual demand overrides.\",\"instruction\":\"Configure pricing defaults for the offer lifecycle including call fees/manual surge if UC needs imply it.\",\"expectedResult\":\"Pricing model persists and future bookings can calculate totals deterministically.\",\"toolHints\":[],\"assertions\":[{\"kind\":\"api_response\",\"description\":\"API call returns success and includes stable ids for created entities.\"},{\"kind\":\"acl_guard\",\"description\":\"Actor permissions are honored for this step context.\"}],\"evidenceRequired\":[{\"kind\":\"api_trace\",\"label\":\"Request/response trace for this step\"},{\"kind\":\"snapshot\",\"label\":\"Structured snapshot.v1 screen blocks (what user saw) with real API-backed data\"}],\"guardrails\":[],\"tags\":[\"pricing\"]}]},{\"phaseKey\":\"supply-and-team-setup\",\"order\":3,\"title\":\"Supply And Team Setup\",\"description\":\"Business owner sets up hosts/assets/venues/resources and invites members.\",\"steps\":[{\"stepKey\":\"owner-create-resources\",\"order\":6,\"title\":\"Create resources representing hosts/assets/venues\",\"actorKey\":\"biz_owner\",\"intent\":\"Model real-world supply that bookings will consume.\",\"instruction\":\"Create at least one host resource and one non-host resource (asset or venue) suitable for the UC.\",\"expectedResult\":\"Resources are created with expected type, location, and buffers.\",\"toolHints\":[\"bizing.resources.create\"],\"assertions\":[{\"kind\":\"api_response\",\"description\":\"API call returns success and includes stable ids for created entities.\"},{\"kind\":\"acl_guard\",\"description\":\"Actor permissions are honored for this step context.\"}],\"evidenceRequired\":[{\"kind\":\"api_trace\",\"label\":\"Request/response trace for this step\"},{\"kind\":\"snapshot\",\"label\":\"Structured snapshot.v1 screen blocks (what user saw) with real API-backed data\"}],\"guardrails\":[],\"tags\":[\"resources\"]},{\"stepKey\":\"owner-invite-member\",\"order\":7,\"title\":\"Invite and provision business member\",\"actorKey\":\"biz_owner\",\"intent\":\"Validate collaboration and role assignment.\",\"instruction\":\"Invite a biz member, assign an operational role, and verify that member can authenticate into the same biz.\",\"expectedResult\":\"Biz member account/session exists with scoped role permissions.\",\"toolHints\":[],\"assertions\":[{\"kind\":\"api_response\",\"description\":\"API call returns success and includes stable ids for created entities.\"},{\"kind\":\"acl_guard\",\"description\":\"Actor permissions are honored for this step context.\"}],\"evidenceRequired\":[{\"kind\":\"api_trace\",\"label\":\"Request/response trace for this step\"},{\"kind\":\"snapshot\",\"label\":\"Structured snapshot.v1 screen blocks (what user saw) with real API-backed data\"}],\"guardrails\":[],\"tags\":[\"team\",\"acl\"]}]},{\"phaseKey\":\"catalog-publish\",\"order\":4,\"title\":\"Catalog And Publish\",\"description\":\"Owner creates services/offers/products and publishes sellable catalog entries.\",\"steps\":[{\"stepKey\":\"owner-create-offer\",\"order\":8,\"title\":\"Create offer shell\",\"actorKey\":\"biz_owner\",\"intent\":\"Define sellable service/catalog entry.\",\"instruction\":\"Create an offer representing the UC primary service; choose execution mode matching the scenario.\",\"expectedResult\":\"Offer is created in draft state with captured id.\",\"toolHints\":[\"bizing.offers.create\"],\"assertions\":[{\"kind\":\"api_response\",\"description\":\"API call returns success and includes stable ids for created entities.\"},{\"kind\":\"acl_guard\",\"description\":\"Actor permissions are honored for this step context.\"}],\"evidenceRequired\":[{\"kind\":\"api_trace\",\"label\":\"Request/response trace for this step\"},{\"kind\":\"snapshot\",\"label\":\"Structured snapshot.v1 screen blocks (what user saw) with real API-backed data\"}],\"guardrails\":[],\"tags\":[\"offer\",\"catalog\"]},{\"stepKey\":\"owner-create-offer-version\",\"orde",
+        "_size": 44819
+      },
+      "at": "2026-02-24T20:17:55.123Z"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3A8BLf5edRnsTYINbU0W24Vc3GR/steps/runner-submit-artifacts/result",
+      "status": 200,
+      "requestBody": {
+        "status": "in_progress",
+        "startedAt": "2026-02-24T20:17:55.071Z",
+        "resultPayload": {
+          "note": "Started runner-submit-artifacts"
+        },
+        "assertionSummary": {
+          "status": "in_progress"
+        }
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "id": "saga_run_step_3A8BLhGF3lzlbeiaoXPp02PDfqy",
+          "sagaRunId": "saga_run_3A8BLf5edRnsTYINbU0W24Vc3GR",
+          "phaseKey": "reporting-and-closeout",
+          "phaseOrder": 8,
+          "phaseTitle": "Reporting And Closeout",
+          "stepKey": "runner-submit-artifacts",
+          "stepOrder": 20,
+          "actorKey": "biz_owner",
+          "instruction": "Upload snapshots for critical steps and submit final markdown report summarizing pass/fail and discovered gaps.",
+          "expectedResult": "Run has persisted report + snapshots in project directory and indexed metadata in DB.",
+          "status": "in_progress",
+          "attemptCount": 1,
+          "startedAt": "2026-02-24T20:17:55.071Z",
+          "endedAt": null,
+          "failureCode": null,
+          "failureMessage": null,
+          "resultPayload": {
+            "note": "Started runner-submit-artifacts"
+          },
+          "assertionSummary": {
+            "status": "in_progress"
+          },
+          "metadata": {},
+          "createdAt": "2026-02-24T20:17:42.438Z",
+          "updatedAt": "2026-02-24T20:17:42.438Z",
+          "deletedAt": null,
+          "createdBy": null,
+          "updatedBy": null,
+          "deletedBy": null
+        },
+        "meta": {
+          "requestId": "f842c5c6-5751-4d8c-bdd6-b6f1794989ff",
+          "timestamp": "2026-02-24T20:17:55.114Z"
+        }
+      },
+      "at": "2026-02-24T20:17:55.124Z"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3A8BMncpIukBuWNqggQ7iU9ky5g/snapshots",
+      "status": 201,
+      "requestBody": {
+        "stepKey": "owner-publish-catalog",
+        "screenKey": "owner-publish-catalog-1771964275062",
+        "title": "Publish catalog visibility Snapshot",
+        "status": "passed",
+        "route": "/sagas/saga_run_3A8BMncpIukBuWNqggQ7iU9ky5g/owner-publish-catalog",
+        "format": "json",
+        "view": {
+          "title": "Publish catalog visibility",
+          "subtitle": "Offer published and activated.",
+          "blocks": [
+            {
+              "type": "alert",
+              "title": "Owner Publish Catalog completed",
+              "message": "Offer published and activated.",
+              "tone": "success"
+            }
+          ]
+        },
+        "rawData": {
+          "stepKey": "owner-publish-catalog",
+          "resultPayload": {
+            "note": "Offer published and activated."
+          },
+          "apiCalls": [
+            {
+              "method": "POST",
+              "path": "/api/v1/sagas/runs/saga_run_3A8BN7CX93AAgysPctehnt1Zbpw/steps/owner-create-location/result",
+              "status": 200,
+              "requestBody": {
+                "status": "passed",
+                "startedAt": "2026-02-24T20:17:54.618Z",
+                "endedAt": "2026-02-24T20:17:54.618Z",
+                "failureMessage": null,
+                "resultPayload": {
+                  "note": "Location created.",
+                  "evidence": {
+                    "id": "3A8BND4Ydtx0aphafPNgaWunWkW",
+                    "bizId": "3A8BNCHE6Ig8us5DaxOYRREwNR6",
+                    "name": "Primary Location",
+                    "slug": "loc-xp0qhmnh",
+                    "type": "physical",
+                    "timezone": "UTC",
+                    "address": {},
+                    "operatingHours": {},
+                    "configOverride": {},
+                    "serviceArea": {},
+                    "status": "active",
+                    "isDefault": false,
+                    "metadata": {},
+                    "createdAt": "2026-02-24T20:17:54.576Z",
+                    "updatedAt": "2026-02-24T20:17:54.576Z",
+                    "deletedAt": null
+                  }
+                },
+                "assertionSummary": {
+                  "status": "passed",
+                  "hasFailure": false,
+                  "assertionsPassed": 1
+                }
+              },
+              "responseBody": {
+                "success": true,
+                "data": {
+                  "id": "saga_run_step_3A8BN4mYCBbzHbTnniPnEiNuILV",
+                  "sagaRunId": "saga_run_3A8BN7CX93AAgysPctehnt1Zbpw",
+                  "phaseKey": "owner-onboarding",
+                  "phaseOrder": 1,
+                  "phaseTitle": "Owner Onboarding",
+                  "stepKey": "owner-create-location",
+                  "stepOrder": 3,
+                  "actorKey": "biz_owner",
+                  "instruction": "Create a primary location for the biz and set timezone aligned with scenario context.",
+                  "expectedResult": "Location exists and is associated with the new biz.",
+                  "status": "passed",
+                  "attemptCount": 1,
+                  "startedAt": "2026-02-24T20:17:54.618Z",
+                  "endedAt": "2026-02-24T20:17:54.618Z",
+                  "failureCode": null,
+                  "failureMessage": null,
+                  "resultPayload": {
+                    "note": "Location created.",
+                    "evidence": {
+                      "id": "3A8BND4Ydtx0aphafPNgaWunWkW",
+                      "name": "Primary Location",
+                      "slug": "loc-xp0qhmnh",
+                      "type": "physical",
+                      "bizId": "3A8BNCHE6Ig8us5DaxOYRREwNR6",
+                      "status": "active",
+                      "address": {},
+                      "metadata": {},
+                      "timezone": "UTC",
+                      "createdAt": "2026-02-24T20:17:54.576Z",
+                      "deletedAt": null,
+                      "isDefault": false,
+                      "updatedAt": "2026-02-24T20:17:54.576Z",
+                      "serviceArea": {},
+                      "configOverride": {},
+                      "operatingHours": {}
+                    }
+                  },
+                  "assertionSummary": {
+                    "status": "passed",
+                    "hasFailure": false,
+                    "assertionsPassed": 1
+                  },
+                  "metadata": {},
+                  "createdAt": "2026-02-24T20:17:53.582Z",
+                  "updatedAt": "2026-02-24T20:17:53.582Z",
+                  "deletedAt": null,
+                  "createdBy": null,
+                  "updatedBy": null,
+                  "deletedBy": null
+                },
+                "meta": {
+                  "requestId": "2cd7828c-01a7-43b1-ba5b-31b874b7bc3a",
+                  "timestamp": "2026-02-24T20:17:54.783Z"
+                }
+              },
+              "at": "2026-02-24T20:17:54.784Z"
+            },
+            {
+              "method": "POST",
+              "path": "/api/v1/bizes/3A8BMyCJlY32X6X4PSRgncEi2e2/offers",
+              "status": 201,
+              "requestBody": {
+                "name": "Primary Service Offer",
+                "slug": "offer-8ncg6lw3",
+                "executionMode": "slot",
+                "status": "draft",
+                "isPublished": false,
+                "timezone": "UTC"
+              },
+              "responseBody": {
+                "success": true,
+                "data": {
+                  "id": "offer_3A8BNEBUb8Vlu2qmoUyW1V9fLPb",
+                  "bizId": "3A8BMyCJlY32X6X4PSRgncEi2e2",
+                  "name": "Primary Service Offer",
+                  "slug": "offer-8ncg6lw3",
+                  "description": null,
+                  "executionMode": "slot",
+                  "executionModeConfigValueId": null,
+                  "status": "draft",
+                  "statusConfigValueId": null,
+                  "isPublished": false,
+                  "timezone": "UTC",
+                  "metadata": {},
+                  "createdAt": "2026-02-24T20:17:54.780Z",
+                  "updatedAt": "2026-02-24T20:17:54.780Z",
+                  "deletedAt": null,
+                  "createdBy": null,
+                  "updatedBy": null,
+                  "deletedBy": null
+                },
+                "meta": {
+                  "requestId": "82b14049-d5df-4e73-91c8-04822a18d28e",
+                  "timestamp": "2026-02-24T20:17:54.783Z"
+                }
+              },
+              "at": "2026-02-24T20:17:54.786Z"
+            }
+          ]
+        }
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "id": "saga_artifact_3A8BNGhcy3u6VRzVVWgvR93CpLh",
+          "sagaRunId": "saga_run_3A8BMncpIukBuWNqggQ7iU9ky5g",
+          "sagaRunStepId": "saga_run_step_3A8BMmQtpqrrgfNGV0qoEnpOPhm",
+          "artifactType": "snapshot",
+          "title": "Publish catalog visibility Snapshot",
+          "storagePath": "testing/sagas/runs/saga_run_3A8BMncpIukBuWNqggQ7iU9ky5g/snapshots/2026-02-24T20-17-55-077Z-owner-publish-catalog-1771964275062.json",
+          "contentType": "application/json",
+          "bodyText": "{\n  \"schemaVersion\": \"snapshot.v1\",\n  \"screenKey\": \"owner-publish-catalog-1771964275062\",\n  \"title\": \"Publish catalog visibility Snapshot\",\n  \"generatedAt\": \"2026-02-24T20:17:55.071Z\",\n  \"stepKey\": \"owner-publish-catalog\",\n  \"status\": \"passed\",\n  \"view\": {\n    \"title\": \"Publish catalog visibility\",\n    \"subtitle\": \"Offer published and activated.\",\n    \"blocks\": [\n      {\n        \"type\": \"alert\",\n        \"title\": \"Owner Publish Catalog completed\",\n        \"message\": \"Offer published and activated.\",\n        \"tone\": \"success\"\n      }\n    ]\n  },\n  \"rawData\": {\n    \"stepKey\": \"owner-publish-catalog\",\n    \"resultPayload\": {\n      \"note\": \"Offer published and activated.\"\n    },\n    \"apiCalls\": [\n      {\n        \"method\": \"POST\",\n        \"path\": \"/api/v1/sagas/runs/saga_run_3A8BN7CX93AAgysPctehnt1Zbpw/steps/owner-create-location/result\",\n        \"status\": 200,\n        \"requestBody\": {\n          \"status\": \"passed\",\n          \"startedAt\": \"2026-02-24T20:17:54.618Z\",\n          \"endedAt\": \"2026-02-24T20:17:54.618Z\",\n          \"failureMessage\": null,\n          \"resultPayload\": {\n            \"note\": \"Location created.\",\n            \"evidence\": {\n              \"id\": \"3A8BND4Ydtx0aphafPNgaWunWkW\",\n              \"bizId\": \"3A8BNCHE6Ig8us5DaxOYRREwNR6\",\n              \"name\": \"Primary Location\",\n              \"slug\": \"loc-xp0qhmnh\",\n              \"type\": \"physical\",\n              \"timezone\": \"UTC\",\n              \"address\": {},\n              \"operatingHours\": {},\n              \"configOverride\": {},\n              \"serviceArea\": {},\n              \"status\": \"active\",\n              \"isDefault\": false,\n              \"metadata\": {},\n              \"createdAt\": \"2026-02-24T20:17:54.576Z\",\n              \"updatedAt\": \"2026-02-24T20:17:54.576Z\",\n              \"deletedAt\": null\n            }\n          },\n          \"assertionSummary\": {\n            \"status\": \"passed\",\n            \"hasFailure\": false,\n            \"assertionsPassed\": 1\n          }\n        },\n        \"responseBody\": {\n          \"success\": true,\n          \"data\": {\n            \"id\": \"saga_run_step_3A8BN4mYCBbzHbTnniPnEiNuILV\",\n            \"sagaRunId\": \"saga_run_3A8BN7CX93AAgysPctehnt1Zbpw\",\n            \"phaseKey\": \"owner-onboarding\",\n            \"phaseOrder\": 1,\n            \"phaseTitle\": \"Owner Onboarding\",\n            \"stepKey\": \"owner-create-location\",\n            \"stepOrder\": 3,\n            \"actorKey\": \"biz_owner\",\n            \"instruction\": \"Create a primary location for the biz and set timezone aligned with scenario context.\",\n            \"expectedResult\": \"Location exists and is associated with the new biz.\",\n            \"status\": \"passed\",\n            \"attemptCount\": 1,\n            \"startedAt\": \"2026-02-24T20:17:54.618Z\",\n            \"endedAt\": \"2026-02-24T20:17:54.618Z\",\n            \"failureCode\": null,\n            \"failureMessage\": null,\n            \"resultPayload\": {\n              \"note\": \"Location created.\",\n              \"evidence\": {\n                \"id\": \"3A8BND4Ydtx0aphafPNgaWunWkW\",\n                \"name\": \"Primary Location\",\n                \"slug\": \"loc-xp0qhmnh\",\n                \"type\": \"physical\",\n                \"bizId\": \"3A8BNCHE6Ig8us5DaxOYRREwNR6\",\n                \"status\": \"active\",\n                \"address\": {},\n                \"metadata\": {},\n                \"timezone\": \"UTC\",\n                \"createdAt\": \"2026-02-24T20:17:54.576Z\",\n                \"deletedAt\": null,\n                \"isDefault\": false,\n                \"updatedAt\": \"2026-02-24T20:17:54.576Z\",\n                \"serviceArea\": {},\n                \"configOverride\": {},\n                \"operatingHours\": {}\n              }\n            },\n            \"assertionSummary\": {\n              \"status\": \"passed\",\n              \"hasFailure\": false,\n              \"assertionsPassed\": 1\n            },\n            \"metadata\": {},\n            \"createdAt\": \"2026-02-24T20:17:53.582Z\",\n            \"updatedAt\": \"2026-02-24T20:17:53.582Z\",\n            \"deletedAt\": null,\n            \"createdBy\": null,\n            \"updatedBy\": null,\n            \"deletedBy\": null\n          },\n          \"meta\": {\n            \"requestId\": \"2cd7828c-01a7-43b1-ba5b-31b874b7bc3a\",\n            \"timestamp\": \"2026-02-24T20:17:54.783Z\"\n          }\n        },\n        \"at\": \"2026-02-24T20:17:54.784Z\"\n      },\n      {\n        \"method\": \"POST\",\n        \"path\": \"/api/v1/bizes/3A8BMyCJlY32X6X4PSRgncEi2e2/offers\",\n        \"status\": 201,\n        \"requestBody\": {\n          \"name\": \"Primary Service Offer\",\n          \"slug\": \"offer-8ncg6lw3\",\n          \"executionMode\": \"slot\",\n          \"status\": \"draft\",\n          \"isPublished\": false,\n          \"timezone\": \"UTC\"\n        },\n        \"responseBody\": {\n          \"success\": true,\n          \"data\": {\n            \"id\": \"offer_3A8BNEBUb8Vlu2qmoUyW1V9fLPb\",\n            \"bizId\": \"3A8BMyCJlY32X6X4PSRgncEi2e2\",\n            \"name\": \"Primary Service Offer\",\n            \"slug\": \"offer-8ncg6lw3\",\n            \"description\": null,\n            \"executionMode\": \"slot\",\n            \"executionModeConfigValueId\": null,\n            \"status\": \"draft\",\n            \"statusConfigValueId\": null,\n            \"isPublished\": false,\n            \"timezone\": \"UTC\",\n            \"metadata\": {},\n            \"createdAt\": \"2026-02-24T20:17:54.780Z\",\n            \"updatedAt\": \"2026-02-24T20:17:54.780Z\",\n            \"deletedAt\": null,\n            \"createdBy\": null,\n            \"updatedBy\": null,\n            \"deletedBy\": null\n          },\n          \"meta\": {\n            \"requestId\": \"82b14049-d5df-4e73-91c8-04822a18d28e\",\n            \"timestamp\": \"2026-02-24T20:17:54.783Z\"\n          }\n        },\n        \"at\": \"2026-02-24T20:17:54.786Z\"\n      }\n    ]\n  },\n  \"metadata\": {}\n}\n",
+          "byteSize": 5644,
+          "checksum": "ff358913b29dfed875f93218e30489b0f233e18b0be9e1d761cdd2c7101993d4",
+          "capturedAt": "2026-02-24T20:17:55.094Z",
+          "metadata": {
+            "format": "json",
+            "stepKey": "owner-publish-catalog",
+            "screenKey": "owner-publish-catalog-1771964275062",
+            "sourceFormat": "v1",
+            "schemaVersion": "snapshot.v1"
+          },
+          "createdAt": "2026-02-24T20:17:55.094Z",
+          "updatedAt": "2026-02-24T20:17:55.094Z",
+          "deletedAt": null,
+          "createdBy": null,
+          "updatedBy": null,
+          "deletedBy": null
+        },
+        "meta": {
+          "requestId": "32ab675c-d27c-4581-96d7-54d3434ad2ed",
+          "timestamp": "2026-02-24T20:17:55.116Z"
+        }
+      },
+      "at": "2026-02-24T20:17:55.125Z"
+    }
+  ]
+}

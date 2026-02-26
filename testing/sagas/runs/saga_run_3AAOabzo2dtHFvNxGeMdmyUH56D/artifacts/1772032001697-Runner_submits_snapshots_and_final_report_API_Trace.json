@@ -1,0 +1,530 @@
+{
+  "stepKey": "runner-submit-artifacts",
+  "callCount": 10,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs",
+      "status": 201,
+      "requestBody": {
+        "sagaKey": "uc-22-the-waitlist-warrior-waiting-walter",
+        "mode": "dry_run",
+        "runnerLabel": "codex-rerun-all",
+        "runContext": {
+          "createdBy": "apps/api/src/scripts/rerun-sagas.ts"
+        }
+      },
+      "responseBody": {
+        "_truncated": true,
+        "_preview": "{\"success\":true,\"data\":{\"run\":{\"id\":\"saga_run_3AAOeFSnXlUgd4WNiguBgoFmZ7F\",\"sagaDefinitionId\":\"saga_definition_3A8fQes24WAvSaZl00I1eZUFKlL\",\"sagaKey\":\"uc-22-the-waitlist-warrior-waiting-walter\",\"bizId\":null,\"status\":\"pending\",\"mode\":\"dry_run\",\"requestedByUserId\":\"n1sZmxkoRU3I056ePPa62zeC77c08bew\",\"runnerLabel\":\"codex-rerun-all\",\"definitionChecksum\":\"32e836fe21e5889dd0d73633d968b3aaff953e4b040c2a3e9b3e8f92480753d3\",\"startedAt\":null,\"endedAt\":null,\"lastHeartbeatAt\":null,\"totalSteps\":32,\"passedSteps\":0,\"failedSteps\":0,\"skippedSteps\":0,\"runContext\":{\"createdBy\":\"apps/api/src/scripts/rerun-sagas.ts\"},\"runSummary\":{},\"metadata\":{\"tags\":[\"uc-derived\",\"persona-derived\",\"lifecycle\",\"api-first\",\"agents\"],\"title\":\"UC-22 • The Tour/Experience with Minimum Viable • The Waitlist Warrior (Waiting Walter)\"},\"createdAt\":\"2026-02-25T15:06:41.354Z\",\"updatedAt\":\"2026-02-25T15:06:41.354Z\",\"deletedAt\":null,\"createdBy\":null,\"updatedBy\":null,\"deletedBy\":null},\"definition\":{\"id\":\"saga_definition_3A8fQes24WAvSaZl00I1eZUFKlL\",\"bizId\":null,\"sagaKey\":\"uc-22-the-waitlist-warrior-waiting-walter\",\"title\":\"UC-22 • The Tour/Experience with Minimum Viable • The Waitlist Warrior (Waiting Walter)\",\"description\":\"Comprehensive lifecycle saga derived from UC-22 and persona P-45. Needs summary: Minimum to run (need 4 people); Maximum capacity (12 people); Multiple time slots per day; Different languages; Weather-dependent (with cancellation policy); Guide assignment\",\"status\":\"active\",\"sourceUseCaseRef\":\"UC-22\",\"sourcePersonaRef\":\"P-45\",\"sourceUseCaseFile\":\"/Users/ameer/bizing/mind/workspace/documentation/use-cases-comprehensive.md\",\"sourcePersonaFile\":\"/Users/ameer/bizing/mind/workspace/documentation/tester-personas.md\",\"specVersion\":\"saga.v0\",\"specFilePath\":\"testing/sagas/specs/uc-22-the-waitlist-warrior-waiting-walter.json\",\"specChecksum\":\"32e836fe21e5889dd0d73633d968b3aaff953e4b040c2a3e9b3e8f92480753d3\",\"metadata\":{\"tags\":[\"uc-derived\",\"persona-derived\",\"lifecycle\",\"api-first\",\"agents\"],\"generatedAt\":\"2026-02-25T06:41:04.541Z\"},\"createdAt\":\"2026-02-25T00:25:03.226Z\",\"updatedAt\":\"2026-02-25T00:25:03.226Z\",\"deletedAt\":null,\"createdBy\":null,\"updatedBy\":null,\"deletedBy\":null},\"spec\":{\"schemaVersion\":\"saga.v0\",\"sagaKey\":\"uc-22-the-waitlist-warrior-waiting-walter\",\"title\":\"UC-22 • The Tour/Experience with Minimum Viable • The Waitlist Warrior (Waiting Walter)\",\"description\":\"Comprehensive lifecycle saga derived from UC-22 and persona P-45. Needs summary: Minimum to run (need 4 people); Maximum capacity (12 people); Multiple time slots per day; Different languages; Weather-dependent (with cancellation policy); Guide assignment\",\"tags\":[\"uc-derived\",\"persona-derived\",\"lifecycle\",\"api-first\",\"agents\"],\"defaults\":{\"runMode\":\"dry_run\",\"continueOnFailure\":false},\"source\":{\"useCaseRef\":\"UC-22\",\"personaRef\":\"P-45\",\"useCaseFile\":\"/Users/ameer/bizing/mind/workspace/documentation/use-cases-comprehensive.md\",\"personaFile\":\"/Users/ameer/bizing/mind/workspace/documentation/tester-personas.md\",\"generatedAt\":\"2026-02-25T06:41:04.541Z\"},\"objectives\":[\"Validate UC-22 lifecycle end-to-end using persona The Waitlist Warrior (Waiting Walter).\",\"Exercise owner setup, team setup, catalog publishing, and customer journeys.\",\"Stress ACL/security edge cases and verify expected denials are enforced.\",\"Collect snapshots and report artifacts for every critical milestone.\"],\"actors\":[{\"actorKey\":\"biz_owner\",\"name\":\"The Waitlist Warrior (Waiting Walter)\",\"role\":\"owner\",\"description\":\"Heavy user of waitlist features when slots are full\",\"personaRef\":\"P-45\"},{\"actorKey\":\"biz_member\",\"name\":\"Operations Team Member\",\"role\":\"manager\",\"description\":\"Business member invited by owner to assist with operations and booking flow.\"},{\"actorKey\":\"customer_1\",\"name\":\"Customer One\",\"role\":\"customer\",\"description\":\"Primary customer exploring catalog, booking services, and purchasing products.\"},{\"actorKey\":\"customer_2\",\"name\":\"Customer Two\",\"role\":\"customer\",\"description\":\"Concurrent customer used to simulate realistic demand and race conditions.\"},{\"actorKey\":\"adversary\",\"name\":\"Adversarial User\",\"role\":\"malicious_actor\",\"description\":\"Actor intentionally attempting unauthorized or abusive actions.\"}],\"phases\":[{\"phaseKey\":\"owner-onboarding\",\"order\":1,\"title\":\"Owner Onboarding\",\"description\":\"Business owner signs up, authenticates, and establishes tenant root.\",\"steps\":[{\"stepKey\":\"owner-sign-up\",\"order\":1,\"title\":\"Owner signs up and authenticates\",\"actorKey\":\"biz_owner\",\"intent\":\"Establish authenticated owner identity for the lifecycle.\",\"instruction\":\"Create or login the owner account through Better Auth endpoints, then verify session context can call authenticated API routes.\",\"expectedResult\":\"Owner session exists and authenticated routes return success for this user.\",\"toolHints\":[],\"assertions\":[{\"kind\":\"api_response\",\"description\":\"API call returns success and includes stable ids for created entities.\"},{\"kind\":\"acl_guard\",\"description\":\"Actor permissions are honored for this step context.\"}],\"evidenceRequired\":[{\"kind\":\"api_trace\",\"label\":\"Request/response trace for this step\"},{\"kind\":\"snapshot\",\"label\":\"Structured snapshot.v1 screen blocks (what user saw) with real API-backed data\"}],\"guardrails\":[],\"tags\":[\"auth\",\"setup\"],\"delay\":{\"mode\":\"none\",\"jitterMs\":0}},{\"stepKey\":\"owner-create-biz\",\"order\":2,\"title\":\"Owner creates business tenant\",\"actorKey\":\"biz_owner\",\"intent\":\"Create the biz root for all subsequent configuration.\",\"instruction\":\"Using agents tools, create a biz representing The Tour/Experience with Minimum Viable. Use name/slug derived from saga context.\",\"expectedResult\":\"Biz is created, owner is auto-added as member with owner role, and biz id is captured.\",\"toolHints\":[\"bizing.bizes.create\"],\"assertions\":[{\"kind\":\"api_response\",\"description\":\"API call returns success and includes stable ids for created entities.\"},{\"kind\":\"acl_guard\",\"description\":\"Actor permissions are honored for this step context.\"}],\"evidenceRequired\":[{\"kind\":\"api_trace\",\"label\":\"Request/response trace for this step\"},{\"kind\":\"snapshot\",\"label\":\"Structured snapshot.v1 screen blocks (what user saw) with real API-backed data\"}],\"guardrails\":[],\"tags\":[\"biz\",\"setup\"],\"delay\":{\"mode\":\"none\",\"jitterMs\":0}},{\"stepKey\":\"owner-create-location\",\"order\":3,\"title\":\"Owner creates primary location\",\"actorKey\":\"biz_owner\",\"intent\":\"Establish operational location for services/resources.\",\"instruction\":\"Create a primary location for the biz and set timezone aligned with scenario context.\",\"expectedResult\":\"Location exists and is associated with the new biz.\",\"toolHints\":[\"bizing.locations.create\"],\"assertions\":[{\"kind\":\"api_response\",\"description\":\"API call returns success and includes stable ids for created entities.\"},{\"kind\":\"acl_guard\",\"description\":\"Actor permissions are honored for this step context.\"}],\"evidenceRequired\":[{\"kind\":\"api_trace\",\"label\":\"Request/response trace for this step\"},{\"kind\":\"snapshot\",\"label\":\"Structured snapshot.v1 screen blocks (what user saw) with real API-backed data\"}],\"guardrails\":[],\"tags\":[\"location\",\"setup\"],\"delay\":{\"mode\":\"none\",\"jitterMs\":0}}]},{\"phaseKey\":\"business-configuration\",\"order\":2,\"title\":\"Business Configuration\",\"description\":\"Owner configures scheduling, pricing baseline, and operational defaults.\",\"steps\":[{\"stepKey\":\"owner-configure-hours\",\"order\":4,\"title\":\"Configure default hours and availability mode\",\"actorKey\":\"biz_owner\",\"intent\":\"Set baseline availability without forcing advanced complexity.\",\"instruction\":\"Create baseline availability and lead-time rules representing the UC default business hours and booking window behavior.\",\"expectedResult\":\"Availability defaults and rules are stored and can be referenced by calendars.\",\"toolHints\":[],\"assertions\":[{\"kind\":\"api_response\",\"description\":\"API call returns success and includes stable ids for created entities.\"},{\"kind\":\"acl_guard\",\"description\":\"Actor permissions are honored for this step context.\"}],\"evidenceRequired\":[{\"kind\":\"api_trace\",\"label\":\"Request/response trace for this step\"},{\"kind\":\"snapshot\",\"label\":\"Structured snapshot.v1 screen blocks (what user saw) with real API-backed data\"}],\"guardrails\":[],\"tags\":[\"availability\",\"policy\"],\"delay\":{\"mode\":\"none\",\"jitterMs\":0}},{\"stepKey\":\"owner-configure-pricing\",\"order\":5,\"title\":\"Configure default pricing rules\",\"actorKey\":\"biz_owner\",\"intent\":\"Set base pricing and optional manual demand overrides.\",\"instruction\":\"Configure pricing defaults for the offer lifecycle including call fees/manual surge if UC needs imply it.\",\"expectedResult\":\"Pricing model persists and future bookings can calculate totals deterministically.\",\"toolHints\":[],\"assertions\":[{\"kind\":\"api_response\",\"description\":\"API call returns success and includes stable ids for created entities.\"},{\"kind\":\"acl_guard\",\"description\":\"Actor permissions are honored for this step context.\"}],\"evidenceRequired\":[{\"kind\":\"api_trace\",\"label\":\"Request/response trace for this step\"},{\"kind\":\"snapshot\",\"label\":\"Structured snapshot.v1 screen blocks (what user saw) with real API-backed data\"}],\"guardrails\":[],\"tags\":[\"pricing\"],\"delay\":{\"mode\":\"none\",\"jitterMs\":0}}]},{\"phaseKey\":\"supply-and-team-setup\",\"order\":3,\"title\":\"Supply And Team Setup\",\"description\":\"Business owner sets up hosts/assets/venues/resources and invites members.\",\"steps\":[{\"stepKey\":\"owner-create-resources\",\"order\":6,\"title\":\"Create resources representing hosts/assets/venues\",\"actorKey\":\"biz_owner\",\"intent\":\"Model real-world supply that bookings will consume.\",\"instruction\":\"Create at least one host resource and one non-host resource (asset or venue) suitable for the UC.\",\"expectedResult\":\"Resources are created with expected type, location, and buffers.\",\"toolHints\":[\"bizing.resources.create\"],\"assertions\":[{\"kind\":\"api_response\",\"description\":\"API call returns success and includes stable ids for created entities.\"},{\"kind\":\"acl_guard\",\"description\":\"Actor permissions are honored for this step context.\"}],\"evidenceRequired\":[{\"kind\":\"api_trace\",\"label\":\"Request/response trace for this step\"},{\"kind\":\"snapshot\",\"label\":\"Structured snapshot.v1 screen blocks (what user saw) with real API-backed data\"}],\"guardrails\":[],\"tags\":[\"resources\"],\"delay\":{\"mode\":\"none\",\"jitterMs\":0}},{\"stepKey\":\"owner-invite-member\",\"order\":7,\"title\":\"Invite and provision business member\",\"actorKey\":\"biz_owner\",\"intent\":\"Validate collaboration and role assignment.\",\"instruction\":\"Invite a biz member, assign an operational role, and verify that member can authenticate into the same biz.\",\"expectedResult\":\"Biz member account/session exists with scoped role permissions.\",\"toolHints\":[],\"assertions\":[{\"kind\":\"api_response\",\"description\":\"API call returns success and includes stable ids for created entities.\"},{\"kind\":\"acl_guard\",\"description\":\"Actor permissions are honored for this step context.\"}],\"evidenceRequired\":[{\"kind\":\"api_trace\",\"label\":\"Request/response trace for this step\"},{\"kind\":\"snapshot\",\"label\":\"Structured snapshot.v1 screen blocks (what user saw) with real API-backed data\"}],\"guardrails\":[],\"tags\":[\"team\",\"acl\"],\"delay\":{\"mode\":\"none\",\"jitterMs\":0}}]},{\"phaseKey\":\"catalog-publish\",\"order\":4,\"title\":\"Catalog And Publish\",\"description\":\"Owner creates services/offers/products and publishes sellable catalog entries.\",\"steps\":[{\"stepKey\":\"owner-create-offer\",\"order\":8,\"title\":\"Create offer shell\",\"actorKey\":\"biz_owner\",\"intent\":\"Define sellable service/catalog entry.\",\"instruction\":\"Create an offer representing the UC primary service; choose execution mode matching the scenario.\",\"expectedResult\":\"Offer is created in draft state with captured id.\",\"toolHints\":[\"bizing.offers.create\"],\"assertions\":[{\"kind\":\"api_response\",\"description\":\"API call returns success and includes stable ids for created entities.\"},{\"kind\":\"acl_guard\",\"description\":\"Actor permissions are honored for this step context.\"}],\"evidenceRequired\":[{\"kind\":\"api_trace\",\"label\":\"Request/response trace for this step\"},{\"kind\":\"snapshot\",\"label\":\"Struc",
+        "_size": 83080
+      },
+      "at": "2026-02-25T15:06:41.444Z"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AAObxZFNukOQvT4luUsDOs9bCf/steps/adversary-cross-biz-read/result",
+      "status": 200,
+      "requestBody": {
+        "status": "in_progress",
+        "startedAt": "2026-02-25T15:06:41.270Z",
+        "resultPayload": {
+          "note": "Started adversary-cross-biz-read"
+        },
+        "assertionSummary": {
+          "status": "in_progress"
+        }
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "id": "saga_run_step_3AAObzycqRJiZHqiMHMdio5EuLK",
+          "sagaRunId": "saga_run_3AAObxZFNukOQvT4luUsDOs9bCf",
+          "phaseKey": "security-and-abuse",
+          "phaseOrder": 6,
+          "phaseTitle": "Security And Abuse Checks",
+          "stepKey": "adversary-cross-biz-read",
+          "stepOrder": 15,
+          "actorKey": "adversary",
+          "instruction": "Using credentials from another context, attempt to read or mutate booking/order resources for this biz.",
+          "expectedResult": "Request is rejected with forbidden/unauthorized error and no data leakage.",
+          "delayMode": "none",
+          "delayMs": null,
+          "delayConditionKey": null,
+          "delayTimeoutMs": null,
+          "delayPollMs": null,
+          "delayJitterMs": 0,
+          "status": "in_progress",
+          "attemptCount": 1,
+          "startedAt": "2026-02-25T15:06:41.270Z",
+          "endedAt": null,
+          "failureCode": null,
+          "failureMessage": null,
+          "resultPayload": {
+            "note": "Started adversary-cross-biz-read"
+          },
+          "assertionSummary": {
+            "status": "in_progress"
+          },
+          "metadata": {},
+          "createdAt": "2026-02-25T15:06:23.314Z",
+          "updatedAt": "2026-02-25T15:06:23.314Z",
+          "deletedAt": null,
+          "createdBy": null,
+          "updatedBy": null,
+          "deletedBy": null
+        },
+        "meta": {
+          "requestId": "058c3186-f063-4e65-afd9-c848c21387e6",
+          "timestamp": "2026-02-25T15:06:41.470Z"
+        }
+      },
+      "at": "2026-02-25T15:06:41.471Z"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AAOcpR0JNcQdMUCgbmDmO54vPZ/steps/owner-create-offer-version/result",
+      "status": 200,
+      "requestBody": {
+        "status": "in_progress",
+        "startedAt": "2026-02-25T15:06:41.337Z",
+        "resultPayload": {
+          "note": "Started owner-create-offer-version"
+        },
+        "assertionSummary": {
+          "status": "in_progress"
+        }
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "id": "saga_run_step_3AAOcru8ioy16UaLnyMjW3oxv0c",
+          "sagaRunId": "saga_run_3AAOcpR0JNcQdMUCgbmDmO54vPZ",
+          "phaseKey": "catalog-publish",
+          "phaseOrder": 4,
+          "phaseTitle": "Catalog And Publish",
+          "stepKey": "owner-create-offer-version",
+          "stepOrder": 9,
+          "actorKey": "biz_owner",
+          "instruction": "Create a published offer version with realistic duration and base price for this UC.",
+          "expectedResult": "Offer version exists and is ready for booking order references.",
+          "delayMode": "none",
+          "delayMs": null,
+          "delayConditionKey": null,
+          "delayTimeoutMs": null,
+          "delayPollMs": null,
+          "delayJitterMs": 0,
+          "status": "in_progress",
+          "attemptCount": 1,
+          "startedAt": "2026-02-25T15:06:41.337Z",
+          "endedAt": null,
+          "failureCode": null,
+          "failureMessage": null,
+          "resultPayload": {
+            "note": "Started owner-create-offer-version"
+          },
+          "assertionSummary": {
+            "status": "in_progress"
+          },
+          "metadata": {},
+          "createdAt": "2026-02-25T15:06:30.619Z",
+          "updatedAt": "2026-02-25T15:06:30.619Z",
+          "deletedAt": null,
+          "createdBy": null,
+          "updatedBy": null,
+          "deletedBy": null
+        },
+        "meta": {
+          "requestId": "5775452d-c61e-4c6d-a655-3d69f0e058f3",
+          "timestamp": "2026-02-25T15:06:41.540Z"
+        }
+      },
+      "at": "2026-02-25T15:06:41.541Z"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AAOcalavZulfqEUcL1F3fKDpiP/steps/customer-book-primary/result",
+      "status": 200,
+      "requestBody": {
+        "status": "in_progress",
+        "startedAt": "2026-02-25T15:06:41.365Z",
+        "resultPayload": {
+          "note": "Started customer-book-primary"
+        },
+        "assertionSummary": {
+          "status": "in_progress"
+        }
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "id": "saga_run_step_3AAOcdIBGmQnhuLN0H5yEAQlfGK",
+          "sagaRunId": "saga_run_3AAOcalavZulfqEUcL1F3fKDpiP",
+          "phaseKey": "customer-lifecycle",
+          "phaseOrder": 5,
+          "phaseTitle": "Customer Lifecycle",
+          "stepKey": "customer-book-primary",
+          "stepOrder": 12,
+          "actorKey": "customer_1",
+          "instruction": "Create a booking order using the published offer version with realistic times and monetary totals.",
+          "expectedResult": "Booking order is created and linked to offer/offer version with coherent totals.",
+          "delayMode": "none",
+          "delayMs": null,
+          "delayConditionKey": null,
+          "delayTimeoutMs": null,
+          "delayPollMs": null,
+          "delayJitterMs": 0,
+          "status": "in_progress",
+          "attemptCount": 1,
+          "startedAt": "2026-02-25T15:06:41.365Z",
+          "endedAt": null,
+          "failureCode": null,
+          "failureMessage": null,
+          "resultPayload": {
+            "note": "Started customer-book-primary"
+          },
+          "assertionSummary": {
+            "status": "in_progress"
+          },
+          "metadata": {},
+          "createdAt": "2026-02-25T15:06:28.285Z",
+          "updatedAt": "2026-02-25T15:06:28.285Z",
+          "deletedAt": null,
+          "createdBy": null,
+          "updatedBy": null,
+          "deletedBy": null
+        },
+        "meta": {
+          "requestId": "b9b4ac2f-d9d8-4f31-b405-0a77b6303afe",
+          "timestamp": "2026-02-25T15:06:41.558Z"
+        }
+      },
+      "at": "2026-02-25T15:06:41.559Z"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AAOcEk38Ro4SpYf9sR2M292z2I/traces",
+      "status": 201,
+      "requestBody": {
+        "stepKey": "customer-join-waitlist-flow",
+        "title": "Customer enters waitlist/queue flow API Trace",
+        "trace": {
+          "stepKey": "customer-join-waitlist-flow",
+          "callCount": 1,
+          "calls": [
+            {
+              "method": "POST",
+              "path": "/api/v1/public/bizes/3AAOcpyz9u7YkaE7lAvSxnKeikU/booking-orders",
+              "status": 201,
+              "requestBody": {
+                "offerId": "offer_3AAOdgvN5j78grAFXO4pxLHGYwL",
+                "offerVersionId": "offer_version_3AAOdmZlOV2koFDlTIJKEWEBWwW",
+                "customerUserId": "DKyb7ALwDwVVporYpn6nCEVzgIbKtPgK",
+                "status": "confirmed",
+                "subtotalMinor": 15000,
+                "taxMinor": 0,
+                "feeMinor": 0,
+                "discountMinor": 0,
+                "totalMinor": 15000,
+                "currency": "USD",
+                "requestedStartAt": "2026-02-26T15:06:41.108Z",
+                "requestedEndAt": "2026-02-26T15:56:41.108Z",
+                "confirmedStartAt": "2026-02-26T15:06:41.108Z",
+                "confirmedEndAt": "2026-02-26T15:56:41.108Z"
+              },
+              "responseBody": {
+                "success": true,
+                "data": {
+                  "id": "booking_order_3AAOeCBwGG2GWMAETru0KEhA1Kw",
+                  "bizId": "3AAOcpyz9u7YkaE7lAvSxnKeikU",
+                  "offerId": "offer_3AAOdgvN5j78grAFXO4pxLHGYwL",
+                  "offerVersionId": "offer_version_3AAOdmZlOV2koFDlTIJKEWEBWwW",
+                  "customerUserId": "DKyb7ALwDwVVporYpn6nCEVzgIbKtPgK",
+                  "customerGroupAccountId": null,
+                  "status": "confirmed",
+                  "statusConfigValueId": null,
+                  "currency": "USD",
+                  "subtotalMinor": 15000,
+                  "taxMinor": 0,
+                  "feeMinor": 0,
+                  "discountMinor": 0,
+                  "totalMinor": 15000,
+                  "requestedStartAt": "2026-02-26T15:06:41.108Z",
+                  "requestedEndAt": "2026-02-26T15:56:41.108Z",
+                  "confirmedStartAt": "2026-02-26T15:06:41.108Z",
+                  "confirmedEndAt": "2026-02-26T15:56:41.108Z",
+                  "pricingSnapshot": {},
+                  "policySnapshot": {},
+                  "metadata": {},
+                  "createdAt": "2026-02-25T15:06:41.147Z",
+                  "updatedAt": "2026-02-25T15:06:41.147Z",
+                  "deletedAt": null,
+                  "createdBy": null,
+                  "updatedBy": null,
+                  "deletedBy": null
+                },
+                "meta": {
+                  "requestId": "a9279c78-b6e5-406e-9830-2171838cf65d",
+                  "timestamp": "2026-02-25T15:06:41.151Z"
+                }
+              },
+              "at": "2026-02-25T15:06:41.153Z"
+            }
+          ]
+        },
+        "metadata": {
+          "source": "rerun-sagas.ts"
+        }
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "id": "saga_artifact_3AAOeEx9AgjJkODlBrUWXlsxild",
+          "sagaRunId": "saga_run_3AAOcEk38Ro4SpYf9sR2M292z2I",
+          "sagaRunStepId": "saga_run_step_3AAOcBhSpOKUvIqDufwr5wxNSR5",
+          "artifactType": "api_trace",
+          "title": "Customer enters waitlist/queue flow API Trace",
+          "storagePath": "testing/sagas/runs/saga_run_3AAOcEk38Ro4SpYf9sR2M292z2I/artifacts/1772032001353-Customer_enters_waitlist_queue_flow_API_Trace.json",
+          "contentType": "application/json",
+          "bodyText": "{\n  \"stepKey\": \"customer-join-waitlist-flow\",\n  \"callCount\": 1,\n  \"calls\": [\n    {\n      \"method\": \"POST\",\n      \"path\": \"/api/v1/public/bizes/3AAOcpyz9u7YkaE7lAvSxnKeikU/booking-orders\",\n      \"status\": 201,\n      \"requestBody\": {\n        \"offerId\": \"offer_3AAOdgvN5j78grAFXO4pxLHGYwL\",\n        \"offerVersionId\": \"offer_version_3AAOdmZlOV2koFDlTIJKEWEBWwW\",\n        \"customerUserId\": \"DKyb7ALwDwVVporYpn6nCEVzgIbKtPgK\",\n        \"status\": \"confirmed\",\n        \"subtotalMinor\": 15000,\n        \"taxMinor\": 0,\n        \"feeMinor\": 0,\n        \"discountMinor\": 0,\n        \"totalMinor\": 15000,\n        \"currency\": \"USD\",\n        \"requestedStartAt\": \"2026-02-26T15:06:41.108Z\",\n        \"requestedEndAt\": \"2026-02-26T15:56:41.108Z\",\n        \"confirmedStartAt\": \"2026-02-26T15:06:41.108Z\",\n        \"confirmedEndAt\": \"2026-02-26T15:56:41.108Z\"\n      },\n      \"responseBody\": {\n        \"success\": true,\n        \"data\": {\n          \"id\": \"booking_order_3AAOeCBwGG2GWMAETru0KEhA1Kw\",\n          \"bizId\": \"3AAOcpyz9u7YkaE7lAvSxnKeikU\",\n          \"offerId\": \"offer_3AAOdgvN5j78grAFXO4pxLHGYwL\",\n          \"offerVersionId\": \"offer_version_3AAOdmZlOV2koFDlTIJKEWEBWwW\",\n          \"customerUserId\": \"DKyb7ALwDwVVporYpn6nCEVzgIbKtPgK\",\n          \"customerGroupAccountId\": null,\n          \"status\": \"confirmed\",\n          \"statusConfigValueId\": null,\n          \"currency\": \"USD\",\n          \"subtotalMinor\": 15000,\n          \"taxMinor\": 0,\n          \"feeMinor\": 0,\n          \"discountMinor\": 0,\n          \"totalMinor\": 15000,\n          \"requestedStartAt\": \"2026-02-26T15:06:41.108Z\",\n          \"requestedEndAt\": \"2026-02-26T15:56:41.108Z\",\n          \"confirmedStartAt\": \"2026-02-26T15:06:41.108Z\",\n          \"confirmedEndAt\": \"2026-02-26T15:56:41.108Z\",\n          \"pricingSnapshot\": {},\n          \"policySnapshot\": {},\n          \"metadata\": {},\n          \"createdAt\": \"2026-02-25T15:06:41.147Z\",\n          \"updatedAt\": \"2026-02-25T15:06:41.147Z\",\n          \"deletedAt\": null,\n          \"createdBy\": null,\n          \"updatedBy\": null,\n          \"deletedBy\": null\n        },\n        \"meta\": {\n          \"requestId\": \"a9279c78-b6e5-406e-9830-2171838cf65d\",\n          \"timestamp\": \"2026-02-25T15:06:41.151Z\"\n        }\n      },\n      \"at\": \"2026-02-25T15:06:41.153Z\"\n    }\n  ]\n}\n",
+          "byteSize": 2251,
+          "checksum": "8207718fdcc5f6d68f7efb7da3b8b35f40556064d65a9664ddbcdf7cff7fa388",
+          "capturedAt": "2026-02-25T15:06:41.401Z",
+          "metadata": {
+            "source": "rerun-sagas.ts"
+          },
+          "createdAt": "2026-02-25T15:06:41.401Z",
+          "updatedAt": "2026-02-25T15:06:41.401Z",
+          "deletedAt": null,
+          "createdBy": null,
+          "updatedBy": null,
+          "deletedBy": null
+        },
+        "meta": {
+          "requestId": "cd42897d-8a99-412f-b7a8-54c05dbbb635",
+          "timestamp": "2026-02-25T15:06:41.564Z"
+        }
+      },
+      "at": "2026-02-25T15:06:41.564Z"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AAOdmMm5pSVc3cwsULUz5JTx8I/traces",
+      "status": 201,
+      "requestBody": {
+        "_truncated": true,
+        "_preview": "{\"stepKey\":\"owner-create-location\",\"title\":\"Owner creates primary location API Trace\",\"trace\":{\"stepKey\":\"owner-create-location\",\"callCount\":4,\"calls\":[{\"method\":\"POST\",\"path\":\"/api/v1/sagas/runs/saga_run_3AAOdPCx6qhfiCbtUfvs1GkMJQP/traces\",\"status\":201,\"requestBody\":{\"_truncated\":true,\"_preview\":\"{\\\"stepKey\\\":\\\"owner-configure-hours\\\",\\\"title\\\":\\\"Configure default hours and availability mode API Trace\\\",\\\"trace\\\":{\\\"stepKey\\\":\\\"owner-configure-hours\\\",\\\"callCount\\\":4,\\\"calls\\\":[{\\\"method\\\":\\\"POST\\\",\\\"path\\\":\\\"/api/v1/sagas/runs/saga_run_3AAOaa2BXYFwd3HwP75sKyhtqzx/steps/runner-submit-artifacts/result\\\",\\\"status\\\":200,\\\"requestBody\\\":{\\\"status\\\":\\\"passed\\\",\\\"startedAt\\\":\\\"2026-02-25T15:06:40.462Z\\\",\\\"endedAt\\\":\\\"2026-02-25T15:06:40.462Z\\\",\\\"failureMessage\\\":null,\\\"resultPayload\\\":{\\\"note\\\":\\\"Final report artifact submitted.\\\"},\\\"assertionSummary\\\":{\\\"status\\\":\\\"passed\\\",\\\"hasFailure\\\":false,\\\"assertionsPassed\\\":1}},\\\"responseBody\\\":{\\\"success\\\":true,\\\"data\\\":{\\\"id\\\":\\\"saga_run_step_3AAOafjG8FRevEO8Qzn1WjPWde3\\\",\\\"sagaRunId\\\":\\\"saga_run_3AAOaa2BXYFwd3HwP75sKyhtqzx\\\",\\\"phaseKey\\\":\\\"reporting-and-closeout\\\",\\\"phaseOrder\\\":8,\\\"phaseTitle\\\":\\\"Reporting And Closeout\\\",\\\"stepKey\\\":\\\"runner-submit-artifacts\\\",\\\"stepOrder\\\":28,\\\"actorKey\\\":\\\"biz_owner\\\",\\\"instruction\\\":\\\"Upload snapshots for critical steps and submit final markdown report summarizing pass/fail and discovered gaps.\\\",\\\"expectedResult\\\":\\\"Run has persisted report + snapshots in project directory and indexed metadata in DB.\\\",\\\"delayMode\\\":\\\"none\\\",\\\"delayMs\\\":null,\\\"delayConditionKey\\\":null,\\\"delayTimeoutMs\\\":null,\\\"delayPollMs\\\":null,\\\"delayJitterMs\\\":0,\\\"status\\\":\\\"passed\\\",\\\"attemptCount\\\":1,\\\"startedAt\\\":\\\"2026-02-25T15:06:40.462Z\\\",\\\"endedAt\\\":\\\"2026-02-25T15:06:40.462Z\\\",\\\"failureCode\\\":null,\\\"failureMessage\\\":null,\\\"resultPayload\\\":{\\\"note\\\":\\\"Final report artifact submitted.\\\"},\\\"assertionSummary\\\":{\\\"status\\\":\\\"passed\\\",\\\"hasFailure\\\":false,\\\"assertionsPassed\\\":1},\\\"metadata\\\":{},\\\"createdAt\\\":\\\"2026-02-25T15:06:12.294Z\\\",\\\"updatedAt\\\":\\\"2026-02-25T15:06:12.294Z\\\",\\\"deletedAt\\\":null,\\\"createdBy\\\":null,\\\"updatedBy\\\":null,\\\"deletedBy\\\":null},\\\"meta\\\":{\\\"requestId\\\":\\\"c6d65718-5e6b-462e-b0e1-4d063bd2945a\\\",\\\"timestamp\\\":\\\"2026-02-25T15:06:41.018Z\\\"}},\\\"at\\\":\\\"2026-02-25T15:06:41.018Z\\\"},{\\\"method\\\":\\\"GET\\\",\\\"path\\\":\\\"/api/auth/get-session\\\",\\\"status\\\":200,\\\"responseBody\\\":{\\\"session\\\":{\\\"expiresAt\\\":\\\"2026-03-04T15:06:40.866Z\\\",\\\"token\\\":\\\"iytS8mkQdxhNoHTH6mr0tHvM5OVtxvqK\\\",\\\"createdAt\\\":\\\"2026-02-25T15:06:40.866Z\\\",\\\"updatedAt\\\":\\\"2026-02-25T15:06:40.866Z\\\",\\\"ipAddress\\\":\\\"\\\",\\\"userAgent\\\":\\\"node\\\",\\\"userId\\\":\\\"Ull9E5mCsNpdBftV1UFHtWVS2NPfwNUt\\\",\\\"activeOrganizationId\\\":null,\\\"impersonatedBy\\\":null,\\\"id\\\":\\\"rcTE0FMI92nUptUkxal3etqxCGsf03r6\\\"},\\\"user\\\":{\\\"name\\\":\\\"adversary-uc-218-the-franchisee-priya\\\",\\\"email\\\":\\\"adversary-uc-218-the-franchisee-priya-1772032000726-7qknbb@example.com\\\",\\\"emailVerified\\\":false,\\\"image\\\":null,\\\"createdAt\\\":\\\"2026-02-25T15:06:40.853Z\\\",\\\"updatedAt\\\":\\\"2026-02-25T15:06:40.853Z\\\",\\\"role\\\":\\\"user\\\",\\\"banned\\\":false,\\\"banReason\\\":null,\\\"banExpires\\\":null,\\\"id\\\":\\\"Ull9E5mCsNpdBftV1UFHtWVS2NPfwNUt\\\"}},\\\"at\\\":\\\"2026-02-25T15:06:41.019Z\\\"},{\\\"method\\\":\\\"POST\\\",\\\"path\\\":\\\"/api/v1/sagas/runs/saga_run_3AAOdmMm5pSVc3cwsULUz5JTx8I/steps/owner-create-biz/result\\\",\\\"status\\\":200,\\\"requestBody\\\":{\\\"status\\\":\\\"passed\\\",\\\"startedAt\\\":\\\"2026-02-25T15:06:40.483Z\\\",\\\"endedAt\\\":\\\"2026-02-25T15:06:40.483Z\\\",\\\"failureMessage\\\":null,\\\"resultPayload\\\":{\\\"note\\\":\\\"Biz created.\\\",\\\"evidence\\\":{\\\"id\\\":\\\"3AAOe7d5zcfdachqS0SBEtnI4Sy\\\",\\\"name\\\":\\\"Saga uc-22-the-group-event-organizer-gathering-gwen\\\",\\\"slug\\\":\\\"uc-22-the-group-event-organizer-gathering-gwen-v9iix8y5\\\",\\\"type\\\":\\\"small_business\\\",\\\"logoUrl\\\":null,\\\"timezone\\\":\\\"UTC\\\",\\\"currency\\\":\\\"USD\\\",\\\"status\\\":\\\"active\\\",\\\"metadata\\\":{},\\\"createdAt\\\":\\\"2026-02-25T15:06:40.217Z\\\",\\\"updatedAt\\\":\\\"2026-02-25T15:06:40.217Z\\\",\\\"deletedAt\\\":null,\\\"createdBy\\\":null,\\\"updatedBy\\\":null,\\\"deletedBy\\\":null}},\\\"assertionSummary\\\":{\\\"status\\\":\\\"passed\\\",\\\"hasFailure\\\":false,\\\"assertionsPassed\\\":1}},\\\"responseBody\\\":{\\\"success\\\":true,\\\"data\\\":{\\\"id\\\":\\\"saga_run_step_3AAOdnmg1HWMbK9SiB1txIhvLnw\\\",\\\"sagaRunId\\\":\\\"saga_run_3AAOdmMm5pSVc3cwsULUz5JTx8I\\\",\\\"phaseKey\\\":\\\"owner-onboarding\\\",\\\"phaseOrder\\\":1,\\\"phaseTitle\\\":\\\"Owner Onboarding\\\",\\\"stepKey\\\":\\\"owner-create-biz\\\",\\\"stepOrder\\\":2,\\\"actorKey\\\":\\\"biz_owner\\\",\\\"instruction\\\":\\\"Using agents tools, create a biz representing The Tour/Experience with Minimum Viable. Use name/slug derived from saga context.\\\",\\\"expectedResult\\\":\\\"Biz is created, owner is auto-added as member with owner role, and biz id is captured.\\\",\\\"delayMode\\\":\\\"none\\\",\\\"delayMs\\\":null,\\\"delayConditionKey\\\":null,\\\"delayTimeoutMs\\\":null,\\\"delayPollMs\\\":null,\\\"delayJitterMs\\\":0,\\\"status\\\":\\\"passed\\\",\\\"attemptCount\\\":1,\\\"startedAt\\\":\\\"2026-02-25T15:06:40.483Z\\\",\\\"endedAt\\\":\\\"2026-02-25T15:06:40.483Z\\\",\\\"failureCode\\\":null,\\\"failureMessage\\\":null,\\\"resultPayload\\\":{\\\"note\\\":\\\"Biz created.\\\",\\\"evidence\\\":{\\\"id\\\":\\\"3AAOe7d5zcfdachqS0SBEtnI4Sy\\\",\\\"name\\\":\\\"Saga uc-22-the-group-event-organizer-gathering-gwen\\\",\\\"slug\\\":\\\"uc-22-the-group-event-organizer-gathering-gwen-v9iix8y5\\\",\\\"type\\\":\\\"small_business\\\",\\\"status\\\":\\\"active\\\",\\\"logoUrl\\\":null,\\\"currency\\\":\\\"USD\\\",\\\"metadata\\\":{},\\\"timezone\\\":\\\"UTC\\\",\\\"createdAt\\\":\\\"2026-02-25T15:06:40.217Z\\\",\\\"createdBy\\\":null,\\\"deletedAt\\\":null,\\\"deletedBy\\\":null,\\\"updatedAt\\\":\\\"2026-02-25T15:06:40.217Z\\\",\\\"updatedBy\\\":null}},\\\"assertionSummary\\\":{\\\"status\\\":\\\"passed\\\",\\\"hasFailure\\\":false,\\\"assertionsPassed\\\":1},\\\"metadata\\\":{},\\\"createdAt\\\":\\\"2026-02-25T15:06:37.173Z\\\",\\\"updatedAt\\\":\\\"2026-02-25T15:06:37.173Z\\\",\\\"deletedAt\\\":null,\\\"createdBy\\\":null,\\\"updatedBy\\\":null,\\\"deletedBy\\\":null},\\\"meta\\\":{\\\"requestId\\\":\\\"df56d103-88dd-46d3-8b83-37c4482cc321\\\",\\\"timestamp\\\":\\\"2026-02-25T15:06:41.052Z\\\"}},\\\"at\\\":\\\"2026-02-25T15:06:41.053Z\\\"},{\\\"method\\\":\\\"POST\\\",\\\"path\\\":\\\"/api/v1/sagas/runs/saga_run_3AAOcpR0JNcQdMUCgbmDmO54vPZ/snapshots\\\",\\\"status\\\":201,\\\"requestBody\\\":{\\\"_truncated\\\":true,\\\"_preview\\\":\\\"{\\\\\\\"stepKey\\\\\\\":\\\\\\\"owner-create-offer\\\\\\\",\\\\\\\"screenKey\\\\\\\":\\\\\\\"owner-create-offer-1772032000611\\\\\\\",\\\\\\\"title\\\\\\\":\\\\\\\"Create offer shell Snapshot\\\\\\\",\\\\\\\"status\\\\\\\":\\\\\\\"passed\\\\\\\",\\\\\\\"route\\\\\\\":\\\\\\\"/sagas/saga_run_3AAOcpR0JNcQdMUCgbmDmO54vPZ/owner-create-offer\\\\\\\",\\\\\\\"format\\\\\\\":\\\\\\\"json\\\\\\\",\\\\\\\"view\\\\\\\":{\\\\\\\"title\\\\\\\":\\\\\\\"Create offer shell\\\\\\\",\\\\\\\"subtitle\\\\\\\":\\\\\\\"Offer created.\\\\\\\",\\\\\\\"blocks\\\\\\\":[{\\\\\\\"type\\\\\\\":\\\\\\\"alert\\\\\\\",\\\\\\\"title\\\\\\\":\\\\\\\"Owner Create Offer completed\\\\\\\",\\\\\\\"message\\\\\\\":\\\\\\\"Offer created.\\\\\\\",\\\\\\\"tone\\\\\\\":\\\\\\\"success\\\\\\\"},{\\\\\\\"type\\\\\\\":\\\\\\\"key_value\\\\\\\",\\\\\\\"title\\\\\\\":\\\\\\\"Screen details\\\\\\\",\\\\\\\"items\\\\\\\":[{\\\\\\\"label\\\\\\\":\\\\\\\"OfferId\\\\\\\",\\\\\\\"value\\\\\\\":\\\\\\\"offer_3AAOe3TKKArfvRLRx8LoeOUYkAQ\\\\\\\"}]}]},\\\\\\\"rawData\\\\\\\":{\\\\\\\"stepKey\\\\\\\":\\\\\\\"owner-create-offer\\\\\\\",\\\\\\\"resultPayload\\\\\\\":{\\\\\\\"note\\\\\\\":\\\\\\\"Offer created.\\\\\\\",\\\\\\\"evidence\\\\\\\":{\\\\\\\"offerId\\\\\\\":\\\\\\\"offer_3AAOe3TKKArfvRLRx8LoeOUYkAQ\\\\\\\"}},\\\\\\\"apiCalls\\\\\\\":[{\\\\\\\"method\\\\\\\":\\\\\\\"POST\\\\\\\",\\\\\\\"path\\\\\\\":\\\\\\\"/api/v1/sagas/runs/saga_run_3AAOabzo2dtHFvNxGeMdmyUH56D/steps/persona-scenario-validate-4/result\\\\\\\",\\\\\\\"status\\\\\\\":200,\\\\\\\"requestBody\\\\\\\":{\\\\\\\"status\\\\\\\":\\\\\\\"skipped\\\\\\\",\\\\\\\"startedAt\\\\\\\":\\\\\\\"2026-02-25T15:06:39.160Z\\\\\\\",\\\\\\\"endedAt\\\\\\\":\\\\\\\"2026-02-25T15:06:39.160Z\\\\\\\",\\\\\\\"failureMessage\\\\\\\":\\\\\\\"Exploratory validation step skipped by deterministic runner (semantic/manual review step).\\\\\\\",\\\\\\\"resultPayload\\\\\\\":{\\\\\\\"note\\\\\\\":\\\\\\\"Step skipped: Exploratory validation step skipped by deterministic runner (semantic/manual review step).\\\\\\\",\\\\\\\"evidence\\\\\\\":{\\\\\\\"error\\\\\\\":\\\\\\\"Exploratory validation step skipped by deterministic runner (semantic/manual review step).\\\\\\\",\\\\\\\"failed\\\\\\\":false,\\\\\\\"blocked\\\\\\\":false,\\\\\\\"skipped\\\\\\\":true,\\\\\\\"stepFamily\\\\\\\":\\\\\\\"persona-scenario-validation\\\\\\\",\\\\\\\"reasonCode\\\\\\\":\\\\\\\"DETERMINISTIC_RUNNER_SKIPS_EXPLORATORY_STEP\\\\\\\"}},\\\\\\\"assertionSummary\\\\\\\":{\\\\\\\"status\\\\\\\":\\\\\\\"skipped\\\\\\\",\\\\\\\"hasFailure\\\\\\\":true,\\\\\\\"assertionsPassed\\\\\\\":0}},\\\\\\\"responseBody\\\\\\\":{\\\\\\\"success\\\\\\\":true,\\\\\\\"data\\\\\\\":{\\\\\\\"id\\\\\\\":\\\\\\\"saga_run_step_3AAOaaVeQfWtAqLYMeaK3Ca5uVN\\\\\\\",\\\\\\\"sagaRunId\\\\\\\":\\\\\\\"saga_run_3AAOabzo2dtHFvNxGeMdmyUH56D\\\\\\\",\\\\\\\"phaseKey\\\\\\\":\\\\\\\"reporting-and-closeout\\\\\\\",\\\\\\\"phaseOrder\\\\\\\":8,\\\\\\\"phaseTitle\\\\\\\":\\\\\\\"Reporting And Closeout\\\\\\\",\\\\\\\"stepKey\\\\\\\":\\\\\\\"persona-scenario-validate-4\\\\\\\",\\\\\\\"stepOrder\\\\\\\":27,\\\\\\\"actorKey\\\\\\\":\\\\\\\"customer_1\\\\\\\",\\\\\\\"instruction\\\\\\\":\\\\\\\"Simulate this persona scenario and validate outcome deterministically: \\\\\\\\\\\\\\\"Waitlist for sold-out group events\\\\\\\\\\\\\\\". Capture traces and snapshots so coverage can be audited later.\\\\\\\",\\\\\\\"expectedResult\\\\\\\":\\\\\\\"Scenario behavior is either confirmed as supported or produces a clear, actionable failure report.\\\\\\\",\\\\\\\"delayMode\\\\\\\":\\\\\\\"none\\\\\\\",\\\\\\\"delayMs\\\\\\\":null,\\\\\\\"delayConditionKey\\\\\\\":null,\\\\\\\"delayTimeoutMs\\\\\\\":null,\\\\\\\"delayPollMs\\\\\\\":null,\\\\\\\"delayJitterMs\\\\\\\":0,\\\\\\\"status\\\\\\\":\\\\\\\"skipped\\\\\\\",\\\\\\\"attemptCount\\\\\\\":1,\\\\\\\"startedAt\\\\\\\":\\\\\\\"2026-02-25T15:06:39.160Z\\\\\\\",\\\\\\\"endedAt\\\\\\\":\\\\\\\"2026-02-25T15:06:39.160Z\\\\\\\",\\\\\\\"failureCode\\\\\\\":null,\\\\\\\"failureMessage\\\\\\\":\\\\\\\"Exploratory validation step skipped by deterministic runner (semantic/manual review step).\\\\\\\",\\\\\\\"resultPayload\\\\\\\":{\\\\\\\"note\\\\\\\":\\\\\\\"Step skipped: Exploratory validation step skipped by deterministic runner (semantic/manual review step).\\\\\\\",\\\\\\\"evidence\\\\\\\":{\\\\\\\"error\\\\\\\":\\\\\\\"Exploratory validation step skipped by deterministic runner (semantic/manual review step).\\\\\\\",\\\\\\\"failed\\\\\\\":false,\\\\\\\"blocked\\\\\\\":false,\\\\\\\"skipped\\\\\\\":true,\\\\\\\"reasonCode\\\\\\\":\\\\\\\"DETERMINISTIC_RUNNER_SKIPS_EXPLORATORY_STEP\\\\\\\",\\\\\\\"stepFamily\\\\\\\":\\\\\\\"persona-scenario-validation\\\\\\\"}},\\\\\\\"assertionSummary\\\\\\\":{\\\\\\\"status\\\\\\\":\\\\\\\"skipped\\\\\\\",\\\\\\\"hasFailure\\\\\\\":true,\\\\\\\"assertionsPassed\\\\\\\":0},\\\\\\\"metadata\\\\\\\":{},\\\\\\\"createdAt\\\\\\\":\\\\\\\"2026-02-25T15:06:12.979Z\\\\\\\",\\\\\\\"updatedAt\\\\\\\":\\\\\\\"2026-02-25T15:06:12.979Z\\\\\\\",\\\\\\\"deletedAt\\\\\\\":null,\\\\\\\"createdBy\\\\\\\":null,\\\\\\\"updatedBy\\\\\\\":null,\\\\\\\"deletedBy\\\\\\\":null},\\\\\\\"meta\\\\\\\":{\\\\\\\"requestId\\\\\\\":\\\\\\\"c42cd4df-8cca-4f9c-ae3c-6d0dadd9e78c\\\\\\\",\\\\\\\"timestamp\\\\\\\":\\\\\\\"2026-02-25T15:06:39.684Z\\\\\\\"}},\\\\\\\"at\\\\\\\":\\\\\\\"2026-02-25T15:06:39.685Z\\\\\\\"},{\\\\\\\"method\\\\\\\":\\\\\\\"POST\\\\\\\",\\\\\\\"path\\\\\\\":\\\\\\\"/api/v1/sagas/runs/saga_run_3AAOZrHlffttEwxI4K0ikvtsUz1/steps/persona-scenario-validate-3/result\\\\\\\",\\\\\\\"status\\\\\\\":200,\\\\\\\"requestBody\\\\\\\":{\\\\\\\"status\\\\\\\":\\\\\\\"skipped\\\\\\\",\\\\\\\"startedAt\\\\\\\":\\\\\\\"2026-02-25T15:06:39.092Z\\\\\\\",\\\\\\\"endedAt\\\\\\\":\\\\\\\"2026-02-25T15:06:39.092Z\\\\\\\",\\\\\\\"failureMessage\\\\\\\":\\\\\\\"Exploratory validation step skipped by deterministic runner (semantic/manual review step).\\\\\\\",\\\\\\\"resultPayload\\\\\\\":{\\\\\\\"note\\\\\\\":\\\\\\\"Step skipped: Exploratory validation step skipped by deterministic runner (semantic/manual review step).\\\\\\\",\\\\\\\"evidence\\\\\\\":{\\\\\\\"error\\\\\\\":\\\\\\\"Exploratory validation step skipped by deterministic runner (semantic/manual review step).\\\\\\\",\\\\\\\"failed\\\\\\\":false,\\\\\\\"blocked\\\\\\\":false,\\\\\\\"skipped\\\\\\\":true,\\\\\\\"stepFamily\\\\\\\":\\\\\\\"persona-scenario-validation\\\\\\\",\\\\\\\"reasonCode\\\\\\\":\\\\\\\"DETERMINISTIC_RUNNER_SKIPS_EXPLORATORY_STEP\\\\\\\"}},\\\\\\\"assertionSummary\\\\\\\":{\\\\\\\"status\\\\\\\":\\\\\\\"skipped\\\\\\\",\\\\\\\"hasFailure\\\\\\\":true,\\\\\\\"assertionsPassed\\\\\\\":0}},\\\\\\\"responseBody\\\\\\\":{\\\\\\\"success\\\\\\\":true,\\\\\\\"data\\\\\\\":{\\\\\\\"id\\\\\\\":\\\\\\\"saga_run_step_3AAOZrcOMsyIZ1DuibaQG5bdfkl\\\\\\\",\\\\\\\"sagaRunId\\\\\\\":\\\\\\\"saga_run_3AAOZrHlffttEwxI4K0ikvtsUz1\\\\\\\",\\\\\\\"phaseKey\\\\\\\":\\\\\\\"reporting-and-closeout\\\\\\\",\\\\\\\"phaseOrder\\\\\\\":8,\\\\\\\"phaseTitle\\\\\\\":\\\\\\\"Reporting And Closeout\\\\\\\",\\\\\\\"stepKey\\\\\\\":\\\\\\\"persona-scenario-validate-3\\\\\\\",\\\\\\\"stepOrder\\\\\\\":27,\\\\\\\"actorKey\\\\\\\":\\\\\\\"customer_1\\\\\\\",\\\\\\\"instruction\\\\\\\":\\\\\\\"Simulate this persona scenario and validate outcome deterministically: \\\\\\\\\\\\\\\"Tries to book herself to test the flow\\\\\\\\\\\\\\\". Capture traces and snapshots so coverage can be audited later.\\\\\\\",\\\\\\\"expectedResult\\\\\\\":\\\\\\\"Scenario behavior is either confirmed as supported or produces a clear, actionable failure report.\\\\\\\",\\\\\\\"delayMode",
+        "_size": 45072
+      },
+      "responseBody": {
+        "_truncated": true,
+        "_preview": "{\"success\":true,\"data\":{\"id\":\"saga_artifact_3AAOeETy7tcSWA6810BwXVlmESI\",\"sagaRunId\":\"saga_run_3AAOdmMm5pSVc3cwsULUz5JTx8I\",\"sagaRunStepId\":\"saga_run_step_3AAOdi5EOQgpAvwDGoZfroJO9TO\",\"artifactType\":\"api_trace\",\"title\":\"Owner creates primary location API Trace\",\"storagePath\":\"testing/sagas/runs/saga_run_3AAOdmMm5pSVc3cwsULUz5JTx8I/artifacts/1772032001356-Owner_creates_primary_location_API_Trace.json\",\"contentType\":\"application/json\",\"bodyText\":\"{\\n  \\\"stepKey\\\": \\\"owner-create-location\\\",\\n  \\\"callCount\\\": 4,\\n  \\\"calls\\\": [\\n    {\\n      \\\"method\\\": \\\"POST\\\",\\n      \\\"path\\\": \\\"/api/v1/sagas/runs/saga_run_3AAOdPCx6qhfiCbtUfvs1GkMJQP/traces\\\",\\n      \\\"status\\\": 201,\\n      \\\"requestBody\\\": {\\n        \\\"_truncated\\\": true,\\n        \\\"_preview\\\": \\\"{\\\\\\\"stepKey\\\\\\\":\\\\\\\"owner-configure-hours\\\\\\\",\\\\\\\"title\\\\\\\":\\\\\\\"Configure default hours and availability mode API Trace\\\\\\\",\\\\\\\"trace\\\\\\\":{\\\\\\\"stepKey\\\\\\\":\\\\\\\"owner-configure-hours\\\\\\\",\\\\\\\"callCount\\\\\\\":4,\\\\\\\"calls\\\\\\\":[{\\\\\\\"method\\\\\\\":\\\\\\\"POST\\\\\\\",\\\\\\\"path\\\\\\\":\\\\\\\"/api/v1/sagas/runs/saga_run_3AAOaa2BXYFwd3HwP75sKyhtqzx/steps/runner-submit-artifacts/result\\\\\\\",\\\\\\\"status\\\\\\\":200,\\\\\\\"requestBody\\\\\\\":{\\\\\\\"status\\\\\\\":\\\\\\\"passed\\\\\\\",\\\\\\\"startedAt\\\\\\\":\\\\\\\"2026-02-25T15:06:40.462Z\\\\\\\",\\\\\\\"endedAt\\\\\\\":\\\\\\\"2026-02-25T15:06:40.462Z\\\\\\\",\\\\\\\"failureMessage\\\\\\\":null,\\\\\\\"resultPayload\\\\\\\":{\\\\\\\"note\\\\\\\":\\\\\\\"Final report artifact submitted.\\\\\\\"},\\\\\\\"assertionSummary\\\\\\\":{\\\\\\\"status\\\\\\\":\\\\\\\"passed\\\\\\\",\\\\\\\"hasFailure\\\\\\\":false,\\\\\\\"assertionsPassed\\\\\\\":1}},\\\\\\\"responseBody\\\\\\\":{\\\\\\\"success\\\\\\\":true,\\\\\\\"data\\\\\\\":{\\\\\\\"id\\\\\\\":\\\\\\\"saga_run_step_3AAOafjG8FRevEO8Qzn1WjPWde3\\\\\\\",\\\\\\\"sagaRunId\\\\\\\":\\\\\\\"saga_run_3AAOaa2BXYFwd3HwP75sKyhtqzx\\\\\\\",\\\\\\\"phaseKey\\\\\\\":\\\\\\\"reporting-and-closeout\\\\\\\",\\\\\\\"phaseOrder\\\\\\\":8,\\\\\\\"phaseTitle\\\\\\\":\\\\\\\"Reporting And Closeout\\\\\\\",\\\\\\\"stepKey\\\\\\\":\\\\\\\"runner-submit-artifacts\\\\\\\",\\\\\\\"stepOrder\\\\\\\":28,\\\\\\\"actorKey\\\\\\\":\\\\\\\"biz_owner\\\\\\\",\\\\\\\"instruction\\\\\\\":\\\\\\\"Upload snapshots for critical steps and submit final markdown report summarizing pass/fail and discovered gaps.\\\\\\\",\\\\\\\"expectedResult\\\\\\\":\\\\\\\"Run has persisted report + snapshots in project directory and indexed metadata in DB.\\\\\\\",\\\\\\\"delayMode\\\\\\\":\\\\\\\"none\\\\\\\",\\\\\\\"delayMs\\\\\\\":null,\\\\\\\"delayConditionKey\\\\\\\":null,\\\\\\\"delayTimeoutMs\\\\\\\":null,\\\\\\\"delayPollMs\\\\\\\":null,\\\\\\\"delayJitterMs\\\\\\\":0,\\\\\\\"status\\\\\\\":\\\\\\\"passed\\\\\\\",\\\\\\\"attemptCount\\\\\\\":1,\\\\\\\"startedAt\\\\\\\":\\\\\\\"2026-02-25T15:06:40.462Z\\\\\\\",\\\\\\\"endedAt\\\\\\\":\\\\\\\"2026-02-25T15:06:40.462Z\\\\\\\",\\\\\\\"failureCode\\\\\\\":null,\\\\\\\"failureMessage\\\\\\\":null,\\\\\\\"resultPayload\\\\\\\":{\\\\\\\"note\\\\\\\":\\\\\\\"Final report artifact submitted.\\\\\\\"},\\\\\\\"assertionSummary\\\\\\\":{\\\\\\\"status\\\\\\\":\\\\\\\"passed\\\\\\\",\\\\\\\"hasFailure\\\\\\\":false,\\\\\\\"assertionsPassed\\\\\\\":1},\\\\\\\"metadata\\\\\\\":{},\\\\\\\"createdAt\\\\\\\":\\\\\\\"2026-02-25T15:06:12.294Z\\\\\\\",\\\\\\\"updatedAt\\\\\\\":\\\\\\\"2026-02-25T15:06:12.294Z\\\\\\\",\\\\\\\"deletedAt\\\\\\\":null,\\\\\\\"createdBy\\\\\\\":null,\\\\\\\"updatedBy\\\\\\\":null,\\\\\\\"deletedBy\\\\\\\":null},\\\\\\\"meta\\\\\\\":{\\\\\\\"requestId\\\\\\\":\\\\\\\"c6d65718-5e6b-462e-b0e1-4d063bd2945a\\\\\\\",\\\\\\\"timestamp\\\\\\\":\\\\\\\"2026-02-25T15:06:41.018Z\\\\\\\"}},\\\\\\\"at\\\\\\\":\\\\\\\"2026-02-25T15:06:41.018Z\\\\\\\"},{\\\\\\\"method\\\\\\\":\\\\\\\"GET\\\\\\\",\\\\\\\"path\\\\\\\":\\\\\\\"/api/auth/get-session\\\\\\\",\\\\\\\"status\\\\\\\":200,\\\\\\\"responseBody\\\\\\\":{\\\\\\\"session\\\\\\\":{\\\\\\\"expiresAt\\\\\\\":\\\\\\\"2026-03-04T15:06:40.866Z\\\\\\\",\\\\\\\"token\\\\\\\":\\\\\\\"iytS8mkQdxhNoHTH6mr0tHvM5OVtxvqK\\\\\\\",\\\\\\\"createdAt\\\\\\\":\\\\\\\"2026-02-25T15:06:40.866Z\\\\\\\",\\\\\\\"updatedAt\\\\\\\":\\\\\\\"2026-02-25T15:06:40.866Z\\\\\\\",\\\\\\\"ipAddress\\\\\\\":\\\\\\\"\\\\\\\",\\\\\\\"userAgent\\\\\\\":\\\\\\\"node\\\\\\\",\\\\\\\"userId\\\\\\\":\\\\\\\"Ull9E5mCsNpdBftV1UFHtWVS2NPfwNUt\\\\\\\",\\\\\\\"activeOrganizationId\\\\\\\":null,\\\\\\\"impersonatedBy\\\\\\\":null,\\\\\\\"id\\\\\\\":\\\\\\\"rcTE0FMI92nUptUkxal3etqxCGsf03r6\\\\\\\"},\\\\\\\"user\\\\\\\":{\\\\\\\"name\\\\\\\":\\\\\\\"adversary-uc-218-the-franchisee-priya\\\\\\\",\\\\\\\"email\\\\\\\":\\\\\\\"adversary-uc-218-the-franchisee-priya-1772032000726-7qknbb@example.com\\\\\\\",\\\\\\\"emailVerified\\\\\\\":false,\\\\\\\"image\\\\\\\":null,\\\\\\\"createdAt\\\\\\\":\\\\\\\"2026-02-25T15:06:40.853Z\\\\\\\",\\\\\\\"updatedAt\\\\\\\":\\\\\\\"2026-02-25T15:06:40.853Z\\\\\\\",\\\\\\\"role\\\\\\\":\\\\\\\"user\\\\\\\",\\\\\\\"banned\\\\\\\":false,\\\\\\\"banReason\\\\\\\":null,\\\\\\\"banExpires\\\\\\\":null,\\\\\\\"id\\\\\\\":\\\\\\\"Ull9E5mCsNpdBftV1UFHtWVS2NPfwNUt\\\\\\\"}},\\\\\\\"at\\\\\\\":\\\\\\\"2026-02-25T15:06:41.019Z\\\\\\\"},{\\\\\\\"method\\\\\\\":\\\\\\\"POST\\\\\\\",\\\\\\\"path\\\\\\\":\\\\\\\"/api/v1/sagas/runs/saga_run_3AAOdmMm5pSVc3cwsULUz5JTx8I/steps/owner-create-biz/result\\\\\\\",\\\\\\\"status\\\\\\\":200,\\\\\\\"requestBody\\\\\\\":{\\\\\\\"status\\\\\\\":\\\\\\\"passed\\\\\\\",\\\\\\\"startedAt\\\\\\\":\\\\\\\"2026-02-25T15:06:40.483Z\\\\\\\",\\\\\\\"endedAt\\\\\\\":\\\\\\\"2026-02-25T15:06:40.483Z\\\\\\\",\\\\\\\"failureMessage\\\\\\\":null,\\\\\\\"resultPayload\\\\\\\":{\\\\\\\"note\\\\\\\":\\\\\\\"Biz created.\\\\\\\",\\\\\\\"evidence\\\\\\\":{\\\\\\\"id\\\\\\\":\\\\\\\"3AAOe7d5zcfdachqS0SBEtnI4Sy\\\\\\\",\\\\\\\"name\\\\\\\":\\\\\\\"Saga uc-22-the-group-event-organizer-gathering-gwen\\\\\\\",\\\\\\\"slug\\\\\\\":\\\\\\\"uc-22-the-group-event-organizer-gathering-gwen-v9iix8y5\\\\\\\",\\\\\\\"type\\\\\\\":\\\\\\\"small_business\\\\\\\",\\\\\\\"logoUrl\\\\\\\":null,\\\\\\\"timezone\\\\\\\":\\\\\\\"UTC\\\\\\\",\\\\\\\"currency\\\\\\\":\\\\\\\"USD\\\\\\\",\\\\\\\"status\\\\\\\":\\\\\\\"active\\\\\\\",\\\\\\\"metadata\\\\\\\":{},\\\\\\\"createdAt\\\\\\\":\\\\\\\"2026-02-25T15:06:40.217Z\\\\\\\",\\\\\\\"updatedAt\\\\\\\":\\\\\\\"2026-02-25T15:06:40.217Z\\\\\\\",\\\\\\\"deletedAt\\\\\\\":null,\\\\\\\"createdBy\\\\\\\":null,\\\\\\\"updatedBy\\\\\\\":null,\\\\\\\"deletedBy\\\\\\\":null}},\\\\\\\"assertionSummary\\\\\\\":{\\\\\\\"status\\\\\\\":\\\\\\\"passed\\\\\\\",\\\\\\\"hasFailure\\\\\\\":false,\\\\\\\"assertionsPassed\\\\\\\":1}},\\\\\\\"responseBody\\\\\\\":{\\\\\\\"success\\\\\\\":true,\\\\\\\"data\\\\\\\":{\\\\\\\"id\\\\\\\":\\\\\\\"saga_run_step_3AAOdnmg1HWMbK9SiB1txIhvLnw\\\\\\\",\\\\\\\"sagaRunId\\\\\\\":\\\\\\\"saga_run_3AAOdmMm5pSVc3cwsULUz5JTx8I\\\\\\\",\\\\\\\"phaseKey\\\\\\\":\\\\\\\"owner-onboarding\\\\\\\",\\\\\\\"phaseOrder\\\\\\\":1,\\\\\\\"phaseTitle\\\\\\\":\\\\\\\"Owner Onboarding\\\\\\\",\\\\\\\"stepKey\\\\\\\":\\\\\\\"owner-create-biz\\\\\\\",\\\\\\\"stepOrder\\\\\\\":2,\\\\\\\"actorKey\\\\\\\":\\\\\\\"biz_owner\\\\\\\",\\\\\\\"instruction\\\\\\\":\\\\\\\"Using agents tools, create a biz representing The Tour/Experience with Minimum Viable. Use name/slug derived from saga context.\\\\\\\",\\\\\\\"expectedResult\\\\\\\":\\\\\\\"Biz is created, owner is auto-added as member with owner role, and biz id is captured.\\\\\\\",\\\\\\\"delayMode\\\\\\\":\\\\\\\"none\\\\\\\",\\\\\\\"delayMs\\\\\\\":null,\\\\\\\"delayConditionKey\\\\\\\":null,\\\\\\\"delayTimeoutMs\\\\\\\":null,\\\\\\\"delayPollMs\\\\\\\":null,\\\\\\\"delayJitterMs\\\\\\\":0,\\\\\\\"status\\\\\\\":\\\\\\\"passed\\\\\\\",\\\\\\\"attemptCount\\\\\\\":1,\\\\\\\"startedAt\\\\\\\":\\\\\\\"2026-02-25T15:06:40.483Z\\\\\\\",\\\\\\\"endedAt\\\\\\\":\\\\\\\"2026-02-25T15:06:40.483Z\\\\\\\",\\\\\\\"failureCode\\\\\\\":null,\\\\\\\"failureMessage\\\\\\\":null,\\\\\\\"resultPayload\\\\\\\":{\\\\\\\"note\\\\\\\":\\\\\\\"Biz created.\\\\\\\",\\\\\\\"evidence\\\\\\\":{\\\\\\\"id\\\\\\\":\\\\\\\"3AAOe7d5zcfdachqS0SBEtnI4Sy\\\\\\\",\\\\\\\"name\\\\\\\":\\\\\\\"Saga uc-22-the-group-event-organizer-gathering-gwen\\\\\\\",\\\\\\\"slug\\\\\\\":\\\\\\\"uc-22-the-group-event-organizer-gathering-gwen-v9iix8y5\\\\\\\",\\\\\\\"type\\\\\\\":\\\\\\\"small_business\\\\\\\",\\\\\\\"status\\\\\\\":\\\\\\\"active\\\\\\\",\\\\\\\"logoUrl\\\\\\\":null,\\\\\\\"currency\\\\\\\":\\\\\\\"USD\\\\\\\",\\\\\\\"metadata\\\\\\\":{},\\\\\\\"timezone\\\\\\\":\\\\\\\"UTC\\\\\\\",\\\\\\\"createdAt\\\\\\\":\\\\\\\"2026-02-25T15:06:40.217Z\\\\\\\",\\\\\\\"createdBy\\\\\\\":null,\\\\\\\"deletedAt\\\\\\\":null,\\\\\\\"deletedBy\\\\\\\":null,\\\\\\\"updatedAt\\\\\\\":\\\\\\\"2026-02-25T15:06:40.217Z\\\\\\\",\\\\\\\"updatedBy\\\\\\\":null}},\\\\\\\"assertionSummary\\\\\\\":{\\\\\\\"status\\\\\\\":\\\\\\\"passed\\\\\\\",\\\\\\\"hasFailure\\\\\\\":false,\\\\\\\"assertionsPassed\\\\\\\":1},\\\\\\\"metadata\\\\\\\":{},\\\\\\\"createdAt\\\\\\\":\\\\\\\"2026-02-25T15:06:37.173Z\\\\\\\",\\\\\\\"updatedAt\\\\\\\":\\\\\\\"2026-02-25T15:06:37.173Z\\\\\\\",\\\\\\\"deletedAt\\\\\\\":null,\\\\\\\"createdBy\\\\\\\":null,\\\\\\\"updatedBy\\\\\\\":null,\\\\\\\"deletedBy\\\\\\\":null},\\\\\\\"meta\\\\\\\":{\\\\\\\"requestId\\\\\\\":\\\\\\\"df56d103-88dd-46d3-8b83-37c4482cc321\\\\\\\",\\\\\\\"timestamp\\\\\\\":\\\\\\\"2026-02-25T15:06:41.052Z\\\\\\\"}},\\\\\\\"at\\\\\\\":\\\\\\\"2026-02-25T15:06:41.053Z\\\\\\\"},{\\\\\\\"method\\\\\\\":\\\\\\\"POST\\\\\\\",\\\\\\\"path\\\\\\\":\\\\\\\"/api/v1/sagas/runs/saga_run_3AAOcpR0JNcQdMUCgbmDmO54vPZ/snapshots\\\\\\\",\\\\\\\"status\\\\\\\":201,\\\\\\\"requestBody\\\\\\\":{\\\\\\\"_truncated\\\\\\\":true,\\\\\\\"_preview\\\\\\\":\\\\\\\"{\\\\\\\\\\\\\\\"stepKey\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"owner-create-offer\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"screenKey\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"owner-create-offer-1772032000611\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"title\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Create offer shell Snapshot\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"status\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"passed\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"route\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"/sagas/saga_run_3AAOcpR0JNcQdMUCgbmDmO54vPZ/owner-create-offer\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"format\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"json\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"view\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"title\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Create offer shell\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"subtitle\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Offer created.\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"blocks\\\\\\\\\\\\\\\":[{\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"alert\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"title\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Owner Create Offer completed\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"message\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Offer created.\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"tone\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"success\\\\\\\\\\\\\\\"},{\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"key_value\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"title\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Screen details\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"items\\\\\\\\\\\\\\\":[{\\\\\\\\\\\\\\\"label\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"OfferId\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"value\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"offer_3AAOe3TKKArfvRLRx8LoeOUYkAQ\\\\\\\\\\\\\\\"}]}]},\\\\\\\\\\\\\\\"rawData\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"stepKey\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"owner-create-offer\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"resultPayload\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"note\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Offer created.\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"evidence\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"offerId\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"offer_3AAOe3TKKArfvRLRx8LoeOUYkAQ\\\\\\\\\\\\\\\"}},\\\\\\\\\\\\\\\"apiCalls\\\\\\\\\\\\\\\":[{\\\\\\\\\\\\\\\"method\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"POST\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"path\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"/api/v1/sagas/runs/saga_run_3AAOabzo2dtHFvNxGeMdmyUH56D/steps/persona-scenario-validate-4/result\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"status\\\\\\\\\\\\\\\":200,\\\\\\\\\\\\\\\"requestBody\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"status\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"skipped\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"startedAt\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"2026-02-25T15:06:39.160Z\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"endedAt\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"2026-02-25T15:06:39.160Z\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"failureMessage\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Exploratory validation step skipped by deterministic runner (semantic/manual review step).\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"resultPayload\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"note\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Step skipped: Exploratory validation step skipped by deterministic runner (semantic/manual review step).\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"evidence\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"error\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Exploratory validation step skipped by deterministic runner (semantic/manual review step).\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"failed\\\\\\\\\\\\\\\":false,\\\\\\\\\\\\\\\"blocked\\\\\\\\\\\\\\\":false,\\\\\\\\\\\\\\\"skipped\\\\\\\\\\\\\\\":true,\\\\\\\\\\\\\\\"stepFamily\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"persona-scenario-validation\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"reasonCode\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"DETERMINISTIC_RUNNER_SKIPS_EXPLORATORY_STEP\\\\\\\\\\\\\\\"}},\\\\\\\\\\\\\\\"assertionSummary\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"status\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"skipped\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"hasFailure\\\\\\\\\\\\\\\":true,\\\\\\\\\\\\\\\"assertionsPassed\\\\\\\\\\\\\\\":0}},\\\\\\\\\\\\\\\"responseBody\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"success\\\\\\\\\\\\\\\":true,\\\\\\\\\\\\\\\"data\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"id\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"saga_run_step_3AAOaaVeQfWtAqLYMeaK3Ca5uVN\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"sagaRunId\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"saga_run_3AAOabzo2dtHFvNxGeMdmyUH56D\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"phaseKey\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"reporting-and-closeout\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"phaseOrder\\\\\\\\\\\\\\\":8,\\\\\\\\\\\\\\\"phaseTitle\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Reporting And Closeout\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"stepKey\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"persona-scenario-validate-4\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"stepOrder\\\\\\\\\\\\\\\":27,\\\\\\\\\\\\\\\"actorKey\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"customer_1\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"instruction\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Simulate this persona scenario and validate outcome deterministically: \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"Waitlist for sold-out group events\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\". Capture traces and snapshots so coverage can be audited later.\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"expectedResult\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Scenario behavior is either confirmed as supported or produces a clear, actionable failure report.\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"delayMode\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"none\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"delayMs\\\\\\\\\\\\\\\":null,\\\\\\\\\\\\\\\"delayConditionKey\\\\\\\\\\\\\\\":null,\\\\\\\\\\\\\\\"delayTimeoutMs\\\\\\\\\\\\\\\":null,\\\\\\\\\\\\\\\"delayPollMs\\\\\\\\\\\\\\\":null,\\\\\\\\\\\\\\\"delayJitterMs\\\\\\\\\\\\\\\":0,\\\\\\\\\\\\\\\"status\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"skipped\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"attemptCount\\\\\\\\\\\\\\\":1,\\\\\\\\\\\\\\\"startedAt\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"2026-02-25T15:06:39.160Z\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"endedAt\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"2026-02-25T15:06:39.160Z\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"failureCode\\\\\\\\\\\\\\\":null,\\\\\\\\\\\\\\\"failureMessage\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Exploratory validation step skipped by deterministic runner (semantic/manual review step).\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"resultPayload\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"note\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Step skipped: Exploratory validation step skipped by deterministic runner (semantic/manual review step).\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"evidence\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"error\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Exploratory validation step skipp",
+        "_size": 58030
+      },
+      "at": "2026-02-25T15:06:41.577Z"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AAOdPCx6qhfiCbtUfvs1GkMJQP/steps/owner-configure-hours/result",
+      "status": 200,
+      "requestBody": {
+        "status": "in_progress",
+        "startedAt": "2026-02-25T15:06:41.314Z",
+        "resultPayload": {
+          "note": "Started owner-configure-hours"
+        },
+        "assertionSummary": {
+          "status": "in_progress"
+        }
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "id": "saga_run_step_3AAOdOBbpUeS2HCNE9d5Mk7RHRL",
+          "sagaRunId": "saga_run_3AAOdPCx6qhfiCbtUfvs1GkMJQP",
+          "phaseKey": "business-configuration",
+          "phaseOrder": 2,
+          "phaseTitle": "Business Configuration",
+          "stepKey": "owner-configure-hours",
+          "stepOrder": 4,
+          "actorKey": "biz_owner",
+          "instruction": "Create baseline availability and lead-time rules representing the UC default business hours and booking window behavior.",
+          "expectedResult": "Availability defaults and rules are stored and can be referenced by calendars.",
+          "delayMode": "none",
+          "delayMs": null,
+          "delayConditionKey": null,
+          "delayTimeoutMs": null,
+          "delayPollMs": null,
+          "delayJitterMs": 0,
+          "status": "in_progress",
+          "attemptCount": 1,
+          "startedAt": "2026-02-25T15:06:41.314Z",
+          "endedAt": null,
+          "failureCode": null,
+          "failureMessage": null,
+          "resultPayload": {
+            "note": "Started owner-configure-hours"
+          },
+          "assertionSummary": {
+            "status": "in_progress"
+          },
+          "metadata": {},
+          "createdAt": "2026-02-25T15:06:34.949Z",
+          "updatedAt": "2026-02-25T15:06:34.949Z",
+          "deletedAt": null,
+          "createdBy": null,
+          "updatedBy": null,
+          "deletedBy": null
+        },
+        "meta": {
+          "requestId": "3c4230e1-8af0-4518-be2c-e4a297fc1259",
+          "timestamp": "2026-02-25T15:06:41.578Z"
+        }
+      },
+      "at": "2026-02-25T15:06:41.579Z"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AAObiftRUYZbNFyyUQje3ieUpv/steps/adversary-cross-biz-read/result",
+      "status": 200,
+      "requestBody": {
+        "status": "in_progress",
+        "startedAt": "2026-02-25T15:06:41.363Z",
+        "resultPayload": {
+          "note": "Started adversary-cross-biz-read"
+        },
+        "assertionSummary": {
+          "status": "in_progress"
+        }
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "id": "saga_run_step_3AAObhJfcy90Gn69QHBAWVjBngf",
+          "sagaRunId": "saga_run_3AAObiftRUYZbNFyyUQje3ieUpv",
+          "phaseKey": "security-and-abuse",
+          "phaseOrder": 6,
+          "phaseTitle": "Security And Abuse Checks",
+          "stepKey": "adversary-cross-biz-read",
+          "stepOrder": 14,
+          "actorKey": "adversary",
+          "instruction": "Using credentials from another context, attempt to read or mutate booking/order resources for this biz.",
+          "expectedResult": "Request is rejected with forbidden/unauthorized error and no data leakage.",
+          "delayMode": "none",
+          "delayMs": null,
+          "delayConditionKey": null,
+          "delayTimeoutMs": null,
+          "delayPollMs": null,
+          "delayJitterMs": 0,
+          "status": "in_progress",
+          "attemptCount": 1,
+          "startedAt": "2026-02-25T15:06:41.363Z",
+          "endedAt": null,
+          "failureCode": null,
+          "failureMessage": null,
+          "resultPayload": {
+            "note": "Started adversary-cross-biz-read"
+          },
+          "assertionSummary": {
+            "status": "in_progress"
+          },
+          "metadata": {},
+          "createdAt": "2026-02-25T15:06:21.104Z",
+          "updatedAt": "2026-02-25T15:06:21.104Z",
+          "deletedAt": null,
+          "createdBy": null,
+          "updatedBy": null,
+          "deletedBy": null
+        },
+        "meta": {
+          "requestId": "3f645fbe-6af5-4998-ad3f-16ce3dbd833b",
+          "timestamp": "2026-02-25T15:06:41.615Z"
+        }
+      },
+      "at": "2026-02-25T15:06:41.615Z"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AAObxZFNukOQvT4luUsDOs9bCf/steps/adversary-cross-biz-read/result",
+      "status": 200,
+      "requestBody": {
+        "status": "passed",
+        "startedAt": "2026-02-25T15:06:41.270Z",
+        "endedAt": "2026-02-25T15:06:41.270Z",
+        "failureMessage": null,
+        "resultPayload": {
+          "note": "Cross-biz read blocked for non-member account.",
+          "evidence": {
+            "adversaryUserId": "Ull9E5mCsNpdBftV1UFHtWVS2NPfwNUt"
+          }
+        },
+        "assertionSummary": {
+          "status": "passed",
+          "hasFailure": false,
+          "assertionsPassed": 1
+        }
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "id": "saga_run_step_3AAObzycqRJiZHqiMHMdio5EuLK",
+          "sagaRunId": "saga_run_3AAObxZFNukOQvT4luUsDOs9bCf",
+          "phaseKey": "security-and-abuse",
+          "phaseOrder": 6,
+          "phaseTitle": "Security And Abuse Checks",
+          "stepKey": "adversary-cross-biz-read",
+          "stepOrder": 15,
+          "actorKey": "adversary",
+          "instruction": "Using credentials from another context, attempt to read or mutate booking/order resources for this biz.",
+          "expectedResult": "Request is rejected with forbidden/unauthorized error and no data leakage.",
+          "delayMode": "none",
+          "delayMs": null,
+          "delayConditionKey": null,
+          "delayTimeoutMs": null,
+          "delayPollMs": null,
+          "delayJitterMs": 0,
+          "status": "passed",
+          "attemptCount": 1,
+          "startedAt": "2026-02-25T15:06:41.270Z",
+          "endedAt": "2026-02-25T15:06:41.270Z",
+          "failureCode": null,
+          "failureMessage": null,
+          "resultPayload": {
+            "note": "Cross-biz read blocked for non-member account.",
+            "evidence": {
+              "adversaryUserId": "Ull9E5mCsNpdBftV1UFHtWVS2NPfwNUt"
+            }
+          },
+          "assertionSummary": {
+            "status": "passed",
+            "hasFailure": false,
+            "assertionsPassed": 1
+          },
+          "metadata": {},
+          "createdAt": "2026-02-25T15:06:23.314Z",
+          "updatedAt": "2026-02-25T15:06:23.314Z",
+          "deletedAt": null,
+          "createdBy": null,
+          "updatedBy": null,
+          "deletedBy": null
+        },
+        "meta": {
+          "requestId": "ea6ca3d5-b82f-4911-bd31-a3052e55a8f9",
+          "timestamp": "2026-02-25T15:06:41.640Z"
+        }
+      },
+      "at": "2026-02-25T15:06:41.641Z"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/sagas/runs/saga_run_3AAOeFSnXlUgd4WNiguBgoFmZ7F",
+      "status": 200,
+      "responseBody": {
+        "_truncated": true,
+        "_preview": "{\"success\":true,\"data\":{\"run\":{\"id\":\"saga_run_3AAOeFSnXlUgd4WNiguBgoFmZ7F\",\"sagaDefinitionId\":\"saga_definition_3A8fQes24WAvSaZl00I1eZUFKlL\",\"sagaKey\":\"uc-22-the-waitlist-warrior-waiting-walter\",\"bizId\":null,\"status\":\"pending\",\"mode\":\"dry_run\",\"requestedByUserId\":\"n1sZmxkoRU3I056ePPa62zeC77c08bew\",\"runnerLabel\":\"codex-rerun-all\",\"definitionChecksum\":\"32e836fe21e5889dd0d73633d968b3aaff953e4b040c2a3e9b3e8f92480753d3\",\"startedAt\":null,\"endedAt\":null,\"lastHeartbeatAt\":null,\"totalSteps\":32,\"passedSteps\":0,\"failedSteps\":0,\"skippedSteps\":0,\"runContext\":{\"createdBy\":\"apps/api/src/scripts/rerun-sagas.ts\"},\"runSummary\":{\"coverage\":{\"totalSteps\":32,\"failedSteps\":0,\"passedSteps\":0,\"pendingSteps\":32,\"skippedSteps\":0,\"completionPct\":0,\"classification\":\"gap\",\"inProgressSteps\":0,\"apiFailureStepCount\":0,\"notImplementedStepCount\":0,\"missingEvidenceStepCount\":0},\"failures\":[],\"missingEvidence\":[]},\"metadata\":{\"tags\":[\"uc-derived\",\"persona-derived\",\"lifecycle\",\"api-first\",\"agents\"],\"title\":\"UC-22 • The Tour/Experience with Minimum Viable • The Waitlist Warrior (Waiting Walter)\"},\"createdAt\":\"2026-02-25T15:06:41.354Z\",\"updatedAt\":\"2026-02-25T15:06:41.354Z\",\"deletedAt\":null,\"createdBy\":null,\"updatedBy\":null,\"deletedBy\":null},\"definition\":{\"id\":\"saga_definition_3A8fQes24WAvSaZl00I1eZUFKlL\",\"bizId\":null,\"sagaKey\":\"uc-22-the-waitlist-warrior-waiting-walter\",\"title\":\"UC-22 • The Tour/Experience with Minimum Viable • The Waitlist Warrior (Waiting Walter)\",\"description\":\"Comprehensive lifecycle saga derived from UC-22 and persona P-45. Needs summary: Minimum to run (need 4 people); Maximum capacity (12 people); Multiple time slots per day; Different languages; Weather-dependent (with cancellation policy); Guide assignment\",\"status\":\"active\",\"sourceUseCaseRef\":\"UC-22\",\"sourcePersonaRef\":\"P-45\",\"sourceUseCaseFile\":\"/Users/ameer/bizing/mind/workspace/documentation/use-cases-comprehensive.md\",\"sourcePersonaFile\":\"/Users/ameer/bizing/mind/workspace/documentation/tester-personas.md\",\"specVersion\":\"saga.v0\",\"specFilePath\":\"testing/sagas/specs/uc-22-the-waitlist-warrior-waiting-walter.json\",\"specChecksum\":\"32e836fe21e5889dd0d73633d968b3aaff953e4b040c2a3e9b3e8f92480753d3\",\"metadata\":{\"tags\":[\"uc-derived\",\"persona-derived\",\"lifecycle\",\"api-first\",\"agents\"],\"generatedAt\":\"2026-02-25T06:41:04.541Z\"},\"createdAt\":\"2026-02-25T00:25:03.226Z\",\"updatedAt\":\"2026-02-25T00:25:03.226Z\",\"deletedAt\":null,\"createdBy\":null,\"updatedBy\":null,\"deletedBy\":null},\"spec\":{\"schemaVersion\":\"saga.v0\",\"sagaKey\":\"uc-22-the-waitlist-warrior-waiting-walter\",\"title\":\"UC-22 • The Tour/Experience with Minimum Viable • The Waitlist Warrior (Waiting Walter)\",\"description\":\"Comprehensive lifecycle saga derived from UC-22 and persona P-45. Needs summary: Minimum to run (need 4 people); Maximum capacity (12 people); Multiple time slots per day; Different languages; Weather-dependent (with cancellation policy); Guide assignment\",\"tags\":[\"uc-derived\",\"persona-derived\",\"lifecycle\",\"api-first\",\"agents\"],\"defaults\":{\"runMode\":\"dry_run\",\"continueOnFailure\":false},\"source\":{\"useCaseRef\":\"UC-22\",\"personaRef\":\"P-45\",\"useCaseFile\":\"/Users/ameer/bizing/mind/workspace/documentation/use-cases-comprehensive.md\",\"personaFile\":\"/Users/ameer/bizing/mind/workspace/documentation/tester-personas.md\",\"generatedAt\":\"2026-02-25T06:41:04.541Z\"},\"objectives\":[\"Validate UC-22 lifecycle end-to-end using persona The Waitlist Warrior (Waiting Walter).\",\"Exercise owner setup, team setup, catalog publishing, and customer journeys.\",\"Stress ACL/security edge cases and verify expected denials are enforced.\",\"Collect snapshots and report artifacts for every critical milestone.\"],\"actors\":[{\"actorKey\":\"biz_owner\",\"name\":\"The Waitlist Warrior (Waiting Walter)\",\"role\":\"owner\",\"description\":\"Heavy user of waitlist features when slots are full\",\"personaRef\":\"P-45\"},{\"actorKey\":\"biz_member\",\"name\":\"Operations Team Member\",\"role\":\"manager\",\"description\":\"Business member invited by owner to assist with operations and booking flow.\"},{\"actorKey\":\"customer_1\",\"name\":\"Customer One\",\"role\":\"customer\",\"description\":\"Primary customer exploring catalog, booking services, and purchasing products.\"},{\"actorKey\":\"customer_2\",\"name\":\"Customer Two\",\"role\":\"customer\",\"description\":\"Concurrent customer used to simulate realistic demand and race conditions.\"},{\"actorKey\":\"adversary\",\"name\":\"Adversarial User\",\"role\":\"malicious_actor\",\"description\":\"Actor intentionally attempting unauthorized or abusive actions.\"}],\"phases\":[{\"phaseKey\":\"owner-onboarding\",\"order\":1,\"title\":\"Owner Onboarding\",\"description\":\"Business owner signs up, authenticates, and establishes tenant root.\",\"steps\":[{\"stepKey\":\"owner-sign-up\",\"order\":1,\"title\":\"Owner signs up and authenticates\",\"actorKey\":\"biz_owner\",\"intent\":\"Establish authenticated owner identity for the lifecycle.\",\"instruction\":\"Create or login the owner account through Better Auth endpoints, then verify session context can call authenticated API routes.\",\"expectedResult\":\"Owner session exists and authenticated routes return success for this user.\",\"toolHints\":[],\"assertions\":[{\"kind\":\"api_response\",\"description\":\"API call returns success and includes stable ids for created entities.\"},{\"kind\":\"acl_guard\",\"description\":\"Actor permissions are honored for this step context.\"}],\"evidenceRequired\":[{\"kind\":\"api_trace\",\"label\":\"Request/response trace for this step\"},{\"kind\":\"snapshot\",\"label\":\"Structured snapshot.v1 screen blocks (what user saw) with real API-backed data\"}],\"guardrails\":[],\"tags\":[\"auth\",\"setup\"],\"delay\":{\"mode\":\"none\",\"jitterMs\":0}},{\"stepKey\":\"owner-create-biz\",\"order\":2,\"title\":\"Owner creates business tenant\",\"actorKey\":\"biz_owner\",\"intent\":\"Create the biz root for all subsequent configuration.\",\"instruction\":\"Using agents tools, create a biz representing The Tour/Experience with Minimum Viable. Use name/slug derived from saga context.\",\"expectedResult\":\"Biz is created, owner is auto-added as member with owner role, and biz id is captured.\",\"toolHints\":[\"bizing.bizes.create\"],\"assertions\":[{\"kind\":\"api_response\",\"description\":\"API call returns success and includes stable ids for created entities.\"},{\"kind\":\"acl_guard\",\"description\":\"Actor permissions are honored for this step context.\"}],\"evidenceRequired\":[{\"kind\":\"api_trace\",\"label\":\"Request/response trace for this step\"},{\"kind\":\"snapshot\",\"label\":\"Structured snapshot.v1 screen blocks (what user saw) with real API-backed data\"}],\"guardrails\":[],\"tags\":[\"biz\",\"setup\"],\"delay\":{\"mode\":\"none\",\"jitterMs\":0}},{\"stepKey\":\"owner-create-location\",\"order\":3,\"title\":\"Owner creates primary location\",\"actorKey\":\"biz_owner\",\"intent\":\"Establish operational location for services/resources.\",\"instruction\":\"Create a primary location for the biz and set timezone aligned with scenario context.\",\"expectedResult\":\"Location exists and is associated with the new biz.\",\"toolHints\":[\"bizing.locations.create\"],\"assertions\":[{\"kind\":\"api_response\",\"description\":\"API call returns success and includes stable ids for created entities.\"},{\"kind\":\"acl_guard\",\"description\":\"Actor permissions are honored for this step context.\"}],\"evidenceRequired\":[{\"kind\":\"api_trace\",\"label\":\"Request/response trace for this step\"},{\"kind\":\"snapshot\",\"label\":\"Structured snapshot.v1 screen blocks (what user saw) with real API-backed data\"}],\"guardrails\":[],\"tags\":[\"location\",\"setup\"],\"delay\":{\"mode\":\"none\",\"jitterMs\":0}}]},{\"phaseKey\":\"business-configuration\",\"order\":2,\"title\":\"Business Configuration\",\"description\":\"Owner configures scheduling, pricing baseline, and operational defaults.\",\"steps\":[{\"stepKey\":\"owner-configure-hours\",\"order\":4,\"title\":\"Configure default hours and availability mode\",\"actorKey\":\"biz_owner\",\"intent\":\"Set baseline availability without forcing advanced complexity.\",\"instruction\":\"Create baseline availability and lead-time rules representing the UC default business hours and booking window behavior.\",\"expectedResult\":\"Availability defaults and rules are stored and can be referenced by calendars.\",\"toolHints\":[],\"assertions\":[{\"kind\":\"api_response\",\"description\":\"API call returns success and includes stable ids for created entities.\"},{\"kind\":\"acl_guard\",\"description\":\"Actor permissions are honored for this step context.\"}],\"evidenceRequired\":[{\"kind\":\"api_trace\",\"label\":\"Request/response trace for this step\"},{\"kind\":\"snapshot\",\"label\":\"Structured snapshot.v1 screen blocks (what user saw) with real API-backed data\"}],\"guardrails\":[],\"tags\":[\"availability\",\"policy\"],\"delay\":{\"mode\":\"none\",\"jitterMs\":0}},{\"stepKey\":\"owner-configure-pricing\",\"order\":5,\"title\":\"Configure default pricing rules\",\"actorKey\":\"biz_owner\",\"intent\":\"Set base pricing and optional manual demand overrides.\",\"instruction\":\"Configure pricing defaults for the offer lifecycle including call fees/manual surge if UC needs imply it.\",\"expectedResult\":\"Pricing model persists and future bookings can calculate totals deterministically.\",\"toolHints\":[],\"assertions\":[{\"kind\":\"api_response\",\"description\":\"API call returns success and includes stable ids for created entities.\"},{\"kind\":\"acl_guard\",\"description\":\"Actor permissions are honored for this step context.\"}],\"evidenceRequired\":[{\"kind\":\"api_trace\",\"label\":\"Request/response trace for this step\"},{\"kind\":\"snapshot\",\"label\":\"Structured snapshot.v1 screen blocks (what user saw) with real API-backed data\"}],\"guardrails\":[],\"tags\":[\"pricing\"],\"delay\":{\"mode\":\"none\",\"jitterMs\":0}}]},{\"phaseKey\":\"supply-and-team-setup\",\"order\":3,\"title\":\"Supply And Team Setup\",\"description\":\"Business owner sets up hosts/assets/venues/resources and invites members.\",\"steps\":[{\"stepKey\":\"owner-create-resources\",\"order\":6,\"title\":\"Create resources representing hosts/assets/venues\",\"actorKey\":\"biz_owner\",\"intent\":\"Model real-world supply that bookings will consume.\",\"instruction\":\"Create at least one host resource and one non-host resource (asset or venue) suitable for the UC.\",\"expectedResult\":\"Resources are created with expected type, location, and buffers.\",\"toolHints\":[\"bizing.resources.create\"],\"assertions\":[{\"kind\":\"api_response\",\"description\":\"API call returns success and includes stable ids for created entities.\"},{\"kind\":\"acl_guard\",\"description\":\"Actor permissions are honored for this step context.\"}],\"evidenceRequired\":[{\"kind\":\"api_trace\",\"label\":\"Request/response trace for this step\"},{\"kind\":\"snapshot\",\"label\":\"Structured snapshot.v1 screen blocks (what user saw) with real API-backed data\"}],\"guardrails\":[],\"tags\":[\"resources\"],\"delay\":{\"mode\":\"none\",\"jitterMs\":0}},{\"stepKey\":\"owner-invite-member\",\"order\":7,\"title\":\"Invite and provision business member\",\"actorKey\":\"biz_owner\",\"intent\":\"Validate collaboration and role assignment.\",\"instruction\":\"Invite a biz member, assign an operational role, and verify that member can authenticate into the same biz.\",\"expectedResult\":\"Biz member account/session exists with scoped role permissions.\",\"toolHints\":[],\"assertions\":[{\"kind\":\"api_response\",\"description\":\"API call returns success and includes stable ids for created entities.\"},{\"kind\":\"acl_guard\",\"description\":\"Actor permissions are honored for this step context.\"}],\"evidenceRequired\":[{\"kind\":\"api_trace\",\"label\":\"Request/response trace for this step\"},{\"kind\":\"snapshot\",\"label\":\"Structured snapshot.v1 screen blocks (what user saw) with real API-backed data\"}],\"guardrails\":[],\"tags\":[\"team\",\"acl\"],\"delay\":{\"mode\":\"none\",\"jitterMs\":0}}]},{\"phaseKey\":\"catalog-publish\",\"order\":4,\"title\":\"Catalog And Publish\",\"description\":\"Owner creates services/offers/products and publishes sellable catalog entries.\",\"steps\":[{\"stepKey\":\"owner-create-offer\",\"order\":8,\"title\":\"Create offer shell\",\"actorKey\":\"biz_owner\",\"intent\":\"Define sellable service/catalog entry.\",\"instruction\":\"Create an offer representing the UC primary service; choose execution mode matching the scenario.\",\"expectedResult\":\"Offer is created in draft state with captured id.\",\"toolHints\":[\"bizing.offers.create\"],\"assertions\":[{\"kind\":\"api_response\",\"description\":\"API call retu",
+        "_size": 83352
+      },
+      "at": "2026-02-25T15:06:41.661Z"
+    }
+  ]
+}

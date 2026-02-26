@@ -195,33 +195,41 @@ function parseWhereFilters(input: string, tableName: string, notes: string[]): C
 
 type AssignmentValue = CommandScalarValue | CommandScalarValue[]
 
+type AssignmentParseResult = {
+  values: Record<string, AssignmentValue>
+  unknownColumns: string[]
+}
+
 function parseAssignments(
   input: string,
   tableName: string,
   notes: string[],
-): Record<string, AssignmentValue> {
+): AssignmentParseResult {
   const values: Record<string, AssignmentValue> = {}
+  const unknownColumns = new Set<string>()
 
-  // Supports patterns like: status=active, total_minor=2500, name:"John"
-  // Prefix guard avoids false positives inside ISO timestamps like T14:00:00Z.
+  // Structured assignment parser for pseudo-SQL prompts used in scenario packs.
+  // We intentionally support only "=" syntax so ":" punctuation in free text
+  // and ISO timestamps is never interpreted as a fake column assignment.
   const assignmentRegex =
-    /(?:^|[\s,])([a-zA-Z_][a-zA-Z0-9_]*)\s*(=|:)\s*("[^"]*"|'[^']*'|[^,\s]+)/g
+    /(?:^|[\s,])([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*("[^"]*"|'[^']*'|[^,\s]+)/g
 
   let match: RegExpExecArray | null
   while ((match = assignmentRegex.exec(input)) !== null) {
     const rawColumn = match[1]
-    const rawValue = match[3]
+    const rawValue = match[2]
 
     const column = resolveColumnName(tableName, rawColumn)
     if (!column) {
       notes.push(`Ignored unknown assignment column: ${rawColumn}`)
+      unknownColumns.add(rawColumn)
       continue
     }
 
     values[column] = parsePrimitiveToken(rawValue)
   }
 
-  return values
+  return { values, unknownColumns: Array.from(unknownColumns) }
 }
 
 function parseQueryCommand(input: string, tableName: string, notes: string[]): QueryCommand {
@@ -272,35 +280,22 @@ function parseQueryCommand(input: string, tableName: string, notes: string[]): Q
   }
 }
 
-function parseInsertCommand(input: string, tableName: string, notes: string[]): MutateCommand {
-  const values = parseAssignments(input, tableName, notes)
-
+function parseInsertCommandWithMeta(
+  input: string,
+  tableName: string,
+  notes: string[],
+): { command: MutateCommand; unknownAssignmentColumns: string[] } {
+  const { values, unknownColumns } = parseAssignments(input, tableName, notes)
   return {
-    kind: 'mutate',
-    action: 'insert',
-    table: tableName,
-    values,
-    filters: [],
-    returning: ['id'],
-  }
-}
-
-function parseUpdateCommand(input: string, tableName: string, notes: string[]): MutateCommand {
-  const setSegment = input.split(/\bset\b/i)[1] ?? input
-  const values = parseAssignments(setSegment, tableName, notes)
-  const filters = parseWhereFilters(input, tableName, notes)
-
-  if (filters.length === 0) {
-    notes.push('No WHERE clause detected for update; executor may reject unsafe mutation.')
-  }
-
-  return {
-    kind: 'mutate',
-    action: 'update',
-    table: tableName,
-    values,
-    filters,
-    returning: ['id'],
+    command: {
+      kind: 'mutate',
+      action: 'insert',
+      table: tableName,
+      values,
+      filters: [],
+      returning: ['id'],
+    },
+    unknownAssignmentColumns: unknownColumns,
   }
 }
 
@@ -320,16 +315,96 @@ function parseDeleteCommand(input: string, tableName: string, notes: string[]): 
   }
 }
 
+function parseUpdateCommandWithMeta(
+  input: string,
+  tableName: string,
+  notes: string[],
+): { command: MutateCommand; unknownAssignmentColumns: string[] } {
+  const setSegmentRaw = input.split(/\bset\b/i)[1] ?? input
+  const setSegment = setSegmentRaw.split(/\bwhere\b/i)[0] ?? setSegmentRaw
+  const { values, unknownColumns } = parseAssignments(setSegment, tableName, notes)
+  const filters = parseWhereFilters(input, tableName, notes)
+
+  if (filters.length === 0) {
+    notes.push('No WHERE clause detected for update; executor may reject unsafe mutation.')
+  }
+
+  return {
+    command: {
+      kind: 'mutate',
+      action: 'update',
+      table: tableName,
+      values,
+      filters,
+      returning: ['id'],
+    },
+    unknownAssignmentColumns: unknownColumns,
+  }
+}
+
+function scoreColumnSuggestion(unknownColumn: string, candidateColumn: string): number {
+  const unknown = unknownColumn.toLowerCase().replace(/[^a-z0-9_]/g, '')
+  const candidate = candidateColumn.toLowerCase()
+
+  if (unknown === candidate) return 100
+  if (candidate.startsWith(unknown) || unknown.startsWith(candidate)) return 80
+  if (candidate.includes(unknown) || unknown.includes(candidate)) return 60
+
+  const unknownTokens = unknown.split('_').filter(Boolean)
+  const candidateTokens = candidate.split('_').filter(Boolean)
+  const overlap = unknownTokens.filter((token) => candidateTokens.includes(token)).length
+  if (overlap > 0) return 40 + overlap
+
+  return 0
+}
+
+function suggestColumnsForUnknown(
+  tableName: string,
+  unknownColumns: string[],
+): string[] {
+  const catalog = getSchemaCatalog()
+  const table = catalog.tables.get(tableName)
+  if (!table) return []
+
+  const suggestions: string[] = []
+
+  for (const unknown of unknownColumns) {
+    const ranked = table.columns
+      .map((column) => ({
+        name: column.name,
+        score: scoreColumnSuggestion(unknown, column.name),
+      }))
+      .filter((entry) => entry.score > 0)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 3)
+      .map((entry) => entry.name)
+
+    if (ranked.length > 0) {
+      suggestions.push(`Unknown column "${unknown}". Did you mean: ${ranked.join(', ')}?`)
+    } else {
+      suggestions.push(`Unknown column "${unknown}" for table "${tableName}".`)
+    }
+  }
+
+  return suggestions
+}
+
 function buildCommandFromInput(
   input: string,
   action: 'query' | 'insert' | 'update' | 'delete',
   tableName: string,
   notes: string[],
-): AgentCommand {
-  if (action === 'query') return parseQueryCommand(input, tableName, notes)
-  if (action === 'insert') return parseInsertCommand(input, tableName, notes)
-  if (action === 'update') return parseUpdateCommand(input, tableName, notes)
-  return parseDeleteCommand(input, tableName, notes)
+): { command: AgentCommand; unknownAssignmentColumns: string[] } {
+  if (action === 'query') {
+    return { command: parseQueryCommand(input, tableName, notes), unknownAssignmentColumns: [] }
+  }
+  if (action === 'insert') {
+    return parseInsertCommandWithMeta(input, tableName, notes)
+  }
+  if (action === 'update') {
+    return parseUpdateCommandWithMeta(input, tableName, notes)
+  }
+  return { command: parseDeleteCommand(input, tableName, notes), unknownAssignmentColumns: [] }
 }
 
 function computeConfidence(
@@ -401,7 +476,29 @@ export function translateNaturalLanguageRequest(input: unknown): TranslationResu
     }
   }
 
-  const command = buildCommandFromInput(parsed.input, action, tableName, notes)
+  const { command, unknownAssignmentColumns } = buildCommandFromInput(
+    parsed.input,
+    action,
+    tableName,
+    notes,
+  )
+
+  if (
+    (action === 'insert' || action === 'update') &&
+    unknownAssignmentColumns.length > 0
+  ) {
+    const suggestions = suggestColumnsForUnknown(tableName, unknownAssignmentColumns)
+    return {
+      success: false,
+      confidence: computeConfidence(action, tableName, notes),
+      notes,
+      inferred: { action, table: tableName },
+      error: {
+        message: `Unknown assignment column(s) for table "${tableName}".`,
+        suggestions,
+      },
+    }
+  }
 
   const request: PseudoApiRequest = {
     requestId: randomUUID(),

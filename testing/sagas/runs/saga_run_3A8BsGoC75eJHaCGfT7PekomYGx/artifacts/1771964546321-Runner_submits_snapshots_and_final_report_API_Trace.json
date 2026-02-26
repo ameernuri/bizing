@@ -1,0 +1,792 @@
+{
+  "stepKey": "runner-submit-artifacts",
+  "callCount": 7,
+  "calls": [
+    {
+      "method": "GET",
+      "path": "/api/v1/sagas/runs/saga_run_3A8BrwOMQJvcrODc49o4di0CYY6",
+      "status": 200,
+      "responseBody": {
+        "_truncated": true,
+        "_preview": "{\"success\":true,\"data\":{\"run\":{\"id\":\"saga_run_3A8BrwOMQJvcrODc49o4di0CYY6\",\"sagaDefinitionId\":\"saga_definition_3A7asZzSWvesIr7Ke33K8Um9DKH\",\"sagaKey\":\"uc-89-the-solo-entrepreneur-sarah\",\"bizId\":null,\"status\":\"failed\",\"mode\":\"dry_run\",\"requestedByUserId\":\"5AuNRNOppdGiLM0XbqF5a3TD5aqoINDZ\",\"runnerLabel\":\"codex-rerun-all\",\"definitionChecksum\":\"db5da63192a2eee4c15536e6673f8e85eee8c2608bc242d71a9b141b8eaf7ff3\",\"startedAt\":\"2026-02-24T20:22:00.528Z\",\"endedAt\":\"2026-02-24T20:22:25.760Z\",\"lastHeartbeatAt\":\"2026-02-24T20:22:25.760Z\",\"totalSteps\":21,\"passedSteps\":19,\"failedSteps\":2,\"skippedSteps\":0,\"runContext\":{\"createdBy\":\"apps/api/src/scripts/rerun-sagas.ts\"},\"runSummary\":{\"auto\":true,\"source\":\"rerun-sagas.ts\",\"coverage\":{\"totalSteps\":21,\"failedSteps\":2,\"passedSteps\":19,\"pendingSteps\":0,\"skippedSteps\":0,\"completionPct\":90,\"classification\":\"partial\",\"inProgressSteps\":0,\"apiFailureStepCount\":0,\"notImplementedStepCount\":0,\"missingEvidenceStepCount\":0},\"failures\":[{\"reason\":\"customer-join-waitlist-flow: Waitlist/queue API is not exposed yet.\",\"stepKey\":\"customer-join-waitlist-flow\"},{\"reason\":\"owner-validate-compliance-controls: Compliance/credential verification API is not exposed yet.\",\"stepKey\":\"owner-validate-compliance-controls\"}],\"missingEvidence\":[]},\"metadata\":{\"tags\":[\"uc-derived\",\"persona-derived\",\"lifecycle\",\"api-first\",\"agents\"],\"title\":\"UC-89 • The Vehicle Rental (Car/Truck/Van) • The Solo Entrepreneur (Sarah)\"},\"createdAt\":\"2026-02-24T20:21:59.784Z\",\"updatedAt\":\"2026-02-24T20:21:59.784Z\",\"deletedAt\":null,\"createdBy\":null,\"updatedBy\":null,\"deletedBy\":null},\"definition\":{\"id\":\"saga_definition_3A7asZzSWvesIr7Ke33K8Um9DKH\",\"bizId\":null,\"sagaKey\":\"uc-89-the-solo-entrepreneur-sarah\",\"title\":\"UC-89 • The Vehicle Rental (Car/Truck/Van) • The Solo Entrepreneur (Sarah)\",\"description\":\"Comprehensive lifecycle saga derived from UC-89 and persona P-1. Needs summary: Vehicle category selection (compact, SUV, truck, van); Pickup and return location (different locations allowed); Mileage limits and overage charges; Insurance options (decline, basic, premium); Driver verification (license, age requirements); Fuel policy (return full or prepay); Additional driver authorization; Child seat/GPS add-ons; Late return grace period (29 minutes free); One-way rental pricing (drop at different location)\",\"status\":\"active\",\"sourceUseCaseRef\":\"UC-89\",\"sourcePersonaRef\":\"P-1\",\"sourceUseCaseFile\":\"/Users/ameer/bizing/mind/workspace/documentation/use-cases-comprehensive.md\",\"sourcePersonaFile\":\"/Users/ameer/bizing/mind/workspace/documentation/tester-personas.md\",\"specVersion\":\"saga.v0\",\"specFilePath\":\"testing/sagas/specs/uc-89-the-solo-entrepreneur-sarah.json\",\"specChecksum\":\"db5da63192a2eee4c15536e6673f8e85eee8c2608bc242d71a9b141b8eaf7ff3\",\"metadata\":{\"tags\":[\"uc-derived\",\"persona-derived\",\"lifecycle\",\"api-first\",\"agents\"],\"generatedAt\":\"2026-02-24T20:12:26.400Z\"},\"createdAt\":\"2026-02-24T15:17:49.406Z\",\"updatedAt\":\"2026-02-24T15:17:49.406Z\",\"deletedAt\":null,\"createdBy\":null,\"updatedBy\":null,\"deletedBy\":null},\"spec\":{\"schemaVersion\":\"saga.v0\",\"sagaKey\":\"uc-89-the-solo-entrepreneur-sarah\",\"title\":\"UC-89 • The Vehicle Rental (Car/Truck/Van) • The Solo Entrepreneur (Sarah)\",\"description\":\"Comprehensive lifecycle saga derived from UC-89 and persona P-1. Needs summary: Vehicle category selection (compact, SUV, truck, van); Pickup and return location (different locations allowed); Mileage limits and overage charges; Insurance options (decline, basic, premium); Driver verification (license, age requirements); Fuel policy (return full or prepay); Additional driver authorization; Child seat/GPS add-ons; Late return grace period (29 minutes free); One-way rental pricing (drop at different location)\",\"tags\":[\"uc-derived\",\"persona-derived\",\"lifecycle\",\"api-first\",\"agents\"],\"defaults\":{\"runMode\":\"dry_run\",\"continueOnFailure\":false},\"source\":{\"useCaseRef\":\"UC-89\",\"personaRef\":\"P-1\",\"useCaseFile\":\"/Users/ameer/bizing/mind/workspace/documentation/use-cases-comprehensive.md\",\"personaFile\":\"/Users/ameer/bizing/mind/workspace/documentation/tester-personas.md\",\"generatedAt\":\"2026-02-24T20:12:26.400Z\"},\"objectives\":[\"Validate UC-89 lifecycle end-to-end using persona The Solo Entrepreneur (Sarah).\",\"Exercise owner setup, team setup, catalog publishing, and customer journeys.\",\"Stress ACL/security edge cases and verify expected denials are enforced.\",\"Collect snapshots and report artifacts for every critical milestone.\"],\"actors\":[{\"actorKey\":\"biz_owner\",\"name\":\"The Solo Entrepreneur (Sarah)\",\"role\":\"owner\",\"description\":\"Just starting out, wearing all hats\",\"personaRef\":\"P-1\"},{\"actorKey\":\"biz_member\",\"name\":\"Operations Team Member\",\"role\":\"manager\",\"description\":\"Business member invited by owner to assist with operations and booking flow.\"},{\"actorKey\":\"customer_1\",\"name\":\"Customer One\",\"role\":\"customer\",\"description\":\"Primary customer exploring catalog, booking services, and purchasing products.\"},{\"actorKey\":\"customer_2\",\"name\":\"Customer Two\",\"role\":\"customer\",\"description\":\"Concurrent customer used to simulate realistic demand and race conditions.\"},{\"actorKey\":\"adversary\",\"name\":\"Adversarial User\",\"role\":\"malicious_actor\",\"description\":\"Actor intentionally attempting unauthorized or abusive actions.\"}],\"phases\":[{\"phaseKey\":\"owner-onboarding\",\"order\":1,\"title\":\"Owner Onboarding\",\"description\":\"Business owner signs up, authenticates, and establishes tenant root.\",\"steps\":[{\"stepKey\":\"owner-sign-up\",\"order\":1,\"title\":\"Owner signs up and authenticates\",\"actorKey\":\"biz_owner\",\"intent\":\"Establish authenticated owner identity for the lifecycle.\",\"instruction\":\"Create or login the owner account through Better Auth endpoints, then verify session context can call authenticated API routes.\",\"expectedResult\":\"Owner session exists and authenticated routes return success for this user.\",\"toolHints\":[],\"assertions\":[{\"kind\":\"api_response\",\"description\":\"API call returns success and includes stable ids for created entities.\"},{\"kind\":\"acl_guard\",\"description\":\"Actor permissions are honored for this step context.\"}],\"evidenceRequired\":[{\"kind\":\"api_trace\",\"label\":\"Request/response trace for this step\"},{\"kind\":\"snapshot\",\"label\":\"Structured snapshot.v1 screen blocks (what user saw) with real API-backed data\"}],\"guardrails\":[],\"tags\":[\"auth\",\"setup\"]},{\"stepKey\":\"owner-create-biz\",\"order\":2,\"title\":\"Owner creates business tenant\",\"actorKey\":\"biz_owner\",\"intent\":\"Create the biz root for all subsequent configuration.\",\"instruction\":\"Using agents tools, create a biz representing The Vehicle Rental (Car/Truck/Van). Use name/slug derived from saga context.\",\"expectedResult\":\"Biz is created, owner is auto-added as member with owner role, and biz id is captured.\",\"toolHints\":[\"bizing.bizes.create\"],\"assertions\":[{\"kind\":\"api_response\",\"description\":\"API call returns success and includes stable ids for created entities.\"},{\"kind\":\"acl_guard\",\"description\":\"Actor permissions are honored for this step context.\"}],\"evidenceRequired\":[{\"kind\":\"api_trace\",\"label\":\"Request/response trace for this step\"},{\"kind\":\"snapshot\",\"label\":\"Structured snapshot.v1 screen blocks (what user saw) with real API-backed data\"}],\"guardrails\":[],\"tags\":[\"biz\",\"setup\"]},{\"stepKey\":\"owner-create-location\",\"order\":3,\"title\":\"Owner creates primary location\",\"actorKey\":\"biz_owner\",\"intent\":\"Establish operational location for services/resources.\",\"instruction\":\"Create a primary location for the biz and set timezone aligned with scenario context.\",\"expectedResult\":\"Location exists and is associated with the new biz.\",\"toolHints\":[\"bizing.locations.create\"],\"assertions\":[{\"kind\":\"api_response\",\"description\":\"API call returns success and includes stable ids for created entities.\"},{\"kind\":\"acl_guard\",\"description\":\"Actor permissions are honored for this step context.\"}],\"evidenceRequired\":[{\"kind\":\"api_trace\",\"label\":\"Request/response trace for this step\"},{\"kind\":\"snapshot\",\"label\":\"Structured snapshot.v1 screen blocks (what user saw) with real API-backed data\"}],\"guardrails\":[],\"tags\":[\"location\",\"setup\"]}]},{\"phaseKey\":\"business-configuration\",\"order\":2,\"title\":\"Business Configuration\",\"description\":\"Owner configures scheduling, pricing baseline, and operational defaults.\",\"steps\":[{\"stepKey\":\"owner-configure-hours\",\"order\":4,\"title\":\"Configure default hours and availability mode\",\"actorKey\":\"biz_owner\",\"intent\":\"Set baseline availability without forcing advanced complexity.\",\"instruction\":\"Create baseline availability and lead-time rules representing the UC default business hours and booking window behavior.\",\"expectedResult\":\"Availability defaults and rules are stored and can be referenced by calendars.\",\"toolHints\":[],\"assertions\":[{\"kind\":\"api_response\",\"description\":\"API call returns success and includes stable ids for created entities.\"},{\"kind\":\"acl_guard\",\"description\":\"Actor permissions are honored for this step context.\"}],\"evidenceRequired\":[{\"kind\":\"api_trace\",\"label\":\"Request/response trace for this step\"},{\"kind\":\"snapshot\",\"label\":\"Structured snapshot.v1 screen blocks (what user saw) with real API-backed data\"}],\"guardrails\":[],\"tags\":[\"availability\",\"policy\"]},{\"stepKey\":\"owner-configure-pricing\",\"order\":5,\"title\":\"Configure default pricing rules\",\"actorKey\":\"biz_owner\",\"intent\":\"Set base pricing and optional manual demand overrides.\",\"instruction\":\"Configure pricing defaults for the offer lifecycle including call fees/manual surge if UC needs imply it.\",\"expectedResult\":\"Pricing model persists and future bookings can calculate totals deterministically.\",\"toolHints\":[],\"assertions\":[{\"kind\":\"api_response\",\"description\":\"API call returns success and includes stable ids for created entities.\"},{\"kind\":\"acl_guard\",\"description\":\"Actor permissions are honored for this step context.\"}],\"evidenceRequired\":[{\"kind\":\"api_trace\",\"label\":\"Request/response trace for this step\"},{\"kind\":\"snapshot\",\"label\":\"Structured snapshot.v1 screen blocks (what user saw) with real API-backed data\"}],\"guardrails\":[],\"tags\":[\"pricing\"]}]},{\"phaseKey\":\"supply-and-team-setup\",\"order\":3,\"title\":\"Supply And Team Setup\",\"description\":\"Business owner sets up hosts/assets/venues/resources and invites members.\",\"steps\":[{\"stepKey\":\"owner-create-resources\",\"order\":6,\"title\":\"Create resources representing hosts/assets/venues\",\"actorKey\":\"biz_owner\",\"intent\":\"Model real-world supply that bookings will consume.\",\"instruction\":\"Create at least one host resource and one non-host resource (asset or venue) suitable for the UC.\",\"expectedResult\":\"Resources are created with expected type, location, and buffers.\",\"toolHints\":[\"bizing.resources.create\"],\"assertions\":[{\"kind\":\"api_response\",\"description\":\"API call returns success and includes stable ids for created entities.\"},{\"kind\":\"acl_guard\",\"description\":\"Actor permissions are honored for this step context.\"}],\"evidenceRequired\":[{\"kind\":\"api_trace\",\"label\":\"Request/response trace for this step\"},{\"kind\":\"snapshot\",\"label\":\"Structured snapshot.v1 screen blocks (what user saw) with real API-backed data\"}],\"guardrails\":[],\"tags\":[\"resources\"]},{\"stepKey\":\"owner-invite-member\",\"order\":7,\"title\":\"Invite and provision business member\",\"actorKey\":\"biz_owner\",\"intent\":\"Validate collaboration and role assignment.\",\"instruction\":\"Invite a biz member, assign an operational role, and verify that member can authenticate into the same biz.\",\"expectedResult\":\"Biz member account/session exists with scoped role permissions.\",\"toolHints\":[],\"assertions\":[{\"kind\":\"api_response\",\"description\":\"API call returns success and includes stable ids for created entities.\"},{\"kind\":\"acl_guard\",\"description\":\"Actor permissions are honored for this step context.\"}],\"evidenceRequired\":[{\"kind\":\"api_trace\",\"label\":\"Request/response trace for this step\"},{\"kind\":\"snapshot\",\"label\":\"Structured snapshot.v1 screen blocks (what user saw) with real API-backed data\"}],\"guardrails\":[],\"tags\":[\"team\",\"acl\"]}]},{\"phaseKey\":\"catalog-publish\",\"order\":4,\"title\":\"Catalog And Publish\",\"desc",
+        "_size": 1555487
+      },
+      "at": "2026-02-24T20:22:26.204Z"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3A8BsO7hEUBb6slQ7DAQe8FeS6B/steps/owner-configure-external-integration/result",
+      "status": 200,
+      "requestBody": {
+        "status": "passed",
+        "startedAt": "2026-02-24T20:22:25.731Z",
+        "endedAt": "2026-02-24T20:22:25.731Z",
+        "failureMessage": null,
+        "resultPayload": {
+          "note": "External channel integration configured and persisted through API.",
+          "evidence": {
+            "channelAccountId": "channel_account_3A8Bv5UVfOkw78RK05SEAA5fExZ",
+            "syncStateId": "channel_sync_state_3A8BvCuKalI2wkQKx2MDOHlEV5M",
+            "entityLinkId": "channel_link_3A8BvGs0ST56u5X4pj5Im5kmSrT",
+            "listedStateCount": 1,
+            "listedLinkCount": 1
+          }
+        },
+        "assertionSummary": {
+          "status": "passed",
+          "hasFailure": false,
+          "assertionsPassed": 1
+        }
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "id": "saga_run_step_3A8BsMgFQ7FobW0omh6u7bVHbzz",
+          "sagaRunId": "saga_run_3A8BsO7hEUBb6slQ7DAQe8FeS6B",
+          "phaseKey": "operations-and-follow-up",
+          "phaseOrder": 7,
+          "phaseTitle": "Operations And Follow-up",
+          "stepKey": "owner-configure-external-integration",
+          "stepOrder": 18,
+          "actorKey": "biz_owner",
+          "instruction": "Configure one external integration/channel and verify sync state + external id linkage is persisted.",
+          "expectedResult": "Connector installation/configuration and sync status are queryable for operational debugging.",
+          "status": "passed",
+          "attemptCount": 1,
+          "startedAt": "2026-02-24T20:22:25.731Z",
+          "endedAt": "2026-02-24T20:22:25.731Z",
+          "failureCode": null,
+          "failureMessage": null,
+          "resultPayload": {
+            "note": "External channel integration configured and persisted through API.",
+            "evidence": {
+              "syncStateId": "channel_sync_state_3A8BvCuKalI2wkQKx2MDOHlEV5M",
+              "entityLinkId": "channel_link_3A8BvGs0ST56u5X4pj5Im5kmSrT",
+              "listedLinkCount": 1,
+              "channelAccountId": "channel_account_3A8Bv5UVfOkw78RK05SEAA5fExZ",
+              "listedStateCount": 1
+            }
+          },
+          "assertionSummary": {
+            "status": "passed",
+            "hasFailure": false,
+            "assertionsPassed": 1
+          },
+          "metadata": {},
+          "createdAt": "2026-02-24T20:22:02.126Z",
+          "updatedAt": "2026-02-24T20:22:02.126Z",
+          "deletedAt": null,
+          "createdBy": null,
+          "updatedBy": null,
+          "deletedBy": null
+        },
+        "meta": {
+          "requestId": "ce4ab5c5-c45c-48aa-bb5f-58c66884c437",
+          "timestamp": "2026-02-24T20:22:26.109Z"
+        }
+      },
+      "at": "2026-02-24T20:22:26.205Z"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3A8BtnCu0mDvFcQk2awmlIcAMPN/steps/owner-create-offer-version/result",
+      "status": 200,
+      "requestBody": {
+        "status": "passed",
+        "startedAt": "2026-02-24T20:22:25.976Z",
+        "endedAt": "2026-02-24T20:22:25.976Z",
+        "failureMessage": null,
+        "resultPayload": {
+          "note": "Offer version created.",
+          "evidence": {
+            "offerVersionId": "offer_version_3A8BvIgqGrYBk1Sfo4vIevRkWrj"
+          }
+        },
+        "assertionSummary": {
+          "status": "passed",
+          "hasFailure": false,
+          "assertionsPassed": 1
+        }
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "id": "saga_run_step_3A8BtlSL2VeJTk9Gq5E1CfP0RTk",
+          "sagaRunId": "saga_run_3A8BtnCu0mDvFcQk2awmlIcAMPN",
+          "phaseKey": "catalog-publish",
+          "phaseOrder": 4,
+          "phaseTitle": "Catalog And Publish",
+          "stepKey": "owner-create-offer-version",
+          "stepOrder": 9,
+          "actorKey": "biz_owner",
+          "instruction": "Create a published offer version with realistic duration and base price for this UC.",
+          "expectedResult": "Offer version exists and is ready for booking order references.",
+          "status": "passed",
+          "attemptCount": 1,
+          "startedAt": "2026-02-24T20:22:25.976Z",
+          "endedAt": "2026-02-24T20:22:25.976Z",
+          "failureCode": null,
+          "failureMessage": null,
+          "resultPayload": {
+            "note": "Offer version created.",
+            "evidence": {
+              "offerVersionId": "offer_version_3A8BvIgqGrYBk1Sfo4vIevRkWrj"
+            }
+          },
+          "assertionSummary": {
+            "status": "passed",
+            "hasFailure": false,
+            "assertionsPassed": 1
+          },
+          "metadata": {},
+          "createdAt": "2026-02-24T20:22:13.156Z",
+          "updatedAt": "2026-02-24T20:22:13.156Z",
+          "deletedAt": null,
+          "createdBy": null,
+          "updatedBy": null,
+          "deletedBy": null
+        },
+        "meta": {
+          "requestId": "96b16e5d-6b20-412b-81da-9804283ba1f1",
+          "timestamp": "2026-02-24T20:22:26.132Z"
+        }
+      },
+      "at": "2026-02-24T20:22:26.205Z"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3A8BupOzqpP0uLnYbvpTOgtiORW/steps/owner-create-location/result",
+      "status": 200,
+      "requestBody": {
+        "status": "passed",
+        "startedAt": "2026-02-24T20:22:25.980Z",
+        "endedAt": "2026-02-24T20:22:25.980Z",
+        "failureMessage": null,
+        "resultPayload": {
+          "note": "Location created.",
+          "evidence": {
+            "id": "3A8BvFzFJYzv0fAxFhhjVh6xzJo",
+            "bizId": "3A8Bv5eYXnDZkPf0ZHaTOGZfx6G",
+            "name": "Primary Location",
+            "slug": "loc-ynqy73nn",
+            "type": "physical",
+            "timezone": "UTC",
+            "address": {},
+            "operatingHours": {},
+            "configOverride": {},
+            "serviceArea": {},
+            "status": "active",
+            "isDefault": false,
+            "metadata": {},
+            "createdAt": "2026-02-24T20:22:25.678Z",
+            "updatedAt": "2026-02-24T20:22:25.678Z",
+            "deletedAt": null
+          }
+        },
+        "assertionSummary": {
+          "status": "passed",
+          "hasFailure": false,
+          "assertionsPassed": 1
+        }
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "id": "saga_run_step_3A8Bus7LVXazLDS1gE7WtFEEOEv",
+          "sagaRunId": "saga_run_3A8BupOzqpP0uLnYbvpTOgtiORW",
+          "phaseKey": "owner-onboarding",
+          "phaseOrder": 1,
+          "phaseTitle": "Owner Onboarding",
+          "stepKey": "owner-create-location",
+          "stepOrder": 3,
+          "actorKey": "biz_owner",
+          "instruction": "Create a primary location for the biz and set timezone aligned with scenario context.",
+          "expectedResult": "Location exists and is associated with the new biz.",
+          "status": "passed",
+          "attemptCount": 1,
+          "startedAt": "2026-02-24T20:22:25.980Z",
+          "endedAt": "2026-02-24T20:22:25.980Z",
+          "failureCode": null,
+          "failureMessage": null,
+          "resultPayload": {
+            "note": "Location created.",
+            "evidence": {
+              "id": "3A8BvFzFJYzv0fAxFhhjVh6xzJo",
+              "name": "Primary Location",
+              "slug": "loc-ynqy73nn",
+              "type": "physical",
+              "bizId": "3A8Bv5eYXnDZkPf0ZHaTOGZfx6G",
+              "status": "active",
+              "address": {},
+              "metadata": {},
+              "timezone": "UTC",
+              "createdAt": "2026-02-24T20:22:25.678Z",
+              "deletedAt": null,
+              "isDefault": false,
+              "updatedAt": "2026-02-24T20:22:25.678Z",
+              "serviceArea": {},
+              "configOverride": {},
+              "operatingHours": {}
+            }
+          },
+          "assertionSummary": {
+            "status": "passed",
+            "hasFailure": false,
+            "assertionsPassed": 1
+          },
+          "metadata": {},
+          "createdAt": "2026-02-24T20:22:22.755Z",
+          "updatedAt": "2026-02-24T20:22:22.755Z",
+          "deletedAt": null,
+          "createdBy": null,
+          "updatedBy": null,
+          "deletedBy": null
+        },
+        "meta": {
+          "requestId": "e8bd6257-aa1e-4478-8b58-34a3da67d108",
+          "timestamp": "2026-02-24T20:22:26.133Z"
+        }
+      },
+      "at": "2026-02-24T20:22:26.206Z"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3A8BuD2swkqOF82jUfkPiHHd2cT/steps/owner-create-resources/result",
+      "status": 200,
+      "requestBody": {
+        "status": "passed",
+        "startedAt": "2026-02-24T20:22:25.833Z",
+        "endedAt": "2026-02-24T20:22:25.833Z",
+        "failureMessage": null,
+        "resultPayload": {
+          "note": "Host + asset resources created.",
+          "evidence": {
+            "hostId": "3A8BvIwnF04GqdpcB9AJdOaF2Ao",
+            "assetId": "3A8BvBRdpD6n2pSge6VRIWm5peF"
+          }
+        },
+        "assertionSummary": {
+          "status": "passed",
+          "hasFailure": false,
+          "assertionsPassed": 1
+        }
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "id": "saga_run_step_3A8BuFxdUTdEg694yNgpw2nCONy",
+          "sagaRunId": "saga_run_3A8BuD2swkqOF82jUfkPiHHd2cT",
+          "phaseKey": "supply-and-team-setup",
+          "phaseOrder": 3,
+          "phaseTitle": "Supply And Team Setup",
+          "stepKey": "owner-create-resources",
+          "stepOrder": 6,
+          "actorKey": "biz_owner",
+          "instruction": "Create at least one host resource and one non-host resource (asset or venue) suitable for the UC.",
+          "expectedResult": "Resources are created with expected type, location, and buffers.",
+          "status": "passed",
+          "attemptCount": 1,
+          "startedAt": "2026-02-24T20:22:25.833Z",
+          "endedAt": "2026-02-24T20:22:25.833Z",
+          "failureCode": null,
+          "failureMessage": null,
+          "resultPayload": {
+            "note": "Host + asset resources created.",
+            "evidence": {
+              "hostId": "3A8BvIwnF04GqdpcB9AJdOaF2Ao",
+              "assetId": "3A8BvBRdpD6n2pSge6VRIWm5peF"
+            }
+          },
+          "assertionSummary": {
+            "status": "passed",
+            "hasFailure": false,
+            "assertionsPassed": 1
+          },
+          "metadata": {},
+          "createdAt": "2026-02-24T20:22:17.741Z",
+          "updatedAt": "2026-02-24T20:22:17.741Z",
+          "deletedAt": null,
+          "createdBy": null,
+          "updatedBy": null,
+          "deletedBy": null
+        },
+        "meta": {
+          "requestId": "671b42da-2dc3-4d78-9d8d-1e3f6c5d2c0c",
+          "timestamp": "2026-02-24T20:22:26.135Z"
+        }
+      },
+      "at": "2026-02-24T20:22:26.271Z"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3A8BtpYFDKrXrx9G1bTpld7zNmb/traces",
+      "status": 201,
+      "requestBody": {
+        "_truncated": true,
+        "_preview": "{\"stepKey\":\"owner-invite-member\",\"title\":\"Invite and provision business member API Trace\",\"trace\":{\"stepKey\":\"owner-invite-member\",\"callCount\":3,\"calls\":[{\"method\":\"POST\",\"path\":\"/api/v1/bizes/3A8BuijXsZfWckY98SCMK0kFICF/resources\",\"status\":201,\"requestBody\":{\"locationId\":\"3A8BuqZGCA4JA9iEI6xCtR9UDti\",\"type\":\"host\",\"name\":\"Primary Host\",\"slug\":\"host-qgxbmh4t\",\"capacity\":1,\"bufferBeforeMinutes\":10,\"bufferAfterMinutes\":10},\"responseBody\":{\"success\":true,\"data\":{\"id\":\"3A8BvIwnF04GqdpcB9AJdOaF2Ao\",\"bizId\":\"3A8BuijXsZfWckY98SCMK0kFICF\",\"locationId\":\"3A8BuqZGCA4JA9iEI6xCtR9UDti\",\"type\":\"host\",\"name\":\"Primary Host\",\"slug\":\"host-qgxbmh4t\",\"description\":null,\"timezone\":\"UTC\",\"statusDefinitionId\":null,\"hostUserId\":null,\"groupAccountId\":null,\"assetId\":null,\"venueId\":null,\"capacity\":1,\"allowSimultaneousBookings\":false,\"maxSimultaneousBookings\":null,\"bufferBeforeMinutes\":10,\"bufferAfterMinutes\":10,\"metadata\":{},\"createdAt\":\"2026-02-24T20:22:25.403Z\",\"updatedAt\":\"2026-02-24T20:22:25.403Z\",\"deletedAt\":null,\"createdBy\":null,\"updatedBy\":null,\"deletedBy\":null},\"meta\":{\"requestId\":\"6a92280e-0294-4bb1-b41e-bdf6f420c038\",\"timestamp\":\"2026-02-24T20:22:25.409Z\"}},\"at\":\"2026-02-24T20:22:25.486Z\"},{\"method\":\"POST\",\"path\":\"/api/v1/sagas/runs/saga_run_3A8BsGoC75eJHaCGfT7PekomYGx/traces\",\"status\":201,\"requestBody\":{\"_truncated\":true,\"_preview\":\"{\\\"stepKey\\\":\\\"owner-revenue-sanity\\\",\\\"title\\\":\\\"Owner validates financial/reporting outputs API Trace\\\",\\\"trace\\\":{\\\"stepKey\\\":\\\"owner-revenue-sanity\\\",\\\"callCount\\\":1,\\\"calls\\\":[{\\\"method\\\":\\\"POST\\\",\\\"path\\\":\\\"/api/v1/sagas/runs/saga_run_3A8Bt7Cg76PWByXOjdWTEte13hN/snapshots\\\",\\\"status\\\":201,\\\"requestBody\\\":{\\\"_truncated\\\":true,\\\"_preview\\\":\\\"{\\\\\\\"stepKey\\\\\\\":\\\\\\\"customer-book-primary\\\\\\\",\\\\\\\"screenKey\\\\\\\":\\\\\\\"customer-book-primary-1771964545028\\\\\\\",\\\\\\\"title\\\\\\\":\\\\\\\"Customer one books primary offer Snapshot\\\\\\\",\\\\\\\"status\\\\\\\":\\\\\\\"passed\\\\\\\",\\\\\\\"route\\\\\\\":\\\\\\\"/sagas/saga_run_3A8Bt7Cg76PWByXOjdWTEte13hN/customer-book-primary\\\\\\\",\\\\\\\"format\\\\\\\":\\\\\\\"json\\\\\\\",\\\\\\\"view\\\\\\\":{\\\\\\\"title\\\\\\\":\\\\\\\"Customer one books primary offer\\\\\\\",\\\\\\\"subtitle\\\\\\\":\\\\\\\"Primary booking created.\\\\\\\",\\\\\\\"blocks\\\\\\\":[{\\\\\\\"type\\\\\\\":\\\\\\\"alert\\\\\\\",\\\\\\\"title\\\\\\\":\\\\\\\"Customer Book Primary completed\\\\\\\",\\\\\\\"message\\\\\\\":\\\\\\\"Primary booking created.\\\\\\\",\\\\\\\"tone\\\\\\\":\\\\\\\"success\\\\\\\"},{\\\\\\\"type\\\\\\\":\\\\\\\"key_value\\\\\\\",\\\\\\\"title\\\\\\\":\\\\\\\"Booking confirmation\\\\\\\",\\\\\\\"items\\\\\\\":[{\\\\\\\"label\\\\\\\":\\\\\\\"Booking id\\\\\\\",\\\\\\\"value\\\\\\\":\\\\\\\"booking_order_3A8Bv8ixZyMtSooRmJ5iko9mM4J\\\\\\\"},{\\\\\\\"label\\\\\\\":\\\\\\\"Status\\\\\\\",\\\\\\\"value\\\\\\\":\\\\\\\"confirmed\\\\\\\"},{\\\\\\\"label\\\\\\\":\\\\\\\"Starts at\\\\\\\",\\\\\\\"value\\\\\\\":\\\\\\\"2026-02-25T20:22:24.432Z\\\\\\\"},{\\\\\\\"label\\\\\\\":\\\\\\\"Total\\\\\\\",\\\\\\\"value\\\\\\\":\\\\\\\"15000\\\\\\\"}]},{\\\\\\\"type\\\\\\\":\\\\\\\"actions\\\\\\\",\\\\\\\"title\\\\\\\":\\\\\\\"Visible actions\\\\\\\",\\\\\\\"items\\\\\\\":[{\\\\\\\"label\\\\\\\":\\\\\\\"Download receipt\\\\\\\",\\\\\\\"kind\\\\\\\":\\\\\\\"secondary\\\\\\\",\\\\\\\"enabled\\\\\\\":true},{\\\\\\\"label\\\\\\\":\\\\\\\"Reschedule\\\\\\\",\\\\\\\"kind\\\\\\\":\\\\\\\"secondary\\\\\\\",\\\\\\\"enabled\\\\\\\":true},{\\\\\\\"label\\\\\\\":\\\\\\\"Cancel booking\\\\\\\",\\\\\\\"kind\\\\\\\":\\\\\\\"danger\\\\\\\",\\\\\\\"enabled\\\\\\\":true}]},{\\\\\\\"type\\\\\\\":\\\\\\\"stats\\\\\\\",\\\\\\\"title\\\\\\\":\\\\\\\"What user sees at a glance\\\\\\\",\\\\\\\"items\\\\\\\":[{\\\\\\\"label\\\\\\\":\\\\\\\"SubtotalMinor\\\\\\\",\\\\\\\"value\\\\\\\":\\\\\\\"15000\\\\\\\"},{\\\\\\\"label\\\\\\\":\\\\\\\"TaxMinor\\\\\\\",\\\\\\\"value\\\\\\\":\\\\\\\"0\\\\\\\"},{\\\\\\\"label\\\\\\\":\\\\\\\"FeeMinor\\\\\\\",\\\\\\\"value\\\\\\\":\\\\\\\"0\\\\\\\"},{\\\\\\\"label\\\\\\\":\\\\\\\"DiscountMinor\\\\\\\",\\\\\\\"value\\\\\\\":\\\\\\\"0\\\\\\\"},{\\\\\\\"label\\\\\\\":\\\\\\\"TotalMinor\\\\\\\",\\\\\\\"value\\\\\\\":\\\\\\\"15000\\\\\\\"}]},{\\\\\\\"type\\\\\\\":\\\\\\\"key_value\\\\\\\",\\\\\\\"title\\\\\\\":\\\\\\\"Screen details\\\\\\\",\\\\\\\"items\\\\\\\":[{\\\\\\\"label\\\\\\\":\\\\\\\"Id\\\\\\\",\\\\\\\"value\\\\\\\":\\\\\\\"booking_order_3A8Bv8ixZyMtSooRmJ5iko9mM4J\\\\\\\"},{\\\\\\\"label\\\\\\\":\\\\\\\"BizId\\\\\\\",\\\\\\\"value\\\\\\\":\\\\\\\"3A8BtUBquqzsnp6NTJzWRL4aRBw\\\\\\\"},{\\\\\\\"label\\\\\\\":\\\\\\\"OfferId\\\\\\\",\\\\\\\"value\\\\\\\":\\\\\\\"offer_3A8Budnn3KCiSmA86uv59279K3W\\\\\\\"},{\\\\\\\"label\\\\\\\":\\\\\\\"OfferVersionId\\\\\\\",\\\\\\\"value\\\\\\\":\\\\\\\"offer_version_3A8BujfsLlqpfveDBtGAMI0vu8L\\\\\\\"},{\\\\\\\"label\\\\\\\":\\\\\\\"CustomerUserId\\\\\\\",\\\\\\\"value\\\\\\\":\\\\\\\"nZGv2qzwj23K1kaRD8M0nfDrB8Pi8zir\\\\\\\"},{\\\\\\\"label\\\\\\\":\\\\\\\"CustomerGroupAccountId\\\\\\\",\\\\\\\"value\\\\\\\":\\\\\\\"null\\\\\\\"},{\\\\\\\"label\\\\\\\":\\\\\\\"Status\\\\\\\",\\\\\\\"value\\\\\\\":\\\\\\\"confirmed\\\\\\\"},{\\\\\\\"label\\\\\\\":\\\\\\\"StatusConfigValueId\\\\\\\",\\\\\\\"value\\\\\\\":\\\\\\\"null\\\\\\\"},{\\\\\\\"label\\\\\\\":\\\\\\\"Currency\\\\\\\",\\\\\\\"value\\\\\\\":\\\\\\\"USD\\\\\\\"},{\\\\\\\"label\\\\\\\":\\\\\\\"SubtotalMinor\\\\\\\",\\\\\\\"value\\\\\\\":\\\\\\\"15000\\\\\\\"},{\\\\\\\"label\\\\\\\":\\\\\\\"TaxMinor\\\\\\\",\\\\\\\"value\\\\\\\":\\\\\\\"0\\\\\\\"},{\\\\\\\"label\\\\\\\":\\\\\\\"FeeMinor\\\\\\\",\\\\\\\"value\\\\\\\":\\\\\\\"0\\\\\\\"},{\\\\\\\"label\\\\\\\":\\\\\\\"DiscountMinor\\\\\\\",\\\\\\\"value\\\\\\\":\\\\\\\"0\\\\\\\"},{\\\\\\\"label\\\\\\\":\\\\\\\"TotalMinor\\\\\\\",\\\\\\\"value\\\\\\\":\\\\\\\"15000\\\\\\\"},{\\\\\\\"label\\\\\\\":\\\\\\\"RequestedStartAt\\\\\\\",\\\\\\\"value\\\\\\\":\\\\\\\"2026-02-25T20:22:24.432Z\\\\\\\"},{\\\\\\\"label\\\\\\\":\\\\\\\"RequestedEndAt\\\\\\\",\\\\\\\"value\\\\\\\":\\\\\\\"2026-02-25T21:12:24.432Z\\\\\\\"}]}]},\\\\\\\"rawData\\\\\\\":{\\\\\\\"stepKey\\\\\\\":\\\\\\\"customer-book-primary\\\\\\\",\\\\\\\"resultPayload\\\\\\\":{\\\\\\\"note\\\\\\\":\\\\\\\"Primary booking created.\\\\\\\",\\\\\\\"evidence\\\\\\\":{\\\\\\\"id\\\\\\\":\\\\\\\"booking_order_3A8Bv8ixZyMtSooRmJ5iko9mM4J\\\\\\\",\\\\\\\"bizId\\\\\\\":\\\\\\\"3A8BtUBquqzsnp6NTJzWRL4aRBw\\\\\\\",\\\\\\\"offerId\\\\\\\":\\\\\\\"offer_3A8Budnn3KCiSmA86uv59279K3W\\\\\\\",\\\\\\\"offerVersionId\\\\\\\":\\\\\\\"offer_version_3A8BujfsLlqpfveDBtGAMI0vu8L\\\\\\\",\\\\\\\"customerUserId\\\\\\\":\\\\\\\"nZGv2qzwj23K1kaRD8M0nfDrB8Pi8zir\\\\\\\",\\\\\\\"customerGroupAccountId\\\\\\\":null,\\\\\\\"status\\\\\\\":\\\\\\\"confirmed\\\\\\\",\\\\\\\"statusConfigValueId\\\\\\\":null,\\\\\\\"currency\\\\\\\":\\\\\\\"USD\\\\\\\",\\\\\\\"subtotalMinor\\\\\\\":15000,\\\\\\\"taxMinor\\\\\\\":0,\\\\\\\"feeMinor\\\\\\\":0,\\\\\\\"discountMinor\\\\\\\":0,\\\\\\\"totalMinor\\\\\\\":15000,\\\\\\\"requestedStartAt\\\\\\\":\\\\\\\"2026-02-25T20:22:24.432Z\\\\\\\",\\\\\\\"requestedEndAt\\\\\\\":\\\\\\\"2026-02-25T21:12:24.432Z\\\\\\\",\\\\\\\"confirmedStartAt\\\\\\\":\\\\\\\"2026-02-25T20:22:24.432Z\\\\\\\",\\\\\\\"confirmedEndAt\\\\\\\":\\\\\\\"2026-02-25T21:12:24.432Z\\\\\\\",\\\\\\\"pricingSnapshot\\\\\\\":{},\\\\\\\"policySnapshot\\\\\\\":{},\\\\\\\"metadata\\\\\\\":{},\\\\\\\"createdAt\\\\\\\":\\\\\\\"2026-02-24T20:22:24.553Z\\\\\\\",\\\\\\\"updatedAt\\\\\\\":\\\\\\\"2026-02-24T20:22:24.553Z\\\\\\\",\\\\\\\"deletedAt\\\\\\\":null,\\\\\\\"createdBy\\\\\\\":null,\\\\\\\"updatedBy\\\\\\\":null,\\\\\\\"deletedBy\\\\\\\":null}},\\\\\\\"apiCalls\\\\\\\":[{\\\\\\\"method\\\\\\\":\\\\\\\"POST\\\\\\\",\\\\\\\"path\\\\\\\":\\\\\\\"/api/v1/sagas/runs/saga_run_3A8BsO7hEUBb6slQ7DAQe8FeS6B/steps/owner-calendar-review/result\\\\\\\",\\\\\\\"status\\\\\\\":200,\\\\\\\"requestBody\\\\\\\":{\\\\\\\"status\\\\\\\":\\\\\\\"in_progress\\\\\\\",\\\\\\\"startedAt\\\\\\\":\\\\\\\"2026-02-24T20:22:24.318Z\\\\\\\",\\\\\\\"resultPayload\\\\\\\":{\\\\\\\"note\\\\\\\":\\\\\\\"Started owner-calendar-review\\\\\\\"},\\\\\\\"assertionSummary\\\\\\\":{\\\\\\\"status\\\\\\\":\\\\\\\"in_progress\\\\\\\"}},\\\\\\\"responseBody\\\\\\\":{\\\\\\\"success\\\\\\\":true,\\\\\\\"data\\\\\\\":{\\\\\\\"id\\\\\\\":\\\\\\\"saga_run_step_3A8BsKRfmYcgOrdS7kbxfhHQlAD\\\\\\\",\\\\\\\"sagaRunId\\\\\\\":\\\\\\\"saga_run_3A8BsO7hEUBb6slQ7DAQe8FeS6B\\\\\\\",\\\\\\\"phaseKey\\\\\\\":\\\\\\\"operations-and-follow-up\\\\\\\",\\\\\\\"phaseOrder\\\\\\\":7,\\\\\\\"phaseTitle\\\\\\\":\\\\\\\"Operations And Follow-up\\\\\\\",\\\\\\\"stepKey\\\\\\\":\\\\\\\"owner-calendar-review\\\\\\\",\\\\\\\"stepOrder\\\\\\\":17,\\\\\\\"actorKey\\\\\\\":\\\\\\\"biz_owner\\\\\\\",\\\\\\\"instruction\\\\\\\":\\\\\\\"Query and compare availability + bookings timeline for the entities involved in this scenario.\\\\\\\",\\\\\\\"expectedResult\\\\\\\":\\\\\\\"Calendar state reflects booked slots, blocks, and any conflict outcomes from previous steps.\\\\\\\",\\\\\\\"status\\\\\\\":\\\\\\\"in_progress\\\\\\\",\\\\\\\"attemptCount\\\\\\\":1,\\\\\\\"startedAt\\\\\\\":\\\\\\\"2026-02-24T20:22:24.318Z\\\\\\\",\\\\\\\"endedAt\\\\\\\":null,\\\\\\\"failureCode\\\\\\\":null,\\\\\\\"failureMessage\\\\\\\":null,\\\\\\\"resultPayload\\\\\\\":{\\\\\\\"note\\\\\\\":\\\\\\\"Started owner-calendar-review\\\\\\\"},\\\\\\\"assertionSummary\\\\\\\":{\\\\\\\"status\\\\\\\":\\\\\\\"in_progress\\\\\\\"},\\\\\\\"metadata\\\\\\\":{},\\\\\\\"createdAt\\\\\\\":\\\\\\\"2026-02-24T20:22:02.126Z\\\\\\\",\\\\\\\"updatedAt\\\\\\\":\\\\\\\"2026-02-24T20:22:02.126Z\\\\\\\",\\\\\\\"deletedAt\\\\\\\":null,\\\\\\\"createdBy\\\\\\\":null,\\\\\\\"updatedBy\\\\\\\":null,\\\\\\\"deletedBy\\\\\\\":null},\\\\\\\"meta\\\\\\\":{\\\\\\\"requestId\\\\\\\":\\\\\\\"cb1216a5-6b51-4e8c-95d8-554649e26634\\\\\\\",\\\\\\\"timestamp\\\\\\\":\\\\\\\"2026-02-24T20:22:24.545Z\\\\\\\"}},\\\\\\\"at\\\\\\\":\\\\\\\"2026-02-24T20:22:24.547Z\\\\\\\"},{\\\\\\\"method\\\\\\\":\\\\\\\"POST\\\\\\\",\\\\\\\"path\\\\\\\":\\\\\\\"/api/v1/sagas/runs/saga_run_3A8BupOzqpP0uLnYbvpTOgtiORW/steps/owner-sign-up/result\\\\\\\",\\\\\\\"status\\\\\\\":200,\\\\\\\"requestBody\\\\\\\":{\\\\\\\"status\\\\\\\":\\\\\\\"in_progress\\\\\\\",\\\\\\\"startedAt\\\\\\\":\\\\\\\"2026-02-24T20:22:24.316Z\\\\\\\",\\\\\\\"resultPayload\\\\\\\":{\\\\\\\"note\\\\\\\":\\\\\\\"Started owner-sign-up\\\\\\\"},\\\\\\\"assertionSummary\\\\\\\":{\\\\\\\"status\\\\\\\":\\\\\\\"in_progress\\\\\\\"}},\\\\\\\"responseBody\\\\\\\":{\\\\\\\"success\\\\\\\":true,\\\\\\\"data\\\\\\\":{\\\\\\\"id\\\\\\\":\\\\\\\"saga_run_step_3A8BupE7LaEsBs2NK6RH7c6T6JH\\\\\\\",\\\\\\\"sagaRunId\\\\\\\":\\\\\\\"saga_run_3A8BupOzqpP0uLnYbvpTOgtiORW\\\\\\\",\\\\\\\"phaseKey\\\\\\\":\\\\\\\"owner-onboarding\\\\\\\",\\\\\\\"phaseOrder\\\\\\\":1,\\\\\\\"phaseTitle\\\\\\\":\\\\\\\"Owner Onboarding\\\\\\\",\\\\\\\"stepKey\\\\\\\":\\\\\\\"owner-sign-up\\\\\\\",\\\\\\\"stepOrder\\\\\\\":1,\\\\\\\"actorKey\\\\\\\":\\\\\\\"biz_owner\\\\\\\",\\\\\\\"instruction\\\\\\\":\\\\\\\"Create or login the owner account through Better Auth endpoints, then verify session context can call authenticated API routes.\\\\\\\",\\\\\\\"expectedResult\\\\\\\":\\\\\\\"Owner session exists and authenticated routes return success for this user.\\\\\\\",\\\\\\\"status\\\\\\\":\\\\\\\"in_progress\\\\\\\",\\\\\\\"attemptCount\\\\\\\":1,\\\\\\\"startedAt\\\\\\\":\\\\\\\"2026-02-24T20:22:24.316Z\\\\\\\",\\\\\\\"endedAt\\\\\\\":null,\\\\\\\"failureCode\\\\\\\":null,\\\\\\\"failureMessage\\\\\\\":null,\\\\\\\"resultPayload\\\\\\\":{\\\\\\\"note\\\\\\\":\\\\\\\"Started owner-sign-up\\\\\\\"},\\\\\\\"assertionSummary\\\\\\\":{\\\\\\\"status\\\\\\\":\\\\\\\"in_progress\\\\\\\"},\\\\\\\"metadata\\\\\\\":{},\\\\\\\"createdAt\\\\\\\":\\\\\\\"2026-02-24T20:22:22.755Z\\\\\\\",\\\\\\\"updatedAt\\\\\\\":\\\\\\\"2026-02-24T20:22:22.755Z\\\\\\\",\\\\\\\"deletedAt\\\\\\\":null,\\\\\\\"createdBy\\\\\\\":null,\\\\\\\"updatedBy\\\\\\\":null,\\\\\\\"deletedBy\\\\\\\":null},\\\\\\\"meta\\\\\\\":{\\\\\\\"requestId\\\\\\\":\\\\\\\"e1a5fa80-1929-4c0e-a75b-6ac1295cb0bd\\\\\\\",\\\\\\\"timestamp\\\\\\\":\\\\\\\"2026-02-24T20:22:24.546Z\\\\\\\"}},\\\\\\\"at\\\\\\\":\\\\\\\"2026-02-24T20:22:24.549Z\\\\\\\"},{\\\\\\\"method\\\\\\\":\\\\\\\"POST\\\\\\\",\\\\\\\"path\\\\\\\":\\\\\\\"/api/v1/sagas/runs/saga_run_3A8BtpYFDKrXrx9G1bTpld7zNmb/snapshots\\\\\\\",\\\\\\\"status\\\\\\\":201,\\\\\\\"requestBody\\\\\\\":{\\\\\\\"_truncated\\\\\\\":true,\\\\\\\"_preview\\\\\\\":\\\\\\\"{\\\\\\\\\\\\\\\"stepKey\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"owner-configure-pricing\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"screenKey\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"owner-configure-pricing-1771964544245\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"title\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Configure default pricing rules Snapshot\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"status\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"passed\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"route\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"/sagas/saga_run_3A8BtpYFDKrXrx9G1bTpld7zNmb/owner-configure-pricing\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"format\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"json\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"view\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"title\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Configure default pricing rules\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"subtitle\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Pricing baseline configured on biz metadata.\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"blocks\\\\\\\\\\\\\\\":[{\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"alert\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"title\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Owner Configure Pricing completed\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"message\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Pricing baseline configured on biz metadata.\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"tone\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"success\\\\\\\\\\\\\\\"}]},\\\\\\\\\\\\\\\"rawData\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"stepKey\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"owner-configure-pricing\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"resultPayload\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"note\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Pricing baseline configured on biz metadata.\\\\\\\\\\\\\\\"},\\\\\\\\\\\\\\\"apiCalls\\\\\\\\\\\\\\\":[{\\\\\\\\\\\\\\\"method\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"POST\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"path\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"/api/v1/sagas/runs/saga_run_3A8BsGoC75eJHaCGfT7PekomYGx/snapshots\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"status\\\\\\\\\\\\\\\":201,\\\\\\\\\\\\\\\"requestBody\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"stepKey\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"member-review-bookings\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"screenKey\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"member-review-bookings-1771964542737\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"title\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Biz member reviews and updates booking status Snapshot\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"status\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"passed\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"route\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"/sagas/saga_run_3A8BsGoC75eJHaCGfT7PekomYGx/member-review-bookings\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"format\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"json\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"view\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"title\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Biz member reviews and updates booking status\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"subtitle\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Bookings reviewed and one booking progressed.\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"blocks\\\\\\\\\\\\\\\":[{\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"alert\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"title\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Member Review Bookings completed\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"message\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Bookings reviewed and one booking progressed.\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"tone\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"success\\\\\\\\\\\\\\\"},{\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"key_value\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"title\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Screen details\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"items\\\\\\\\\\\\\\\":[{\\\\\\\\\\\\\\\"label\\\\\\\\\\\\",
+        "_size": 38862
+      },
+      "responseBody": {
+        "_truncated": true,
+        "_preview": "{\"success\":true,\"data\":{\"id\":\"saga_artifact_3A8BvOBOL0XH3ecw9oxl7bIEmGD\",\"sagaRunId\":\"saga_run_3A8BtpYFDKrXrx9G1bTpld7zNmb\",\"sagaRunStepId\":\"saga_run_step_3A8Bu1b1Jxb9B2r3DDKAab9zInN\",\"artifactType\":\"api_trace\",\"title\":\"Invite and provision business member API Trace\",\"storagePath\":\"testing/sagas/runs/saga_run_3A8BtpYFDKrXrx9G1bTpld7zNmb/artifacts/1771964546049-Invite_and_provision_business_member_API_Trace.json\",\"contentType\":\"application/json\",\"bodyText\":\"{\\n  \\\"stepKey\\\": \\\"owner-invite-member\\\",\\n  \\\"callCount\\\": 3,\\n  \\\"calls\\\": [\\n    {\\n      \\\"method\\\": \\\"POST\\\",\\n      \\\"path\\\": \\\"/api/v1/bizes/3A8BuijXsZfWckY98SCMK0kFICF/resources\\\",\\n      \\\"status\\\": 201,\\n      \\\"requestBody\\\": {\\n        \\\"locationId\\\": \\\"3A8BuqZGCA4JA9iEI6xCtR9UDti\\\",\\n        \\\"type\\\": \\\"host\\\",\\n        \\\"name\\\": \\\"Primary Host\\\",\\n        \\\"slug\\\": \\\"host-qgxbmh4t\\\",\\n        \\\"capacity\\\": 1,\\n        \\\"bufferBeforeMinutes\\\": 10,\\n        \\\"bufferAfterMinutes\\\": 10\\n      },\\n      \\\"responseBody\\\": {\\n        \\\"success\\\": true,\\n        \\\"data\\\": {\\n          \\\"id\\\": \\\"3A8BvIwnF04GqdpcB9AJdOaF2Ao\\\",\\n          \\\"bizId\\\": \\\"3A8BuijXsZfWckY98SCMK0kFICF\\\",\\n          \\\"locationId\\\": \\\"3A8BuqZGCA4JA9iEI6xCtR9UDti\\\",\\n          \\\"type\\\": \\\"host\\\",\\n          \\\"name\\\": \\\"Primary Host\\\",\\n          \\\"slug\\\": \\\"host-qgxbmh4t\\\",\\n          \\\"description\\\": null,\\n          \\\"timezone\\\": \\\"UTC\\\",\\n          \\\"statusDefinitionId\\\": null,\\n          \\\"hostUserId\\\": null,\\n          \\\"groupAccountId\\\": null,\\n          \\\"assetId\\\": null,\\n          \\\"venueId\\\": null,\\n          \\\"capacity\\\": 1,\\n          \\\"allowSimultaneousBookings\\\": false,\\n          \\\"maxSimultaneousBookings\\\": null,\\n          \\\"bufferBeforeMinutes\\\": 10,\\n          \\\"bufferAfterMinutes\\\": 10,\\n          \\\"metadata\\\": {},\\n          \\\"createdAt\\\": \\\"2026-02-24T20:22:25.403Z\\\",\\n          \\\"updatedAt\\\": \\\"2026-02-24T20:22:25.403Z\\\",\\n          \\\"deletedAt\\\": null,\\n          \\\"createdBy\\\": null,\\n          \\\"updatedBy\\\": null,\\n          \\\"deletedBy\\\": null\\n        },\\n        \\\"meta\\\": {\\n          \\\"requestId\\\": \\\"6a92280e-0294-4bb1-b41e-bdf6f420c038\\\",\\n          \\\"timestamp\\\": \\\"2026-02-24T20:22:25.409Z\\\"\\n        }\\n      },\\n      \\\"at\\\": \\\"2026-02-24T20:22:25.486Z\\\"\\n    },\\n    {\\n      \\\"method\\\": \\\"POST\\\",\\n      \\\"path\\\": \\\"/api/v1/sagas/runs/saga_run_3A8BsGoC75eJHaCGfT7PekomYGx/traces\\\",\\n      \\\"status\\\": 201,\\n      \\\"requestBody\\\": {\\n        \\\"_truncated\\\": true,\\n        \\\"_preview\\\": \\\"{\\\\\\\"stepKey\\\\\\\":\\\\\\\"owner-revenue-sanity\\\\\\\",\\\\\\\"title\\\\\\\":\\\\\\\"Owner validates financial/reporting outputs API Trace\\\\\\\",\\\\\\\"trace\\\\\\\":{\\\\\\\"stepKey\\\\\\\":\\\\\\\"owner-revenue-sanity\\\\\\\",\\\\\\\"callCount\\\\\\\":1,\\\\\\\"calls\\\\\\\":[{\\\\\\\"method\\\\\\\":\\\\\\\"POST\\\\\\\",\\\\\\\"path\\\\\\\":\\\\\\\"/api/v1/sagas/runs/saga_run_3A8Bt7Cg76PWByXOjdWTEte13hN/snapshots\\\\\\\",\\\\\\\"status\\\\\\\":201,\\\\\\\"requestBody\\\\\\\":{\\\\\\\"_truncated\\\\\\\":true,\\\\\\\"_preview\\\\\\\":\\\\\\\"{\\\\\\\\\\\\\\\"stepKey\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"customer-book-primary\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"screenKey\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"customer-book-primary-1771964545028\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"title\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Customer one books primary offer Snapshot\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"status\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"passed\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"route\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"/sagas/saga_run_3A8Bt7Cg76PWByXOjdWTEte13hN/customer-book-primary\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"format\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"json\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"view\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"title\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Customer one books primary offer\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"subtitle\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Primary booking created.\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"blocks\\\\\\\\\\\\\\\":[{\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"alert\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"title\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Customer Book Primary completed\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"message\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Primary booking created.\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"tone\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"success\\\\\\\\\\\\\\\"},{\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"key_value\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"title\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Booking confirmation\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"items\\\\\\\\\\\\\\\":[{\\\\\\\\\\\\\\\"label\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Booking id\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"value\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"booking_order_3A8Bv8ixZyMtSooRmJ5iko9mM4J\\\\\\\\\\\\\\\"},{\\\\\\\\\\\\\\\"label\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Status\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"value\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"confirmed\\\\\\\\\\\\\\\"},{\\\\\\\\\\\\\\\"label\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Starts at\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"value\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"2026-02-25T20:22:24.432Z\\\\\\\\\\\\\\\"},{\\\\\\\\\\\\\\\"label\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Total\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"value\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"15000\\\\\\\\\\\\\\\"}]},{\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"actions\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"title\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Visible actions\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"items\\\\\\\\\\\\\\\":[{\\\\\\\\\\\\\\\"label\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Download receipt\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"kind\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"secondary\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"enabled\\\\\\\\\\\\\\\":true},{\\\\\\\\\\\\\\\"label\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Reschedule\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"kind\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"secondary\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"enabled\\\\\\\\\\\\\\\":true},{\\\\\\\\\\\\\\\"label\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Cancel booking\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"kind\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"danger\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"enabled\\\\\\\\\\\\\\\":true}]},{\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"stats\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"title\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"What user sees at a glance\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"items\\\\\\\\\\\\\\\":[{\\\\\\\\\\\\\\\"label\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"SubtotalMinor\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"value\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"15000\\\\\\\\\\\\\\\"},{\\\\\\\\\\\\\\\"label\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"TaxMinor\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"value\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"0\\\\\\\\\\\\\\\"},{\\\\\\\\\\\\\\\"label\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"FeeMinor\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"value\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"0\\\\\\\\\\\\\\\"},{\\\\\\\\\\\\\\\"label\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"DiscountMinor\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"value\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"0\\\\\\\\\\\\\\\"},{\\\\\\\\\\\\\\\"label\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"TotalMinor\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"value\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"15000\\\\\\\\\\\\\\\"}]},{\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"key_value\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"title\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Screen details\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"items\\\\\\\\\\\\\\\":[{\\\\\\\\\\\\\\\"label\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Id\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"value\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"booking_order_3A8Bv8ixZyMtSooRmJ5iko9mM4J\\\\\\\\\\\\\\\"},{\\\\\\\\\\\\\\\"label\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"BizId\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"value\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"3A8BtUBquqzsnp6NTJzWRL4aRBw\\\\\\\\\\\\\\\"},{\\\\\\\\\\\\\\\"label\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"OfferId\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"value\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"offer_3A8Budnn3KCiSmA86uv59279K3W\\\\\\\\\\\\\\\"},{\\\\\\\\\\\\\\\"label\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"OfferVersionId\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"value\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"offer_version_3A8BujfsLlqpfveDBtGAMI0vu8L\\\\\\\\\\\\\\\"},{\\\\\\\\\\\\\\\"label\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"CustomerUserId\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"value\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"nZGv2qzwj23K1kaRD8M0nfDrB8Pi8zir\\\\\\\\\\\\\\\"},{\\\\\\\\\\\\\\\"label\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"CustomerGroupAccountId\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"value\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"null\\\\\\\\\\\\\\\"},{\\\\\\\\\\\\\\\"label\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Status\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"value\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"confirmed\\\\\\\\\\\\\\\"},{\\\\\\\\\\\\\\\"label\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"StatusConfigValueId\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"value\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"null\\\\\\\\\\\\\\\"},{\\\\\\\\\\\\\\\"label\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Currency\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"value\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"USD\\\\\\\\\\\\\\\"},{\\\\\\\\\\\\\\\"label\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"SubtotalMinor\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"value\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"15000\\\\\\\\\\\\\\\"},{\\\\\\\\\\\\\\\"label\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"TaxMinor\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"value\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"0\\\\\\\\\\\\\\\"},{\\\\\\\\\\\\\\\"label\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"FeeMinor\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"value\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"0\\\\\\\\\\\\\\\"},{\\\\\\\\\\\\\\\"label\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"DiscountMinor\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"value\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"0\\\\\\\\\\\\\\\"},{\\\\\\\\\\\\\\\"label\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"TotalMinor\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"value\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"15000\\\\\\\\\\\\\\\"},{\\\\\\\\\\\\\\\"label\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"RequestedStartAt\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"value\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"2026-02-25T20:22:24.432Z\\\\\\\\\\\\\\\"},{\\\\\\\\\\\\\\\"label\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"RequestedEndAt\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"value\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"2026-02-25T21:12:24.432Z\\\\\\\\\\\\\\\"}]}]},\\\\\\\\\\\\\\\"rawData\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"stepKey\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"customer-book-primary\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"resultPayload\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"note\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Primary booking created.\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"evidence\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"id\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"booking_order_3A8Bv8ixZyMtSooRmJ5iko9mM4J\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"bizId\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"3A8BtUBquqzsnp6NTJzWRL4aRBw\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"offerId\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"offer_3A8Budnn3KCiSmA86uv59279K3W\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"offerVersionId\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"offer_version_3A8BujfsLlqpfveDBtGAMI0vu8L\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"customerUserId\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"nZGv2qzwj23K1kaRD8M0nfDrB8Pi8zir\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"customerGroupAccountId\\\\\\\\\\\\\\\":null,\\\\\\\\\\\\\\\"status\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"confirmed\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"statusConfigValueId\\\\\\\\\\\\\\\":null,\\\\\\\\\\\\\\\"currency\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"USD\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"subtotalMinor\\\\\\\\\\\\\\\":15000,\\\\\\\\\\\\\\\"taxMinor\\\\\\\\\\\\\\\":0,\\\\\\\\\\\\\\\"feeMinor\\\\\\\\\\\\\\\":0,\\\\\\\\\\\\\\\"discountMinor\\\\\\\\\\\\\\\":0,\\\\\\\\\\\\\\\"totalMinor\\\\\\\\\\\\\\\":15000,\\\\\\\\\\\\\\\"requestedStartAt\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"2026-02-25T20:22:24.432Z\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"requestedEndAt\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"2026-02-25T21:12:24.432Z\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"confirmedStartAt\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"2026-02-25T20:22:24.432Z\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"confirmedEndAt\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"2026-02-25T21:12:24.432Z\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"pricingSnapshot\\\\\\\\\\\\\\\":{},\\\\\\\\\\\\\\\"policySnapshot\\\\\\\\\\\\\\\":{},\\\\\\\\\\\\\\\"metadata\\\\\\\\\\\\\\\":{},\\\\\\\\\\\\\\\"createdAt\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"2026-02-24T20:22:24.553Z\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"updatedAt\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"2026-02-24T20:22:24.553Z\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"deletedAt\\\\\\\\\\\\\\\":null,\\\\\\\\\\\\\\\"createdBy\\\\\\\\\\\\\\\":null,\\\\\\\\\\\\\\\"updatedBy\\\\\\\\\\\\\\\":null,\\\\\\\\\\\\\\\"deletedBy\\\\\\\\\\\\\\\":null}},\\\\\\\\\\\\\\\"apiCalls\\\\\\\\\\\\\\\":[{\\\\\\\\\\\\\\\"method\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"POST\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"path\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"/api/v1/sagas/runs/saga_run_3A8BsO7hEUBb6slQ7DAQe8FeS6B/steps/owner-calendar-review/result\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"status\\\\\\\\\\\\\\\":200,\\\\\\\\\\\\\\\"requestBody\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"status\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"in_progress\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"startedAt\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"2026-02-24T20:22:24.318Z\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"resultPayload\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"note\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Started owner-calendar-review\\\\\\\\\\\\\\\"},\\\\\\\\\\\\\\\"assertionSummary\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"status\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"in_progress\\\\\\\\\\\\\\\"}},\\\\\\\\\\\\\\\"responseBody\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"success\\\\\\\\\\\\\\\":true,\\\\\\\\\\\\\\\"data\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"id\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"saga_run_step_3A8BsKRfmYcgOrdS7kbxfhHQlAD\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"sagaRunId\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"saga_run_3A8BsO7hEUBb6slQ7DAQe8FeS6B\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"phaseKey\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"operations-and-follow-up\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"phaseOrder\\\\\\\\\\\\\\\":7,\\\\\\\\\\\\\\\"phaseTitle\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Operations And Follow-up\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"stepKey\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"owner-calendar-review\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"stepOrder\\\\\\\\\\\\\\\":17,\\\\\\\\\\\\\\\"actorKey\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"biz_owner\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"instruction\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Query and compare availability + bookings timeline for the entities involved in this scenario.\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"expectedResult\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Calendar state reflects booked slots, blocks, and any conflict outcomes from previous steps.\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"status\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"in_progress\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"attemptCount\\\\\\\\\\\\\\\":1,\\\\\\\\\\\\\\\"startedAt\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"2026-02-24T20:22:24.318Z\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"endedAt\\\\\\\\\\\\\\\":null,\\\\\\\\\\\\\\\"failureCode\\\\\\\\\\\\\\\":null,\\\\\\\\\\\\\\\"failureMessage\\\\\\\\\\\\\\\":null,\\\\\\\\\\\\\\\"resultPayload\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"note\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Started owner-calendar-review\\\\\\\\\\\\\\\"},\\\\\\\\\\\\\\\"assertionSummary\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"status\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"in_progress\\\\\\\\\\\\\\\"},\\\\\\\\\\\\\\\"metadata\\\\\\\\\\\\\\\":{},\\\\\\\\\\\\\\\"createdAt\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"2026-02-24T20:22:02.126Z\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"updatedAt\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"2026-02-24T20:22:02.126Z\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"deletedAt\\\\\\\\\\\\\\\":null,\\\\\\\\\\\\\\\"createdBy\\\\\\\\\\\\\\\":null,\\\\\\\\\\\\\\\"updatedBy\\\\\\\\\\\\\\\":null,\\\\\\\\\\\\\\\"deletedBy\\\\\\\\\\\\\\\":null},\\\\\\\\\\\\\\\"meta\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"requestId\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"cb1216a5-6b51-4e8c-95d8-554649e26634\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"timestamp\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"2026-02-24T20:22:24.545Z\\\\\\\\\\\\\\\"}},\\\\\\\\\\\\\\\"at\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"2026-02-24T20:22:24.547Z\\\\\\\\\\\\\\\"},{\\\\\\\\\\\\\\\"method\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"POST\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"path\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"/api/v1/sagas/runs/saga_run_3A8BupOzqpP0uLnYbvpTOgtiORW/steps/owner-sign-up/result\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"status\\\\\\\\\\\\\\\":200,\\\\\\\\\\\\\\\"requestBody\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"status\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"in_progress\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"startedAt\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"2026-02-24T20:22:24.316Z\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"resultPayload\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"note\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Started owner-sign-up\\\\\\\\\\\\\\\"},\\\\\\\\\\\\\\\"assertionSummary\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"status\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"in_progress\\\\\\\\\\\\\\\"}},\\\\\\\\\\\\\\\"responseBody\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"success\\\\\\\\\\\\\\\":true,\\\\\\\\\\\\\\\"data\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"id\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"saga_run_step_3A8BupE7LaEsBs2NK6RH7c6T6JH\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"sagaRunId\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"saga_run_3A8BupOzqpP0uLnYbvpTOgtiORW\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"phaseKey\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"owner-onboarding\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"phaseOrder\\\\\\\\\\\\\\\":1,\\\\\\\\\\\\\\",
+        "_size": 58515
+      },
+      "at": "2026-02-24T20:22:26.274Z"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3A8Bt7Cg76PWByXOjdWTEte13hN/snapshots",
+      "status": 201,
+      "requestBody": {
+        "stepKey": "customer-two-concurrent",
+        "screenKey": "customer-two-concurrent-1771964546032",
+        "title": "Customer two performs concurrent booking attempt Snapshot",
+        "status": "passed",
+        "route": "/sagas/saga_run_3A8Bt7Cg76PWByXOjdWTEte13hN/customer-two-concurrent",
+        "format": "json",
+        "view": {
+          "title": "Customer two performs concurrent booking attempt",
+          "subtitle": "Second concurrent booking created.",
+          "blocks": [
+            {
+              "type": "alert",
+              "title": "Customer Two Concurrent completed",
+              "message": "Second concurrent booking created.",
+              "tone": "success"
+            },
+            {
+              "type": "key_value",
+              "title": "Booking confirmation",
+              "items": [
+                {
+                  "label": "Booking id",
+                  "value": "booking_order_3A8BvDAJe7oMxiBzDIJSYsItbox"
+                },
+                {
+                  "label": "Status",
+                  "value": "confirmed"
+                },
+                {
+                  "label": "Starts at",
+                  "value": "2026-02-25T20:22:25.369Z"
+                },
+                {
+                  "label": "Total",
+                  "value": "15000"
+                }
+              ]
+            },
+            {
+              "type": "actions",
+              "title": "Visible actions",
+              "items": [
+                {
+                  "label": "Download receipt",
+                  "kind": "secondary",
+                  "enabled": true
+                },
+                {
+                  "label": "Reschedule",
+                  "kind": "secondary",
+                  "enabled": true
+                },
+                {
+                  "label": "Cancel booking",
+                  "kind": "danger",
+                  "enabled": true
+                }
+              ]
+            },
+            {
+              "type": "stats",
+              "title": "What user sees at a glance",
+              "items": [
+                {
+                  "label": "SubtotalMinor",
+                  "value": "15000"
+                },
+                {
+                  "label": "TaxMinor",
+                  "value": "0"
+                },
+                {
+                  "label": "FeeMinor",
+                  "value": "0"
+                },
+                {
+                  "label": "DiscountMinor",
+                  "value": "0"
+                },
+                {
+                  "label": "TotalMinor",
+                  "value": "15000"
+                }
+              ]
+            },
+            {
+              "type": "key_value",
+              "title": "Screen details",
+              "items": [
+                {
+                  "label": "Id",
+                  "value": "booking_order_3A8BvDAJe7oMxiBzDIJSYsItbox"
+                },
+                {
+                  "label": "BizId",
+                  "value": "3A8BtUBquqzsnp6NTJzWRL4aRBw"
+                },
+                {
+                  "label": "OfferId",
+                  "value": "offer_3A8Budnn3KCiSmA86uv59279K3W"
+                },
+                {
+                  "label": "OfferVersionId",
+                  "value": "offer_version_3A8BujfsLlqpfveDBtGAMI0vu8L"
+                },
+                {
+                  "label": "CustomerUserId",
+                  "value": "J01F2hSGogYvww5DywbCHWZKvLapdlAL"
+                },
+                {
+                  "label": "CustomerGroupAccountId",
+                  "value": "null"
+                },
+                {
+                  "label": "Status",
+                  "value": "confirmed"
+                },
+                {
+                  "label": "StatusConfigValueId",
+                  "value": "null"
+                },
+                {
+                  "label": "Currency",
+                  "value": "USD"
+                },
+                {
+                  "label": "SubtotalMinor",
+                  "value": "15000"
+                },
+                {
+                  "label": "TaxMinor",
+                  "value": "0"
+                },
+                {
+                  "label": "FeeMinor",
+                  "value": "0"
+                },
+                {
+                  "label": "DiscountMinor",
+                  "value": "0"
+                },
+                {
+                  "label": "TotalMinor",
+                  "value": "15000"
+                },
+                {
+                  "label": "RequestedStartAt",
+                  "value": "2026-02-25T20:22:25.369Z"
+                },
+                {
+                  "label": "RequestedEndAt",
+                  "value": "2026-02-25T21:12:25.369Z"
+                }
+              ]
+            }
+          ]
+        },
+        "rawData": {
+          "stepKey": "customer-two-concurrent",
+          "resultPayload": {
+            "note": "Second concurrent booking created.",
+            "evidence": {
+              "id": "booking_order_3A8BvDAJe7oMxiBzDIJSYsItbox",
+              "bizId": "3A8BtUBquqzsnp6NTJzWRL4aRBw",
+              "offerId": "offer_3A8Budnn3KCiSmA86uv59279K3W",
+              "offerVersionId": "offer_version_3A8BujfsLlqpfveDBtGAMI0vu8L",
+              "customerUserId": "J01F2hSGogYvww5DywbCHWZKvLapdlAL",
+              "customerGroupAccountId": null,
+              "status": "confirmed",
+              "statusConfigValueId": null,
+              "currency": "USD",
+              "subtotalMinor": 15000,
+              "taxMinor": 0,
+              "feeMinor": 0,
+              "discountMinor": 0,
+              "totalMinor": 15000,
+              "requestedStartAt": "2026-02-25T20:22:25.369Z",
+              "requestedEndAt": "2026-02-25T21:12:25.369Z",
+              "confirmedStartAt": "2026-02-25T20:22:25.369Z",
+              "confirmedEndAt": "2026-02-25T21:12:25.369Z",
+              "pricingSnapshot": {},
+              "policySnapshot": {},
+              "metadata": {},
+              "createdAt": "2026-02-24T20:22:25.384Z",
+              "updatedAt": "2026-02-24T20:22:25.384Z",
+              "deletedAt": null,
+              "createdBy": null,
+              "updatedBy": null,
+              "deletedBy": null
+            }
+          },
+          "apiCalls": [
+            {
+              "method": "POST",
+              "path": "/api/v1/sagas/runs/saga_run_3A8BtpYFDKrXrx9G1bTpld7zNmb/steps/owner-create-resources/result",
+              "status": 200,
+              "requestBody": {
+                "status": "passed",
+                "startedAt": "2026-02-24T20:22:24.987Z",
+                "endedAt": "2026-02-24T20:22:24.987Z",
+                "failureMessage": null,
+                "resultPayload": {
+                  "note": "Host + asset resources created.",
+                  "evidence": {
+                    "hostId": "3A8Bv5JgjTTeAVVY1XkkqTVtaGB",
+                    "assetId": "3A8Bv7uTdjAFU6DbA1vBeyb25NA"
+                  }
+                },
+                "assertionSummary": {
+                  "status": "passed",
+                  "hasFailure": false,
+                  "assertionsPassed": 1
+                }
+              },
+              "responseBody": {
+                "success": true,
+                "data": {
+                  "id": "saga_run_step_3A8Bu2wDLmdyrc3juouVACHidOt",
+                  "sagaRunId": "saga_run_3A8BtpYFDKrXrx9G1bTpld7zNmb",
+                  "phaseKey": "supply-and-team-setup",
+                  "phaseOrder": 3,
+                  "phaseTitle": "Supply And Team Setup",
+                  "stepKey": "owner-create-resources",
+                  "stepOrder": 6,
+                  "actorKey": "biz_owner",
+                  "instruction": "Create at least one host resource and one non-host resource (asset or venue) suitable for the UC.",
+                  "expectedResult": "Resources are created with expected type, location, and buffers.",
+                  "status": "passed",
+                  "attemptCount": 1,
+                  "startedAt": "2026-02-24T20:22:24.987Z",
+                  "endedAt": "2026-02-24T20:22:24.987Z",
+                  "failureCode": null,
+                  "failureMessage": null,
+                  "resultPayload": {
+                    "note": "Host + asset resources created.",
+                    "evidence": {
+                      "hostId": "3A8Bv5JgjTTeAVVY1XkkqTVtaGB",
+                      "assetId": "3A8Bv7uTdjAFU6DbA1vBeyb25NA"
+                    }
+                  },
+                  "assertionSummary": {
+                    "status": "passed",
+                    "hasFailure": false,
+                    "assertionsPassed": 1
+                  },
+                  "metadata": {},
+                  "createdAt": "2026-02-24T20:22:15.010Z",
+                  "updatedAt": "2026-02-24T20:22:15.010Z",
+                  "deletedAt": null,
+                  "createdBy": null,
+                  "updatedBy": null,
+                  "deletedBy": null
+                },
+                "meta": {
+                  "requestId": "59446974-52d7-4409-b8fb-43178f2e9269",
+                  "timestamp": "2026-02-24T20:22:25.165Z"
+                }
+              },
+              "at": "2026-02-24T20:22:25.173Z"
+            },
+            {
+              "method": "POST",
+              "path": "/api/v1/bizes/3A8BsZ7oGyLSE4euXAVRpFtZkNX/channel-entity-links",
+              "status": 201,
+              "requestBody": {
+                "channelAccountId": "channel_account_3A8Bv5UVfOkw78RK05SEAA5fExZ",
+                "objectType": "custom",
+                "localReferenceKey": "uc-uc-90-the-solo-entrepreneur-sarah-netw6k",
+                "externalObjectId": "ext-8toa9xfixlr",
+                "metadata": {
+                  "source": "saga-rerun"
+                }
+              },
+              "responseBody": {
+                "success": true,
+                "data": {
+                  "id": "channel_link_3A8BvGs0ST56u5X4pj5Im5kmSrT",
+                  "bizId": "3A8BsZ7oGyLSE4euXAVRpFtZkNX",
+                  "channelAccountId": "channel_account_3A8Bv5UVfOkw78RK05SEAA5fExZ",
+                  "objectType": "custom",
+                  "offerVersionId": null,
+                  "bookingOrderId": null,
+                  "resourceId": null,
+                  "customerUserId": null,
+                  "localReferenceKey": "uc-uc-90-the-solo-entrepreneur-sarah-netw6k",
+                  "externalObjectId": "ext-8toa9xfixlr",
+                  "externalParentId": null,
+                  "syncHash": null,
+                  "isActive": true,
+                  "lastSyncedAt": null,
+                  "metadata": {
+                    "source": "saga-rerun"
+                  },
+                  "createdAt": "2026-02-24T20:22:25.164Z",
+                  "updatedAt": "2026-02-24T20:22:25.164Z",
+                  "deletedAt": null,
+                  "createdBy": null,
+                  "updatedBy": null,
+                  "deletedBy": null
+                },
+                "meta": {
+                  "requestId": "7a7012c8-9169-4469-8137-5491d65fe3f7",
+                  "timestamp": "2026-02-24T20:22:25.319Z"
+                }
+              },
+              "at": "2026-02-24T20:22:25.320Z"
+            },
+            {
+              "method": "POST",
+              "path": "/api/v1/sagas/runs/saga_run_3A8BupOzqpP0uLnYbvpTOgtiORW/steps/owner-create-biz/result",
+              "status": 200,
+              "requestBody": {
+                "status": "in_progress",
+                "startedAt": "2026-02-24T20:22:25.129Z",
+                "resultPayload": {
+                  "note": "Started owner-create-biz"
+                },
+                "assertionSummary": {
+                  "status": "in_progress"
+                }
+              },
+              "responseBody": {
+                "success": true,
+                "data": {
+                  "id": "saga_run_step_3A8Bur8wUahjJMDzpBfadCntVuo",
+                  "sagaRunId": "saga_run_3A8BupOzqpP0uLnYbvpTOgtiORW",
+                  "phaseKey": "owner-onboarding",
+                  "phaseOrder": 1,
+                  "phaseTitle": "Owner Onboarding",
+                  "stepKey": "owner-create-biz",
+                  "stepOrder": 2,
+                  "actorKey": "biz_owner",
+                  "instruction": "Using agents tools, create a biz representing The Virtual Fitness Class Subscription. Use name/slug derived from saga context.",
+                  "expectedResult": "Biz is created, owner is auto-added as member with owner role, and biz id is captured.",
+                  "status": "in_progress",
+                  "attemptCount": 1,
+                  "startedAt": "2026-02-24T20:22:25.129Z",
+                  "endedAt": null,
+                  "failureCode": null,
+                  "failureMessage": null,
+                  "resultPayload": {
+                    "note": "Started owner-create-biz"
+                  },
+                  "assertionSummary": {
+                    "status": "in_progress"
+                  },
+                  "metadata": {},
+                  "createdAt": "2026-02-24T20:22:22.755Z",
+                  "updatedAt": "2026-02-24T20:22:22.755Z",
+                  "deletedAt": null,
+                  "createdBy": null,
+                  "updatedBy": null,
+                  "deletedBy": null
+                },
+                "meta": {
+                  "requestId": "75df0651-b0e4-4058-a6bd-4bc4c2987d73",
+                  "timestamp": "2026-02-24T20:22:25.340Z"
+                }
+              },
+              "at": "2026-02-24T20:22:25.343Z"
+            },
+            {
+              "method": "GET",
+              "path": "/api/v1/bizes/3A8BsZ4uGy3DOzZ3gTAJcYZEL4y/booking-orders?perPage=100",
+              "status": 200,
+              "responseBody": {
+                "success": true,
+                "data": [
+                  {
+                    "id": "booking_order_3A8Bu8rDQTCUtaymFFZOmnQ9lb1",
+                    "bizId": "3A8BsZ4uGy3DOzZ3gTAJcYZEL4y",
+                    "offerId": "offer_3A8BtX1HX9ADwwIxzdTRm2vwvM7",
+                    "offerVersionId": "offer_version_3A8BtYmcJqdhtHUsBKtBrUKFTt5",
+                    "customerUserId": "CMOBpiXKt3OnjYM37RiSdFwmMVCR6uGF",
+                    "customerGroupAccountId": null,
+                    "status": "in_progress",
+                    "statusConfigValueId": null,
+                    "currency": "USD",
+                    "subtotalMinor": 15000,
+                    "taxMinor": 0,
+                    "feeMinor": 0,
+                    "discountMinor": 0,
+                    "totalMinor": 15000,
+                    "requestedStartAt": "2026-02-25T20:22:16.794Z",
+                    "requestedEndAt": "2026-02-25T21:12:16.794Z",
+                    "confirmedStartAt": "2026-02-25T20:22:16.794Z",
+                    "confirmedEndAt": "2026-02-25T21:12:16.794Z",
+                    "pricingSnapshot": {},
+                    "policySnapshot": {},
+                    "metadata": {},
+                    "createdAt": "2026-02-24T20:22:16.847Z",
+                    "updatedAt": "2026-02-24T20:22:16.847Z",
+                    "deletedAt": null,
+                    "createdBy": null,
+                    "updatedBy": null,
+                    "deletedBy": null
+                  },
+                  {
+                    "id": "booking_order_3A8Bto4kolKge03SMmJmWY9HAf0",
+                    "bizId": "3A8BsZ4uGy3DOzZ3gTAJcYZEL4y",
+                    "offerId": "offer_3A8BtX1HX9ADwwIxzdTRm2vwvM7",
+                    "offerVersionId": "offer_version_3A8BtYmcJqdhtHUsBKtBrUKFTt5",
+                    "customerUserId": "YSiIVPBsV6eHvUNisDc36NUhFvad0v6x",
+                    "customerGroupAccountId": null,
+                    "status": "confirmed",
+                    "statusConfigValueId": null,
+                    "currency": "USD",
+                    "subtotalMinor": 15000,
+                    "taxMinor": 0,
+                    "feeMinor": 0,
+                    "discountMinor": 0,
+                    "totalMinor": 15000,
+                    "requestedStartAt": "2026-02-25T20:22:14.317Z",
+                    "requestedEndAt": "2026-02-25T21:12:14.317Z",
+                    "confirmedStartAt": "2026-02-25T20:22:14.317Z",
+                    "confirmedEndAt": "2026-02-25T21:12:14.317Z",
+                    "pricingSnapshot": {},
+                    "policySnapshot": {},
+                    "metadata": {},
+                    "createdAt": "2026-02-24T20:22:14.338Z",
+                    "updatedAt": "2026-02-24T20:22:14.338Z",
+                    "deletedAt": null,
+                    "createdBy": null,
+                    "updatedBy": null,
+                    "deletedBy": null
+                  }
+                ],
+                "meta": {
+                  "requestId": "b8e4bf8e-adf4-49f5-9e48-8019c2e14219",
+                  "timestamp": "2026-02-24T20:22:25.341Z"
+                },
+                "pagination": {
+                  "page": 1,
+                  "perPage": 100,
+                  "total": 2,
+                  "hasMore": false
+                }
+              },
+              "at": "2026-02-24T20:22:25.346Z"
+            }
+          ]
+        }
+      },
+      "responseBody": {
+        "_truncated": true,
+        "_preview": "{\"success\":true,\"data\":{\"id\":\"saga_artifact_3A8BvQO6XuEkjDQ3EZsR5ZJk5Cc\",\"sagaRunId\":\"saga_run_3A8Bt7Cg76PWByXOjdWTEte13hN\",\"sagaRunStepId\":\"saga_run_step_3A8Bt6LJFghiaZ9SjIJ4jHCKXLn\",\"artifactType\":\"snapshot\",\"title\":\"Customer two performs concurrent booking attempt Snapshot\",\"storagePath\":\"testing/sagas/runs/saga_run_3A8Bt7Cg76PWByXOjdWTEte13hN/snapshots/2026-02-24T20-22-26-067Z-customer-two-concurrent-1771964546032.json\",\"contentType\":\"application/json\",\"bodyText\":\"{\\n  \\\"schemaVersion\\\": \\\"snapshot.v1\\\",\\n  \\\"screenKey\\\": \\\"customer-two-concurrent-1771964546032\\\",\\n  \\\"title\\\": \\\"Customer two performs concurrent booking attempt Snapshot\\\",\\n  \\\"generatedAt\\\": \\\"2026-02-24T20:22:26.045Z\\\",\\n  \\\"stepKey\\\": \\\"customer-two-concurrent\\\",\\n  \\\"status\\\": \\\"passed\\\",\\n  \\\"view\\\": {\\n    \\\"title\\\": \\\"Customer two performs concurrent booking attempt\\\",\\n    \\\"subtitle\\\": \\\"Second concurrent booking created.\\\",\\n    \\\"blocks\\\": [\\n      {\\n        \\\"type\\\": \\\"alert\\\",\\n        \\\"title\\\": \\\"Customer Two Concurrent completed\\\",\\n        \\\"message\\\": \\\"Second concurrent booking created.\\\",\\n        \\\"tone\\\": \\\"success\\\"\\n      },\\n      {\\n        \\\"type\\\": \\\"key_value\\\",\\n        \\\"title\\\": \\\"Booking confirmation\\\",\\n        \\\"items\\\": [\\n          {\\n            \\\"label\\\": \\\"Booking id\\\",\\n            \\\"value\\\": \\\"booking_order_3A8BvDAJe7oMxiBzDIJSYsItbox\\\"\\n          },\\n          {\\n            \\\"label\\\": \\\"Status\\\",\\n            \\\"value\\\": \\\"confirmed\\\"\\n          },\\n          {\\n            \\\"label\\\": \\\"Starts at\\\",\\n            \\\"value\\\": \\\"2026-02-25T20:22:25.369Z\\\"\\n          },\\n          {\\n            \\\"label\\\": \\\"Total\\\",\\n            \\\"value\\\": \\\"15000\\\"\\n          }\\n        ]\\n      },\\n      {\\n        \\\"type\\\": \\\"actions\\\",\\n        \\\"title\\\": \\\"Visible actions\\\",\\n        \\\"items\\\": [\\n          {\\n            \\\"label\\\": \\\"Download receipt\\\",\\n            \\\"kind\\\": \\\"secondary\\\",\\n            \\\"enabled\\\": true\\n          },\\n          {\\n            \\\"label\\\": \\\"Reschedule\\\",\\n            \\\"kind\\\": \\\"secondary\\\",\\n            \\\"enabled\\\": true\\n          },\\n          {\\n            \\\"label\\\": \\\"Cancel booking\\\",\\n            \\\"kind\\\": \\\"danger\\\",\\n            \\\"enabled\\\": true\\n          }\\n        ]\\n      },\\n      {\\n        \\\"type\\\": \\\"stats\\\",\\n        \\\"title\\\": \\\"What user sees at a glance\\\",\\n        \\\"items\\\": [\\n          {\\n            \\\"label\\\": \\\"SubtotalMinor\\\",\\n            \\\"value\\\": \\\"15000\\\"\\n          },\\n          {\\n            \\\"label\\\": \\\"TaxMinor\\\",\\n            \\\"value\\\": \\\"0\\\"\\n          },\\n          {\\n            \\\"label\\\": \\\"FeeMinor\\\",\\n            \\\"value\\\": \\\"0\\\"\\n          },\\n          {\\n            \\\"label\\\": \\\"DiscountMinor\\\",\\n            \\\"value\\\": \\\"0\\\"\\n          },\\n          {\\n            \\\"label\\\": \\\"TotalMinor\\\",\\n            \\\"value\\\": \\\"15000\\\"\\n          }\\n        ]\\n      },\\n      {\\n        \\\"type\\\": \\\"key_value\\\",\\n        \\\"title\\\": \\\"Screen details\\\",\\n        \\\"items\\\": [\\n          {\\n            \\\"label\\\": \\\"Id\\\",\\n            \\\"value\\\": \\\"booking_order_3A8BvDAJe7oMxiBzDIJSYsItbox\\\"\\n          },\\n          {\\n            \\\"label\\\": \\\"BizId\\\",\\n            \\\"value\\\": \\\"3A8BtUBquqzsnp6NTJzWRL4aRBw\\\"\\n          },\\n          {\\n            \\\"label\\\": \\\"OfferId\\\",\\n            \\\"value\\\": \\\"offer_3A8Budnn3KCiSmA86uv59279K3W\\\"\\n          },\\n          {\\n            \\\"label\\\": \\\"OfferVersionId\\\",\\n            \\\"value\\\": \\\"offer_version_3A8BujfsLlqpfveDBtGAMI0vu8L\\\"\\n          },\\n          {\\n            \\\"label\\\": \\\"CustomerUserId\\\",\\n            \\\"value\\\": \\\"J01F2hSGogYvww5DywbCHWZKvLapdlAL\\\"\\n          },\\n          {\\n            \\\"label\\\": \\\"CustomerGroupAccountId\\\",\\n            \\\"value\\\": \\\"null\\\"\\n          },\\n          {\\n            \\\"label\\\": \\\"Status\\\",\\n            \\\"value\\\": \\\"confirmed\\\"\\n          },\\n          {\\n            \\\"label\\\": \\\"StatusConfigValueId\\\",\\n            \\\"value\\\": \\\"null\\\"\\n          },\\n          {\\n            \\\"label\\\": \\\"Currency\\\",\\n            \\\"value\\\": \\\"USD\\\"\\n          },\\n          {\\n            \\\"label\\\": \\\"SubtotalMinor\\\",\\n            \\\"value\\\": \\\"15000\\\"\\n          },\\n          {\\n            \\\"label\\\": \\\"TaxMinor\\\",\\n            \\\"value\\\": \\\"0\\\"\\n          },\\n          {\\n            \\\"label\\\": \\\"FeeMinor\\\",\\n            \\\"value\\\": \\\"0\\\"\\n          },\\n          {\\n            \\\"label\\\": \\\"DiscountMinor\\\",\\n            \\\"value\\\": \\\"0\\\"\\n          },\\n          {\\n            \\\"label\\\": \\\"TotalMinor\\\",\\n            \\\"value\\\": \\\"15000\\\"\\n          },\\n          {\\n            \\\"label\\\": \\\"RequestedStartAt\\\",\\n            \\\"value\\\": \\\"2026-02-25T20:22:25.369Z\\\"\\n          },\\n          {\\n            \\\"label\\\": \\\"RequestedEndAt\\\",\\n            \\\"value\\\": \\\"2026-02-25T21:12:25.369Z\\\"\\n          }\\n        ]\\n      }\\n    ]\\n  },\\n  \\\"rawData\\\": {\\n    \\\"stepKey\\\": \\\"customer-two-concurrent\\\",\\n    \\\"resultPayload\\\": {\\n      \\\"note\\\": \\\"Second concurrent booking created.\\\",\\n      \\\"evidence\\\": {\\n        \\\"id\\\": \\\"booking_order_3A8BvDAJe7oMxiBzDIJSYsItbox\\\",\\n        \\\"bizId\\\": \\\"3A8BtUBquqzsnp6NTJzWRL4aRBw\\\",\\n        \\\"offerId\\\": \\\"offer_3A8Budnn3KCiSmA86uv59279K3W\\\",\\n        \\\"offerVersionId\\\": \\\"offer_version_3A8BujfsLlqpfveDBtGAMI0vu8L\\\",\\n        \\\"customerUserId\\\": \\\"J01F2hSGogYvww5DywbCHWZKvLapdlAL\\\",\\n        \\\"customerGroupAccountId\\\": null,\\n        \\\"status\\\": \\\"confirmed\\\",\\n        \\\"statusConfigValueId\\\": null,\\n        \\\"currency\\\": \\\"USD\\\",\\n        \\\"subtotalMinor\\\": 15000,\\n        \\\"taxMinor\\\": 0,\\n        \\\"feeMinor\\\": 0,\\n        \\\"discountMinor\\\": 0,\\n        \\\"totalMinor\\\": 15000,\\n        \\\"requestedStartAt\\\": \\\"2026-02-25T20:22:25.369Z\\\",\\n        \\\"requestedEndAt\\\": \\\"2026-02-25T21:12:25.369Z\\\",\\n        \\\"confirmedStartAt\\\": \\\"2026-02-25T20:22:25.369Z\\\",\\n        \\\"confirmedEndAt\\\": \\\"2026-02-25T21:12:25.369Z\\\",\\n        \\\"pricingSnapshot\\\": {},\\n        \\\"policySnapshot\\\": {},\\n        \\\"metadata\\\": {},\\n        \\\"createdAt\\\": \\\"2026-02-24T20:22:25.384Z\\\",\\n        \\\"updatedAt\\\": \\\"2026-02-24T20:22:25.384Z\\\",\\n        \\\"deletedAt\\\": null,\\n        \\\"createdBy\\\": null,\\n        \\\"updatedBy\\\": null,\\n        \\\"deletedBy\\\": null\\n      }\\n    },\\n    \\\"apiCalls\\\": [\\n      {\\n        \\\"method\\\": \\\"POST\\\",\\n        \\\"path\\\": \\\"/api/v1/sagas/runs/saga_run_3A8BtpYFDKrXrx9G1bTpld7zNmb/steps/owner-create-resources/result\\\",\\n        \\\"status\\\": 200,\\n        \\\"requestBody\\\": {\\n          \\\"status\\\": \\\"passed\\\",\\n          \\\"startedAt\\\": \\\"2026-02-24T20:22:24.987Z\\\",\\n          \\\"endedAt\\\": \\\"2026-02-24T20:22:24.987Z\\\",\\n          \\\"failureMessage\\\": null,\\n          \\\"resultPayload\\\": {\\n            \\\"note\\\": \\\"Host + asset resources created.\\\",\\n            \\\"evidence\\\": {\\n              \\\"hostId\\\": \\\"3A8Bv5JgjTTeAVVY1XkkqTVtaGB\\\",\\n              \\\"assetId\\\": \\\"3A8Bv7uTdjAFU6DbA1vBeyb25NA\\\"\\n            }\\n          },\\n          \\\"assertionSummary\\\": {\\n            \\\"status\\\": \\\"passed\\\",\\n            \\\"hasFailure\\\": false,\\n            \\\"assertionsPassed\\\": 1\\n          }\\n        },\\n        \\\"responseBody\\\": {\\n          \\\"success\\\": true,\\n          \\\"data\\\": {\\n            \\\"id\\\": \\\"saga_run_step_3A8Bu2wDLmdyrc3juouVACHidOt\\\",\\n            \\\"sagaRunId\\\": \\\"saga_run_3A8BtpYFDKrXrx9G1bTpld7zNmb\\\",\\n            \\\"phaseKey\\\": \\\"supply-and-team-setup\\\",\\n            \\\"phaseOrder\\\": 3,\\n            \\\"phaseTitle\\\": \\\"Supply And Team Setup\\\",\\n            \\\"stepKey\\\": \\\"owner-create-resources\\\",\\n            \\\"stepOrder\\\": 6,\\n            \\\"actorKey\\\": \\\"biz_owner\\\",\\n            \\\"instruction\\\": \\\"Create at least one host resource and one non-host resource (asset or venue) suitable for the UC.\\\",\\n            \\\"expectedResult\\\": \\\"Resources are created with expected type, location, and buffers.\\\",\\n            \\\"status\\\": \\\"passed\\\",\\n            \\\"attemptCount\\\": 1,\\n            \\\"startedAt\\\": \\\"2026-02-24T20:22:24.987Z\\\",\\n            \\\"endedAt\\\": \\\"2026-02-24T20:22:24.987Z\\\",\\n            \\\"failureCode\\\": null,\\n            \\\"failureMessage\\\": null,\\n            \\\"resultPayload\\\": {\\n              \\\"note\\\": \\\"Host + asset resources created.\\\",\\n              \\\"evidence\\\": {\\n                \\\"hostId\\\": \\\"3A8Bv5JgjTTeAVVY1XkkqTVtaGB\\\",\\n                \\\"assetId\\\": \\\"3A8Bv7uTdjAFU6DbA1vBeyb25NA\\\"\\n              }\\n            },\\n            \\\"assertionSummary\\\": {\\n              \\\"status\\\": \\\"passed\\\",\\n              \\\"hasFailure\\\": false,\\n              \\\"assertionsPassed\\\": 1\\n            },\\n            \\\"metadata\\\": {},\\n            \\\"createdAt\\\": \\\"2026-02-24T20:22:15.010Z\\\",\\n            \\\"updatedAt\\\": \\\"2026-02-24T20:22:15.010Z\\\",\\n            \\\"deletedAt\\\": null,\\n            \\\"createdBy\\\": null,\\n            \\\"updatedBy\\\": null,\\n            \\\"deletedBy\\\": null\\n          },\\n          \\\"meta\\\": {\\n            \\\"requestId\\\": \\\"59446974-52d7-4409-b8fb-43178f2e9269\\\",\\n            \\\"timestamp\\\": \\\"2026-02-24T20:22:25.165Z\\\"\\n          }\\n        },\\n        \\\"at\\\": \\\"2026-02-24T20:22:25.173Z\\\"\\n      },\\n      {\\n        \\\"method\\\": \\\"POST\\\",\\n        \\\"path\\\": \\\"/api/v1/bizes/3A8BsZ7oGyLSE4euXAVRpFtZkNX/channel-entity-links\\\",\\n        \\\"status\\\": 201,\\n        \\\"requestBody\\\": {\\n          \\\"channelAccountId\\\": \\\"channel_account_3A8Bv5UVfOkw78RK05SEAA5fExZ\\\",\\n          \\\"objectType\\\": \\\"custom\\\",\\n          \\\"localReferenceKey\\\": \\\"uc-uc-90-the-solo-entrepreneur-sarah-netw6k\\\",\\n          \\\"externalObjectId\\\": \\\"ext-8toa9xfixlr\\\",\\n          \\\"metadata\\\": {\\n            \\\"source\\\": \\\"saga-rerun\\\"\\n          }\\n        },\\n        \\\"responseBody\\\": {\\n          \\\"success\\\": true,\\n          \\\"data\\\": {\\n            \\\"id\\\": \\\"channel_link_3A8BvGs0ST56u5X4pj5Im5kmSrT\\\",\\n            \\\"bizId\\\": \\\"3A8BsZ7oGyLSE4euXAVRpFtZkNX\\\",\\n            \\\"channelAccountId\\\": \\\"channel_account_3A8Bv5UVfOkw78RK05SEAA5fExZ\\\",\\n            \\\"objectType\\\": \\\"custom\\\",\\n            \\\"offerVersionId\\\": null,\\n            \\\"bookingOrderId\\\": null,\\n            \\\"resourceId\\\": null,\\n            \\\"customerUserId\\\": null,\\n            \\\"localReferenceKey\\\": \\\"uc-uc-90-the-solo-entrepreneur-sarah-netw6k\\\",\\n            \\\"externalObjectId\\\": \\\"ext-8toa9xfixlr\\\",\\n            \\\"externalParentId\\\": null,\\n            \\\"syncHash\\\": null,\\n            \\\"isActive\\\": true,\\n            \\\"lastSyncedAt\\\": null,\\n            \\\"metadata\\\": {\\n              \\\"source\\\": \\\"saga-rerun\\\"\\n            },\\n            \\\"createdAt\\\": \\\"2026-02-24T20:22:25.164Z\\\",\\n            \\\"updatedAt\\\": \\\"2026-02-24T20:22:25.164Z\\\",\\n            \\\"deletedAt\\\": null,\\n            \\\"createdBy\\\": null,\\n            \\\"updatedBy\\\": null,\\n            \\\"deletedBy\\\": null\\n          },\\n          \\\"meta\\\": {\\n            \\\"requestId\\\": \\\"7a7012c8-9169-4469-8137-5491d65fe3f7\\\",\\n            \\\"timestamp\\\": \\\"2026-02-24T20:22:25.319Z\\\"\\n          }\\n        },\\n        \\\"at\\\": \\\"2026-02-24T20:22:25.320Z\\\"\\n      },\\n      {\\n        \\\"method\\\": \\\"POST\\\",\\n        \\\"path\\\": \\\"/api/v1/sagas/runs/saga_run_3A8BupOzqpP0uLnYbvpTOgtiORW/steps/owner-create-biz/result\\\",\\n        \\\"status\\\": 200,\\n        \\\"requestBody\\\": {\\n          \\\"status\\\": \\\"in_progress\\\",\\n          \\\"startedAt\\\": \\\"2026-02-24T20:22:25.129Z\\\",\\n          \\\"resultPayload\\\": {\\n            \\\"note\\\": \\\"Started owner-create-biz\\\"\\n          },\\n          \\\"assertionSummary\\\": {\\n            \\\"status\\\": \\\"in_progress\\\"\\n          }\\n        },\\n        \\\"responseBody\\\": {\\n          \\\"success\\\": true,\\n          \\\"data\\\": {\\n            \\\"id\\\": \\\"saga_run_step_3A8Bur8wUahjJMDzpBfadCntVuo\\\",\\n            \\\"sagaRunId\\\": \\\"saga_run_3A8BupOzqpP0uLnYbvpTOgtiORW\\\",\\n            \\\"phaseKey\\\": \\\"owner-onboarding\\\",\\n            \\\"phaseOrder\\\": 1,\\n            \\\"phaseTitle\\\": \\\"Owner Onboarding\\\",\\n            \\\"stepKey\\\": \\\"owner-create-biz\\\",\\n            \\\"stepOrder\\\": 2,\\n            \\\"actorKey\\\": \\\"biz_owner\\\",\\n            \\\"instruction\\\": \\\"Using agents tools, create a biz representing The Virtual Fitness Class Subscription. Use",
+        "_size": 17117
+      },
+      "at": "2026-02-24T20:22:26.275Z"
+    }
+  ]
+}

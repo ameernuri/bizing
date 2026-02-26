@@ -1,0 +1,363 @@
+{
+  "schemaVersion": "snapshot.v1",
+  "screenKey": "adversary-hold-abuse-1771947939346",
+  "title": "Adversary attempts demand/hold abuse Snapshot",
+  "generatedAt": "2026-02-24T15:45:39.353Z",
+  "stepKey": "adversary-hold-abuse",
+  "status": "passed",
+  "view": {
+    "title": "Adversary attempts demand/hold abuse",
+    "subtitle": "Repeated unauthorized hold attempts were blocked (403).",
+    "blocks": [
+      {
+        "type": "alert",
+        "title": "Adversary Hold Abuse completed",
+        "message": "Repeated unauthorized hold attempts were blocked (403).",
+        "tone": "success"
+      }
+    ]
+  },
+  "rawData": {
+    "stepKey": "adversary-hold-abuse",
+    "resultPayload": {
+      "note": "Repeated unauthorized hold attempts were blocked (403)."
+    },
+    "apiCalls": [
+      {
+        "method": "POST",
+        "path": "/api/v1/sagas/runs/saga_run_3A7eFqFLb8gJ4ktotUjsapwqgEg/steps/customer-two-concurrent/result",
+        "status": 200,
+        "requestBody": {
+          "status": "in_progress",
+          "startedAt": "2026-02-24T15:45:38.900Z",
+          "resultPayload": {
+            "note": "Started customer-two-concurrent"
+          },
+          "assertionSummary": {
+            "status": "in_progress"
+          }
+        },
+        "responseBody": {
+          "success": true,
+          "data": {
+            "id": "saga_run_step_3A7eFqOBmGu8ordKL7MkttEqyHL",
+            "sagaRunId": "saga_run_3A7eFqFLb8gJ4ktotUjsapwqgEg",
+            "phaseKey": "customer-lifecycle",
+            "phaseOrder": 5,
+            "phaseTitle": "Customer Lifecycle",
+            "stepKey": "customer-two-concurrent",
+            "stepOrder": 13,
+            "actorKey": "customer_2",
+            "instruction": "Customer two attempts booking overlapping demand for the same offer/resource window.",
+            "expectedResult": "System either books correctly under capacity rules or rejects with deterministic conflict response.",
+            "status": "in_progress",
+            "attemptCount": 1,
+            "startedAt": "2026-02-24T15:45:38.900Z",
+            "endedAt": null,
+            "failureCode": null,
+            "failureMessage": null,
+            "resultPayload": {
+              "note": "Started customer-two-concurrent"
+            },
+            "assertionSummary": {
+              "status": "in_progress"
+            },
+            "metadata": {},
+            "createdAt": "2026-02-24T15:45:34.726Z",
+            "updatedAt": "2026-02-24T15:45:34.726Z",
+            "deletedAt": null,
+            "createdBy": null,
+            "updatedBy": null,
+            "deletedBy": null
+          },
+          "meta": {
+            "requestId": "48c9741e-06ae-4ced-9559-a4c856f114bd",
+            "timestamp": "2026-02-24T15:45:38.927Z"
+          }
+        },
+        "at": "2026-02-24T15:45:38.931Z"
+      },
+      {
+        "method": "POST",
+        "path": "/api/v1/bizes/3A7eFl0xZ7fCyld9lWF0ZrivRfQ/booking-orders",
+        "status": 403,
+        "requestBody": {
+          "offerId": "offer_3A7eG5lMHWtVuwZ0FXk1hN0KkzU",
+          "offerVersionId": "offer_version_3A7eG1D0BM91VCf2Cle2vLuBr6B",
+          "status": "draft",
+          "subtotalMinor": 1000,
+          "taxMinor": 0,
+          "feeMinor": 0,
+          "discountMinor": 0,
+          "totalMinor": 1000,
+          "currency": "USD"
+        },
+        "responseBody": {
+          "success": false,
+          "error": {
+            "code": "FORBIDDEN",
+            "message": "You are not a member of this biz."
+          },
+          "meta": {
+            "requestId": "76ba8630-680f-4d38-a81f-1cb8d5c59432",
+            "timestamp": "2026-02-24T15:45:38.941Z"
+          }
+        },
+        "at": "2026-02-24T15:45:38.941Z"
+      },
+      {
+        "method": "POST",
+        "path": "/api/v1/sagas/runs/saga_run_3A7eFlh4XBFbCaAeiGK6ULagZav/snapshots",
+        "status": 201,
+        "requestBody": {
+          "stepKey": "customer-book-primary",
+          "screenKey": "customer-book-primary-1771947938906",
+          "title": "Customer one books primary offer Snapshot",
+          "status": "passed",
+          "route": "/sagas/saga_run_3A7eFlh4XBFbCaAeiGK6ULagZav/customer-book-primary",
+          "format": "json",
+          "view": {
+            "title": "Customer one books primary offer",
+            "subtitle": "Primary booking created.",
+            "blocks": [
+              {
+                "type": "alert",
+                "title": "Customer Book Primary completed",
+                "message": "Primary booking created.",
+                "tone": "success"
+              },
+              {
+                "type": "key_value",
+                "title": "Booking confirmation",
+                "items": [
+                  {
+                    "label": "Booking id",
+                    "value": "booking_order_3A7eGG40Ia00SrXHjFNIaos4EUv"
+                  },
+                  {
+                    "label": "Status",
+                    "value": "confirmed"
+                  },
+                  {
+                    "label": "Starts at",
+                    "value": "2026-02-25T15:45:38.507Z"
+                  },
+                  {
+                    "label": "Total",
+                    "value": "15000"
+                  }
+                ]
+              },
+              {
+                "type": "actions",
+                "title": "Visible actions",
+                "items": [
+                  {
+                    "label": "Download receipt",
+                    "kind": "secondary",
+                    "enabled": true
+                  },
+                  {
+                    "label": "Reschedule",
+                    "kind": "secondary",
+                    "enabled": true
+                  },
+                  {
+                    "label": "Cancel booking",
+                    "kind": "danger",
+                    "enabled": true
+                  }
+                ]
+              },
+              {
+                "type": "stats",
+                "title": "What user sees at a glance",
+                "items": [
+                  {
+                    "label": "SubtotalMinor",
+                    "value": "15000"
+                  },
+                  {
+                    "label": "TaxMinor",
+                    "value": "0"
+                  },
+                  {
+                    "label": "FeeMinor",
+                    "value": "0"
+                  },
+                  {
+                    "label": "DiscountMinor",
+                    "value": "0"
+                  },
+                  {
+                    "label": "TotalMinor",
+                    "value": "15000"
+                  }
+                ]
+              },
+              {
+                "type": "key_value",
+                "title": "Screen details",
+                "items": [
+                  {
+                    "label": "Id",
+                    "value": "booking_order_3A7eGG40Ia00SrXHjFNIaos4EUv"
+                  },
+                  {
+                    "label": "BizId",
+                    "value": "3A7eFsdnoRiFA28nJvsImCBqQG1"
+                  },
+                  {
+                    "label": "OfferId",
+                    "value": "offer_3A7eFzR337o5VRij49zpCBQAoyv"
+                  },
+                  {
+                    "label": "OfferVersionId",
+                    "value": "offer_version_3A7eG6Sd7Fnsh9Lcx26z39QBzeC"
+                  },
+                  {
+                    "label": "CustomerUserId",
+                    "value": "Eko5EmyZ2WpH3t0jv8iOqtGMVNZpwJ4Q"
+                  },
+                  {
+                    "label": "CustomerGroupAccountId",
+                    "value": "null"
+                  },
+                  {
+                    "label": "Status",
+                    "value": "confirmed"
+                  },
+                  {
+                    "label": "StatusConfigValueId",
+                    "value": "null"
+                  },
+                  {
+                    "label": "Currency",
+                    "value": "USD"
+                  },
+                  {
+                    "label": "SubtotalMinor",
+                    "value": "15000"
+                  },
+                  {
+                    "label": "TaxMinor",
+                    "value": "0"
+                  },
+                  {
+                    "label": "FeeMinor",
+                    "value": "0"
+                  },
+                  {
+                    "label": "DiscountMinor",
+                    "value": "0"
+                  },
+                  {
+                    "label": "TotalMinor",
+                    "value": "15000"
+                  },
+                  {
+                    "label": "RequestedStartAt",
+                    "value": "2026-02-25T15:45:38.507Z"
+                  },
+                  {
+                    "label": "RequestedEndAt",
+                    "value": "2026-02-25T16:35:38.507Z"
+                  }
+                ]
+              }
+            ]
+          },
+          "rawData": {
+            "stepKey": "customer-book-primary",
+            "resultPayload": {
+              "note": "Primary booking created.",
+              "evidence": {
+                "id": "booking_order_3A7eGG40Ia00SrXHjFNIaos4EUv",
+                "bizId": "3A7eFsdnoRiFA28nJvsImCBqQG1",
+                "offerId": "offer_3A7eFzR337o5VRij49zpCBQAoyv",
+                "offerVersionId": "offer_version_3A7eG6Sd7Fnsh9Lcx26z39QBzeC",
+                "customerUserId": "Eko5EmyZ2WpH3t0jv8iOqtGMVNZpwJ4Q",
+                "customerGroupAccountId": null,
+                "status": "confirmed",
+                "statusConfigValueId": null,
+                "currency": "USD",
+                "subtotalMinor": 15000,
+                "taxMinor": 0,
+                "feeMinor": 0,
+                "discountMinor": 0,
+                "totalMinor": 15000,
+                "requestedStartAt": "2026-02-25T15:45:38.507Z",
+                "requestedEndAt": "2026-02-25T16:35:38.507Z",
+                "confirmedStartAt": "2026-02-25T15:45:38.507Z",
+                "confirmedEndAt": "2026-02-25T16:35:38.507Z",
+                "pricingSnapshot": {},
+                "policySnapshot": {},
+                "metadata": {},
+                "createdAt": "2026-02-24T15:45:38.514Z",
+                "updatedAt": "2026-02-24T15:45:38.514Z",
+                "deletedAt": null,
+                "createdBy": null,
+                "updatedBy": null,
+                "deletedBy": null
+              }
+            },
+            "apiCalls": [
+              {
+                "method": "GET",
+                "path": "/api/v1/bizes/3A7eFqVlPGGFtFlBVhfcvj1gzFr/booking-orders",
+                "status": 403,
+                "responseBody": {
+                  "success": false,
+                  "error": {
+                    "code": "FORBIDDEN",
+                    "message": "You are not a member of this biz."
+                  },
+                  "meta": {
+                    "requestId": "cd80344a-6a23-45f1-aa19-500dfde916c6",
+                    "timestamp": "2026-02-24T15:45:38.507Z"
+                  }
+                },
+                "at": "2026-02-24T15:45:38.509Z"
+              }
+            ]
+          }
+        },
+        "responseBody": {
+          "success": true,
+          "data": {
+            "id": "saga_artifact_3A7eGEpt1DR3a5vkWDz86VKvoTQ",
+            "sagaRunId": "saga_run_3A7eFlh4XBFbCaAeiGK6ULagZav",
+            "sagaRunStepId": "saga_run_step_3A7eFkfKhj3FPMdxiSnIU5Gka9y",
+            "artifactType": "snapshot",
+            "title": "Customer one books primary offer Snapshot",
+            "storagePath": "testing/sagas/runs/saga_run_3A7eFlh4XBFbCaAeiGK6ULagZav/snapshots/2026-02-24T15-45-38-919Z-customer-book-primary-1771947938906.json",
+            "contentType": "application/json",
+            "bodyText": "{\n  \"schemaVersion\": \"snapshot.v1\",\n  \"screenKey\": \"customer-book-primary-1771947938906\",\n  \"title\": \"Customer one books primary offer Snapshot\",\n  \"generatedAt\": \"2026-02-24T15:45:38.914Z\",\n  \"stepKey\": \"customer-book-primary\",\n  \"status\": \"passed\",\n  \"view\": {\n    \"title\": \"Customer one books primary offer\",\n    \"subtitle\": \"Primary booking created.\",\n    \"blocks\": [\n      {\n        \"type\": \"alert\",\n        \"title\": \"Customer Book Primary completed\",\n        \"message\": \"Primary booking created.\",\n        \"tone\": \"success\"\n      },\n      {\n        \"type\": \"key_value\",\n        \"title\": \"Booking confirmation\",\n        \"items\": [\n          {\n            \"label\": \"Booking id\",\n            \"value\": \"booking_order_3A7eGG40Ia00SrXHjFNIaos4EUv\"\n          },\n          {\n            \"label\": \"Status\",\n            \"value\": \"confirmed\"\n          },\n          {\n            \"label\": \"Starts at\",\n            \"value\": \"2026-02-25T15:45:38.507Z\"\n          },\n          {\n            \"label\": \"Total\",\n            \"value\": \"15000\"\n          }\n        ]\n      },\n      {\n        \"type\": \"actions\",\n        \"title\": \"Visible actions\",\n        \"items\": [\n          {\n            \"label\": \"Download receipt\",\n            \"kind\": \"secondary\",\n            \"enabled\": true\n          },\n          {\n            \"label\": \"Reschedule\",\n            \"kind\": \"secondary\",\n            \"enabled\": true\n          },\n          {\n            \"label\": \"Cancel booking\",\n            \"kind\": \"danger\",\n            \"enabled\": true\n          }\n        ]\n      },\n      {\n        \"type\": \"stats\",\n        \"title\": \"What user sees at a glance\",\n        \"items\": [\n          {\n            \"label\": \"SubtotalMinor\",\n            \"value\": \"15000\"\n          },\n          {\n            \"label\": \"TaxMinor\",\n            \"value\": \"0\"\n          },\n          {\n            \"label\": \"FeeMinor\",\n            \"value\": \"0\"\n          },\n          {\n            \"label\": \"DiscountMinor\",\n            \"value\": \"0\"\n          },\n          {\n            \"label\": \"TotalMinor\",\n            \"value\": \"15000\"\n          }\n        ]\n      },\n      {\n        \"type\": \"key_value\",\n        \"title\": \"Screen details\",\n        \"items\": [\n          {\n            \"label\": \"Id\",\n            \"value\": \"booking_order_3A7eGG40Ia00SrXHjFNIaos4EUv\"\n          },\n          {\n            \"label\": \"BizId\",\n            \"value\": \"3A7eFsdnoRiFA28nJvsImCBqQG1\"\n          },\n          {\n            \"label\": \"OfferId\",\n            \"value\": \"offer_3A7eFzR337o5VRij49zpCBQAoyv\"\n          },\n          {\n            \"label\": \"OfferVersionId\",\n            \"value\": \"offer_version_3A7eG6Sd7Fnsh9Lcx26z39QBzeC\"\n          },\n          {\n            \"label\": \"CustomerUserId\",\n            \"value\": \"Eko5EmyZ2WpH3t0jv8iOqtGMVNZpwJ4Q\"\n          },\n          {\n            \"label\": \"CustomerGroupAccountId\",\n            \"value\": \"null\"\n          },\n          {\n            \"label\": \"Status\",\n            \"value\": \"confirmed\"\n          },\n          {\n            \"label\": \"StatusConfigValueId\",\n            \"value\": \"null\"\n          },\n          {\n            \"label\": \"Currency\",\n            \"value\": \"USD\"\n          },\n          {\n            \"label\": \"SubtotalMinor\",\n            \"value\": \"15000\"\n          },\n          {\n            \"label\": \"TaxMinor\",\n            \"value\": \"0\"\n          },\n          {\n            \"label\": \"FeeMinor\",\n            \"value\": \"0\"\n          },\n          {\n            \"label\": \"DiscountMinor\",\n            \"value\": \"0\"\n          },\n          {\n            \"label\": \"TotalMinor\",\n            \"value\": \"15000\"\n          },\n          {\n            \"label\": \"RequestedStartAt\",\n            \"value\": \"2026-02-25T15:45:38.507Z\"\n          },\n          {\n            \"label\": \"RequestedEndAt\",\n            \"value\": \"2026-02-25T16:35:38.507Z\"\n          }\n        ]\n      }\n    ]\n  },\n  \"rawData\": {\n    \"stepKey\": \"customer-book-primary\",\n    \"resultPayload\": {\n      \"note\": \"Primary booking created.\",\n      \"evidence\": {\n        \"id\": \"booking_order_3A7eGG40Ia00SrXHjFNIaos4EUv\",\n        \"bizId\": \"3A7eFsdnoRiFA28nJvsImCBqQG1\",\n        \"offerId\": \"offer_3A7eFzR337o5VRij49zpCBQAoyv\",\n        \"offerVersionId\": \"offer_version_3A7eG6Sd7Fnsh9Lcx26z39QBzeC\",\n        \"customerUserId\": \"Eko5EmyZ2WpH3t0jv8iOqtGMVNZpwJ4Q\",\n        \"customerGroupAccountId\": null,\n        \"status\": \"confirmed\",\n        \"statusConfigValueId\": null,\n        \"currency\": \"USD\",\n        \"subtotalMinor\": 15000,\n        \"taxMinor\": 0,\n        \"feeMinor\": 0,\n        \"discountMinor\": 0,\n        \"totalMinor\": 15000,\n        \"requestedStartAt\": \"2026-02-25T15:45:38.507Z\",\n        \"requestedEndAt\": \"2026-02-25T16:35:38.507Z\",\n        \"confirmedStartAt\": \"2026-02-25T15:45:38.507Z\",\n        \"confirmedEndAt\": \"2026-02-25T16:35:38.507Z\",\n        \"pricingSnapshot\": {},\n        \"policySnapshot\": {},\n        \"metadata\": {},\n        \"createdAt\": \"2026-02-24T15:45:38.514Z\",\n        \"updatedAt\": \"2026-02-24T15:45:38.514Z\",\n        \"deletedAt\": null,\n        \"createdBy\": null,\n        \"updatedBy\": null,\n        \"deletedBy\": null\n      }\n    },\n    \"apiCalls\": [\n      {\n        \"method\": \"GET\",\n        \"path\": \"/api/v1/bizes/3A7eFqVlPGGFtFlBVhfcvj1gzFr/booking-orders\",\n        \"status\": 403,\n        \"responseBody\": {\n          \"success\": false,\n          \"error\": {\n            \"code\": \"FORBIDDEN\",\n            \"message\": \"You are not a member of this biz.\"\n          },\n          \"meta\": {\n            \"requestId\": \"cd80344a-6a23-45f1-aa19-500dfde916c6\",\n            \"timestamp\": \"2026-02-24T15:45:38.507Z\"\n          }\n        },\n        \"at\": \"2026-02-24T15:45:38.509Z\"\n      }\n    ]\n  },\n  \"metadata\": {}\n}\n",
+            "byteSize": 5626,
+            "checksum": "2c8129206e8e673d4bdb770bf68d9e00731cc3d8410e256b96a83674249c62b7",
+            "capturedAt": "2026-02-24T15:45:38.926Z",
+            "metadata": {
+              "format": "json",
+              "stepKey": "customer-book-primary",
+              "screenKey": "customer-book-primary-1771947938906",
+              "sourceFormat": "v1",
+              "schemaVersion": "snapshot.v1"
+            },
+            "createdAt": "2026-02-24T15:45:38.926Z",
+            "updatedAt": "2026-02-24T15:45:38.926Z",
+            "deletedAt": null,
+            "createdBy": null,
+            "updatedBy": null,
+            "deletedBy": null
+          },
+          "meta": {
+            "requestId": "d36adc8c-3490-4183-ba20-03edd584484a",
+            "timestamp": "2026-02-24T15:45:38.944Z"
+          }
+        },
+        "at": "2026-02-24T15:45:38.945Z"
+      }
+    ]
+  },
+  "metadata": {}
+}

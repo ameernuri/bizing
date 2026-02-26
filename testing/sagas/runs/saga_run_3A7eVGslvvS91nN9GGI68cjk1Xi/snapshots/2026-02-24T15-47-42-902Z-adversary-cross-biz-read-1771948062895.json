@@ -1,0 +1,605 @@
+{
+  "schemaVersion": "snapshot.v1",
+  "screenKey": "adversary-cross-biz-read-1771948062895",
+  "title": "Adversary attempts unauthorized cross-biz read Snapshot",
+  "generatedAt": "2026-02-24T15:47:42.899Z",
+  "stepKey": "adversary-cross-biz-read",
+  "status": "passed",
+  "view": {
+    "title": "Adversary attempts unauthorized cross-biz read",
+    "subtitle": "Cross-biz read blocked for non-member account.",
+    "blocks": [
+      {
+        "type": "alert",
+        "title": "Adversary Cross Biz Read completed",
+        "message": "Cross-biz read blocked for non-member account.",
+        "tone": "success"
+      },
+      {
+        "type": "key_value",
+        "title": "Screen details",
+        "items": [
+          {
+            "label": "AdversaryUserId",
+            "value": "95HM7Y7aVMrtZ0NikF0Pon4ctvurHQhp"
+          }
+        ]
+      }
+    ]
+  },
+  "rawData": {
+    "stepKey": "adversary-cross-biz-read",
+    "resultPayload": {
+      "note": "Cross-biz read blocked for non-member account.",
+      "evidence": {
+        "adversaryUserId": "95HM7Y7aVMrtZ0NikF0Pon4ctvurHQhp"
+      }
+    },
+    "apiCalls": [
+      {
+        "method": "POST",
+        "path": "/api/v1/sagas/runs/saga_run_3A7eV4cygSj3V6q7JR0RWxl2dwA/steps/owner-revenue-sanity/result",
+        "status": 200,
+        "requestBody": {
+          "status": "passed",
+          "startedAt": "2026-02-24T15:47:42.491Z",
+          "endedAt": "2026-02-24T15:47:42.491Z",
+          "failureMessage": null,
+          "resultPayload": {
+            "note": "Revenue sanity computed from booking orders.",
+            "evidence": {
+              "bookingCount": 2,
+              "totalMinor": 30000,
+              "currency": "USD"
+            }
+          },
+          "assertionSummary": {
+            "status": "passed",
+            "hasFailure": false,
+            "assertionsPassed": 1
+          }
+        },
+        "responseBody": {
+          "success": true,
+          "data": {
+            "id": "saga_run_step_3A7eV5tOvDCwBlKyZJ9gUdXeCBi",
+            "sagaRunId": "saga_run_3A7eV4cygSj3V6q7JR0RWxl2dwA",
+            "phaseKey": "reporting-and-closeout",
+            "phaseOrder": 8,
+            "phaseTitle": "Reporting And Closeout",
+            "stepKey": "owner-revenue-sanity",
+            "stepOrder": 18,
+            "actorKey": "biz_owner",
+            "instruction": "Read reporting endpoints and verify booking totals, counts, and statuses align with saga actions.",
+            "expectedResult": "Reported metrics match booking actions and highlight any discrepancies for schema/API iteration.",
+            "status": "passed",
+            "attemptCount": 1,
+            "startedAt": "2026-02-24T15:47:42.491Z",
+            "endedAt": "2026-02-24T15:47:42.491Z",
+            "failureCode": null,
+            "failureMessage": null,
+            "resultPayload": {
+              "note": "Revenue sanity computed from booking orders.",
+              "evidence": {
+                "currency": "USD",
+                "totalMinor": 30000,
+                "bookingCount": 2
+              }
+            },
+            "assertionSummary": {
+              "status": "passed",
+              "hasFailure": false,
+              "assertionsPassed": 1
+            },
+            "metadata": {},
+            "createdAt": "2026-02-24T15:47:36.649Z",
+            "updatedAt": "2026-02-24T15:47:36.649Z",
+            "deletedAt": null,
+            "createdBy": null,
+            "updatedBy": null,
+            "deletedBy": null
+          },
+          "meta": {
+            "requestId": "662193b9-4c04-40bb-ae3f-392a74bfccd0",
+            "timestamp": "2026-02-24T15:47:42.636Z"
+          }
+        },
+        "at": "2026-02-24T15:47:42.645Z"
+      },
+      {
+        "method": "POST",
+        "path": "/api/v1/sagas/runs/saga_run_3A7eVaNphhZA1uz3oZuWeKmq0TH/traces",
+        "status": 201,
+        "requestBody": {
+          "stepKey": "owner-configure-pricing",
+          "title": "Configure default pricing rules API Trace",
+          "trace": {
+            "stepKey": "owner-configure-pricing",
+            "callCount": 6,
+            "calls": [
+              {
+                "method": "POST",
+                "path": "/api/v1/bizes/3A7eVGM4sH7N2qunIzgaEgZdRLd/booking-orders",
+                "status": 403,
+                "requestBody": {
+                  "offerId": "offer_3A7eVdI2VaZqdoPZ7wNazcmfFaJ",
+                  "offerVersionId": "offer_version_3A7eVg41p6X4L3KLz5s1Lyr68nz",
+                  "status": "draft",
+                  "subtotalMinor": 1000,
+                  "taxMinor": 0,
+                  "feeMinor": 0,
+                  "discountMinor": 0,
+                  "totalMinor": 1000,
+                  "currency": "USD"
+                },
+                "responseBody": {
+                  "success": false,
+                  "error": {
+                    "code": "FORBIDDEN",
+                    "message": "You are not a member of this biz."
+                  },
+                  "meta": {
+                    "requestId": "db1243fa-5315-4506-9861-82f960aecf78",
+                    "timestamp": "2026-02-24T15:47:42.607Z"
+                  }
+                },
+                "at": "2026-02-24T15:47:42.608Z"
+              },
+              {
+                "method": "POST",
+                "path": "/api/v1/sagas/runs/saga_run_3A7eVGslvvS91nN9GGI68cjk1Xi/steps/customer-advanced-payment-flow/result",
+                "status": 200,
+                "requestBody": {
+                  "status": "blocked",
+                  "startedAt": "2026-02-24T15:47:42.460Z",
+                  "endedAt": "2026-02-24T15:47:42.460Z",
+                  "failureMessage": "customer-advanced-payment-flow: Advanced payment/tender allocation API is not exposed yet.",
+                  "resultPayload": {
+                    "note": "Step blocked: customer-advanced-payment-flow: Advanced payment/tender allocation API is not exposed yet.",
+                    "evidence": {
+                      "error": "customer-advanced-payment-flow: Advanced payment/tender allocation API is not exposed yet.",
+                      "failed": false,
+                      "blocked": true,
+                      "expected": "Split tender + gift/credit/payment allocation tools",
+                      "foundToolCount": 43
+                    }
+                  },
+                  "assertionSummary": {
+                    "status": "blocked",
+                    "hasFailure": true,
+                    "assertionsPassed": 0
+                  }
+                },
+                "responseBody": {
+                  "success": true,
+                  "data": {
+                    "id": "saga_run_step_3A7eVGAmxBMHYTuXQb1HcTkKwR2",
+                    "sagaRunId": "saga_run_3A7eVGslvvS91nN9GGI68cjk1Xi",
+                    "phaseKey": "customer-lifecycle",
+                    "phaseOrder": 5,
+                    "phaseTitle": "Customer Lifecycle",
+                    "stepKey": "customer-advanced-payment-flow",
+                    "stepOrder": 15,
+                    "actorKey": "customer_1",
+                    "instruction": "Execute advanced payment path (split tender and/or tip/gift/credit entitlement usage) and persist allocation evidence.",
+                    "expectedResult": "Payment trace clearly links payer, tender mix, and booking/order amounts with no ambiguity.",
+                    "status": "blocked",
+                    "attemptCount": 1,
+                    "startedAt": "2026-02-24T15:47:42.460Z",
+                    "endedAt": "2026-02-24T15:47:42.460Z",
+                    "failureCode": null,
+                    "failureMessage": "customer-advanced-payment-flow: Advanced payment/tender allocation API is not exposed yet.",
+                    "resultPayload": {
+                      "note": "Step blocked: customer-advanced-payment-flow: Advanced payment/tender allocation API is not exposed yet.",
+                      "evidence": {
+                        "error": "customer-advanced-payment-flow: Advanced payment/tender allocation API is not exposed yet.",
+                        "failed": false,
+                        "blocked": true,
+                        "expected": "Split tender + gift/credit/payment allocation tools",
+                        "foundToolCount": 43
+                      }
+                    },
+                    "assertionSummary": {
+                      "status": "blocked",
+                      "hasFailure": true,
+                      "assertionsPassed": 0
+                    },
+                    "metadata": {},
+                    "createdAt": "2026-02-24T15:47:37.379Z",
+                    "updatedAt": "2026-02-24T15:47:37.379Z",
+                    "deletedAt": null,
+                    "createdBy": null,
+                    "updatedBy": null,
+                    "deletedBy": null
+                  },
+                  "meta": {
+                    "requestId": "9d36ecce-6c47-48a5-8c11-f88a005ff886",
+                    "timestamp": "2026-02-24T15:47:42.609Z"
+                  }
+                },
+                "at": "2026-02-24T15:47:42.609Z"
+              },
+              {
+                "method": "GET",
+                "path": "/api/auth/get-session",
+                "status": 200,
+                "responseBody": {
+                  "session": {
+                    "expiresAt": "2026-03-03T15:47:42.596Z",
+                    "token": "QIV2gUwV1q2fip2aVP6u3VKo98IqLZP4",
+                    "createdAt": "2026-02-24T15:47:42.596Z",
+                    "updatedAt": "2026-02-24T15:47:42.596Z",
+                    "ipAddress": "",
+                    "userAgent": "node",
+                    "userId": "JjCcf3BkUrL8JwPzXSMKVcVB2dU4xLWa",
+                    "activeOrganizationId": null,
+                    "impersonatedBy": null,
+                    "id": "g4V5wm6DTKmCfCAeKAGzgXruMAWZO9JS"
+                  },
+                  "user": {
+                    "name": "adversary-uc-83-the-solo-entrepreneur-sarah",
+                    "email": "adversary-uc-83-the-solo-entrepreneur-sarah-1771948062489-nmtdmn@example.com",
+                    "emailVerified": false,
+                    "image": null,
+                    "createdAt": "2026-02-24T15:47:42.589Z",
+                    "updatedAt": "2026-02-24T15:47:42.589Z",
+                    "role": "user",
+                    "banned": false,
+                    "banReason": null,
+                    "banExpires": null,
+                    "id": "JjCcf3BkUrL8JwPzXSMKVcVB2dU4xLWa"
+                  }
+                },
+                "at": "2026-02-24T15:47:42.614Z"
+              },
+              {
+                "method": "POST",
+                "path": "/api/v1/sagas/runs/saga_run_3A7eV4cygSj3V6q7JR0RWxl2dwA/steps/owner-revenue-sanity/result",
+                "status": 200,
+                "requestBody": {
+                  "status": "in_progress",
+                  "startedAt": "2026-02-24T15:47:42.491Z",
+                  "resultPayload": {
+                    "note": "Started owner-revenue-sanity"
+                  },
+                  "assertionSummary": {
+                    "status": "in_progress"
+                  }
+                },
+                "responseBody": {
+                  "success": true,
+                  "data": {
+                    "id": "saga_run_step_3A7eV5tOvDCwBlKyZJ9gUdXeCBi",
+                    "sagaRunId": "saga_run_3A7eV4cygSj3V6q7JR0RWxl2dwA",
+                    "phaseKey": "reporting-and-closeout",
+                    "phaseOrder": 8,
+                    "phaseTitle": "Reporting And Closeout",
+                    "stepKey": "owner-revenue-sanity",
+                    "stepOrder": 18,
+                    "actorKey": "biz_owner",
+                    "instruction": "Read reporting endpoints and verify booking totals, counts, and statuses align with saga actions.",
+                    "expectedResult": "Reported metrics match booking actions and highlight any discrepancies for schema/API iteration.",
+                    "status": "in_progress",
+                    "attemptCount": 1,
+                    "startedAt": "2026-02-24T15:47:42.491Z",
+                    "endedAt": null,
+                    "failureCode": null,
+                    "failureMessage": null,
+                    "resultPayload": {
+                      "note": "Started owner-revenue-sanity"
+                    },
+                    "assertionSummary": {
+                      "status": "in_progress"
+                    },
+                    "metadata": {},
+                    "createdAt": "2026-02-24T15:47:36.649Z",
+                    "updatedAt": "2026-02-24T15:47:36.649Z",
+                    "deletedAt": null,
+                    "createdBy": null,
+                    "updatedBy": null,
+                    "deletedBy": null
+                  },
+                  "meta": {
+                    "requestId": "ab135caf-be29-4316-ad3e-07207c9b4b45",
+                    "timestamp": "2026-02-24T15:47:42.612Z"
+                  }
+                },
+                "at": "2026-02-24T15:47:42.615Z"
+              },
+              {
+                "method": "POST",
+                "path": "/api/v1/bizes/3A7eVGM4sH7N2qunIzgaEgZdRLd/booking-orders",
+                "status": 403,
+                "requestBody": {
+                  "offerId": "offer_3A7eVdI2VaZqdoPZ7wNazcmfFaJ",
+                  "offerVersionId": "offer_version_3A7eVg41p6X4L3KLz5s1Lyr68nz",
+                  "status": "draft",
+                  "subtotalMinor": 1000,
+                  "taxMinor": 0,
+                  "feeMinor": 0,
+                  "discountMinor": 0,
+                  "totalMinor": 1000,
+                  "currency": "USD"
+                },
+                "responseBody": {
+                  "success": false,
+                  "error": {
+                    "code": "FORBIDDEN",
+                    "message": "You are not a member of this biz."
+                  },
+                  "meta": {
+                    "requestId": "0d22ae62-7647-4597-bb70-3472304e19ed",
+                    "timestamp": "2026-02-24T15:47:42.613Z"
+                  }
+                },
+                "at": "2026-02-24T15:47:42.616Z"
+              },
+              {
+                "method": "GET",
+                "path": "/api/v1/bizes/3A7eVECt9DUwxAQq1Lt0OqkBhL4/booking-orders",
+                "status": 403,
+                "responseBody": {
+                  "success": false,
+                  "error": {
+                    "code": "FORBIDDEN",
+                    "message": "You are not a member of this biz."
+                  },
+                  "meta": {
+                    "requestId": "e2378604-469e-4f62-8238-3deb73615694",
+                    "timestamp": "2026-02-24T15:47:42.618Z"
+                  }
+                },
+                "at": "2026-02-24T15:47:42.621Z"
+              }
+            ]
+          },
+          "metadata": {
+            "source": "rerun-sagas.ts"
+          }
+        },
+        "responseBody": {
+          "success": true,
+          "data": {
+            "id": "saga_artifact_3A7eVvVDuiYBJpwK7BfaiQXMMnh",
+            "sagaRunId": "saga_run_3A7eVaNphhZA1uz3oZuWeKmq0TH",
+            "sagaRunStepId": "saga_run_step_3A7eVZsAIcmSh1GLHoaOrUDygiD",
+            "artifactType": "api_trace",
+            "title": "Configure default pricing rules API Trace",
+            "storagePath": "testing/sagas/runs/saga_run_3A7eVaNphhZA1uz3oZuWeKmq0TH/artifacts/1771948062634-Configure_default_pricing_rules_API_Trace.json",
+            "contentType": "application/json",
+            "bodyText": "{\n  \"stepKey\": \"owner-configure-pricing\",\n  \"callCount\": 6,\n  \"calls\": [\n    {\n      \"method\": \"POST\",\n      \"path\": \"/api/v1/bizes/3A7eVGM4sH7N2qunIzgaEgZdRLd/booking-orders\",\n      \"status\": 403,\n      \"requestBody\": {\n        \"offerId\": \"offer_3A7eVdI2VaZqdoPZ7wNazcmfFaJ\",\n        \"offerVersionId\": \"offer_version_3A7eVg41p6X4L3KLz5s1Lyr68nz\",\n        \"status\": \"draft\",\n        \"subtotalMinor\": 1000,\n        \"taxMinor\": 0,\n        \"feeMinor\": 0,\n        \"discountMinor\": 0,\n        \"totalMinor\": 1000,\n        \"currency\": \"USD\"\n      },\n      \"responseBody\": {\n        \"success\": false,\n        \"error\": {\n          \"code\": \"FORBIDDEN\",\n          \"message\": \"You are not a member of this biz.\"\n        },\n        \"meta\": {\n          \"requestId\": \"db1243fa-5315-4506-9861-82f960aecf78\",\n          \"timestamp\": \"2026-02-24T15:47:42.607Z\"\n        }\n      },\n      \"at\": \"2026-02-24T15:47:42.608Z\"\n    },\n    {\n      \"method\": \"POST\",\n      \"path\": \"/api/v1/sagas/runs/saga_run_3A7eVGslvvS91nN9GGI68cjk1Xi/steps/customer-advanced-payment-flow/result\",\n      \"status\": 200,\n      \"requestBody\": {\n        \"status\": \"blocked\",\n        \"startedAt\": \"2026-02-24T15:47:42.460Z\",\n        \"endedAt\": \"2026-02-24T15:47:42.460Z\",\n        \"failureMessage\": \"customer-advanced-payment-flow: Advanced payment/tender allocation API is not exposed yet.\",\n        \"resultPayload\": {\n          \"note\": \"Step blocked: customer-advanced-payment-flow: Advanced payment/tender allocation API is not exposed yet.\",\n          \"evidence\": {\n            \"error\": \"customer-advanced-payment-flow: Advanced payment/tender allocation API is not exposed yet.\",\n            \"failed\": false,\n            \"blocked\": true,\n            \"expected\": \"Split tender + gift/credit/payment allocation tools\",\n            \"foundToolCount\": 43\n          }\n        },\n        \"assertionSummary\": {\n          \"status\": \"blocked\",\n          \"hasFailure\": true,\n          \"assertionsPassed\": 0\n        }\n      },\n      \"responseBody\": {\n        \"success\": true,\n        \"data\": {\n          \"id\": \"saga_run_step_3A7eVGAmxBMHYTuXQb1HcTkKwR2\",\n          \"sagaRunId\": \"saga_run_3A7eVGslvvS91nN9GGI68cjk1Xi\",\n          \"phaseKey\": \"customer-lifecycle\",\n          \"phaseOrder\": 5,\n          \"phaseTitle\": \"Customer Lifecycle\",\n          \"stepKey\": \"customer-advanced-payment-flow\",\n          \"stepOrder\": 15,\n          \"actorKey\": \"customer_1\",\n          \"instruction\": \"Execute advanced payment path (split tender and/or tip/gift/credit entitlement usage) and persist allocation evidence.\",\n          \"expectedResult\": \"Payment trace clearly links payer, tender mix, and booking/order amounts with no ambiguity.\",\n          \"status\": \"blocked\",\n          \"attemptCount\": 1,\n          \"startedAt\": \"2026-02-24T15:47:42.460Z\",\n          \"endedAt\": \"2026-02-24T15:47:42.460Z\",\n          \"failureCode\": null,\n          \"failureMessage\": \"customer-advanced-payment-flow: Advanced payment/tender allocation API is not exposed yet.\",\n          \"resultPayload\": {\n            \"note\": \"Step blocked: customer-advanced-payment-flow: Advanced payment/tender allocation API is not exposed yet.\",\n            \"evidence\": {\n              \"error\": \"customer-advanced-payment-flow: Advanced payment/tender allocation API is not exposed yet.\",\n              \"failed\": false,\n              \"blocked\": true,\n              \"expected\": \"Split tender + gift/credit/payment allocation tools\",\n              \"foundToolCount\": 43\n            }\n          },\n          \"assertionSummary\": {\n            \"status\": \"blocked\",\n            \"hasFailure\": true,\n            \"assertionsPassed\": 0\n          },\n          \"metadata\": {},\n          \"createdAt\": \"2026-02-24T15:47:37.379Z\",\n          \"updatedAt\": \"2026-02-24T15:47:37.379Z\",\n          \"deletedAt\": null,\n          \"createdBy\": null,\n          \"updatedBy\": null,\n          \"deletedBy\": null\n        },\n        \"meta\": {\n          \"requestId\": \"9d36ecce-6c47-48a5-8c11-f88a005ff886\",\n          \"timestamp\": \"2026-02-24T15:47:42.609Z\"\n        }\n      },\n      \"at\": \"2026-02-24T15:47:42.609Z\"\n    },\n    {\n      \"method\": \"GET\",\n      \"path\": \"/api/auth/get-session\",\n      \"status\": 200,\n      \"responseBody\": {\n        \"session\": {\n          \"expiresAt\": \"2026-03-03T15:47:42.596Z\",\n          \"token\": \"QIV2gUwV1q2fip2aVP6u3VKo98IqLZP4\",\n          \"createdAt\": \"2026-02-24T15:47:42.596Z\",\n          \"updatedAt\": \"2026-02-24T15:47:42.596Z\",\n          \"ipAddress\": \"\",\n          \"userAgent\": \"node\",\n          \"userId\": \"JjCcf3BkUrL8JwPzXSMKVcVB2dU4xLWa\",\n          \"activeOrganizationId\": null,\n          \"impersonatedBy\": null,\n          \"id\": \"g4V5wm6DTKmCfCAeKAGzgXruMAWZO9JS\"\n        },\n        \"user\": {\n          \"name\": \"adversary-uc-83-the-solo-entrepreneur-sarah\",\n          \"email\": \"adversary-uc-83-the-solo-entrepreneur-sarah-1771948062489-nmtdmn@example.com\",\n          \"emailVerified\": false,\n          \"image\": null,\n          \"createdAt\": \"2026-02-24T15:47:42.589Z\",\n          \"updatedAt\": \"2026-02-24T15:47:42.589Z\",\n          \"role\": \"user\",\n          \"banned\": false,\n          \"banReason\": null,\n          \"banExpires\": null,\n          \"id\": \"JjCcf3BkUrL8JwPzXSMKVcVB2dU4xLWa\"\n        }\n      },\n      \"at\": \"2026-02-24T15:47:42.614Z\"\n    },\n    {\n      \"method\": \"POST\",\n      \"path\": \"/api/v1/sagas/runs/saga_run_3A7eV4cygSj3V6q7JR0RWxl2dwA/steps/owner-revenue-sanity/result\",\n      \"status\": 200,\n      \"requestBody\": {\n        \"status\": \"in_progress\",\n        \"startedAt\": \"2026-02-24T15:47:42.491Z\",\n        \"resultPayload\": {\n          \"note\": \"Started owner-revenue-sanity\"\n        },\n        \"assertionSummary\": {\n          \"status\": \"in_progress\"\n        }\n      },\n      \"responseBody\": {\n        \"success\": true,\n        \"data\": {\n          \"id\": \"saga_run_step_3A7eV5tOvDCwBlKyZJ9gUdXeCBi\",\n          \"sagaRunId\": \"saga_run_3A7eV4cygSj3V6q7JR0RWxl2dwA\",\n          \"phaseKey\": \"reporting-and-closeout\",\n          \"phaseOrder\": 8,\n          \"phaseTitle\": \"Reporting And Closeout\",\n          \"stepKey\": \"owner-revenue-sanity\",\n          \"stepOrder\": 18,\n          \"actorKey\": \"biz_owner\",\n          \"instruction\": \"Read reporting endpoints and verify booking totals, counts, and statuses align with saga actions.\",\n          \"expectedResult\": \"Reported metrics match booking actions and highlight any discrepancies for schema/API iteration.\",\n          \"status\": \"in_progress\",\n          \"attemptCount\": 1,\n          \"startedAt\": \"2026-02-24T15:47:42.491Z\",\n          \"endedAt\": null,\n          \"failureCode\": null,\n          \"failureMessage\": null,\n          \"resultPayload\": {\n            \"note\": \"Started owner-revenue-sanity\"\n          },\n          \"assertionSummary\": {\n            \"status\": \"in_progress\"\n          },\n          \"metadata\": {},\n          \"createdAt\": \"2026-02-24T15:47:36.649Z\",\n          \"updatedAt\": \"2026-02-24T15:47:36.649Z\",\n          \"deletedAt\": null,\n          \"createdBy\": null,\n          \"updatedBy\": null,\n          \"deletedBy\": null\n        },\n        \"meta\": {\n          \"requestId\": \"ab135caf-be29-4316-ad3e-07207c9b4b45\",\n          \"timestamp\": \"2026-02-24T15:47:42.612Z\"\n        }\n      },\n      \"at\": \"2026-02-24T15:47:42.615Z\"\n    },\n    {\n      \"method\": \"POST\",\n      \"path\": \"/api/v1/bizes/3A7eVGM4sH7N2qunIzgaEgZdRLd/booking-orders\",\n      \"status\": 403,\n      \"requestBody\": {\n        \"offerId\": \"offer_3A7eVdI2VaZqdoPZ7wNazcmfFaJ\",\n        \"offerVersionId\": \"offer_version_3A7eVg41p6X4L3KLz5s1Lyr68nz\",\n        \"status\": \"draft\",\n        \"subtotalMinor\": 1000,\n        \"taxMinor\": 0,\n        \"feeMinor\": 0,\n        \"discountMinor\": 0,\n        \"totalMinor\": 1000,\n        \"currency\": \"USD\"\n      },\n      \"responseBody\": {\n        \"success\": false,\n        \"error\": {\n          \"code\": \"FORBIDDEN\",\n          \"message\": \"You are not a member of this biz.\"\n        },\n        \"meta\": {\n          \"requestId\": \"0d22ae62-7647-4597-bb70-3472304e19ed\",\n          \"timestamp\": \"2026-02-24T15:47:42.613Z\"\n        }\n      },\n      \"at\": \"2026-02-24T15:47:42.616Z\"\n    },\n    {\n      \"method\": \"GET\",\n      \"path\": \"/api/v1/bizes/3A7eVECt9DUwxAQq1Lt0OqkBhL4/booking-orders\",\n      \"status\": 403,\n      \"responseBody\": {\n        \"success\": false,\n        \"error\": {\n          \"code\": \"FORBIDDEN\",\n          \"message\": \"You are not a member of this biz.\"\n        },\n        \"meta\": {\n          \"requestId\": \"e2378604-469e-4f62-8238-3deb73615694\",\n          \"timestamp\": \"2026-02-24T15:47:42.618Z\"\n        }\n      },\n      \"at\": \"2026-02-24T15:47:42.621Z\"\n    }\n  ]\n}\n",
+            "byteSize": 8509,
+            "checksum": "6fb707be8cb294aa2e684ca7739f2bdcb5cd8e6b22e2c53987e0b55fdf258629",
+            "capturedAt": "2026-02-24T15:47:42.636Z",
+            "metadata": {
+              "source": "rerun-sagas.ts"
+            },
+            "createdAt": "2026-02-24T15:47:42.636Z",
+            "updatedAt": "2026-02-24T15:47:42.636Z",
+            "deletedAt": null,
+            "createdBy": null,
+            "updatedBy": null,
+            "deletedBy": null
+          },
+          "meta": {
+            "requestId": "eb8f812c-40f2-44cb-90ff-8319915be1de",
+            "timestamp": "2026-02-24T15:47:42.648Z"
+          }
+        },
+        "at": "2026-02-24T15:47:42.649Z"
+      },
+      {
+        "method": "POST",
+        "path": "/api/v1/sagas/runs/saga_run_3A7eVHcJJL9KT238IiJrBNAFIvu/traces",
+        "status": 201,
+        "requestBody": {
+          "_truncated": true,
+          "_preview": "{\"stepKey\":\"adversary-cross-biz-read\",\"title\":\"Adversary attempts unauthorized cross-biz read API Trace\",\"trace\":{\"stepKey\":\"adversary-cross-biz-read\",\"callCount\":2,\"calls\":[{\"method\":\"POST\",\"path\":\"/api/v1/sagas/runs/saga_run_3A7eV4cygSj3V6q7JR0RWxl2dwA/traces\",\"status\":201,\"requestBody\":{\"_truncated\":true,\"_preview\":\"{\\\"stepKey\\\":\\\"owner-revenue-sanity\\\",\\\"title\\\":\\\"Owner validates financial/reporting outputs API Trace\\\",\\\"trace\\\":{\\\"stepKey\\\":\\\"owner-revenue-sanity\\\",\\\"callCount\\\":6,\\\"calls\\\":[{\\\"method\\\":\\\"POST\\\",\\\"path\\\":\\\"/api/v1/sagas/runs/saga_run_3A7eV9hRTBb4fH2kPGji14EVqG5/traces\\\",\\\"status\\\":201,\\\"requestBody\\\":{\\\"_truncated\\\":true,\\\"_preview\\\":\\\"{\\\\\\\"stepKey\\\\\\\":\\\\\\\"member-review-bookings\\\\\\\",\\\\\\\"title\\\\\\\":\\\\\\\"Biz member reviews and updates booking status API Trace\\\\\\\",\\\\\\\"trace\\\\\\\":{\\\\\\\"stepKey\\\\\\\":\\\\\\\"member-review-bookings\\\\\\\",\\\\\\\"callCount\\\\\\\":1,\\\\\\\"calls\\\\\\\":[{\\\\\\\"method\\\\\\\":\\\\\\\"GET\\\\\\\",\\\\\\\"path\\\\\\\":\\\\\\\"/api/v1/agents/tools\\\\\\\",\\\\\\\"status\\\\\\\":200,\\\\\\\"responseBody\\\\\\\":{\\\\\\\"_truncated\\\\\\\":true,\\\\\\\"_preview\\\\\\\":\\\\\\\"{\\\\\\\\\\\\\\\"success\\\\\\\\\\\\\\\":true,\\\\\\\\\\\\\\\"data\\\\\\\\\\\\\\\":[{\\\\\\\\\\\\\\\"name\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"bizing.bizes.list\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"description\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"List bizes available to the authenticated user.\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"method\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"GET\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"path\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"/api/v1/bizes\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"tags\\\\\\\\\\\\\\\":[\\\\\\\\\\\\\\\"bizes\\\\\\\\\\\\\\\"],\\\\\\\\\\\\\\\"parameters\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"object\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"properties\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"page\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"number\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"default\\\\\\\\\\\\\\\":1},\\\\\\\\\\\\\\\"perPage\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"number\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"default\\\\\\\\\\\\\\\":20},\\\\\\\\\\\\\\\"status\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"string\\\\\\\\\\\\\\\"},\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"string\\\\\\\\\\\\\\\"}}}},{\\\\\\\\\\\\\\\"name\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"bizing.bizes.create\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"description\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Create a biz and make current user owner.\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"method\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"POST\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"path\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"/api/v1/bizes\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"tags\\\\\\\\\\\\\\\":[\\\\\\\\\\\\\\\"bizes\\\\\\\\\\\\\\\"],\\\\\\\\\\\\\\\"parameters\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"object\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"properties\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"name\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"string\\\\\\\\\\\\\\\"},\\\\\\\\\\\\\\\"slug\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"string\\\\\\\\\\\\\\\"},\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"string\\\\\\\\\\\\\\\"},\\\\\\\\\\\\\\\"timezone\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"string\\\\\\\\\\\\\\\"},\\\\\\\\\\\\\\\"currency\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"string\\\\\\\\\\\\\\\"}},\\\\\\\\\\\\\\\"required\\\\\\\\\\\\\\\":[\\\\\\\\\\\\\\\"name\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"slug\\\\\\\\\\\\\\\"]}},{\\\\\\\\\\\\\\\"name\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"bizing.auth.me\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"description\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Get authenticated user context, memberships, active biz, and effective permissions.\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"method\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"GET\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"path\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"/api/v1/auth/me\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"tags\\\\\\\\\\\\\\\":[\\\\\\\\\\\\\\\"auth\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"acl\\\\\\\\\\\\\\\"],\\\\\\\\\\\\\\\"parameters\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"object\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"properties\\\\\\\\\\\\\\\":{}}},{\\\\\\\\\\\\\\\"name\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"bizing.auth.switchActiveBiz\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"description\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Switch active biz context for the current session.\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"method\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"PATCH\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"path\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"/api/v1/auth/active-biz\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"tags\\\\\\\\\\\\\\\":[\\\\\\\\\\\\\\\"auth\\\\\\\\\\\\\\\"],\\\\\\\\\\\\\\\"parameters\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"object\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"properties\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"bizId\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"string\\\\\\\\\\\\\\\"}},\\\\\\\\\\\\\\\"required\\\\\\\\\\\\\\\":[\\\\\\\\\\\\\\\"bizId\\\\\\\\\\\\\\\"]}},{\\\\\\\\\\\\\\\"name\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"bizing.auth.apiKeys.list\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"description\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"List machine API keys owned by current user.\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"method\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"GET\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"path\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"/api/v1/auth/api-keys\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"tags\\\\\\\\\\\\\\\":[\\\\\\\\\\\\\\\"auth\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"machine\\\\\\\\\\\\\\\"],\\\\\\\\\\\\\\\"parameters\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"object\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"properties\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"includeRevoked\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"boolean\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"default\\\\\\\\\\\\\\\":false},\\\\\\\\\\\\\\\"bizId\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"string\\\\\\\\\\\\\\\"},\\\\\\\\\\\\\\\"limit\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"number\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"default\\\\\\\\\\\\\\\":100}}}},{\\\\\\\\\\\\\\\"name\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"bizing.auth.apiKeys.create\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"description\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Create one machine API key (raw secret returned once).\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"method\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"POST\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"path\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"/api/v1/auth/api-keys\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"tags\\\\\\\\\\\\\\\":[\\\\\\\\\\\\\\\"auth\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"machine\\\\\\\\\\\\\\\"],\\\\\\\\\\\\\\\"parameters\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"object\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"properties\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"label\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"string\\\\\\\\\\\\\\\"},\\\\\\\\\\\\\\\"description\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"string\\\\\\\\\\\\\\\"},\\\\\\\\\\\\\\\"bizId\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"string\\\\\\\\\\\\\\\"},\\\\\\\\\\\\\\\"scopes\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"array\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"items\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"string\\\\\\\\\\\\\\\"}},\\\\\\\\\\\\\\\"expiresAt\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"string\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"description\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"ISO datetime\\\\\\\\\\\\\\\"},\\\\\\\\\\\\\\\"allowDirectApiKeyAuth\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"boolean\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"default\\\\\\\\\\\\\\\":false},\\\\\\\\\\\\\\\"metadata\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"object\\\\\\\\\\\\\\\"}},\\\\\\\\\\\\\\\"required\\\\\\\\\\\\\\\":[\\\\\\\\\\\\\\\"label\\\\\\\\\\\\\\\"]}},{\\\\\\\\\\\\\\\"name\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"bizing.auth.apiKeys.revoke\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"description\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Revoke one API key and all child short-lived tokens.\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"method\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"POST\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"path\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"/api/v1/auth/api-keys/{apiCredentialId}/revoke\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"tags\\\\\\\\\\\\\\\":[\\\\\\\\\\\\\\\"auth\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"machine\\\\\\\\\\\\\\\"],\\\\\\\\\\\\\\\"parameters\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"object\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"properties\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"apiCredentialId\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"string\\\\\\\\\\\\\\\"},\\\\\\\\\\\\\\\"reason\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"string\\\\\\\\\\\\\\\"}},\\\\\\\\\\\\\\\"required\\\\\\\\\\\\\\\":[\\\\\\\\\\\\\\\"apiCredentialId\\\\\\\\\\\\\\\"]}},{\\\\\\\\\\\\\\\"name\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"bizing.auth.tokens.exchange\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"description\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Exchange an API key for a short-lived bearer token. Supports session + apiCredentialId or direct x-api-key auth.\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"method\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"POST\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"path\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"/api/v1/auth/tokens/exchange\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"tags\\\\\\\\\\\\\\\":[\\\\\\\\\\\\\\\"auth\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"machine\\\\\\\\\\\\\\\"],\\\\\\\\\\\\\\\"parameters\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"object\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"properties\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"apiCredentialId\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"string\\\\\\\\\\\\\\\"},\\\\\\\\\\\\\\\"apiKey\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"string\\\\\\\\\\\\\\\"},\\\\\\\\\\\\\\\"scopes\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"array\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"items\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"string\\\\\\\\\\\\\\\"}},\\\\\\\\\\\\\\\"ttlSeconds\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"number\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"default\\\\\\\\\\\\\\\":900},\\\\\\\\\\\\\\\"bizId\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"string\\\\\\\\\\\\\\\"},\\\\\\\\\\\\\\\"reason\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"string\\\\\\\\\\\\\\\"}}}},{\\\\\\\\\\\\\\\"name\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"bizing.auth.tokens.revoke\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"description\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Revoke one short-lived machine access token.\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"method\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"POST\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"path\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"/api/v1/auth/tokens/{tokenId}/revoke\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"tags\\\\\\\\\\\\\\\":[\\\\\\\\\\\\\\\"auth\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"machine\\\\\\\\\\\\\\\"],\\\\\\\\\\\\\\\"parameters\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"object\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"properties\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"tokenId\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"string\\\\\\\\\\\\\\\"},\\\\\\\\\\\\\\\"reason\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"string\\\\\\\\\\\\\\\"}},\\\\\\\\\\\\\\\"required\\\\\\\\\\\\\\\":[\\\\\\\\\\\\\\\"tokenId\\\\\\\\\\\\\\\"]}},{\\\\\\\\\\\\\\\"name\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"bizing.acl.biz.roles.list\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"description\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"List ACL role definitions available to one biz.\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"method\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"GET\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"path\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"/api/v1/bizes/{bizId}/acl/roles\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"tags\\\\\\\\\\\\\\\":[\\\\\\\\\\\\\\\"acl\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"biz\\\\\\\\\\\\\\\"],\\\\\\\\\\\\\\\"parameters\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"object\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"properties\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"bizId\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"string\\\\\\\\\\\\\\\"}},\\\\\\\\\\\\\\\"required\\\\\\\\\\\\\\\":[\\\\\\\\\\\\\\\"bizId\\\\\\\\\\\\\\\"]}},{\\\\\\\\\\\\\\\"name\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"bizing.acl.biz.roles.create\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"description\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Create biz/location/resource/subject scoped ACL role definition.\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"method\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"POST\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"path\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"/api/v1/bizes/{bizId}/acl/roles\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"tags\\\\\\\\\\\\\\\":[\\\\\\\\\\\\\\\"acl\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"biz\\\\\\\\\\\\\\\"],\\\\\\\\\\\\\\\"parameters\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"object\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"properties\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"bizId\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"string\\\\\\\\\\\\\\\"},\\\\\\\\\\\\\\\"roleKey\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"string\\\\\\\\\\\\\\\"},\\\\\\\\\\\\\\\"name\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"string\\\\\\\\\\\\\\\"},\\\\\\\\\\\\\\\"scopeType\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"string\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"enum\\\\\\\\\\\\\\\":[\\\\\\\\\\\\\\\"biz\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"location\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"resource\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"subject\\\\\\\\\\\\\\\"]},\\\\\\\\\\\\\\\"locationId\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"string\\\\\\\\\\\\\\\"},\\\\\\\\\\\\\\\"resourceId\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"string\\\\\\\\\\\\\\\"},\\\\\\\\\\\\\\\"scopeSubjectType\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"string\\\\\\\\\\\\\\\"},\\\\\\\\\\\\\\\"scopeSubjectId\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"string\\\\\\\\\\\\\\\"},\\\\\\\\\\\\\\\"description\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"string\\\\\\\\\\\\\\\"}},\\\\\\\\\\\\\\\"required\\\\\\\\\\\\\\\":[\\\\\\\\\\\\\\\"bizId\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"roleKey\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"name\\\\\\\\\\\\\\\"]}},{\\\\\\\\\\\\\\\"name\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"bizing.acl.biz.rolePermissions.replace\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"description\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Replace/update one biz role permission set.\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"method\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"PUT\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"path\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"/api/v1/bizes/{bizId}/acl/roles/{roleId}/permissions\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"tags\\\\\\\\\\\\\\\":[\\\\\\\\\\\\\\\"acl\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"biz\\\\\\\\\\\\\\\"],\\\\\\\\\\\\\\\"parameters\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"object\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"properties\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"bizId\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"string\\\\\\\\\\\\\\\"},\\\\\\\\\\\\\\\"roleId\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"string\\\\\\\\\\\\\\\"},\\\\\\\\\\\\\\\"permissions\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"array\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"items\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"object\\\\\\\\\\\\\\\"}}},\\\\\\\\\\\\\\\"required\\\\\\\\\\\\\\\":[\\\\\\\\\\\\\\\"bizId\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"roleId\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"permissions\\\\\\\\\\\\\\\"]}},{\\\\\\\\\\\\\\\"name\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"bizing.acl.biz.assignments.create\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"description\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Assign ACL role to a user at biz/location/resource/subject scope.\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"method\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"POST\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"path\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"/api/v1/bizes/{bizId}/acl/assignments\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"tags\\\\\\\\\\\\\\\":[\\\\\\\\\\\\\\\"acl\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"biz\\\\\\\\\\\\\\\"],\\\\\\\\\\\\\\\"parameters\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"object\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"properties\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"bizId\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"string\\\\\\\\\\\\\\\"},\\\\\\\\\\\\\\\"userId\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"string\\\\\\\\\\\\\\\"},\\\\\\\\\\\\\\\"roleDefinitionId\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"string\\\\\\\\\\\\\\\"},\\\\\\\\\\\\\\\"scopeType\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"string\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"enum\\\\\\\\\\\\\\\":[\\\\\\\\\\\\\\\"biz\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"location\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"resource\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"subject\\\\\\\\\\\\\\\"]},\\\\\\\\\\\\\\\"locationId\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"string\\\\\\\\\\\\\\\"},\\\\\\\\\\\\\\\"resourceId\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"string\\\\\\\\\\\\\\\"},\\\\\\\\\\\\\\\"scopeSubjectType\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"string\\\\\\\\\\\\\\\"},\\\\\\\\\\\\\\\"scopeSubjectId\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"string\\\\\\\\\\\\\\\"}},\\\\\\\\\\\\\\\"required\\\\\\\\\\\\\\\":[\\\\\\\\\\\\\\\"bizId\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"userId\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"roleDefinitionId\\\\\\\\\\\\\\\"]}},{\\\\\\\\\\\\\\\"name\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"bizing.acl.biz.mappings.replace\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"description\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Replace membership role -> ACL role mappings for one biz.\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"method\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"PUT\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"path\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"/api/v1/b",
+          "_size": 67401
+        },
+        "responseBody": {
+          "_truncated": true,
+          "_preview": "{\"success\":true,\"data\":{\"id\":\"saga_artifact_3A7eVtsGCpuJrhQh4etb3WAZTxa\",\"sagaRunId\":\"saga_run_3A7eVHcJJL9KT238IiJrBNAFIvu\",\"sagaRunStepId\":\"saga_run_step_3A7eVCKc5w7yGPcgt1gg15FmMCC\",\"artifactType\":\"api_trace\",\"title\":\"Adversary attempts unauthorized cross-biz read API Trace\",\"storagePath\":\"testing/sagas/runs/saga_run_3A7eVHcJJL9KT238IiJrBNAFIvu/artifacts/1771948062630-Adversary_attempts_unauthorized_cross-biz_read_API_Trace.json\",\"contentType\":\"application/json\",\"bodyText\":\"{\\n  \\\"stepKey\\\": \\\"adversary-cross-biz-read\\\",\\n  \\\"callCount\\\": 2,\\n  \\\"calls\\\": [\\n    {\\n      \\\"method\\\": \\\"POST\\\",\\n      \\\"path\\\": \\\"/api/v1/sagas/runs/saga_run_3A7eV4cygSj3V6q7JR0RWxl2dwA/traces\\\",\\n      \\\"status\\\": 201,\\n      \\\"requestBody\\\": {\\n        \\\"_truncated\\\": true,\\n        \\\"_preview\\\": \\\"{\\\\\\\"stepKey\\\\\\\":\\\\\\\"owner-revenue-sanity\\\\\\\",\\\\\\\"title\\\\\\\":\\\\\\\"Owner validates financial/reporting outputs API Trace\\\\\\\",\\\\\\\"trace\\\\\\\":{\\\\\\\"stepKey\\\\\\\":\\\\\\\"owner-revenue-sanity\\\\\\\",\\\\\\\"callCount\\\\\\\":6,\\\\\\\"calls\\\\\\\":[{\\\\\\\"method\\\\\\\":\\\\\\\"POST\\\\\\\",\\\\\\\"path\\\\\\\":\\\\\\\"/api/v1/sagas/runs/saga_run_3A7eV9hRTBb4fH2kPGji14EVqG5/traces\\\\\\\",\\\\\\\"status\\\\\\\":201,\\\\\\\"requestBody\\\\\\\":{\\\\\\\"_truncated\\\\\\\":true,\\\\\\\"_preview\\\\\\\":\\\\\\\"{\\\\\\\\\\\\\\\"stepKey\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"member-review-bookings\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"title\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Biz member reviews and updates booking status API Trace\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"trace\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"stepKey\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"member-review-bookings\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"callCount\\\\\\\\\\\\\\\":1,\\\\\\\\\\\\\\\"calls\\\\\\\\\\\\\\\":[{\\\\\\\\\\\\\\\"method\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"GET\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"path\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"/api/v1/agents/tools\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"status\\\\\\\\\\\\\\\":200,\\\\\\\\\\\\\\\"responseBody\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"_truncated\\\\\\\\\\\\\\\":true,\\\\\\\\\\\\\\\"_preview\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"{\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"success\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":true,\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"data\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":[{\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"name\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"bizing.bizes.list\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"description\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"List bizes available to the authenticated user.\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"method\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"GET\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"path\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"/api/v1/bizes\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"tags\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":[\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"bizes\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"],\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"parameters\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"object\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"properties\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"page\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"number\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"default\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":1},\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"perPage\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"number\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"default\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":20},\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"status\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"string\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"},\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"string\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"}}}},{\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"name\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"bizing.bizes.create\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"description\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"Create a biz and make current user owner.\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"method\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"POST\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"path\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"/api/v1/bizes\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"tags\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":[\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"bizes\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"],\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"parameters\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"object\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"properties\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"name\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"string\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"},\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"slug\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"string\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"},\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"string\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"},\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"timezone\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"string\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"},\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"currency\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"string\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"}},\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"required\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":[\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"name\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"slug\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"]}},{\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"name\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"bizing.auth.me\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"description\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"Get authenticated user context, memberships, active biz, and effective permissions.\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"method\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"GET\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"path\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"/api/v1/auth/me\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"tags\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":[\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"auth\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"acl\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"],\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"parameters\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"object\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"properties\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":{}}},{\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"name\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"bizing.auth.switchActiveBiz\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"description\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"Switch active biz context for the current session.\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"method\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"PATCH\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"path\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"/api/v1/auth/active-biz\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"tags\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":[\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"auth\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"],\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"parameters\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"object\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"properties\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"bizId\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"string\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"}},\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"required\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":[\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"bizId\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"]}},{\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"name\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"bizing.auth.apiKeys.list\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"description\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"List machine API keys owned by current user.\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"method\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"GET\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"path\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"/api/v1/auth/api-keys\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"tags\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":[\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"auth\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"machine\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"],\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"parameters\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"object\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"properties\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"includeRevoked\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"boolean\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"default\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":false},\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"bizId\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"string\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"},\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"limit\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"number\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"default\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":100}}}},{\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"name\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"bizing.auth.apiKeys.create\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"description\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"Create one machine API key (raw secret returned once).\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"method\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"POST\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"path\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"/api/v1/auth/api-keys\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"tags\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":[\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"auth\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"machine\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"],\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"parameters\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"object\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"properties\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"label\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"string\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"},\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"description\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"string\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"},\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"bizId\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"string\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"},\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"scopes\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"array\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"items\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"string\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"}},\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"expiresAt\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"string\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"description\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"ISO datetime\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"},\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"allowDirectApiKeyAuth\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"boolean\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"default\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":false},\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"metadata\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"object\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"}},\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"required\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":[\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"label\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"]}},{\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"name\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"bizing.auth.apiKeys.revoke\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"description\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"Revoke one API key and all child short-lived tokens.\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"method\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"POST\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"path\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"/api/v1/auth/api-keys/{apiCredentialId}/revoke\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"tags\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":[\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"auth\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"machine\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"],\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"parameters\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"object\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"properties\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"apiCredentialId\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"string\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"},\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"reason\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"string\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"}},\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"required\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":[\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"apiCredentialId\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"]}},{\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"name\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"bizing.auth.tokens.exchange\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"description\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"Exchange an API key for a short-lived bearer token. Supports session + apiCredentialId or direct x-api-key auth.\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"method\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"POST\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"path\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"/api/v1/auth/tokens/exchange\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"tags\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":[\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"auth\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"machine\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"],\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"parameters\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"object\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"properties\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"apiCredentialId\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"string\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"},\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"apiKey\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"string\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"},\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"scopes\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"array\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"items\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"string\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"}},\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"ttlSeconds\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"number\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"default\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":900},\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"bizId\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"string\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"},\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"reason\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"string\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"}}}},{\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"name\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"bizing.auth.tokens.revoke\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"description\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"Revoke one short-lived machine access token.\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"method\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"POST\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"path\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"/api/v1/auth/tokens/{tokenId}/revoke\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"tags\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":[\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"auth\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"machine\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"],\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"parameters\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"ty",
+          "_size": 105872
+        },
+        "at": "2026-02-24T15:47:42.745Z"
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/bizes/3A7eVFD1BFMqGF87gdukoFE4CqW/resources",
+        "status": 200,
+        "responseBody": {
+          "success": true,
+          "data": [
+            {
+              "id": "3A7eVLb4Yh2JbQYtAnTJB5Bv5QO",
+              "bizId": "3A7eVFD1BFMqGF87gdukoFE4CqW",
+              "locationId": "3A7eVBHAJCSSrUAMgKbEFk2cHSP",
+              "type": "host",
+              "name": "Primary Host",
+              "slug": "host-f9t53bga",
+              "description": null,
+              "timezone": "UTC",
+              "statusDefinitionId": null,
+              "hostUserId": null,
+              "groupAccountId": null,
+              "assetId": null,
+              "venueId": null,
+              "capacity": 1,
+              "allowSimultaneousBookings": false,
+              "maxSimultaneousBookings": null,
+              "bufferBeforeMinutes": 10,
+              "bufferAfterMinutes": 10,
+              "metadata": {},
+              "createdAt": "2026-02-24T15:47:38.299Z",
+              "updatedAt": "2026-02-24T15:47:38.299Z",
+              "deletedAt": null,
+              "createdBy": null,
+              "updatedBy": null,
+              "deletedBy": null
+            },
+            {
+              "id": "3A7eVNFL3WNGgzhVJ8hNS1EztoE",
+              "bizId": "3A7eVFD1BFMqGF87gdukoFE4CqW",
+              "locationId": "3A7eVBHAJCSSrUAMgKbEFk2cHSP",
+              "type": "asset",
+              "name": "Primary Asset",
+              "slug": "asset-1q8o2qqf",
+              "description": null,
+              "timezone": "UTC",
+              "statusDefinitionId": null,
+              "hostUserId": null,
+              "groupAccountId": null,
+              "assetId": null,
+              "venueId": null,
+              "capacity": 1,
+              "allowSimultaneousBookings": false,
+              "maxSimultaneousBookings": null,
+              "bufferBeforeMinutes": 5,
+              "bufferAfterMinutes": 5,
+              "metadata": {},
+              "createdAt": "2026-02-24T15:47:38.510Z",
+              "updatedAt": "2026-02-24T15:47:38.510Z",
+              "deletedAt": null,
+              "createdBy": null,
+              "updatedBy": null,
+              "deletedBy": null
+            }
+          ],
+          "meta": {
+            "requestId": "ca9db40b-5129-4ad2-8704-21754923073d",
+            "timestamp": "2026-02-24T15:47:42.751Z"
+          },
+          "pagination": {
+            "page": 1,
+            "perPage": 20,
+            "total": 2,
+            "hasMore": false
+          }
+        },
+        "at": "2026-02-24T15:47:42.752Z"
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/bizes/3A7eVFD1BFMqGF87gdukoFE4CqW/offers",
+        "status": 200,
+        "responseBody": {
+          "success": true,
+          "data": [
+            {
+              "id": "offer_3A7eVY0Qc9pmNAbge4vDWcnVoYN",
+              "bizId": "3A7eVFD1BFMqGF87gdukoFE4CqW",
+              "name": "Primary Service Offer",
+              "slug": "offer-2cpvb51q",
+              "description": null,
+              "executionMode": "slot",
+              "executionModeConfigValueId": null,
+              "status": "active",
+              "statusConfigValueId": null,
+              "isPublished": true,
+              "timezone": "UTC",
+              "metadata": {},
+              "createdAt": "2026-02-24T15:47:39.125Z",
+              "updatedAt": "2026-02-24T15:47:39.125Z",
+              "deletedAt": null,
+              "createdBy": null,
+              "updatedBy": null,
+              "deletedBy": null
+            }
+          ],
+          "meta": {
+            "requestId": "f0fc7655-917f-422f-baeb-b107646698df",
+            "timestamp": "2026-02-24T15:47:42.752Z"
+          },
+          "pagination": {
+            "page": 1,
+            "perPage": 20,
+            "total": 1,
+            "hasMore": false
+          }
+        },
+        "at": "2026-02-24T15:47:42.753Z"
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/bizes/3A7eVFD1BFMqGF87gdukoFE4CqW/booking-orders?perPage=50",
+        "status": 200,
+        "responseBody": {
+          "success": true,
+          "data": [
+            {
+              "id": "booking_order_3A7eVb3hO8KpggnHYHbJWzOOfib",
+              "bizId": "3A7eVFD1BFMqGF87gdukoFE4CqW",
+              "offerId": "offer_3A7eVY0Qc9pmNAbge4vDWcnVoYN",
+              "offerVersionId": "offer_version_3A7eVRsREonvW4QSGtvMpHoxmlD",
+              "customerUserId": "85JwcoKakKtLh1kMSU2tPDlGwTCdXGcU",
+              "customerGroupAccountId": null,
+              "status": "in_progress",
+              "statusConfigValueId": null,
+              "currency": "USD",
+              "subtotalMinor": 15000,
+              "taxMinor": 0,
+              "feeMinor": 0,
+              "discountMinor": 0,
+              "totalMinor": 15000,
+              "requestedStartAt": "2026-02-25T15:47:40.816Z",
+              "requestedEndAt": "2026-02-25T16:37:40.816Z",
+              "confirmedStartAt": "2026-02-25T15:47:40.816Z",
+              "confirmedEndAt": "2026-02-25T16:37:40.816Z",
+              "pricingSnapshot": {},
+              "policySnapshot": {},
+              "metadata": {},
+              "createdAt": "2026-02-24T15:47:40.829Z",
+              "updatedAt": "2026-02-24T15:47:40.829Z",
+              "deletedAt": null,
+              "createdBy": null,
+              "updatedBy": null,
+              "deletedBy": null
+            },
+            {
+              "id": "booking_order_3A7eVe0gj5R4pQY5Um7pOxgYIDK",
+              "bizId": "3A7eVFD1BFMqGF87gdukoFE4CqW",
+              "offerId": "offer_3A7eVY0Qc9pmNAbge4vDWcnVoYN",
+              "offerVersionId": "offer_version_3A7eVRsREonvW4QSGtvMpHoxmlD",
+              "customerUserId": "nvMj5A6pYCfxRzyG62DL1FPJGS91VaHB",
+              "customerGroupAccountId": null,
+              "status": "confirmed",
+              "statusConfigValueId": null,
+              "currency": "USD",
+              "subtotalMinor": 15000,
+              "taxMinor": 0,
+              "feeMinor": 0,
+              "discountMinor": 0,
+              "totalMinor": 15000,
+              "requestedStartAt": "2026-02-25T15:47:40.440Z",
+              "requestedEndAt": "2026-02-25T16:37:40.440Z",
+              "confirmedStartAt": "2026-02-25T15:47:40.440Z",
+              "confirmedEndAt": "2026-02-25T16:37:40.440Z",
+              "pricingSnapshot": {},
+              "policySnapshot": {},
+              "metadata": {},
+              "createdAt": "2026-02-24T15:47:40.448Z",
+              "updatedAt": "2026-02-24T15:47:40.448Z",
+              "deletedAt": null,
+              "createdBy": null,
+              "updatedBy": null,
+              "deletedBy": null
+            }
+          ],
+          "meta": {
+            "requestId": "d62f279f-b7df-4e52-80be-9d154ad441e8",
+            "timestamp": "2026-02-24T15:47:42.752Z"
+          },
+          "pagination": {
+            "page": 1,
+            "perPage": 50,
+            "total": 2,
+            "hasMore": false
+          }
+        },
+        "at": "2026-02-24T15:47:42.753Z"
+      }
+    ]
+  },
+  "metadata": {}
+}

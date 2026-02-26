@@ -91,12 +91,42 @@ export const sharedAccountMemberRoleEnum = pgEnum(
 
 /** Org membership roles used by admin/host APIs and access checks. */
 export const orgMembershipRoleEnum = pgEnum("org_membership_role", [
+  "user",
   "owner",
   "admin",
   "manager",
   "staff",
   "host",
   "customer",
+]);
+
+/**
+ * ACL scope used by permission evaluation.
+ *
+ * The scope hierarchy is intentionally generic:
+ * - platform: global ("bizing-level") controls
+ * - biz: tenant-wide controls
+ * - location: branch/site controls inside one biz
+ * - resource: individual supply node controls (host/asset/venue/etc.)
+ * - subject: extensible plugin/custom scope using `subjects` registry
+ */
+export const authzScopeTypeEnum = pgEnum("authz_scope_type", [
+  "platform",
+  "biz",
+  "location",
+  "resource",
+  "subject",
+]);
+
+/**
+ * ACL decision effect for one role-permission row.
+ *
+ * Deny rows let admins explicitly block sensitive actions even when another
+ * role would otherwise allow them.
+ */
+export const authzPermissionEffectEnum = pgEnum("authz_permission_effect", [
+  "allow",
+  "deny",
 ]);
 
 // -----------------------------------------------------------------------------
@@ -1850,12 +1880,30 @@ export const availabilityResolutionStatusEnum = pgEnum(
 // Fulfillment domain
 // ---------------------------------------------------------------------------
 
-/** Commercial contract status from cart intent through completion. */
+/**
+ * Commercial contract status from cart intent through completion.
+ *
+ * Lifecycle flow:
+ *   draft → quoted → awaiting_payment → confirmed → [checked_in] → in_progress → completed
+ *                                              ↓
+ *                                        cancelled / expired / failed
+ *
+ * Why `checked_in` exists:
+ * - Medical appointments, events, and classes need to track when a customer
+ *   physically arrives and checks in (distinct from "in_progress" which means
+ *   service has started).
+ * - Enables queue management and wait time tracking.
+ * - Allows audit trails for no-show detection.
+ *
+ * Example: A patient books a doctor appointment (confirmed), checks in at
+ * the kiosk (checked_in), then the consultation starts (in_progress).
+ */
 export const bookingOrderStatusEnum = pgEnum("booking_order_status", [
   "draft",
   "quoted",
   "awaiting_payment",
   "confirmed",
+  "checked_in",
   "in_progress",
   "completed",
   "cancelled",
@@ -4428,3 +4476,94 @@ export const enterpriseRolloutTargetStatusEnum = pgEnum(
   "enterprise_rollout_target_status",
   ["pending", "applied", "skipped", "failed"],
 );
+
+// ---------------------------------------------------------------------------
+// Saga testing / lifecycle simulation primitives
+// ---------------------------------------------------------------------------
+
+/**
+ * Lifecycle state for one saga definition.
+ *
+ * ELI5:
+ * A saga definition is the reusable "recipe" of a full business journey test.
+ * - `draft`: still being edited
+ * - `active`: ready to run
+ * - `archived`: kept for history, not for new runs
+ */
+export const sagaDefinitionStatusEnum = pgEnum("saga_definition_status", [
+  "draft",
+  "active",
+  "archived",
+]);
+
+/**
+ * High-level run state for one saga test session.
+ */
+export const sagaRunStatusEnum = pgEnum("saga_run_status", [
+  "pending",
+  "running",
+  "passed",
+  "failed",
+  "cancelled",
+]);
+
+/**
+ * Execution mode for one saga run.
+ *
+ * - `dry_run`: safe simulation mode; meant for validation without side effects.
+ * - `live`: intended for real integration environments.
+ */
+export const sagaRunModeEnum = pgEnum("saga_run_mode", ["dry_run", "live"]);
+
+/**
+ * Per-step status inside one saga run.
+ */
+export const sagaRunStepStatusEnum = pgEnum("saga_run_step_status", [
+  "pending",
+  "in_progress",
+  "passed",
+  "failed",
+  "skipped",
+  "blocked",
+]);
+
+/**
+ * Artifact categories collected during saga execution.
+ *
+ * ELI5:
+ * Artifacts are the "proof" of what happened in a test run.
+ */
+export const sagaArtifactTypeEnum = pgEnum("saga_artifact_type", [
+  "report",
+  "snapshot",
+  "api_trace",
+  "step_log",
+  "attachment",
+]);
+
+/**
+ * Simulated communication channels for saga actor messaging.
+ *
+ * ELI5:
+ * These are virtual channels used during lifecycle tests.
+ * They do not require real providers, but they let us verify flows that depend
+ * on email/SMS/push style notifications.
+ */
+export const sagaActorMessageChannelEnum = pgEnum("saga_actor_message_channel", [
+  "email",
+  "sms",
+  "push",
+  "in_app",
+]);
+
+/**
+ * Delivery status of one simulated message in a saga run.
+ */
+export const sagaActorMessageStatusEnum = pgEnum("saga_actor_message_status", [
+  "queued",
+  "sent",
+  "delivered",
+  "read",
+  "failed",
+  "cancelled",
+]);

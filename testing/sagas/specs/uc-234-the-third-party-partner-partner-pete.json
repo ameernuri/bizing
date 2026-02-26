@@ -1,0 +1,1351 @@
+{
+  "schemaVersion": "saga.v0",
+  "sagaKey": "uc-234-the-third-party-partner-partner-pete",
+  "title": "UC-234 • The Enterprise SSO + SCIM Provisioning Lifecycle • The Third-Party Partner (Partner Pete)",
+  "description": "Comprehensive lifecycle saga derived from UC-234 and persona P-32. Needs summary: Identity provider records (OIDC/SAML/SCIM metadata); SCIM sync run state and failure visibility; External directory links to internal users/subjects; Status controls for provisioning and deprovisioning flows",
+  "tags": [
+    "uc-derived",
+    "persona-derived",
+    "lifecycle",
+    "api-first",
+    "agents"
+  ],
+  "defaults": {
+    "runMode": "dry_run",
+    "continueOnFailure": false
+  },
+  "source": {
+    "useCaseRef": "UC-234",
+    "personaRef": "P-32",
+    "useCaseFile": "/Users/ameer/bizing/mind/workspace/documentation/use-cases-comprehensive.md",
+    "personaFile": "/Users/ameer/bizing/mind/workspace/documentation/tester-personas.md",
+    "generatedAt": "2026-02-25T06:41:05.408Z"
+  },
+  "objectives": [
+    "Validate UC-234 lifecycle end-to-end using persona The Third-Party Partner (Partner Pete).",
+    "Exercise owner setup, team setup, catalog publishing, and customer journeys.",
+    "Stress ACL/security edge cases and verify expected denials are enforced.",
+    "Collect snapshots and report artifacts for every critical milestone."
+  ],
+  "actors": [
+    {
+      "actorKey": "biz_owner",
+      "name": "The Third-Party Partner (Partner Pete)",
+      "role": "owner",
+      "description": "External service with API integration (CRM, accounting, etc.)",
+      "personaRef": "P-32"
+    },
+    {
+      "actorKey": "biz_member",
+      "name": "Operations Team Member",
+      "role": "manager",
+      "description": "Business member invited by owner to assist with operations and booking flow."
+    },
+    {
+      "actorKey": "customer_1",
+      "name": "Customer One",
+      "role": "customer",
+      "description": "Primary customer exploring catalog, booking services, and purchasing products."
+    },
+    {
+      "actorKey": "customer_2",
+      "name": "Customer Two",
+      "role": "customer",
+      "description": "Concurrent customer used to simulate realistic demand and race conditions."
+    },
+    {
+      "actorKey": "adversary",
+      "name": "Adversarial User",
+      "role": "malicious_actor",
+      "description": "Actor intentionally attempting unauthorized or abusive actions."
+    }
+  ],
+  "phases": [
+    {
+      "phaseKey": "owner-onboarding",
+      "order": 1,
+      "title": "Owner Onboarding",
+      "description": "Business owner signs up, authenticates, and establishes tenant root.",
+      "steps": [
+        {
+          "stepKey": "owner-sign-up",
+          "order": 1,
+          "title": "Owner signs up and authenticates",
+          "actorKey": "biz_owner",
+          "intent": "Establish authenticated owner identity for the lifecycle.",
+          "instruction": "Create or login the owner account through Better Auth endpoints, then verify session context can call authenticated API routes.",
+          "expectedResult": "Owner session exists and authenticated routes return success for this user.",
+          "toolHints": [],
+          "assertions": [
+            {
+              "kind": "api_response",
+              "description": "API call returns success and includes stable ids for created entities."
+            },
+            {
+              "kind": "acl_guard",
+              "description": "Actor permissions are honored for this step context."
+            }
+          ],
+          "evidenceRequired": [
+            {
+              "kind": "api_trace",
+              "label": "Request/response trace for this step"
+            },
+            {
+              "kind": "snapshot",
+              "label": "Structured snapshot.v1 screen blocks (what user saw) with real API-backed data"
+            }
+          ],
+          "guardrails": [],
+          "tags": [
+            "auth",
+            "setup"
+          ],
+          "delay": {
+            "mode": "none",
+            "jitterMs": 0
+          }
+        },
+        {
+          "stepKey": "owner-create-biz",
+          "order": 2,
+          "title": "Owner creates business tenant",
+          "actorKey": "biz_owner",
+          "intent": "Create the biz root for all subsequent configuration.",
+          "instruction": "Using agents tools, create a biz representing The Enterprise SSO + SCIM Provisioning Lifecycle. Use name/slug derived from saga context.",
+          "expectedResult": "Biz is created, owner is auto-added as member with owner role, and biz id is captured.",
+          "toolHints": [
+            "bizing.bizes.create"
+          ],
+          "assertions": [
+            {
+              "kind": "api_response",
+              "description": "API call returns success and includes stable ids for created entities."
+            },
+            {
+              "kind": "acl_guard",
+              "description": "Actor permissions are honored for this step context."
+            }
+          ],
+          "evidenceRequired": [
+            {
+              "kind": "api_trace",
+              "label": "Request/response trace for this step"
+            },
+            {
+              "kind": "snapshot",
+              "label": "Structured snapshot.v1 screen blocks (what user saw) with real API-backed data"
+            }
+          ],
+          "guardrails": [],
+          "tags": [
+            "biz",
+            "setup"
+          ],
+          "delay": {
+            "mode": "none",
+            "jitterMs": 0
+          }
+        },
+        {
+          "stepKey": "owner-create-location",
+          "order": 3,
+          "title": "Owner creates primary location",
+          "actorKey": "biz_owner",
+          "intent": "Establish operational location for services/resources.",
+          "instruction": "Create a primary location for the biz and set timezone aligned with scenario context.",
+          "expectedResult": "Location exists and is associated with the new biz.",
+          "toolHints": [
+            "bizing.locations.create"
+          ],
+          "assertions": [
+            {
+              "kind": "api_response",
+              "description": "API call returns success and includes stable ids for created entities."
+            },
+            {
+              "kind": "acl_guard",
+              "description": "Actor permissions are honored for this step context."
+            }
+          ],
+          "evidenceRequired": [
+            {
+              "kind": "api_trace",
+              "label": "Request/response trace for this step"
+            },
+            {
+              "kind": "snapshot",
+              "label": "Structured snapshot.v1 screen blocks (what user saw) with real API-backed data"
+            }
+          ],
+          "guardrails": [],
+          "tags": [
+            "location",
+            "setup"
+          ],
+          "delay": {
+            "mode": "none",
+            "jitterMs": 0
+          }
+        }
+      ]
+    },
+    {
+      "phaseKey": "business-configuration",
+      "order": 2,
+      "title": "Business Configuration",
+      "description": "Owner configures scheduling, pricing baseline, and operational defaults.",
+      "steps": [
+        {
+          "stepKey": "owner-configure-hours",
+          "order": 4,
+          "title": "Configure default hours and availability mode",
+          "actorKey": "biz_owner",
+          "intent": "Set baseline availability without forcing advanced complexity.",
+          "instruction": "Create baseline availability and lead-time rules representing the UC default business hours and booking window behavior.",
+          "expectedResult": "Availability defaults and rules are stored and can be referenced by calendars.",
+          "toolHints": [],
+          "assertions": [
+            {
+              "kind": "api_response",
+              "description": "API call returns success and includes stable ids for created entities."
+            },
+            {
+              "kind": "acl_guard",
+              "description": "Actor permissions are honored for this step context."
+            }
+          ],
+          "evidenceRequired": [
+            {
+              "kind": "api_trace",
+              "label": "Request/response trace for this step"
+            },
+            {
+              "kind": "snapshot",
+              "label": "Structured snapshot.v1 screen blocks (what user saw) with real API-backed data"
+            }
+          ],
+          "guardrails": [],
+          "tags": [
+            "availability",
+            "policy"
+          ],
+          "delay": {
+            "mode": "none",
+            "jitterMs": 0
+          }
+        },
+        {
+          "stepKey": "owner-configure-pricing",
+          "order": 5,
+          "title": "Configure default pricing rules",
+          "actorKey": "biz_owner",
+          "intent": "Set base pricing and optional manual demand overrides.",
+          "instruction": "Configure pricing defaults for the offer lifecycle including call fees/manual surge if UC needs imply it.",
+          "expectedResult": "Pricing model persists and future bookings can calculate totals deterministically.",
+          "toolHints": [],
+          "assertions": [
+            {
+              "kind": "api_response",
+              "description": "API call returns success and includes stable ids for created entities."
+            },
+            {
+              "kind": "acl_guard",
+              "description": "Actor permissions are honored for this step context."
+            }
+          ],
+          "evidenceRequired": [
+            {
+              "kind": "api_trace",
+              "label": "Request/response trace for this step"
+            },
+            {
+              "kind": "snapshot",
+              "label": "Structured snapshot.v1 screen blocks (what user saw) with real API-backed data"
+            }
+          ],
+          "guardrails": [],
+          "tags": [
+            "pricing"
+          ],
+          "delay": {
+            "mode": "none",
+            "jitterMs": 0
+          }
+        }
+      ]
+    },
+    {
+      "phaseKey": "supply-and-team-setup",
+      "order": 3,
+      "title": "Supply And Team Setup",
+      "description": "Business owner sets up hosts/assets/venues/resources and invites members.",
+      "steps": [
+        {
+          "stepKey": "owner-create-resources",
+          "order": 6,
+          "title": "Create resources representing hosts/assets/venues",
+          "actorKey": "biz_owner",
+          "intent": "Model real-world supply that bookings will consume.",
+          "instruction": "Create at least one host resource and one non-host resource (asset or venue) suitable for the UC.",
+          "expectedResult": "Resources are created with expected type, location, and buffers.",
+          "toolHints": [
+            "bizing.resources.create"
+          ],
+          "assertions": [
+            {
+              "kind": "api_response",
+              "description": "API call returns success and includes stable ids for created entities."
+            },
+            {
+              "kind": "acl_guard",
+              "description": "Actor permissions are honored for this step context."
+            }
+          ],
+          "evidenceRequired": [
+            {
+              "kind": "api_trace",
+              "label": "Request/response trace for this step"
+            },
+            {
+              "kind": "snapshot",
+              "label": "Structured snapshot.v1 screen blocks (what user saw) with real API-backed data"
+            }
+          ],
+          "guardrails": [],
+          "tags": [
+            "resources"
+          ],
+          "delay": {
+            "mode": "none",
+            "jitterMs": 0
+          }
+        },
+        {
+          "stepKey": "owner-invite-member",
+          "order": 7,
+          "title": "Invite and provision business member",
+          "actorKey": "biz_owner",
+          "intent": "Validate collaboration and role assignment.",
+          "instruction": "Invite a biz member, assign an operational role, and verify that member can authenticate into the same biz.",
+          "expectedResult": "Biz member account/session exists with scoped role permissions.",
+          "toolHints": [],
+          "assertions": [
+            {
+              "kind": "api_response",
+              "description": "API call returns success and includes stable ids for created entities."
+            },
+            {
+              "kind": "acl_guard",
+              "description": "Actor permissions are honored for this step context."
+            }
+          ],
+          "evidenceRequired": [
+            {
+              "kind": "api_trace",
+              "label": "Request/response trace for this step"
+            },
+            {
+              "kind": "snapshot",
+              "label": "Structured snapshot.v1 screen blocks (what user saw) with real API-backed data"
+            }
+          ],
+          "guardrails": [],
+          "tags": [
+            "team",
+            "acl"
+          ],
+          "delay": {
+            "mode": "none",
+            "jitterMs": 0
+          }
+        }
+      ]
+    },
+    {
+      "phaseKey": "catalog-publish",
+      "order": 4,
+      "title": "Catalog And Publish",
+      "description": "Owner creates services/offers/products and publishes sellable catalog entries.",
+      "steps": [
+        {
+          "stepKey": "owner-create-offer",
+          "order": 8,
+          "title": "Create offer shell",
+          "actorKey": "biz_owner",
+          "intent": "Define sellable service/catalog entry.",
+          "instruction": "Create an offer representing the UC primary service; choose execution mode matching the scenario.",
+          "expectedResult": "Offer is created in draft state with captured id.",
+          "toolHints": [
+            "bizing.offers.create"
+          ],
+          "assertions": [
+            {
+              "kind": "api_response",
+              "description": "API call returns success and includes stable ids for created entities."
+            },
+            {
+              "kind": "acl_guard",
+              "description": "Actor permissions are honored for this step context."
+            }
+          ],
+          "evidenceRequired": [
+            {
+              "kind": "api_trace",
+              "label": "Request/response trace for this step"
+            },
+            {
+              "kind": "snapshot",
+              "label": "Structured snapshot.v1 screen blocks (what user saw) with real API-backed data"
+            }
+          ],
+          "guardrails": [],
+          "tags": [
+            "offer",
+            "catalog"
+          ],
+          "delay": {
+            "mode": "none",
+            "jitterMs": 0
+          }
+        },
+        {
+          "stepKey": "owner-create-offer-version",
+          "order": 9,
+          "title": "Create and publish offer version",
+          "actorKey": "biz_owner",
+          "intent": "Freeze booking rules, duration, and price for customers.",
+          "instruction": "Create a published offer version with realistic duration and base price for this UC.",
+          "expectedResult": "Offer version exists and is ready for booking order references.",
+          "toolHints": [
+            "bizing.offers.createVersion"
+          ],
+          "assertions": [
+            {
+              "kind": "api_response",
+              "description": "API call returns success and includes stable ids for created entities."
+            },
+            {
+              "kind": "acl_guard",
+              "description": "Actor permissions are honored for this step context."
+            }
+          ],
+          "evidenceRequired": [
+            {
+              "kind": "api_trace",
+              "label": "Request/response trace for this step"
+            },
+            {
+              "kind": "snapshot",
+              "label": "Structured snapshot.v1 screen blocks (what user saw) with real API-backed data"
+            }
+          ],
+          "guardrails": [],
+          "tags": [
+            "offer",
+            "pricing"
+          ],
+          "delay": {
+            "mode": "none",
+            "jitterMs": 0
+          }
+        },
+        {
+          "stepKey": "owner-publish-catalog",
+          "order": 10,
+          "title": "Publish catalog visibility",
+          "actorKey": "biz_owner",
+          "intent": "Expose offer to customer discovery flow.",
+          "instruction": "Update offer publish/lifecycle flags so customer actors can discover it.",
+          "expectedResult": "Offer appears as published/active and can be returned in customer-facing list queries.",
+          "toolHints": [
+            "bizing.offers.create",
+            "bizing.offers.list"
+          ],
+          "assertions": [
+            {
+              "kind": "api_response",
+              "description": "API call returns success and includes stable ids for created entities."
+            },
+            {
+              "kind": "acl_guard",
+              "description": "Actor permissions are honored for this step context."
+            }
+          ],
+          "evidenceRequired": [
+            {
+              "kind": "api_trace",
+              "label": "Request/response trace for this step"
+            },
+            {
+              "kind": "snapshot",
+              "label": "Structured snapshot.v1 screen blocks (what user saw) with real API-backed data"
+            }
+          ],
+          "guardrails": [],
+          "tags": [
+            "catalog",
+            "publish"
+          ],
+          "delay": {
+            "mode": "none",
+            "jitterMs": 0
+          }
+        }
+      ]
+    },
+    {
+      "phaseKey": "customer-lifecycle",
+      "order": 5,
+      "title": "Customer Lifecycle",
+      "description": "Customers sign up, discover offerings, book, and purchase in realistic order.",
+      "steps": [
+        {
+          "stepKey": "customer-sign-up",
+          "order": 11,
+          "title": "Customer one signs up and logs in",
+          "actorKey": "customer_1",
+          "intent": "Establish customer identity for purchase/booking traceability.",
+          "instruction": "Create customer account/session and verify customer can browse published offers.",
+          "expectedResult": "Customer session established and offer discovery succeeds.",
+          "toolHints": [
+            "bizing.offers.list"
+          ],
+          "assertions": [
+            {
+              "kind": "api_response",
+              "description": "API call returns success and includes stable ids for created entities."
+            },
+            {
+              "kind": "acl_guard",
+              "description": "Actor permissions are honored for this step context."
+            }
+          ],
+          "evidenceRequired": [
+            {
+              "kind": "api_trace",
+              "label": "Request/response trace for this step"
+            },
+            {
+              "kind": "snapshot",
+              "label": "Structured snapshot.v1 screen blocks (what user saw) with real API-backed data"
+            }
+          ],
+          "guardrails": [],
+          "tags": [
+            "auth",
+            "customer"
+          ],
+          "delay": {
+            "mode": "none",
+            "jitterMs": 0
+          }
+        },
+        {
+          "stepKey": "customer-book-primary",
+          "order": 12,
+          "title": "Customer one books primary offer",
+          "actorKey": "customer_1",
+          "intent": "Exercise booking order creation under normal path.",
+          "instruction": "Create a booking order using the published offer version with realistic times and monetary totals.",
+          "expectedResult": "Booking order is created and linked to offer/offer version with coherent totals.",
+          "toolHints": [
+            "bizing.bookingOrders.create"
+          ],
+          "assertions": [
+            {
+              "kind": "api_response",
+              "description": "API call returns success and includes stable ids for created entities."
+            },
+            {
+              "kind": "acl_guard",
+              "description": "Actor permissions are honored for this step context."
+            }
+          ],
+          "evidenceRequired": [
+            {
+              "kind": "api_trace",
+              "label": "Request/response trace for this step"
+            },
+            {
+              "kind": "snapshot",
+              "label": "Structured snapshot.v1 screen blocks (what user saw) with real API-backed data"
+            }
+          ],
+          "guardrails": [],
+          "tags": [
+            "booking",
+            "checkout"
+          ],
+          "delay": {
+            "mode": "none",
+            "jitterMs": 0
+          }
+        },
+        {
+          "stepKey": "customer-two-concurrent",
+          "order": 13,
+          "title": "Customer two performs concurrent booking attempt",
+          "actorKey": "customer_2",
+          "intent": "Simulate real demand and potential scheduling conflicts.",
+          "instruction": "Customer two attempts booking overlapping demand for the same offer/resource window.",
+          "expectedResult": "System either books correctly under capacity rules or rejects with deterministic conflict response.",
+          "toolHints": [
+            "bizing.bookingOrders.create"
+          ],
+          "assertions": [
+            {
+              "kind": "api_response",
+              "description": "API call returns success and includes stable ids for created entities."
+            },
+            {
+              "kind": "acl_guard",
+              "description": "Actor permissions are honored for this step context."
+            }
+          ],
+          "evidenceRequired": [
+            {
+              "kind": "api_trace",
+              "label": "Request/response trace for this step"
+            },
+            {
+              "kind": "snapshot",
+              "label": "Structured snapshot.v1 screen blocks (what user saw) with real API-backed data"
+            }
+          ],
+          "guardrails": [],
+          "tags": [
+            "concurrency",
+            "booking"
+          ],
+          "delay": {
+            "mode": "none",
+            "jitterMs": 0
+          }
+        }
+      ]
+    },
+    {
+      "phaseKey": "security-and-abuse",
+      "order": 6,
+      "title": "Security And Abuse Checks",
+      "description": "Adversarial actor attempts prohibited operations to validate access controls.",
+      "steps": [
+        {
+          "stepKey": "adversary-cross-biz-read",
+          "order": 14,
+          "title": "Adversary attempts unauthorized cross-biz read",
+          "actorKey": "adversary",
+          "intent": "Validate tenant isolation against IDOR-like behavior.",
+          "instruction": "Using credentials from another context, attempt to read or mutate booking/order resources for this biz.",
+          "expectedResult": "Request is rejected with forbidden/unauthorized error and no data leakage.",
+          "toolHints": [],
+          "assertions": [
+            {
+              "kind": "api_response",
+              "description": "API call returns success and includes stable ids for created entities."
+            },
+            {
+              "kind": "acl_guard",
+              "description": "Actor permissions are honored for this step context."
+            }
+          ],
+          "evidenceRequired": [
+            {
+              "kind": "api_trace",
+              "label": "Request/response trace for this step"
+            },
+            {
+              "kind": "snapshot",
+              "label": "Structured snapshot.v1 screen blocks (what user saw) with real API-backed data"
+            }
+          ],
+          "guardrails": [
+            "Must not bypass membership checks",
+            "No sensitive payload should be returned"
+          ],
+          "tags": [
+            "security",
+            "acl",
+            "idor"
+          ],
+          "delay": {
+            "mode": "none",
+            "jitterMs": 0
+          }
+        },
+        {
+          "stepKey": "adversary-hold-abuse",
+          "order": 15,
+          "title": "Adversary attempts demand/hold abuse",
+          "actorKey": "adversary",
+          "intent": "Stress anti-abuse controls around booking intent and capacity locks.",
+          "instruction": "Trigger repeated booking/hold-like attempts to validate throttling, expiry, or non-blocking demand visibility behavior.",
+          "expectedResult": "Abusive attempts are rate-limited or isolated without blocking legitimate customer flow.",
+          "toolHints": [],
+          "assertions": [
+            {
+              "kind": "api_response",
+              "description": "API call returns success and includes stable ids for created entities."
+            },
+            {
+              "kind": "acl_guard",
+              "description": "Actor permissions are honored for this step context."
+            }
+          ],
+          "evidenceRequired": [
+            {
+              "kind": "api_trace",
+              "label": "Request/response trace for this step"
+            },
+            {
+              "kind": "snapshot",
+              "label": "Structured snapshot.v1 screen blocks (what user saw) with real API-backed data"
+            }
+          ],
+          "guardrails": [],
+          "tags": [
+            "security",
+            "abuse",
+            "capacity"
+          ],
+          "delay": {
+            "mode": "none",
+            "jitterMs": 0
+          }
+        },
+        {
+          "stepKey": "adversary-marketplace-tenant-isolation",
+          "order": 16,
+          "title": "Cross-biz isolation under marketplace/enterprise flow",
+          "actorKey": "adversary",
+          "intent": "Validate tenant-isolation behavior in cross-biz contexts.",
+          "instruction": "Attempt unauthorized cross-biz visibility/mutation in marketplace/enterprise scenario context.",
+          "expectedResult": "Unauthorized access is denied and no sensitive tenant data leaks across business boundaries.",
+          "toolHints": [],
+          "assertions": [
+            {
+              "kind": "api_response",
+              "description": "API call returns success and includes stable ids for created entities."
+            },
+            {
+              "kind": "acl_guard",
+              "description": "Actor permissions are honored for this step context."
+            }
+          ],
+          "evidenceRequired": [
+            {
+              "kind": "api_trace",
+              "label": "Request/response trace for this step"
+            },
+            {
+              "kind": "snapshot",
+              "label": "Structured snapshot.v1 screen blocks (what user saw) with real API-backed data"
+            }
+          ],
+          "guardrails": [],
+          "tags": [
+            "uc-specific",
+            "security",
+            "tenant-isolation"
+          ],
+          "delay": {
+            "mode": "none",
+            "jitterMs": 0
+          }
+        }
+      ]
+    },
+    {
+      "phaseKey": "operations-and-follow-up",
+      "order": 7,
+      "title": "Operations And Follow-up",
+      "description": "Owner and members handle notifications, confirmations, and operational updates.",
+      "steps": [
+        {
+          "stepKey": "member-review-bookings",
+          "order": 17,
+          "title": "Biz member reviews and updates booking status",
+          "actorKey": "biz_member",
+          "intent": "Validate role-based operational workflow.",
+          "instruction": "As biz member, list bookings and progress one booking through operational status updates.",
+          "expectedResult": "Authorized role can update status while preserving auditability and lifecycle consistency.",
+          "toolHints": [
+            "bizing.bookingOrders.list",
+            "bizing.bookingOrders.updateStatus"
+          ],
+          "assertions": [
+            {
+              "kind": "api_response",
+              "description": "API call returns success and includes stable ids for created entities."
+            },
+            {
+              "kind": "acl_guard",
+              "description": "Actor permissions are honored for this step context."
+            }
+          ],
+          "evidenceRequired": [
+            {
+              "kind": "api_trace",
+              "label": "Request/response trace for this step"
+            },
+            {
+              "kind": "snapshot",
+              "label": "Structured snapshot.v1 screen blocks (what user saw) with real API-backed data"
+            }
+          ],
+          "guardrails": [],
+          "tags": [
+            "operations",
+            "acl"
+          ],
+          "delay": {
+            "mode": "none",
+            "jitterMs": 0
+          }
+        },
+        {
+          "stepKey": "owner-calendar-review",
+          "order": 18,
+          "title": "Owner reviews consolidated calendar state",
+          "actorKey": "biz_owner",
+          "intent": "Verify availability, bookings, and resulting schedule are coherent.",
+          "instruction": "Query and compare availability + bookings timeline for the entities involved in this scenario.",
+          "expectedResult": "Calendar state reflects booked slots, blocks, and any conflict outcomes from previous steps.",
+          "toolHints": [],
+          "assertions": [
+            {
+              "kind": "api_response",
+              "description": "API call returns success and includes stable ids for created entities."
+            },
+            {
+              "kind": "acl_guard",
+              "description": "Actor permissions are honored for this step context."
+            }
+          ],
+          "evidenceRequired": [
+            {
+              "kind": "api_trace",
+              "label": "Request/response trace for this step"
+            },
+            {
+              "kind": "snapshot",
+              "label": "Structured snapshot.v1 screen blocks (what user saw) with real API-backed data"
+            }
+          ],
+          "guardrails": [],
+          "tags": [
+            "calendar",
+            "validation"
+          ],
+          "delay": {
+            "mode": "none",
+            "jitterMs": 0
+          }
+        }
+      ]
+    },
+    {
+      "phaseKey": "reporting-and-closeout",
+      "order": 8,
+      "title": "Reporting And Closeout",
+      "description": "Run collects evidence, computes pass/fail summary, and validates lifecycle traceability.",
+      "steps": [
+        {
+          "stepKey": "owner-revenue-sanity",
+          "order": 19,
+          "title": "Owner validates financial/reporting outputs",
+          "actorKey": "biz_owner",
+          "intent": "Ensure lifecycle creates coherent business metrics.",
+          "instruction": "Read reporting endpoints and verify booking totals, counts, and statuses align with saga actions.",
+          "expectedResult": "Reported metrics match booking actions and highlight any discrepancies for schema/API iteration.",
+          "toolHints": [],
+          "assertions": [
+            {
+              "kind": "api_response",
+              "description": "API call returns success and includes stable ids for created entities."
+            },
+            {
+              "kind": "acl_guard",
+              "description": "Actor permissions are honored for this step context."
+            }
+          ],
+          "evidenceRequired": [
+            {
+              "kind": "api_trace",
+              "label": "Request/response trace for this step"
+            },
+            {
+              "kind": "snapshot",
+              "label": "Structured snapshot.v1 screen blocks (what user saw) with real API-backed data"
+            }
+          ],
+          "guardrails": [],
+          "tags": [
+            "reporting",
+            "reconciliation"
+          ],
+          "delay": {
+            "mode": "none",
+            "jitterMs": 0
+          }
+        },
+        {
+          "stepKey": "uc-need-validate-1",
+          "order": 20,
+          "title": "Validate explicit UC need #1",
+          "actorKey": "biz_owner",
+          "intent": "Prove this lifecycle covers explicit requirement: Identity provider records (OIDC/SAML/SCIM metadata)",
+          "instruction": "Using concrete API reads and persisted state checks, validate this requirement is satisfied: \"Identity provider records (OIDC/SAML/SCIM metadata)\". If not satisfied, record exact gap and failing entities/endpoints.",
+          "expectedResult": "Evidence either confirms requirement coverage or captures a precise, reproducible gap.",
+          "toolHints": [],
+          "assertions": [
+            {
+              "kind": "api_response",
+              "description": "API call returns success and includes stable ids for created entities."
+            },
+            {
+              "kind": "acl_guard",
+              "description": "Actor permissions are honored for this step context."
+            }
+          ],
+          "evidenceRequired": [
+            {
+              "kind": "api_trace",
+              "label": "Request/response trace for this step"
+            },
+            {
+              "kind": "snapshot",
+              "label": "Structured snapshot.v1 screen blocks (what user saw) with real API-backed data"
+            }
+          ],
+          "guardrails": [],
+          "tags": [
+            "uc-need",
+            "validation",
+            "coverage"
+          ],
+          "delay": {
+            "mode": "none",
+            "jitterMs": 0
+          }
+        },
+        {
+          "stepKey": "uc-need-validate-2",
+          "order": 21,
+          "title": "Validate explicit UC need #2",
+          "actorKey": "biz_owner",
+          "intent": "Prove this lifecycle covers explicit requirement: SCIM sync run state and failure visibility",
+          "instruction": "Using concrete API reads and persisted state checks, validate this requirement is satisfied: \"SCIM sync run state and failure visibility\". If not satisfied, record exact gap and failing entities/endpoints.",
+          "expectedResult": "Evidence either confirms requirement coverage or captures a precise, reproducible gap.",
+          "toolHints": [],
+          "assertions": [
+            {
+              "kind": "api_response",
+              "description": "API call returns success and includes stable ids for created entities."
+            },
+            {
+              "kind": "acl_guard",
+              "description": "Actor permissions are honored for this step context."
+            }
+          ],
+          "evidenceRequired": [
+            {
+              "kind": "api_trace",
+              "label": "Request/response trace for this step"
+            },
+            {
+              "kind": "snapshot",
+              "label": "Structured snapshot.v1 screen blocks (what user saw) with real API-backed data"
+            }
+          ],
+          "guardrails": [],
+          "tags": [
+            "uc-need",
+            "validation",
+            "coverage"
+          ],
+          "delay": {
+            "mode": "none",
+            "jitterMs": 0
+          }
+        },
+        {
+          "stepKey": "uc-need-validate-3",
+          "order": 22,
+          "title": "Validate explicit UC need #3",
+          "actorKey": "biz_owner",
+          "intent": "Prove this lifecycle covers explicit requirement: External directory links to internal users/subjects",
+          "instruction": "Using concrete API reads and persisted state checks, validate this requirement is satisfied: \"External directory links to internal users/subjects\". If not satisfied, record exact gap and failing entities/endpoints.",
+          "expectedResult": "Evidence either confirms requirement coverage or captures a precise, reproducible gap.",
+          "toolHints": [],
+          "assertions": [
+            {
+              "kind": "api_response",
+              "description": "API call returns success and includes stable ids for created entities."
+            },
+            {
+              "kind": "acl_guard",
+              "description": "Actor permissions are honored for this step context."
+            }
+          ],
+          "evidenceRequired": [
+            {
+              "kind": "api_trace",
+              "label": "Request/response trace for this step"
+            },
+            {
+              "kind": "snapshot",
+              "label": "Structured snapshot.v1 screen blocks (what user saw) with real API-backed data"
+            }
+          ],
+          "guardrails": [],
+          "tags": [
+            "uc-need",
+            "validation",
+            "coverage"
+          ],
+          "delay": {
+            "mode": "none",
+            "jitterMs": 0
+          }
+        },
+        {
+          "stepKey": "uc-need-validate-4",
+          "order": 23,
+          "title": "Validate explicit UC need #4",
+          "actorKey": "biz_owner",
+          "intent": "Prove this lifecycle covers explicit requirement: Status controls for provisioning and deprovisioning flows",
+          "instruction": "Using concrete API reads and persisted state checks, validate this requirement is satisfied: \"Status controls for provisioning and deprovisioning flows\". If not satisfied, record exact gap and failing entities/endpoints.",
+          "expectedResult": "Evidence either confirms requirement coverage or captures a precise, reproducible gap.",
+          "toolHints": [],
+          "assertions": [
+            {
+              "kind": "api_response",
+              "description": "API call returns success and includes stable ids for created entities."
+            },
+            {
+              "kind": "acl_guard",
+              "description": "Actor permissions are honored for this step context."
+            }
+          ],
+          "evidenceRequired": [
+            {
+              "kind": "api_trace",
+              "label": "Request/response trace for this step"
+            },
+            {
+              "kind": "snapshot",
+              "label": "Structured snapshot.v1 screen blocks (what user saw) with real API-backed data"
+            }
+          ],
+          "guardrails": [],
+          "tags": [
+            "uc-need",
+            "validation",
+            "coverage"
+          ],
+          "delay": {
+            "mode": "none",
+            "jitterMs": 0
+          }
+        },
+        {
+          "stepKey": "persona-scenario-validate-1",
+          "order": 24,
+          "title": "Validate persona scenario #1",
+          "actorKey": "customer_1",
+          "intent": "Exercise persona-specific behavior: Token rotation requirements",
+          "instruction": "Simulate this persona scenario and validate outcome deterministically: \"Token rotation requirements\". Capture traces and snapshots so coverage can be audited later.",
+          "expectedResult": "Scenario behavior is either confirmed as supported or produces a clear, actionable failure report.",
+          "toolHints": [],
+          "assertions": [
+            {
+              "kind": "api_response",
+              "description": "API call returns success and includes stable ids for created entities."
+            },
+            {
+              "kind": "acl_guard",
+              "description": "Actor permissions are honored for this step context."
+            }
+          ],
+          "evidenceRequired": [
+            {
+              "kind": "api_trace",
+              "label": "Request/response trace for this step"
+            },
+            {
+              "kind": "snapshot",
+              "label": "Structured snapshot.v1 screen blocks (what user saw) with real API-backed data"
+            }
+          ],
+          "guardrails": [],
+          "tags": [
+            "persona-scenario",
+            "validation",
+            "coverage"
+          ],
+          "delay": {
+            "mode": "none",
+            "jitterMs": 0
+          }
+        },
+        {
+          "stepKey": "persona-scenario-validate-2",
+          "order": 25,
+          "title": "Validate persona scenario #2",
+          "actorKey": "customer_1",
+          "intent": "Exercise persona-specific behavior: Scope downgrade on token refresh",
+          "instruction": "Simulate this persona scenario and validate outcome deterministically: \"Scope downgrade on token refresh\". Capture traces and snapshots so coverage can be audited later.",
+          "expectedResult": "Scenario behavior is either confirmed as supported or produces a clear, actionable failure report.",
+          "toolHints": [],
+          "assertions": [
+            {
+              "kind": "api_response",
+              "description": "API call returns success and includes stable ids for created entities."
+            },
+            {
+              "kind": "acl_guard",
+              "description": "Actor permissions are honored for this step context."
+            }
+          ],
+          "evidenceRequired": [
+            {
+              "kind": "api_trace",
+              "label": "Request/response trace for this step"
+            },
+            {
+              "kind": "snapshot",
+              "label": "Structured snapshot.v1 screen blocks (what user saw) with real API-backed data"
+            }
+          ],
+          "guardrails": [],
+          "tags": [
+            "persona-scenario",
+            "validation",
+            "coverage"
+          ],
+          "delay": {
+            "mode": "none",
+            "jitterMs": 0
+          }
+        },
+        {
+          "stepKey": "persona-scenario-validate-3",
+          "order": 26,
+          "title": "Validate persona scenario #3",
+          "actorKey": "customer_1",
+          "intent": "Exercise persona-specific behavior: Data deletion cascades to third parties",
+          "instruction": "Simulate this persona scenario and validate outcome deterministically: \"Data deletion cascades to third parties\". Capture traces and snapshots so coverage can be audited later.",
+          "expectedResult": "Scenario behavior is either confirmed as supported or produces a clear, actionable failure report.",
+          "toolHints": [],
+          "assertions": [
+            {
+              "kind": "api_response",
+              "description": "API call returns success and includes stable ids for created entities."
+            },
+            {
+              "kind": "acl_guard",
+              "description": "Actor permissions are honored for this step context."
+            }
+          ],
+          "evidenceRequired": [
+            {
+              "kind": "api_trace",
+              "label": "Request/response trace for this step"
+            },
+            {
+              "kind": "snapshot",
+              "label": "Structured snapshot.v1 screen blocks (what user saw) with real API-backed data"
+            }
+          ],
+          "guardrails": [],
+          "tags": [
+            "persona-scenario",
+            "validation",
+            "coverage"
+          ],
+          "delay": {
+            "mode": "none",
+            "jitterMs": 0
+          }
+        },
+        {
+          "stepKey": "persona-scenario-validate-4",
+          "order": 27,
+          "title": "Validate persona scenario #4",
+          "actorKey": "customer_1",
+          "intent": "Exercise persona-specific behavior: OAuth consent screen clarity",
+          "instruction": "Simulate this persona scenario and validate outcome deterministically: \"OAuth consent screen clarity\". Capture traces and snapshots so coverage can be audited later.",
+          "expectedResult": "Scenario behavior is either confirmed as supported or produces a clear, actionable failure report.",
+          "toolHints": [],
+          "assertions": [
+            {
+              "kind": "api_response",
+              "description": "API call returns success and includes stable ids for created entities."
+            },
+            {
+              "kind": "acl_guard",
+              "description": "Actor permissions are honored for this step context."
+            }
+          ],
+          "evidenceRequired": [
+            {
+              "kind": "api_trace",
+              "label": "Request/response trace for this step"
+            },
+            {
+              "kind": "snapshot",
+              "label": "Structured snapshot.v1 screen blocks (what user saw) with real API-backed data"
+            }
+          ],
+          "guardrails": [],
+          "tags": [
+            "persona-scenario",
+            "validation",
+            "coverage"
+          ],
+          "delay": {
+            "mode": "none",
+            "jitterMs": 0
+          }
+        },
+        {
+          "stepKey": "persona-scenario-validate-5",
+          "order": 28,
+          "title": "Validate persona scenario #5",
+          "actorKey": "customer_1",
+          "intent": "Exercise persona-specific behavior: Rate limiting per integration partner",
+          "instruction": "Simulate this persona scenario and validate outcome deterministically: \"Rate limiting per integration partner\". Capture traces and snapshots so coverage can be audited later.",
+          "expectedResult": "Scenario behavior is either confirmed as supported or produces a clear, actionable failure report.",
+          "toolHints": [],
+          "assertions": [
+            {
+              "kind": "api_response",
+              "description": "API call returns success and includes stable ids for created entities."
+            },
+            {
+              "kind": "acl_guard",
+              "description": "Actor permissions are honored for this step context."
+            }
+          ],
+          "evidenceRequired": [
+            {
+              "kind": "api_trace",
+              "label": "Request/response trace for this step"
+            },
+            {
+              "kind": "snapshot",
+              "label": "Structured snapshot.v1 screen blocks (what user saw) with real API-backed data"
+            }
+          ],
+          "guardrails": [],
+          "tags": [
+            "persona-scenario",
+            "validation",
+            "coverage"
+          ],
+          "delay": {
+            "mode": "none",
+            "jitterMs": 0
+          }
+        },
+        {
+          "stepKey": "persona-scenario-validate-6",
+          "order": 29,
+          "title": "Validate persona scenario #6",
+          "actorKey": "customer_1",
+          "intent": "Exercise persona-specific behavior: Suspicious data access pattern detection",
+          "instruction": "Simulate this persona scenario and validate outcome deterministically: \"Suspicious data access pattern detection\". Capture traces and snapshots so coverage can be audited later.",
+          "expectedResult": "Scenario behavior is either confirmed as supported or produces a clear, actionable failure report.",
+          "toolHints": [],
+          "assertions": [
+            {
+              "kind": "api_response",
+              "description": "API call returns success and includes stable ids for created entities."
+            },
+            {
+              "kind": "acl_guard",
+              "description": "Actor permissions are honored for this step context."
+            }
+          ],
+          "evidenceRequired": [
+            {
+              "kind": "api_trace",
+              "label": "Request/response trace for this step"
+            },
+            {
+              "kind": "snapshot",
+              "label": "Structured snapshot.v1 screen blocks (what user saw) with real API-backed data"
+            }
+          ],
+          "guardrails": [],
+          "tags": [
+            "persona-scenario",
+            "validation",
+            "coverage"
+          ],
+          "delay": {
+            "mode": "none",
+            "jitterMs": 0
+          }
+        },
+        {
+          "stepKey": "runner-submit-artifacts",
+          "order": 30,
+          "title": "Runner submits snapshots and final report",
+          "actorKey": "biz_owner",
+          "intent": "Close loop with machine-readable evidence and human-readable findings.",
+          "instruction": "Upload snapshots for critical steps and submit final markdown report summarizing pass/fail and discovered gaps.",
+          "expectedResult": "Run has persisted report + snapshots in project directory and indexed metadata in DB.",
+          "toolHints": [],
+          "assertions": [
+            {
+              "kind": "api_response",
+              "description": "API call returns success and includes stable ids for created entities."
+            },
+            {
+              "kind": "acl_guard",
+              "description": "Actor permissions are honored for this step context."
+            }
+          ],
+          "evidenceRequired": [
+            {
+              "kind": "api_trace",
+              "label": "Request/response trace for this step"
+            },
+            {
+              "kind": "snapshot",
+              "label": "Structured snapshot.v1 screen blocks (what user saw) with real API-backed data"
+            }
+          ],
+          "guardrails": [],
+          "tags": [
+            "evidence",
+            "closeout"
+          ],
+          "delay": {
+            "mode": "none",
+            "jitterMs": 0
+          }
+        }
+      ]
+    }
+  ],
+  "metadata": {
+    "ucScenario": "A healthcare enterprise enables Azure AD SSO + SCIM sync. New hires automatically appear with mapped subject links, deactivated employees are suspended quickly, and every sync run has traceable status.",
+    "personaGoals": "Sync data, automate workflows",
+    "personaPainPoints": "",
+    "personaTestScenarios": [
+      "Token rotation requirements",
+      "Scope downgrade on token refresh",
+      "Data deletion cascades to third parties",
+      "OAuth consent screen clarity",
+      "Rate limiting per integration partner",
+      "Suspicious data access pattern detection"
+    ],
+    "coverageTargets": [
+      "adversary-marketplace-tenant-isolation"
+    ]
+  }
+}

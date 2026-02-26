@@ -1,0 +1,93 @@
+{
+  "schemaVersion": "snapshot.v1",
+  "screenKey": "adversary-cross-biz-read-1772038012131",
+  "title": "Adversary attempts unauthorized cross-biz read Snapshot",
+  "generatedAt": "2026-02-25T16:46:52.135Z",
+  "stepKey": "adversary-cross-biz-read",
+  "status": "passed",
+  "view": {
+    "title": "Adversary attempts unauthorized cross-biz read",
+    "subtitle": "Cross-biz read blocked for non-member account.",
+    "blocks": [
+      {
+        "type": "alert",
+        "title": "Adversary Cross Biz Read completed",
+        "message": "Cross-biz read blocked for non-member account.",
+        "tone": "success"
+      },
+      {
+        "type": "key_value",
+        "title": "Screen details",
+        "items": [
+          {
+            "label": "AdversaryUserId",
+            "value": "NBP730YO0MDEr666oF9TmF5IWaqi5pOF"
+          }
+        ]
+      }
+    ]
+  },
+  "rawData": {
+    "stepKey": "adversary-cross-biz-read",
+    "resultPayload": {
+      "note": "Cross-biz read blocked for non-member account.",
+      "evidence": {
+        "adversaryUserId": "NBP730YO0MDEr666oF9TmF5IWaqi5pOF"
+      }
+    },
+    "apiCalls": [
+      {
+        "method": "GET",
+        "path": "/api/auth/get-session",
+        "status": 200,
+        "responseBody": {
+          "session": {
+            "expiresAt": "2026-03-04T16:46:51.884Z",
+            "token": "OZaDqO9U7lKMXtqS2iHOksq9nkQNiFiQ",
+            "createdAt": "2026-02-25T16:46:51.884Z",
+            "updatedAt": "2026-02-25T16:46:51.884Z",
+            "ipAddress": "",
+            "userAgent": "node",
+            "userId": "NBP730YO0MDEr666oF9TmF5IWaqi5pOF",
+            "activeOrganizationId": null,
+            "impersonatedBy": null,
+            "id": "MUrQWlUj6ISJUWFlVEGRCJ6ml56NZ9m7"
+          },
+          "user": {
+            "name": "adversary-uc-187-the-long-name-user-namedropper",
+            "email": "adversary-uc-187-the-long-name-user-namedropper-1772038011763-och1nn@example.com",
+            "emailVerified": false,
+            "image": null,
+            "createdAt": "2026-02-25T16:46:51.874Z",
+            "updatedAt": "2026-02-25T16:46:51.874Z",
+            "role": "user",
+            "banned": false,
+            "banReason": null,
+            "banExpires": null,
+            "id": "NBP730YO0MDEr666oF9TmF5IWaqi5pOF"
+          }
+        },
+        "at": "2026-02-25T16:46:51.899Z"
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/bizes/3AAap12KdZqD7PIsmNjxKdowmpE/booking-orders",
+        "status": 403,
+        "responseBody": {
+          "success": false,
+          "error": {
+            "code": "FORBIDDEN",
+            "message": "You are not a member of this biz."
+          },
+          "meta": {
+            "requestId": "2d22ed08-239b-4255-a065-b972997a837d",
+            "timestamp": "2026-02-25T16:46:51.914Z"
+          }
+        },
+        "at": "2026-02-25T16:46:51.915Z"
+      }
+    ],
+    "contract": null
+  },
+  "metadata": {}
+}

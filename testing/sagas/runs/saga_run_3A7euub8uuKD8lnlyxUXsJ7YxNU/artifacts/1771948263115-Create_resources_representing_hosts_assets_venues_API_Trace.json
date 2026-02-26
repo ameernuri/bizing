@@ -1,0 +1,255 @@
+{
+  "stepKey": "owner-create-resources",
+  "callCount": 2,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs",
+      "status": 201,
+      "requestBody": {
+        "sagaKey": "uc-232-the-franchisee-priya",
+        "mode": "live",
+        "runnerLabel": "codex-rerun-all",
+        "runContext": {
+          "createdBy": "apps/api/src/scripts/rerun-sagas.ts"
+        }
+      },
+      "responseBody": {
+        "_truncated": true,
+        "_preview": "{\"success\":true,\"data\":{\"run\":{\"id\":\"saga_run_3A7ev9z06D44uEAFBEot8xkZtJ6\",\"sagaDefinitionId\":\"saga_definition_3A7asUxelEr03HiiX4VZTvmAgmB\",\"sagaKey\":\"uc-232-the-franchisee-priya\",\"bizId\":null,\"status\":\"pending\",\"mode\":\"live\",\"requestedByUserId\":\"ANJOKqSfClZHXaXnzc5ZUeuNHyPGIYd0\",\"runnerLabel\":\"codex-rerun-all\",\"definitionChecksum\":\"367db507bc35ad944b187375d20bda7e77f7c05db6c0ed2713919cda9c283265\",\"startedAt\":null,\"endedAt\":null,\"lastHeartbeatAt\":null,\"totalSteps\":20,\"passedSteps\":0,\"failedSteps\":0,\"skippedSteps\":0,\"runContext\":{\"createdBy\":\"apps/api/src/scripts/rerun-sagas.ts\"},\"runSummary\":{},\"metadata\":{\"tags\":[\"uc-derived\",\"persona-derived\",\"lifecycle\",\"api-first\",\"agents\"],\"title\":\"UC-232 • The Contract Pack Canary Rollout Across a Franchise Network • The Franchisee (Priya)\"},\"createdAt\":\"2026-02-24T15:51:03.058Z\",\"updatedAt\":\"2026-02-24T15:51:03.058Z\",\"deletedAt\":null,\"createdBy\":null,\"updatedBy\":null,\"deletedBy\":null},\"definition\":{\"id\":\"saga_definition_3A7asUxelEr03HiiX4VZTvmAgmB\",\"bizId\":null,\"sagaKey\":\"uc-232-the-franchisee-priya\",\"title\":\"UC-232 • The Contract Pack Canary Rollout Across a Franchise Network • The Franchisee (Priya)\",\"description\":\"Comprehensive lifecycle saga derived from UC-232 and persona P-6. Needs summary: Versioned contract packs; Scope-based binding (required/recommended/optional); Staged rollout runs with ordered targets; Per-target execution results with failure diagnostics and replayability\",\"status\":\"active\",\"sourceUseCaseRef\":\"UC-232\",\"sourcePersonaRef\":\"P-6\",\"sourceUseCaseFile\":\"/Users/ameer/bizing/mind/workspace/documentation/use-cases-comprehensive.md\",\"sourcePersonaFile\":\"/Users/ameer/bizing/mind/workspace/documentation/tester-personas.md\",\"specVersion\":\"saga.v0\",\"specFilePath\":\"testing/sagas/specs/uc-232-the-franchisee-priya.json\",\"specChecksum\":\"367db507bc35ad944b187375d20bda7e77f7c05db6c0ed2713919cda9c283265\",\"metadata\":{\"tags\":[\"uc-derived\",\"persona-derived\",\"lifecycle\",\"api-first\",\"agents\"],\"generatedAt\":\"2026-02-24T14:45:06.987Z\"},\"createdAt\":\"2026-02-24T15:17:49.187Z\",\"updatedAt\":\"2026-02-24T15:17:49.187Z\",\"deletedAt\":null,\"createdBy\":null,\"updatedBy\":null,\"deletedBy\":null},\"spec\":{\"schemaVersion\":\"saga.v0\",\"sagaKey\":\"uc-232-the-franchisee-priya\",\"title\":\"UC-232 • The Contract Pack Canary Rollout Across a Franchise Network • The Franchisee (Priya)\",\"description\":\"Comprehensive lifecycle saga derived from UC-232 and persona P-6. Needs summary: Versioned contract packs; Scope-based binding (required/recommended/optional); Staged rollout runs with ordered targets; Per-target execution results with failure diagnostics and replayability\",\"tags\":[\"uc-derived\",\"persona-derived\",\"lifecycle\",\"api-first\",\"agents\"],\"defaults\":{\"runMode\":\"dry_run\",\"continueOnFailure\":false},\"source\":{\"useCaseRef\":\"UC-232\",\"personaRef\":\"P-6\",\"useCaseFile\":\"/Users/ameer/bizing/mind/workspace/documentation/use-cases-comprehensive.md\",\"personaFile\":\"/Users/ameer/bizing/mind/workspace/documentation/tester-personas.md\",\"generatedAt\":\"2026-02-24T14:45:06.987Z\"},\"objectives\":[\"Validate UC-232 lifecycle end-to-end using persona The Franchisee (Priya).\",\"Exercise owner setup, team setup, catalog publishing, and customer journeys.\",\"Stress ACL/security edge cases and verify expected denials are enforced.\",\"Collect snapshots and report artifacts for every critical milestone.\"],\"actors\":[{\"actorKey\":\"biz_owner\",\"name\":\"The Franchisee (Priya)\",\"role\":\"owner\",\"description\":\"Owns 2 franchise locations, follows corporate rules\",\"personaRef\":\"P-6\"},{\"actorKey\":\"biz_member\",\"name\":\"Operations Team Member\",\"role\":\"manager\",\"description\":\"Business member invited by owner to assist with operations and booking flow.\"},{\"actorKey\":\"customer_1\",\"name\":\"Customer One\",\"role\":\"customer\",\"description\":\"Primary customer exploring catalog, booking services, and purchasing products.\"},{\"actorKey\":\"customer_2\",\"name\":\"Customer Two\",\"role\":\"customer\",\"description\":\"Concurrent customer used to simulate realistic demand and race conditions.\"},{\"actorKey\":\"adversary\",\"name\":\"Adversarial User\",\"role\":\"malicious_actor\",\"description\":\"Actor intentionally attempting unauthorized or abusive actions.\"}],\"phases\":[{\"phaseKey\":\"owner-onboarding\",\"order\":1,\"title\":\"Owner Onboarding\",\"description\":\"Business owner signs up, authenticates, and establishes tenant root.\",\"steps\":[{\"stepKey\":\"owner-sign-up\",\"order\":1,\"title\":\"Owner signs up and authenticates\",\"actorKey\":\"biz_owner\",\"intent\":\"Establish authenticated owner identity for the lifecycle.\",\"instruction\":\"Create or login the owner account through Better Auth endpoints, then verify session context can call authenticated API routes.\",\"expectedResult\":\"Owner session exists and authenticated routes return success for this user.\",\"toolHints\":[],\"assertions\":[{\"kind\":\"api_response\",\"description\":\"API call returns success and includes stable ids for created entities.\"},{\"kind\":\"acl_guard\",\"description\":\"Actor permissions are honored for this step context.\"}],\"evidenceRequired\":[{\"kind\":\"api_trace\",\"label\":\"Request/response trace for this step\"},{\"kind\":\"snapshot\",\"label\":\"Structured snapshot.v1 screen blocks (what user saw) with real API-backed data\"}],\"guardrails\":[],\"tags\":[\"auth\",\"setup\"]},{\"stepKey\":\"owner-create-biz\",\"order\":2,\"title\":\"Owner creates business tenant\",\"actorKey\":\"biz_owner\",\"intent\":\"Create the biz root for all subsequent configuration.\",\"instruction\":\"Using agents tools, create a biz representing The Contract Pack Canary Rollout Across a Franchise Network. Use name/slug derived from saga context.\",\"expectedResult\":\"Biz is created, owner is auto-added as member with owner role, and biz id is captured.\",\"toolHints\":[\"bizing.bizes.create\"],\"assertions\":[{\"kind\":\"api_response\",\"description\":\"API call returns success and includes stable ids for created entities.\"},{\"kind\":\"acl_guard\",\"description\":\"Actor permissions are honored for this step context.\"}],\"evidenceRequired\":[{\"kind\":\"api_trace\",\"label\":\"Request/response trace for this step\"},{\"kind\":\"snapshot\",\"label\":\"Structured snapshot.v1 screen blocks (what user saw) with real API-backed data\"}],\"guardrails\":[],\"tags\":[\"biz\",\"setup\"]},{\"stepKey\":\"owner-create-location\",\"order\":3,\"title\":\"Owner creates primary location\",\"actorKey\":\"biz_owner\",\"intent\":\"Establish operational location for services/resources.\",\"instruction\":\"Create a primary location for the biz and set timezone aligned with scenario context.\",\"expectedResult\":\"Location exists and is associated with the new biz.\",\"toolHints\":[\"bizing.locations.create\"],\"assertions\":[{\"kind\":\"api_response\",\"description\":\"API call returns success and includes stable ids for created entities.\"},{\"kind\":\"acl_guard\",\"description\":\"Actor permissions are honored for this step context.\"}],\"evidenceRequired\":[{\"kind\":\"api_trace\",\"label\":\"Request/response trace for this step\"},{\"kind\":\"snapshot\",\"label\":\"Structured snapshot.v1 screen blocks (what user saw) with real API-backed data\"}],\"guardrails\":[],\"tags\":[\"location\",\"setup\"]}]},{\"phaseKey\":\"business-configuration\",\"order\":2,\"title\":\"Business Configuration\",\"description\":\"Owner configures scheduling, pricing baseline, and operational defaults.\",\"steps\":[{\"stepKey\":\"owner-configure-hours\",\"order\":4,\"title\":\"Configure default hours and availability mode\",\"actorKey\":\"biz_owner\",\"intent\":\"Set baseline availability without forcing advanced complexity.\",\"instruction\":\"Create baseline availability and lead-time rules representing the UC default business hours and booking window behavior.\",\"expectedResult\":\"Availability defaults and rules are stored and can be referenced by calendars.\",\"toolHints\":[],\"assertions\":[{\"kind\":\"api_response\",\"description\":\"API call returns success and includes stable ids for created entities.\"},{\"kind\":\"acl_guard\",\"description\":\"Actor permissions are honored for this step context.\"}],\"evidenceRequired\":[{\"kind\":\"api_trace\",\"label\":\"Request/response trace for this step\"},{\"kind\":\"snapshot\",\"label\":\"Structured snapshot.v1 screen blocks (what user saw) with real API-backed data\"}],\"guardrails\":[],\"tags\":[\"availability\",\"policy\"]},{\"stepKey\":\"owner-configure-pricing\",\"order\":5,\"title\":\"Configure default pricing rules\",\"actorKey\":\"biz_owner\",\"intent\":\"Set base pricing and optional manual demand overrides.\",\"instruction\":\"Configure pricing defaults for the offer lifecycle including call fees/manual surge if UC needs imply it.\",\"expectedResult\":\"Pricing model persists and future bookings can calculate totals deterministically.\",\"toolHints\":[],\"assertions\":[{\"kind\":\"api_response\",\"description\":\"API call returns success and includes stable ids for created entities.\"},{\"kind\":\"acl_guard\",\"description\":\"Actor permissions are honored for this step context.\"}],\"evidenceRequired\":[{\"kind\":\"api_trace\",\"label\":\"Request/response trace for this step\"},{\"kind\":\"snapshot\",\"label\":\"Structured snapshot.v1 screen blocks (what user saw) with real API-backed data\"}],\"guardrails\":[],\"tags\":[\"pricing\"]}]},{\"phaseKey\":\"supply-and-team-setup\",\"order\":3,\"title\":\"Supply And Team Setup\",\"description\":\"Business owner sets up hosts/assets/venues/resources and invites members.\",\"steps\":[{\"stepKey\":\"owner-create-resources\",\"order\":6,\"title\":\"Create resources representing hosts/assets/venues\",\"actorKey\":\"biz_owner\",\"intent\":\"Model real-world supply that bookings will consume.\",\"instruction\":\"Create at least one host resource and one non-host resource (asset or venue) suitable for the UC.\",\"expectedResult\":\"Resources are created with expected type, location, and buffers.\",\"toolHints\":[\"bizing.resources.create\"],\"assertions\":[{\"kind\":\"api_response\",\"description\":\"API call returns success and includes stable ids for created entities.\"},{\"kind\":\"acl_guard\",\"description\":\"Actor permissions are honored for this step context.\"}],\"evidenceRequired\":[{\"kind\":\"api_trace\",\"label\":\"Request/response trace for this step\"},{\"kind\":\"snapshot\",\"label\":\"Structured snapshot.v1 screen blocks (what user saw) with real API-backed data\"}],\"guardrails\":[],\"tags\":[\"resources\"]},{\"stepKey\":\"owner-invite-member\",\"order\":7,\"title\":\"Invite and provision business member\",\"actorKey\":\"biz_owner\",\"intent\":\"Validate collaboration and role assignment.\",\"instruction\":\"Invite a biz member, assign an operational role, and verify that member can authenticate into the same biz.\",\"expectedResult\":\"Biz member account/session exists with scoped role permissions.\",\"toolHints\":[],\"assertions\":[{\"kind\":\"api_response\",\"description\":\"API call returns success and includes stable ids for created entities.\"},{\"kind\":\"acl_guard\",\"description\":\"Actor permissions are honored for this step context.\"}],\"evidenceRequired\":[{\"kind\":\"api_trace\",\"label\":\"Request/response trace for this step\"},{\"kind\":\"snapshot\",\"label\":\"Structured snapshot.v1 screen blocks (what user saw) with real API-backed data\"}],\"guardrails\":[],\"tags\":[\"team\",\"acl\"]}]},{\"phaseKey\":\"catalog-publish\",\"order\":4,\"title\":\"Catalog And Publish\",\"description\":\"Owner creates services/offers/products and publishes sellable catalog entries.\",\"steps\":[{\"stepKey\":\"owner-create-offer\",\"order\":8,\"title\":\"Create offer shell\",\"actorKey\":\"biz_owner\",\"intent\":\"Define sellable service/catalog entry.\",\"instruction\":\"Create an offer representing the UC primary service; choose execution mode matching the scenario.\",\"expectedResult\":\"Offer is created in draft state with captured id.\",\"toolHints\":[\"bizing.offers.create\"],\"assertions\":[{\"kind\":\"api_response\",\"description\":\"API call returns success and includes stable ids for created entities.\"},{\"kind\":\"acl_guard\",\"description\":\"Actor permissions are honored for this step context.\"}],\"evidenceRequired\":[{\"kind\":\"api_trace\",\"label\":\"Request/response trace for this step\"},{\"kind\":\"snapshot\",\"label\":\"Structured snapshot.v1 screen blocks (what user saw) with real API-backed data\"}],\"guardrails\":[],\"tags\":[\"offer\",\"catalog\"]},{\"stepKey\":\"owner-create-offer-version\",\"order\":9,\"title\":\"Create and publish offer version\",\"actorKey\":\"biz_owner\",\"intent\":\"Freeze booking rules, durat",
+        "_size": 46911
+      },
+      "at": "2026-02-24T15:51:03.078Z"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3A7euG7EbsFxMAYPXU3dw57SiUM/snapshots",
+      "status": 201,
+      "requestBody": {
+        "stepKey": "adversary-marketplace-tenant-isolation",
+        "screenKey": "adversary-marketplace-tenant-isolation-1771948263056",
+        "title": "Cross-biz isolation under marketplace/enterprise flow Snapshot",
+        "status": "passed",
+        "route": "/sagas/saga_run_3A7euG7EbsFxMAYPXU3dw57SiUM/adversary-marketplace-tenant-isolation",
+        "format": "json",
+        "view": {
+          "title": "Cross-biz isolation under marketplace/enterprise flow",
+          "subtitle": "Marketplace/cross-biz isolation enforced for non-member adversary.",
+          "blocks": [
+            {
+              "type": "alert",
+              "title": "Adversary Marketplace Tenant Isolation completed",
+              "message": "Marketplace/cross-biz isolation enforced for non-member adversary.",
+              "tone": "success"
+            },
+            {
+              "type": "key_value",
+              "title": "Screen details",
+              "items": [
+                {
+                  "label": "AdversaryUserId",
+                  "value": "9RpkJbVkxDS9b5IF5BXhqjzkrqvkmOeH"
+                }
+              ]
+            }
+          ]
+        },
+        "rawData": {
+          "stepKey": "adversary-marketplace-tenant-isolation",
+          "resultPayload": {
+            "note": "Marketplace/cross-biz isolation enforced for non-member adversary.",
+            "evidence": {
+              "adversaryUserId": "9RpkJbVkxDS9b5IF5BXhqjzkrqvkmOeH"
+            }
+          },
+          "apiCalls": [
+            {
+              "method": "POST",
+              "path": "/api/v1/sagas/runs/saga_run_3A7eu0FxzjGZxaMsEQZCgXfLJS4/steps/runner-submit-artifacts/result",
+              "status": 200,
+              "requestBody": {
+                "status": "in_progress",
+                "startedAt": "2026-02-24T15:51:02.885Z",
+                "resultPayload": {
+                  "note": "Started runner-submit-artifacts"
+                },
+                "assertionSummary": {
+                  "status": "in_progress"
+                }
+              },
+              "responseBody": {
+                "success": true,
+                "data": {
+                  "id": "saga_run_step_3A7etxa1hbYflmroopszl50oo5b",
+                  "sagaRunId": "saga_run_3A7eu0FxzjGZxaMsEQZCgXfLJS4",
+                  "phaseKey": "reporting-and-closeout",
+                  "phaseOrder": 8,
+                  "phaseTitle": "Reporting And Closeout",
+                  "stepKey": "runner-submit-artifacts",
+                  "stepOrder": 21,
+                  "actorKey": "biz_owner",
+                  "instruction": "Upload snapshots for critical steps and submit final markdown report summarizing pass/fail and discovered gaps.",
+                  "expectedResult": "Run has persisted report + snapshots in project directory and indexed metadata in DB.",
+                  "status": "in_progress",
+                  "attemptCount": 1,
+                  "startedAt": "2026-02-24T15:51:02.885Z",
+                  "endedAt": null,
+                  "failureCode": null,
+                  "failureMessage": null,
+                  "resultPayload": {
+                    "note": "Started runner-submit-artifacts"
+                  },
+                  "assertionSummary": {
+                    "status": "in_progress"
+                  },
+                  "metadata": {},
+                  "createdAt": "2026-02-24T15:50:54.960Z",
+                  "updatedAt": "2026-02-24T15:50:54.960Z",
+                  "deletedAt": null,
+                  "createdBy": null,
+                  "updatedBy": null,
+                  "deletedBy": null
+                },
+                "meta": {
+                  "requestId": "7bf96179-c673-45e5-bc45-fd9eaa09e8c0",
+                  "timestamp": "2026-02-24T15:51:02.913Z"
+                }
+              },
+              "at": "2026-02-24T15:51:02.914Z"
+            },
+            {
+              "method": "GET",
+              "path": "/api/v1/bizes/3A7euNPOUZvEw377tSBueTZYJIu/offers",
+              "status": 403,
+              "responseBody": {
+                "success": false,
+                "error": {
+                  "code": "FORBIDDEN",
+                  "message": "You are not a member of this biz."
+                },
+                "meta": {
+                  "requestId": "30569569-b07c-4262-8cf0-ffa9af714ea6",
+                  "timestamp": "2026-02-24T15:51:02.915Z"
+                }
+              },
+              "at": "2026-02-24T15:51:02.915Z"
+            },
+            {
+              "method": "GET",
+              "path": "/api/v1/bizes/3A7euJHGAbwUrmPM1n041foCXuQ/booking-orders?perPage=100",
+              "status": 200,
+              "responseBody": {
+                "success": true,
+                "data": [
+                  {
+                    "id": "booking_order_3A7eurJoPFFNcwxN9MXcpH3W8Sc",
+                    "bizId": "3A7euJHGAbwUrmPM1n041foCXuQ",
+                    "offerId": "offer_3A7euZNCwoU3Hjd6LFwjS4Gyv1N",
+                    "offerVersionId": "offer_version_3A7euZHN9HRPVu8iVLr2qAeaZ3b",
+                    "customerUserId": "WmLwbOQrwxrWO6pbXZTanSskB5V00ahI",
+                    "customerGroupAccountId": null,
+                    "status": "in_progress",
+                    "statusConfigValueId": null,
+                    "currency": "USD",
+                    "subtotalMinor": 15000,
+                    "taxMinor": 0,
+                    "feeMinor": 0,
+                    "discountMinor": 0,
+                    "totalMinor": 15000,
+                    "requestedStartAt": "2026-02-25T15:51:01.232Z",
+                    "requestedEndAt": "2026-02-25T16:41:01.232Z",
+                    "confirmedStartAt": "2026-02-25T15:51:01.232Z",
+                    "confirmedEndAt": "2026-02-25T16:41:01.232Z",
+                    "pricingSnapshot": {},
+                    "policySnapshot": {},
+                    "metadata": {},
+                    "createdAt": "2026-02-24T15:51:01.241Z",
+                    "updatedAt": "2026-02-24T15:51:01.241Z",
+                    "deletedAt": null,
+                    "createdBy": null,
+                    "updatedBy": null,
+                    "deletedBy": null
+                  },
+                  {
+                    "id": "booking_order_3A7euhaIoFiB8T5tT1l8x1rEbW5",
+                    "bizId": "3A7euJHGAbwUrmPM1n041foCXuQ",
+                    "offerId": "offer_3A7euZNCwoU3Hjd6LFwjS4Gyv1N",
+                    "offerVersionId": "offer_version_3A7euZHN9HRPVu8iVLr2qAeaZ3b",
+                    "customerUserId": "K7ZrZQjabFwVAAPR7vv1F4ZxYAgbChU9",
+                    "customerGroupAccountId": null,
+                    "status": "confirmed",
+                    "statusConfigValueId": null,
+                    "currency": "USD",
+                    "subtotalMinor": 15000,
+                    "taxMinor": 0,
+                    "feeMinor": 0,
+                    "discountMinor": 0,
+                    "totalMinor": 15000,
+                    "requestedStartAt": "2026-02-25T15:51:00.898Z",
+                    "requestedEndAt": "2026-02-25T16:41:00.898Z",
+                    "confirmedStartAt": "2026-02-25T15:51:00.898Z",
+                    "confirmedEndAt": "2026-02-25T16:41:00.898Z",
+                    "pricingSnapshot": {},
+                    "policySnapshot": {},
+                    "metadata": {},
+                    "createdAt": "2026-02-24T15:51:00.903Z",
+                    "updatedAt": "2026-02-24T15:51:00.903Z",
+                    "deletedAt": null,
+                    "createdBy": null,
+                    "updatedBy": null,
+                    "deletedBy": null
+                  }
+                ],
+                "meta": {
+                  "requestId": "40eec17d-f019-446e-a64a-f276c24cd018",
+                  "timestamp": "2026-02-24T15:51:02.916Z"
+                },
+                "pagination": {
+                  "page": 1,
+                  "perPage": 100,
+                  "total": 2,
+                  "hasMore": false
+                }
+              },
+              "at": "2026-02-24T15:51:02.916Z"
+            }
+          ]
+        }
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "id": "saga_artifact_3A7ev7oiZANoJzhiVMfzLXYuvml",
+          "sagaRunId": "saga_run_3A7euG7EbsFxMAYPXU3dw57SiUM",
+          "sagaRunStepId": "saga_run_step_3A7euCBQyswqXvVeBIOkjgIjbvm",
+          "artifactType": "snapshot",
+          "title": "Cross-biz isolation under marketplace/enterprise flow Snapshot",
+          "storagePath": "testing/sagas/runs/saga_run_3A7euG7EbsFxMAYPXU3dw57SiUM/snapshots/2026-02-24T15-51-03-058Z-adversary-marketplace-tenant-isolation-1771948263056.json",
+          "contentType": "application/json",
+          "bodyText": "{\n  \"schemaVersion\": \"snapshot.v1\",\n  \"screenKey\": \"adversary-marketplace-tenant-isolation-1771948263056\",\n  \"title\": \"Cross-biz isolation under marketplace/enterprise flow Snapshot\",\n  \"generatedAt\": \"2026-02-24T15:51:03.058Z\",\n  \"stepKey\": \"adversary-marketplace-tenant-isolation\",\n  \"status\": \"passed\",\n  \"view\": {\n    \"title\": \"Cross-biz isolation under marketplace/enterprise flow\",\n    \"subtitle\": \"Marketplace/cross-biz isolation enforced for non-member adversary.\",\n    \"blocks\": [\n      {\n        \"type\": \"alert\",\n        \"title\": \"Adversary Marketplace Tenant Isolation completed\",\n        \"message\": \"Marketplace/cross-biz isolation enforced for non-member adversary.\",\n        \"tone\": \"success\"\n      },\n      {\n        \"type\": \"key_value\",\n        \"title\": \"Screen details\",\n        \"items\": [\n          {\n            \"label\": \"AdversaryUserId\",\n            \"value\": \"9RpkJbVkxDS9b5IF5BXhqjzkrqvkmOeH\"\n          }\n        ]\n      }\n    ]\n  },\n  \"rawData\": {\n    \"stepKey\": \"adversary-marketplace-tenant-isolation\",\n    \"resultPayload\": {\n      \"note\": \"Marketplace/cross-biz isolation enforced for non-member adversary.\",\n      \"evidence\": {\n        \"adversaryUserId\": \"9RpkJbVkxDS9b5IF5BXhqjzkrqvkmOeH\"\n      }\n    },\n    \"apiCalls\": [\n      {\n        \"method\": \"POST\",\n        \"path\": \"/api/v1/sagas/runs/saga_run_3A7eu0FxzjGZxaMsEQZCgXfLJS4/steps/runner-submit-artifacts/result\",\n        \"status\": 200,\n        \"requestBody\": {\n          \"status\": \"in_progress\",\n          \"startedAt\": \"2026-02-24T15:51:02.885Z\",\n          \"resultPayload\": {\n            \"note\": \"Started runner-submit-artifacts\"\n          },\n          \"assertionSummary\": {\n            \"status\": \"in_progress\"\n          }\n        },\n        \"responseBody\": {\n          \"success\": true,\n          \"data\": {\n            \"id\": \"saga_run_step_3A7etxa1hbYflmroopszl50oo5b\",\n            \"sagaRunId\": \"saga_run_3A7eu0FxzjGZxaMsEQZCgXfLJS4\",\n            \"phaseKey\": \"reporting-and-closeout\",\n            \"phaseOrder\": 8,\n            \"phaseTitle\": \"Reporting And Closeout\",\n            \"stepKey\": \"runner-submit-artifacts\",\n            \"stepOrder\": 21,\n            \"actorKey\": \"biz_owner\",\n            \"instruction\": \"Upload snapshots for critical steps and submit final markdown report summarizing pass/fail and discovered gaps.\",\n            \"expectedResult\": \"Run has persisted report + snapshots in project directory and indexed metadata in DB.\",\n            \"status\": \"in_progress\",\n            \"attemptCount\": 1,\n            \"startedAt\": \"2026-02-24T15:51:02.885Z\",\n            \"endedAt\": null,\n            \"failureCode\": null,\n            \"failureMessage\": null,\n            \"resultPayload\": {\n              \"note\": \"Started runner-submit-artifacts\"\n            },\n            \"assertionSummary\": {\n              \"status\": \"in_progress\"\n            },\n            \"metadata\": {},\n            \"createdAt\": \"2026-02-24T15:50:54.960Z\",\n            \"updatedAt\": \"2026-02-24T15:50:54.960Z\",\n            \"deletedAt\": null,\n            \"createdBy\": null,\n            \"updatedBy\": null,\n            \"deletedBy\": null\n          },\n          \"meta\": {\n            \"requestId\": \"7bf96179-c673-45e5-bc45-fd9eaa09e8c0\",\n            \"timestamp\": \"2026-02-24T15:51:02.913Z\"\n          }\n        },\n        \"at\": \"2026-02-24T15:51:02.914Z\"\n      },\n      {\n        \"method\": \"GET\",\n        \"path\": \"/api/v1/bizes/3A7euNPOUZvEw377tSBueTZYJIu/offers\",\n        \"status\": 403,\n        \"responseBody\": {\n          \"success\": false,\n          \"error\": {\n            \"code\": \"FORBIDDEN\",\n            \"message\": \"You are not a member of this biz.\"\n          },\n          \"meta\": {\n            \"requestId\": \"30569569-b07c-4262-8cf0-ffa9af714ea6\",\n            \"timestamp\": \"2026-02-24T15:51:02.915Z\"\n          }\n        },\n        \"at\": \"2026-02-24T15:51:02.915Z\"\n      },\n      {\n        \"method\": \"GET\",\n        \"path\": \"/api/v1/bizes/3A7euJHGAbwUrmPM1n041foCXuQ/booking-orders?perPage=100\",\n        \"status\": 200,\n        \"responseBody\": {\n          \"success\": true,\n          \"data\": [\n            {\n              \"id\": \"booking_order_3A7eurJoPFFNcwxN9MXcpH3W8Sc\",\n              \"bizId\": \"3A7euJHGAbwUrmPM1n041foCXuQ\",\n              \"offerId\": \"offer_3A7euZNCwoU3Hjd6LFwjS4Gyv1N\",\n              \"offerVersionId\": \"offer_version_3A7euZHN9HRPVu8iVLr2qAeaZ3b\",\n              \"customerUserId\": \"WmLwbOQrwxrWO6pbXZTanSskB5V00ahI\",\n              \"customerGroupAccountId\": null,\n              \"status\": \"in_progress\",\n              \"statusConfigValueId\": null,\n              \"currency\": \"USD\",\n              \"subtotalMinor\": 15000,\n              \"taxMinor\": 0,\n              \"feeMinor\": 0,\n              \"discountMinor\": 0,\n              \"totalMinor\": 15000,\n              \"requestedStartAt\": \"2026-02-25T15:51:01.232Z\",\n              \"requestedEndAt\": \"2026-02-25T16:41:01.232Z\",\n              \"confirmedStartAt\": \"2026-02-25T15:51:01.232Z\",\n              \"confirmedEndAt\": \"2026-02-25T16:41:01.232Z\",\n              \"pricingSnapshot\": {},\n              \"policySnapshot\": {},\n              \"metadata\": {},\n              \"createdAt\": \"2026-02-24T15:51:01.241Z\",\n              \"updatedAt\": \"2026-02-24T15:51:01.241Z\",\n              \"deletedAt\": null,\n              \"createdBy\": null,\n              \"updatedBy\": null,\n              \"deletedBy\": null\n            },\n            {\n              \"id\": \"booking_order_3A7euhaIoFiB8T5tT1l8x1rEbW5\",\n              \"bizId\": \"3A7euJHGAbwUrmPM1n041foCXuQ\",\n              \"offerId\": \"offer_3A7euZNCwoU3Hjd6LFwjS4Gyv1N\",\n              \"offerVersionId\": \"offer_version_3A7euZHN9HRPVu8iVLr2qAeaZ3b\",\n              \"customerUserId\": \"K7ZrZQjabFwVAAPR7vv1F4ZxYAgbChU9\",\n              \"customerGroupAccountId\": null,\n              \"status\": \"confirmed\",\n              \"statusConfigValueId\": null,\n              \"currency\": \"USD\",\n              \"subtotalMinor\": 15000,\n              \"taxMinor\": 0,\n              \"feeMinor\": 0,\n              \"discountMinor\": 0,\n              \"totalMinor\": 15000,\n              \"requestedStartAt\": \"2026-02-25T15:51:00.898Z\",\n              \"requestedEndAt\": \"2026-02-25T16:41:00.898Z\",\n              \"confirmedStartAt\": \"2026-02-25T15:51:00.898Z\",\n              \"confirmedEndAt\": \"2026-02-25T16:41:00.898Z\",\n              \"pricingSnapshot\": {},\n              \"policySnapshot\": {},\n              \"metadata\": {},\n              \"createdAt\": \"2026-02-24T15:51:00.903Z\",\n              \"updatedAt\": \"2026-02-24T15:51:00.903Z\",\n              \"deletedAt\": null,\n              \"createdBy\": null,\n              \"updatedBy\": null,\n              \"deletedBy\": null\n            }\n          ],\n          \"meta\": {\n            \"requestId\": \"40eec17d-f019-446e-a64a-f276c24cd018\",\n            \"timestamp\": \"2026-02-24T15:51:02.916Z\"\n          },\n          \"pagination\": {\n            \"page\": 1,\n            \"perPage\": 100,\n            \"total\": 2,\n            \"hasMore\": false\n          }\n        },\n        \"at\": \"2026-02-24T15:51:02.916Z\"\n      }\n    ]\n  },\n  \"metadata\": {}\n}\n",
+          "byteSize": 6975,
+          "checksum": "2254fa534ce09b80fc7cfbfced7213e78c7316451aa000ffc045541edd6133ff",
+          "capturedAt": "2026-02-24T15:51:03.062Z",
+          "metadata": {
+            "format": "json",
+            "stepKey": "adversary-marketplace-tenant-isolation",
+            "screenKey": "adversary-marketplace-tenant-isolation-1771948263056",
+            "sourceFormat": "v1",
+            "schemaVersion": "snapshot.v1"
+          },
+          "createdAt": "2026-02-24T15:51:03.062Z",
+          "updatedAt": "2026-02-24T15:51:03.062Z",
+          "deletedAt": null,
+          "createdBy": null,
+          "updatedBy": null,
+          "deletedBy": null
+        },
+        "meta": {
+          "requestId": "68cd2eac-973b-476b-9c14-7faf615923df",
+          "timestamp": "2026-02-24T15:51:03.071Z"
+        }
+      },
+      "at": "2026-02-24T15:51:03.078Z"
+    }
+  ]
+}

@@ -1,0 +1,492 @@
+{
+  "schemaVersion": "snapshot.v1",
+  "screenKey": "owner-revenue-sanity-1771947905470",
+  "title": "Owner validates financial/reporting outputs Snapshot",
+  "generatedAt": "2026-02-24T15:45:05.482Z",
+  "stepKey": "owner-revenue-sanity",
+  "status": "passed",
+  "view": {
+    "title": "Owner validates financial/reporting outputs",
+    "subtitle": "Revenue sanity computed from booking orders.",
+    "blocks": [
+      {
+        "type": "alert",
+        "title": "Owner Revenue Sanity completed",
+        "message": "Revenue sanity computed from booking orders.",
+        "tone": "success"
+      },
+      {
+        "type": "stats",
+        "title": "What user sees at a glance",
+        "items": [
+          {
+            "label": "BookingCount",
+            "value": "2"
+          },
+          {
+            "label": "TotalMinor",
+            "value": "30000"
+          }
+        ]
+      },
+      {
+        "type": "key_value",
+        "title": "Screen details",
+        "items": [
+          {
+            "label": "BookingCount",
+            "value": "2"
+          },
+          {
+            "label": "TotalMinor",
+            "value": "30000"
+          },
+          {
+            "label": "Currency",
+            "value": "USD"
+          }
+        ]
+      }
+    ]
+  },
+  "rawData": {
+    "stepKey": "owner-revenue-sanity",
+    "resultPayload": {
+      "note": "Revenue sanity computed from booking orders.",
+      "evidence": {
+        "bookingCount": 2,
+        "totalMinor": 30000,
+        "currency": "USD"
+      }
+    },
+    "apiCalls": [
+      {
+        "method": "POST",
+        "path": "/api/v1/sagas/runs/saga_run_3A7eBIh67LquTqpdSdhy3A7cquZ/traces",
+        "status": 201,
+        "requestBody": {
+          "_truncated": true,
+          "_preview": "{\"stepKey\":\"owner-revenue-sanity\",\"title\":\"Owner validates financial/reporting outputs API Trace\",\"trace\":{\"stepKey\":\"owner-revenue-sanity\",\"callCount\":1,\"calls\":[{\"method\":\"GET\",\"path\":\"/api/v1/agents/tools\",\"status\":200,\"responseBody\":{\"_truncated\":true,\"_preview\":\"{\\\"success\\\":true,\\\"data\\\":[{\\\"name\\\":\\\"bizing.bizes.list\\\",\\\"description\\\":\\\"List bizes available to the authenticated user.\\\",\\\"method\\\":\\\"GET\\\",\\\"path\\\":\\\"/api/v1/bizes\\\",\\\"tags\\\":[\\\"bizes\\\"],\\\"parameters\\\":{\\\"type\\\":\\\"object\\\",\\\"properties\\\":{\\\"page\\\":{\\\"type\\\":\\\"number\\\",\\\"default\\\":1},\\\"perPage\\\":{\\\"type\\\":\\\"number\\\",\\\"default\\\":20},\\\"status\\\":{\\\"type\\\":\\\"string\\\"},\\\"type\\\":{\\\"type\\\":\\\"string\\\"}}}},{\\\"name\\\":\\\"bizing.bizes.create\\\",\\\"description\\\":\\\"Create a biz and make current user owner.\\\",\\\"method\\\":\\\"POST\\\",\\\"path\\\":\\\"/api/v1/bizes\\\",\\\"tags\\\":[\\\"bizes\\\"],\\\"parameters\\\":{\\\"type\\\":\\\"object\\\",\\\"properties\\\":{\\\"name\\\":{\\\"type\\\":\\\"string\\\"},\\\"slug\\\":{\\\"type\\\":\\\"string\\\"},\\\"type\\\":{\\\"type\\\":\\\"string\\\"},\\\"timezone\\\":{\\\"type\\\":\\\"string\\\"},\\\"currency\\\":{\\\"type\\\":\\\"string\\\"}},\\\"required\\\":[\\\"name\\\",\\\"slug\\\"]}},{\\\"name\\\":\\\"bizing.auth.me\\\",\\\"description\\\":\\\"Get authenticated user context, memberships, active biz, and effective permissions.\\\",\\\"method\\\":\\\"GET\\\",\\\"path\\\":\\\"/api/v1/auth/me\\\",\\\"tags\\\":[\\\"auth\\\",\\\"acl\\\"],\\\"parameters\\\":{\\\"type\\\":\\\"object\\\",\\\"properties\\\":{}}},{\\\"name\\\":\\\"bizing.auth.switchActiveBiz\\\",\\\"description\\\":\\\"Switch active biz context for the current session.\\\",\\\"method\\\":\\\"PATCH\\\",\\\"path\\\":\\\"/api/v1/auth/active-biz\\\",\\\"tags\\\":[\\\"auth\\\"],\\\"parameters\\\":{\\\"type\\\":\\\"object\\\",\\\"properties\\\":{\\\"bizId\\\":{\\\"type\\\":\\\"string\\\"}},\\\"required\\\":[\\\"bizId\\\"]}},{\\\"name\\\":\\\"bizing.auth.apiKeys.list\\\",\\\"description\\\":\\\"List machine API keys owned by current user.\\\",\\\"method\\\":\\\"GET\\\",\\\"path\\\":\\\"/api/v1/auth/api-keys\\\",\\\"tags\\\":[\\\"auth\\\",\\\"machine\\\"],\\\"parameters\\\":{\\\"type\\\":\\\"object\\\",\\\"properties\\\":{\\\"includeRevoked\\\":{\\\"type\\\":\\\"boolean\\\",\\\"default\\\":false},\\\"bizId\\\":{\\\"type\\\":\\\"string\\\"},\\\"limit\\\":{\\\"type\\\":\\\"number\\\",\\\"default\\\":100}}}},{\\\"name\\\":\\\"bizing.auth.apiKeys.create\\\",\\\"description\\\":\\\"Create one machine API key (raw secret returned once).\\\",\\\"method\\\":\\\"POST\\\",\\\"path\\\":\\\"/api/v1/auth/api-keys\\\",\\\"tags\\\":[\\\"auth\\\",\\\"machine\\\"],\\\"parameters\\\":{\\\"type\\\":\\\"object\\\",\\\"properties\\\":{\\\"label\\\":{\\\"type\\\":\\\"string\\\"},\\\"description\\\":{\\\"type\\\":\\\"string\\\"},\\\"bizId\\\":{\\\"type\\\":\\\"string\\\"},\\\"scopes\\\":{\\\"type\\\":\\\"array\\\",\\\"items\\\":{\\\"type\\\":\\\"string\\\"}},\\\"expiresAt\\\":{\\\"type\\\":\\\"string\\\",\\\"description\\\":\\\"ISO datetime\\\"},\\\"allowDirectApiKeyAuth\\\":{\\\"type\\\":\\\"boolean\\\",\\\"default\\\":false},\\\"metadata\\\":{\\\"type\\\":\\\"object\\\"}},\\\"required\\\":[\\\"label\\\"]}},{\\\"name\\\":\\\"bizing.auth.apiKeys.revoke\\\",\\\"description\\\":\\\"Revoke one API key and all child short-lived tokens.\\\",\\\"method\\\":\\\"POST\\\",\\\"path\\\":\\\"/api/v1/auth/api-keys/{apiCredentialId}/revoke\\\",\\\"tags\\\":[\\\"auth\\\",\\\"machine\\\"],\\\"parameters\\\":{\\\"type\\\":\\\"object\\\",\\\"properties\\\":{\\\"apiCredentialId\\\":{\\\"type\\\":\\\"string\\\"},\\\"reason\\\":{\\\"type\\\":\\\"string\\\"}},\\\"required\\\":[\\\"apiCredentialId\\\"]}},{\\\"name\\\":\\\"bizing.auth.tokens.exchange\\\",\\\"description\\\":\\\"Exchange an API key for a short-lived bearer token. Supports session + apiCredentialId or direct x-api-key auth.\\\",\\\"method\\\":\\\"POST\\\",\\\"path\\\":\\\"/api/v1/auth/tokens/exchange\\\",\\\"tags\\\":[\\\"auth\\\",\\\"machine\\\"],\\\"parameters\\\":{\\\"type\\\":\\\"object\\\",\\\"properties\\\":{\\\"apiCredentialId\\\":{\\\"type\\\":\\\"string\\\"},\\\"apiKey\\\":{\\\"type\\\":\\\"string\\\"},\\\"scopes\\\":{\\\"type\\\":\\\"array\\\",\\\"items\\\":{\\\"type\\\":\\\"string\\\"}},\\\"ttlSeconds\\\":{\\\"type\\\":\\\"number\\\",\\\"default\\\":900},\\\"bizId\\\":{\\\"type\\\":\\\"string\\\"},\\\"reason\\\":{\\\"type\\\":\\\"string\\\"}}}},{\\\"name\\\":\\\"bizing.auth.tokens.revoke\\\",\\\"description\\\":\\\"Revoke one short-lived machine access token.\\\",\\\"method\\\":\\\"POST\\\",\\\"path\\\":\\\"/api/v1/auth/tokens/{tokenId}/revoke\\\",\\\"tags\\\":[\\\"auth\\\",\\\"machine\\\"],\\\"parameters\\\":{\\\"type\\\":\\\"object\\\",\\\"properties\\\":{\\\"tokenId\\\":{\\\"type\\\":\\\"string\\\"},\\\"reason\\\":{\\\"type\\\":\\\"string\\\"}},\\\"required\\\":[\\\"tokenId\\\"]}},{\\\"name\\\":\\\"bizing.acl.biz.roles.list\\\",\\\"description\\\":\\\"List ACL role definitions available to one biz.\\\",\\\"method\\\":\\\"GET\\\",\\\"path\\\":\\\"/api/v1/bizes/{bizId}/acl/roles\\\",\\\"tags\\\":[\\\"acl\\\",\\\"biz\\\"],\\\"parameters\\\":{\\\"type\\\":\\\"object\\\",\\\"properties\\\":{\\\"bizId\\\":{\\\"type\\\":\\\"string\\\"}},\\\"required\\\":[\\\"bizId\\\"]}},{\\\"name\\\":\\\"bizing.acl.biz.roles.create\\\",\\\"description\\\":\\\"Create biz/location/resource/subject scoped ACL role definition.\\\",\\\"method\\\":\\\"POST\\\",\\\"path\\\":\\\"/api/v1/bizes/{bizId}/acl/roles\\\",\\\"tags\\\":[\\\"acl\\\",\\\"biz\\\"],\\\"parameters\\\":{\\\"type\\\":\\\"object\\\",\\\"properties\\\":{\\\"bizId\\\":{\\\"type\\\":\\\"string\\\"},\\\"roleKey\\\":{\\\"type\\\":\\\"string\\\"},\\\"name\\\":{\\\"type\\\":\\\"string\\\"},\\\"scopeType\\\":{\\\"type\\\":\\\"string\\\",\\\"enum\\\":[\\\"biz\\\",\\\"location\\\",\\\"resource\\\",\\\"subject\\\"]},\\\"locationId\\\":{\\\"type\\\":\\\"string\\\"},\\\"resourceId\\\":{\\\"type\\\":\\\"string\\\"},\\\"scopeSubjectType\\\":{\\\"type\\\":\\\"string\\\"},\\\"scopeSubjectId\\\":{\\\"type\\\":\\\"string\\\"},\\\"description\\\":{\\\"type\\\":\\\"string\\\"}},\\\"required\\\":[\\\"bizId\\\",\\\"roleKey\\\",\\\"name\\\"]}},{\\\"name\\\":\\\"bizing.acl.biz.rolePermissions.replace\\\",\\\"description\\\":\\\"Replace/update one biz role permission set.\\\",\\\"method\\\":\\\"PUT\\\",\\\"path\\\":\\\"/api/v1/bizes/{bizId}/acl/roles/{roleId}/permissions\\\",\\\"tags\\\":[\\\"acl\\\",\\\"biz\\\"],\\\"parameters\\\":{\\\"type\\\":\\\"object\\\",\\\"properties\\\":{\\\"bizId\\\":{\\\"type\\\":\\\"string\\\"},\\\"roleId\\\":{\\\"type\\\":\\\"string\\\"},\\\"permissions\\\":{\\\"type\\\":\\\"array\\\",\\\"items\\\":{\\\"type\\\":\\\"object\\\"}}},\\\"required\\\":[\\\"bizId\\\",\\\"roleId\\\",\\\"permissions\\\"]}},{\\\"name\\\":\\\"bizing.acl.biz.assignments.create\\\",\\\"description\\\":\\\"Assign ACL role to a user at biz/location/resource/subject scope.\\\",\\\"method\\\":\\\"POST\\\",\\\"path\\\":\\\"/api/v1/bizes/{bizId}/acl/assignments\\\",\\\"tags\\\":[\\\"acl\\\",\\\"biz\\\"],\\\"parameters\\\":{\\\"type\\\":\\\"object\\\",\\\"properties\\\":{\\\"bizId\\\":{\\\"type\\\":\\\"string\\\"},\\\"userId\\\":{\\\"type\\\":\\\"string\\\"},\\\"roleDefinitionId\\\":{\\\"type\\\":\\\"string\\\"},\\\"scopeType\\\":{\\\"type\\\":\\\"string\\\",\\\"enum\\\":[\\\"biz\\\",\\\"location\\\",\\\"resource\\\",\\\"subject\\\"]},\\\"locationId\\\":{\\\"type\\\":\\\"string\\\"},\\\"resourceId\\\":{\\\"type\\\":\\\"string\\\"},\\\"scopeSubjectType\\\":{\\\"type\\\":\\\"string\\\"},\\\"scopeSubjectId\\\":{\\\"type\\\":\\\"string\\\"}},\\\"required\\\":[\\\"bizId\\\",\\\"userId\\\",\\\"roleDefinitionId\\\"]}},{\\\"name\\\":\\\"bizing.acl.biz.mappings.replace\\\",\\\"description\\\":\\\"Replace membership role -> ACL role mappings for one biz.\\\",\\\"method\\\":\\\"PUT\\\",\\\"path\\\":\\\"/api/v1/bizes/{bizId}/acl/membership-mappings\\\",\\\"tags\\\":[\\\"acl\\\",\\\"biz\\\"],\\\"parameters\\\":{\\\"type\\\":\\\"object\\\",\\\"properties\\\":{\\\"bizId\\\":{\\\"type\\\":\\\"string\\\"},\\\"mappings\\\":{\\\"type\\\":\\\"array\\\",\\\"items\\\":{\\\"type\\\":\\\"object\\\"}}},\\\"required\\\":[\\\"bizId\\\",\\\"mappings\\\"]}},{\\\"name\\\":\\\"bizing.acl.platform.roles.list\\\",\\\"description\\\":\\\"List platform-level ACL role templates.\\\",\\\"method\\\":\\\"GET\\\",\\\"path\\\":\\\"/api/v1/platform/acl/roles\\\",\\\"tags\\\":[\\\"acl\\\",\\\"platform\\\"],\\\"parameters\\\":{\\\"type\\\":\\\"object\\\",\\\"properties\\\":{}}},{\\\"name\\\":\\\"bizing.acl.platform.permissions.list\\\",\\\"description\\\":\\\"List global ACL permission definitions.\\\",\\\"method\\\":\\\"GET\\\",\\\"path\\\":\\\"/api/v1/platform/acl/permissions\\\",\\\"tags\\\":[\\\"acl\\\",\\\"platform\\\"],\\\"parameters\\\":{\\\"type\\\":\\\"object\\\",\\\"properties\\\":{}}},{\\\"name\\\":\\\"bizing.acl.platform.assignments.create\\\",\\\"description\\\":\\\"Assign a platform ACL role to a user.\\\",\\\"method\\\":\\\"POST\\\",\\\"path\\\":\\\"/api/v1/platform/acl/assignments\\\",\\\"tags\\\":[\\\"acl\\\",\\\"platform\\\"],\\\"parameters\\\":{\\\"type\\\":\\\"object\\\",\\\"properties\\\":{\\\"userId\\\":{\\\"type\\\":\\\"string\\\"},\\\"roleDefinitionId\\\":{\\\"type\\\":\\\"string\\\"}},\\\"required\\\":[\\\"userId\\\",\\\"roleDefinitionId\\\"]}},{\\\"name\\\":\\\"bizing.locations.list\\\",\\\"description\\\":\\\"List locations for one biz.\\\",\\\"method\\\":\\\"GET\\\",\\\"path\\\":\\\"/api/v1/bizes/{bizId}/locations\\\",\\\"tags\\\":[\\\"locations\\\"],\\\"parameters\\\":{\\\"type\\\":\\\"object\\\",\\\"properties\\\":{\\\"bizId\\\":{\\\"type\\\":\\\"string\\\"},\\\"page\\\":{\\\"type\\\":\\\"number\\\",\\\"default\\\":1},\\\"perPage\\\":{\\\"type\\\":\\\"number\\\",\\\"default\\\":20}},\\\"required\\\":[\\\"bizId\\\"]}},{\\\"name\\\":\\\"bizing.locations.create\\\",\\\"description\\\":\\\"Create location in one biz.\\\",\\\"method\\\":\\\"POST\\\",\\\"path\\\":\\\"/api/v1/bizes/{bizId}/locations\\\",\\\"tags\\\":[\\\"locations\\\"],\\\"parameters\\\":{\\\"type\\\":\\\"object\\\",\\\"properties\\\":{\\\"bizId\\\":{\\\"type\\\":\\\"string\\\"},\\\"name\\\":{\\\"type\\\":\\\"string\\\"},\\\"slug\\\":{\\\"type\\\":\\\"string\\\"},\\\"type\\\":{\\\"type\\\":\\\"string\\\"},\\\"timezone\\\":{\\\"type\\\":\\\"string\\\"}},\\\"required\\\":[\\\"bizId\\\",\\\"name\\\",\\\"slug\\\"]}},{\\\"name\\\":\\\"bizing.resources.list\\\",\\\"description\\\":\\\"List resources for one biz.\\\",\\\"method\\\":\\\"GET\\\",\\\"path\\\":\\\"/api/v1/bizes/{bizId}/resources\\\",\\\"tags\\\":[\\\"resources\\\"],\\\"parameters\\\":{\\\"type\\\":\\\"object\\\",\\\"properties\\\":{\\\"bizId\\\":{\\\"type\\\":\\\"string\\\"},\\\"type\\\":{\\\"type\\\":\\\"string\\\"},\\\"locationId\\\":{\\\"type\\\":\\\"string\\\"}},\\\"required\\\":[\\\"bizId\\\"]}},{\\\"name\\\":\\\"bizing.resources.create\\\",\\\"description\\\":\\\"Create resource in one biz.\\\",\\\"method\\\":\\\"POST\\\",\\\"path\\\":\\\"/api/v1/bizes/{bizId}/resources\\\",\\\"tags\\\":[\\\"resources\\\"],\\\"parameters\\\":{\\\"type\\\":\\\"object\\\",\\\"properties\\\":{\\\"bizId\\\":{\\\"type\\\":\\\"string\\\"},\\\"locationId\\\":{\\\"type\\\":\\\"string\\\"},\\\"type\\\":{\\\"type\\\":\\\"string\\\"},\\\"name\\\":{\\\"type\\\":\\\"string\\\"},\\\"slug\\\":{\\\"type\\\":\\\"string\\\"}},\\\"required\\\":[\\\"bizId\\\",\\\"locationId\\\",\\\"type\\\",\\\"name\\\",\\\"slug\\\"]}},{\\\"name\\\":\\\"bizing.offers.list\\\",\\\"description\\\":\\\"List offers for one biz.\\\",\\\"method\\\":\\\"GET\\\",\\\"path\\\":\\\"/api/v1/bizes/{bizId}/offers\\\",\\\"tags\\\":[\\\"offers\\\"],\\\"parameters\\\":{\\\"type\\\":\\\"object\\\",\\\"properties\\\":{\\\"bizId\\\":{\\\"type\\\":\\\"string\\\"},\\\"status\\\":{\\\"type\\\":\\\"string\\\"},\\\"executionMode\\\":{\\\"type\\\":\\\"string\\\"}},\\\"required\\\":[\\\"bizId\\\"]}},{\\\"name\\\":\\\"bizing.offers.create\\\",\\\"description\\\":\\\"Create offer in one biz.\\\",\\\"method\\\":\\\"POST\\\",\\\"path\\\":\\\"/api/v1/bizes/{bizId}/offers\\\",\\\"tags\\\":[\\\"offers\\\"],\\\"parameters\\\":{\\\"type\\\":\\\"object\\\",\\\"properties\\\":{\\\"bizId\\\":{\\\"type\\\":\\\"string\\\"},\\\"name\\\":{\\\"type\\\":\\\"string\\\"},\\\"slug\\\":{\\\"type\\\":\\\"string\\\"},\\\"executionMode\\\":{\\\"type\\\":\\\"string\\\"}},\\\"required\\\":[\\\"bizId\\\",\\\"name\\\",\\\"slug\\\"]}},{\\\"name\\\":\\\"bizing.offers.createVersion\\\",\\\"description\\\":\\\"Create a new offer version.\\\",\\\"method\\\":\\\"POST\\\",\\\"path\\\":\\\"/api/v1/bizes/{bizId}/offers/{offerId}/versions\\\",\\\"tags\\\":[\\\"offers\\\",\\\"versions\\\"],\\\"parameters\\\":{\\\"type\\\":\\\"object\\\",\\\"properties\\\":{\\\"bizId\\\":{\\\"type\\\":\\\"string\\\"},\\\"offerId\\\":{\\\"type\\\":\\\"string\\\"},\\\"version\\\":{\\\"type\\\":\\\"number\\\"},\\\"durationMode\\\":{\\\"type\\\":\\\"string\\\"},\\\"basePriceMinor\\\":{\\\"type\\\":\\\"number\\\"}},\\\"required\\\":[\\\"bizId\\\",\\\"offerId\\\",\\\"version\\\"]}},{\\\"name\\\":\\\"bizing.public.offers.list\\\",\\\"description\\\":\\\"List publicly published offers for one biz (customer discovery surface).\\\",\\\"method\\\":\\\"GET\\\",\\\"path\\\":\\\"/api/v1/public/bizes/{bizId}/offers\\\",\\\"tags\\\":[\\\"offers\\\",\\\"public\\\"],\\\"parameters\\\":{\\\"type\\\":\\\"object\\\",\\\"properties\\\":{\\\"bizId\\\":{\\\"type\\\":\\\"string\\\"},\\\"search\\\":{\\\"type\\\":\\\"string\\\"},\\\"limit\\\":{\\\"type\\\":\\\"number\\\",\\\"default\\\":50}},\\\"required\\\":[\\\"bizId\\\"]}},{\\\"name\\\":\\\"bizing.bookingOrders.list\\\",\\\"description\\\":\\\"List booking orders for one biz.\\\",\\\"method\\\":\\\"GET\\\",\\\"path\\\":\\\"/api/v1/bizes/{bizId}/booking-orders\\\",\\\"tags\\\":[\\\"booking-orders\\\"],\\\"parameters\\\":{\\\"type\\\":\\\"object\\\",\\\"properties\\\":{\\\"bizId\\\":{\\\"type\\\":\\\"string\\\"},\\\"status\\\":{\\\"type\\\":\\\"string\\\"},\\\"page\\\":{\\\"type\\\":\\\"number\\\",\\\"default\\\":1},\\\"perPage\\\":{\\\"type\\\":\\\"number\\\",\\\"default\\\":20}},\\\"required\\\":[\\\"bizId\\\"]}},{\\\"name\\\":\\\"bizing.bookingOrders.create\\\",\\\"description\\\":\\\"Create booking order in one biz.\\\",\\\"method\\\":\\\"POST\\\",\\\"path\\\":\\\"/api/v1/bizes/{bizId}/booking-orders\\\",\\\"tags\\\":[\\\"booking-orders\\\"],\\\"parameters\\\":{\\\"type\\\":\\\"object\\\",\\\"properties\\\":{\\\"bizId\\\":{\\\"type\\\":\\\"string\\\"},\\\"offerId\\\":{\\\"type\\\":\\\"string\\\"},\\\"offerVersionId\\\":{\\\"type\\\":\\\"string\\\"},\\\"totalMinor\\\":{\\\"type\\\":\\\"number\\\"},\\\"currency\\\":{\\\"type\\\":\\\"string\\\"}},\\\"required\\\":[\\\"bizId\\\",\\\"offerId\\\",\\\"offerVersionId\\\"]}},{\\\"name\\\":\\\"bizing.public.bookingOrders.listMine\\\",\\\"description\\\":\\\"List authenticated customer bookings for one biz on the public booking surface.\\\",\\\"method\\\":\\\"GET\\\",\\\"path\\\":\\\"/api/v1/public/bizes/{bizId}/booking-orders\\\",\\\"tags\\\":[\\\"booking-orders\\\",\\\"public\\\"],\\\"parameters\\\":{\\\"type\\\":\\\"",
+          "_size": 14228
+        },
+        "responseBody": {
+          "_truncated": true,
+          "_preview": "{\"success\":true,\"data\":{\"id\":\"saga_artifact_3A7eCAFFvpcFwEMVrq7Urczkn3v\",\"sagaRunId\":\"saga_run_3A7eBIh67LquTqpdSdhy3A7cquZ\",\"sagaRunStepId\":\"saga_run_step_3A7eBJJ1tWkuazr9lauEXthgJBZ\",\"artifactType\":\"api_trace\",\"title\":\"Owner validates financial/reporting outputs API Trace\",\"storagePath\":\"testing/sagas/runs/saga_run_3A7eBIh67LquTqpdSdhy3A7cquZ/artifacts/1771947905287-Owner_validates_financial_reporting_outputs_API_Trace.json\",\"contentType\":\"application/json\",\"bodyText\":\"{\\n  \\\"stepKey\\\": \\\"owner-revenue-sanity\\\",\\n  \\\"callCount\\\": 1,\\n  \\\"calls\\\": [\\n    {\\n      \\\"method\\\": \\\"GET\\\",\\n      \\\"path\\\": \\\"/api/v1/agents/tools\\\",\\n      \\\"status\\\": 200,\\n      \\\"responseBody\\\": {\\n        \\\"_truncated\\\": true,\\n        \\\"_preview\\\": \\\"{\\\\\\\"success\\\\\\\":true,\\\\\\\"data\\\\\\\":[{\\\\\\\"name\\\\\\\":\\\\\\\"bizing.bizes.list\\\\\\\",\\\\\\\"description\\\\\\\":\\\\\\\"List bizes available to the authenticated user.\\\\\\\",\\\\\\\"method\\\\\\\":\\\\\\\"GET\\\\\\\",\\\\\\\"path\\\\\\\":\\\\\\\"/api/v1/bizes\\\\\\\",\\\\\\\"tags\\\\\\\":[\\\\\\\"bizes\\\\\\\"],\\\\\\\"parameters\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"object\\\\\\\",\\\\\\\"properties\\\\\\\":{\\\\\\\"page\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"number\\\\\\\",\\\\\\\"default\\\\\\\":1},\\\\\\\"perPage\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"number\\\\\\\",\\\\\\\"default\\\\\\\":20},\\\\\\\"status\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"string\\\\\\\"},\\\\\\\"type\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"string\\\\\\\"}}}},{\\\\\\\"name\\\\\\\":\\\\\\\"bizing.bizes.create\\\\\\\",\\\\\\\"description\\\\\\\":\\\\\\\"Create a biz and make current user owner.\\\\\\\",\\\\\\\"method\\\\\\\":\\\\\\\"POST\\\\\\\",\\\\\\\"path\\\\\\\":\\\\\\\"/api/v1/bizes\\\\\\\",\\\\\\\"tags\\\\\\\":[\\\\\\\"bizes\\\\\\\"],\\\\\\\"parameters\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"object\\\\\\\",\\\\\\\"properties\\\\\\\":{\\\\\\\"name\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"string\\\\\\\"},\\\\\\\"slug\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"string\\\\\\\"},\\\\\\\"type\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"string\\\\\\\"},\\\\\\\"timezone\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"string\\\\\\\"},\\\\\\\"currency\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"string\\\\\\\"}},\\\\\\\"required\\\\\\\":[\\\\\\\"name\\\\\\\",\\\\\\\"slug\\\\\\\"]}},{\\\\\\\"name\\\\\\\":\\\\\\\"bizing.auth.me\\\\\\\",\\\\\\\"description\\\\\\\":\\\\\\\"Get authenticated user context, memberships, active biz, and effective permissions.\\\\\\\",\\\\\\\"method\\\\\\\":\\\\\\\"GET\\\\\\\",\\\\\\\"path\\\\\\\":\\\\\\\"/api/v1/auth/me\\\\\\\",\\\\\\\"tags\\\\\\\":[\\\\\\\"auth\\\\\\\",\\\\\\\"acl\\\\\\\"],\\\\\\\"parameters\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"object\\\\\\\",\\\\\\\"properties\\\\\\\":{}}},{\\\\\\\"name\\\\\\\":\\\\\\\"bizing.auth.switchActiveBiz\\\\\\\",\\\\\\\"description\\\\\\\":\\\\\\\"Switch active biz context for the current session.\\\\\\\",\\\\\\\"method\\\\\\\":\\\\\\\"PATCH\\\\\\\",\\\\\\\"path\\\\\\\":\\\\\\\"/api/v1/auth/active-biz\\\\\\\",\\\\\\\"tags\\\\\\\":[\\\\\\\"auth\\\\\\\"],\\\\\\\"parameters\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"object\\\\\\\",\\\\\\\"properties\\\\\\\":{\\\\\\\"bizId\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"string\\\\\\\"}},\\\\\\\"required\\\\\\\":[\\\\\\\"bizId\\\\\\\"]}},{\\\\\\\"name\\\\\\\":\\\\\\\"bizing.auth.apiKeys.list\\\\\\\",\\\\\\\"description\\\\\\\":\\\\\\\"List machine API keys owned by current user.\\\\\\\",\\\\\\\"method\\\\\\\":\\\\\\\"GET\\\\\\\",\\\\\\\"path\\\\\\\":\\\\\\\"/api/v1/auth/api-keys\\\\\\\",\\\\\\\"tags\\\\\\\":[\\\\\\\"auth\\\\\\\",\\\\\\\"machine\\\\\\\"],\\\\\\\"parameters\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"object\\\\\\\",\\\\\\\"properties\\\\\\\":{\\\\\\\"includeRevoked\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"boolean\\\\\\\",\\\\\\\"default\\\\\\\":false},\\\\\\\"bizId\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"string\\\\\\\"},\\\\\\\"limit\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"number\\\\\\\",\\\\\\\"default\\\\\\\":100}}}},{\\\\\\\"name\\\\\\\":\\\\\\\"bizing.auth.apiKeys.create\\\\\\\",\\\\\\\"description\\\\\\\":\\\\\\\"Create one machine API key (raw secret returned once).\\\\\\\",\\\\\\\"method\\\\\\\":\\\\\\\"POST\\\\\\\",\\\\\\\"path\\\\\\\":\\\\\\\"/api/v1/auth/api-keys\\\\\\\",\\\\\\\"tags\\\\\\\":[\\\\\\\"auth\\\\\\\",\\\\\\\"machine\\\\\\\"],\\\\\\\"parameters\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"object\\\\\\\",\\\\\\\"properties\\\\\\\":{\\\\\\\"label\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"string\\\\\\\"},\\\\\\\"description\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"string\\\\\\\"},\\\\\\\"bizId\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"string\\\\\\\"},\\\\\\\"scopes\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"array\\\\\\\",\\\\\\\"items\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"string\\\\\\\"}},\\\\\\\"expiresAt\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"string\\\\\\\",\\\\\\\"description\\\\\\\":\\\\\\\"ISO datetime\\\\\\\"},\\\\\\\"allowDirectApiKeyAuth\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"boolean\\\\\\\",\\\\\\\"default\\\\\\\":false},\\\\\\\"metadata\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"object\\\\\\\"}},\\\\\\\"required\\\\\\\":[\\\\\\\"label\\\\\\\"]}},{\\\\\\\"name\\\\\\\":\\\\\\\"bizing.auth.apiKeys.revoke\\\\\\\",\\\\\\\"description\\\\\\\":\\\\\\\"Revoke one API key and all child short-lived tokens.\\\\\\\",\\\\\\\"method\\\\\\\":\\\\\\\"POST\\\\\\\",\\\\\\\"path\\\\\\\":\\\\\\\"/api/v1/auth/api-keys/{apiCredentialId}/revoke\\\\\\\",\\\\\\\"tags\\\\\\\":[\\\\\\\"auth\\\\\\\",\\\\\\\"machine\\\\\\\"],\\\\\\\"parameters\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"object\\\\\\\",\\\\\\\"properties\\\\\\\":{\\\\\\\"apiCredentialId\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"string\\\\\\\"},\\\\\\\"reason\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"string\\\\\\\"}},\\\\\\\"required\\\\\\\":[\\\\\\\"apiCredentialId\\\\\\\"]}},{\\\\\\\"name\\\\\\\":\\\\\\\"bizing.auth.tokens.exchange\\\\\\\",\\\\\\\"description\\\\\\\":\\\\\\\"Exchange an API key for a short-lived bearer token. Supports session + apiCredentialId or direct x-api-key auth.\\\\\\\",\\\\\\\"method\\\\\\\":\\\\\\\"POST\\\\\\\",\\\\\\\"path\\\\\\\":\\\\\\\"/api/v1/auth/tokens/exchange\\\\\\\",\\\\\\\"tags\\\\\\\":[\\\\\\\"auth\\\\\\\",\\\\\\\"machine\\\\\\\"],\\\\\\\"parameters\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"object\\\\\\\",\\\\\\\"properties\\\\\\\":{\\\\\\\"apiCredentialId\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"string\\\\\\\"},\\\\\\\"apiKey\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"string\\\\\\\"},\\\\\\\"scopes\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"array\\\\\\\",\\\\\\\"items\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"string\\\\\\\"}},\\\\\\\"ttlSeconds\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"number\\\\\\\",\\\\\\\"default\\\\\\\":900},\\\\\\\"bizId\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"string\\\\\\\"},\\\\\\\"reason\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"string\\\\\\\"}}}},{\\\\\\\"name\\\\\\\":\\\\\\\"bizing.auth.tokens.revoke\\\\\\\",\\\\\\\"description\\\\\\\":\\\\\\\"Revoke one short-lived machine access token.\\\\\\\",\\\\\\\"method\\\\\\\":\\\\\\\"POST\\\\\\\",\\\\\\\"path\\\\\\\":\\\\\\\"/api/v1/auth/tokens/{tokenId}/revoke\\\\\\\",\\\\\\\"tags\\\\\\\":[\\\\\\\"auth\\\\\\\",\\\\\\\"machine\\\\\\\"],\\\\\\\"parameters\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"object\\\\\\\",\\\\\\\"properties\\\\\\\":{\\\\\\\"tokenId\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"string\\\\\\\"},\\\\\\\"reason\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"string\\\\\\\"}},\\\\\\\"required\\\\\\\":[\\\\\\\"tokenId\\\\\\\"]}},{\\\\\\\"name\\\\\\\":\\\\\\\"bizing.acl.biz.roles.list\\\\\\\",\\\\\\\"description\\\\\\\":\\\\\\\"List ACL role definitions available to one biz.\\\\\\\",\\\\\\\"method\\\\\\\":\\\\\\\"GET\\\\\\\",\\\\\\\"path\\\\\\\":\\\\\\\"/api/v1/bizes/{bizId}/acl/roles\\\\\\\",\\\\\\\"tags\\\\\\\":[\\\\\\\"acl\\\\\\\",\\\\\\\"biz\\\\\\\"],\\\\\\\"parameters\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"object\\\\\\\",\\\\\\\"properties\\\\\\\":{\\\\\\\"bizId\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"string\\\\\\\"}},\\\\\\\"required\\\\\\\":[\\\\\\\"bizId\\\\\\\"]}},{\\\\\\\"name\\\\\\\":\\\\\\\"bizing.acl.biz.roles.create\\\\\\\",\\\\\\\"description\\\\\\\":\\\\\\\"Create biz/location/resource/subject scoped ACL role definition.\\\\\\\",\\\\\\\"method\\\\\\\":\\\\\\\"POST\\\\\\\",\\\\\\\"path\\\\\\\":\\\\\\\"/api/v1/bizes/{bizId}/acl/roles\\\\\\\",\\\\\\\"tags\\\\\\\":[\\\\\\\"acl\\\\\\\",\\\\\\\"biz\\\\\\\"],\\\\\\\"parameters\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"object\\\\\\\",\\\\\\\"properties\\\\\\\":{\\\\\\\"bizId\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"string\\\\\\\"},\\\\\\\"roleKey\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"string\\\\\\\"},\\\\\\\"name\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"string\\\\\\\"},\\\\\\\"scopeType\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"string\\\\\\\",\\\\\\\"enum\\\\\\\":[\\\\\\\"biz\\\\\\\",\\\\\\\"location\\\\\\\",\\\\\\\"resource\\\\\\\",\\\\\\\"subject\\\\\\\"]},\\\\\\\"locationId\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"string\\\\\\\"},\\\\\\\"resourceId\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"string\\\\\\\"},\\\\\\\"scopeSubjectType\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"string\\\\\\\"},\\\\\\\"scopeSubjectId\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"string\\\\\\\"},\\\\\\\"description\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"string\\\\\\\"}},\\\\\\\"required\\\\\\\":[\\\\\\\"bizId\\\\\\\",\\\\\\\"roleKey\\\\\\\",\\\\\\\"name\\\\\\\"]}},{\\\\\\\"name\\\\\\\":\\\\\\\"bizing.acl.biz.rolePermissions.replace\\\\\\\",\\\\\\\"description\\\\\\\":\\\\\\\"Replace/update one biz role permission set.\\\\\\\",\\\\\\\"method\\\\\\\":\\\\\\\"PUT\\\\\\\",\\\\\\\"path\\\\\\\":\\\\\\\"/api/v1/bizes/{bizId}/acl/roles/{roleId}/permissions\\\\\\\",\\\\\\\"tags\\\\\\\":[\\\\\\\"acl\\\\\\\",\\\\\\\"biz\\\\\\\"],\\\\\\\"parameters\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"object\\\\\\\",\\\\\\\"properties\\\\\\\":{\\\\\\\"bizId\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"string\\\\\\\"},\\\\\\\"roleId\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"string\\\\\\\"},\\\\\\\"permissions\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"array\\\\\\\",\\\\\\\"items\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"object\\\\\\\"}}},\\\\\\\"required\\\\\\\":[\\\\\\\"bizId\\\\\\\",\\\\\\\"roleId\\\\\\\",\\\\\\\"permissions\\\\\\\"]}},{\\\\\\\"name\\\\\\\":\\\\\\\"bizing.acl.biz.assignments.create\\\\\\\",\\\\\\\"description\\\\\\\":\\\\\\\"Assign ACL role to a user at biz/location/resource/subject scope.\\\\\\\",\\\\\\\"method\\\\\\\":\\\\\\\"POST\\\\\\\",\\\\\\\"path\\\\\\\":\\\\\\\"/api/v1/bizes/{bizId}/acl/assignments\\\\\\\",\\\\\\\"tags\\\\\\\":[\\\\\\\"acl\\\\\\\",\\\\\\\"biz\\\\\\\"],\\\\\\\"parameters\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"object\\\\\\\",\\\\\\\"properties\\\\\\\":{\\\\\\\"bizId\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"string\\\\\\\"},\\\\\\\"userId\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"string\\\\\\\"},\\\\\\\"roleDefinitionId\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"string\\\\\\\"},\\\\\\\"scopeType\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"string\\\\\\\",\\\\\\\"enum\\\\\\\":[\\\\\\\"biz\\\\\\\",\\\\\\\"location\\\\\\\",\\\\\\\"resource\\\\\\\",\\\\\\\"subject\\\\\\\"]},\\\\\\\"locationId\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"string\\\\\\\"},\\\\\\\"resourceId\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"string\\\\\\\"},\\\\\\\"scopeSubjectType\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"string\\\\\\\"},\\\\\\\"scopeSubjectId\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"string\\\\\\\"}},\\\\\\\"required\\\\\\\":[\\\\\\\"bizId\\\\\\\",\\\\\\\"userId\\\\\\\",\\\\\\\"roleDefinitionId\\\\\\\"]}},{\\\\\\\"name\\\\\\\":\\\\\\\"bizing.acl.biz.mappings.replace\\\\\\\",\\\\\\\"description\\\\\\\":\\\\\\\"Replace membership role -> ACL role mappings for one biz.\\\\\\\",\\\\\\\"method\\\\\\\":\\\\\\\"PUT\\\\\\\",\\\\\\\"path\\\\\\\":\\\\\\\"/api/v1/bizes/{bizId}/acl/membership-mappings\\\\\\\",\\\\\\\"tags\\\\\\\":[\\\\\\\"acl\\\\\\\",\\\\\\\"biz\\\\\\\"],\\\\\\\"parameters\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"object\\\\\\\",\\\\\\\"properties\\\\\\\":{\\\\\\\"bizId\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"string\\\\\\\"},\\\\\\\"mappings\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"array\\\\\\\",\\\\\\\"items\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"object\\\\\\\"}}},\\\\\\\"required\\\\\\\":[\\\\\\\"bizId\\\\\\\",\\\\\\\"mappings\\\\\\\"]}},{\\\\\\\"name\\\\\\\":\\\\\\\"bizing.acl.platform.roles.list\\\\\\\",\\\\\\\"description\\\\\\\":\\\\\\\"List platform-level ACL role templates.\\\\\\\",\\\\\\\"method\\\\\\\":\\\\\\\"GET\\\\\\\",\\\\\\\"path\\\\\\\":\\\\\\\"/api/v1/platform/acl/roles\\\\\\\",\\\\\\\"tags\\\\\\\":[\\\\\\\"acl\\\\\\\",\\\\\\\"platform\\\\\\\"],\\\\\\\"parameters\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"object\\\\\\\",\\\\\\\"properties\\\\\\\":{}}},{\\\\\\\"name\\\\\\\":\\\\\\\"bizing.acl.platform.permissions.list\\\\\\\",\\\\\\\"description\\\\\\\":\\\\\\\"List global ACL permission definitions.\\\\\\\",\\\\\\\"method\\\\\\\":\\\\\\\"GET\\\\\\\",\\\\\\\"path\\\\\\\":\\\\\\\"/api/v1/platform/acl/permissions\\\\\\\",\\\\\\\"tags\\\\\\\":[\\\\\\\"acl\\\\\\\",\\\\\\\"platform\\\\\\\"],\\\\\\\"parameters\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"object\\\\\\\",\\\\\\\"properties\\\\\\\":{}}},{\\\\\\\"name\\\\\\\":\\\\\\\"bizing.acl.platform.assignments.create\\\\\\\",\\\\\\\"description\\\\\\\":\\\\\\\"Assign a platform ACL role to a user.\\\\\\\",\\\\\\\"method\\\\\\\":\\\\\\\"POST\\\\\\\",\\\\\\\"path\\\\\\\":\\\\\\\"/api/v1/platform/acl/assignments\\\\\\\",\\\\\\\"tags\\\\\\\":[\\\\\\\"acl\\\\\\\",\\\\\\\"platform\\\\\\\"],\\\\\\\"parameters\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"object\\\\\\\",\\\\\\\"properties\\\\\\\":{\\\\\\\"userId\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"string\\\\\\\"},\\\\\\\"roleDefinitionId\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"string\\\\\\\"}},\\\\\\\"required\\\\\\\":[\\\\\\\"userId\\\\\\\",\\\\\\\"roleDefinitionId\\\\\\\"]}},{\\\\\\\"name\\\\\\\":\\\\\\\"bizing.locations.list\\\\\\\",\\\\\\\"description\\\\\\\":\\\\\\\"List locations for one biz.\\\\\\\",\\\\\\\"method\\\\\\\":\\\\\\\"GET\\\\\\\",\\\\\\\"path\\\\\\\":\\\\\\\"/api/v1/bizes/{bizId}/locations\\\\\\\",\\\\\\\"tags\\\\\\\":[\\\\\\\"locations\\\\\\\"],\\\\\\\"parameters\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"object\\\\\\\",\\\\\\\"properties\\\\\\\":{\\\\\\\"bizId\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"string\\\\\\\"},\\\\\\\"page\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"number\\\\\\\",\\\\\\\"default\\\\\\\":1},\\\\\\\"perPage\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"number\\\\\\\",\\\\\\\"default\\\\\\\":20}},\\\\\\\"required\\\\\\\":[\\\\\\\"bizId\\\\\\\"]}},{\\\\\\\"name\\\\\\\":\\\\\\\"bizing.locations.create\\\\\\\",\\\\\\\"description\\\\\\\":\\\\\\\"Create location in one biz.\\\\\\\",\\\\\\\"method\\\\\\\":\\\\\\\"POST\\\\\\\",\\\\\\\"path\\\\\\\":\\\\\\\"/api/v1/bizes/{bizId}/locations\\\\\\\",\\\\\\\"tags\\\\\\\":[\\\\\\\"locations\\\\\\\"],\\\\\\\"parameters\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"object\\\\\\\",\\\\\\\"properties\\\\\\\":{\\\\\\\"bizId\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"string\\\\\\\"},\\\\\\\"name\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"string\\\\\\\"},\\\\\\\"slug\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"string\\\\\\\"},\\\\\\\"type\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"string\\\\\\\"},\\\\\\\"timezone\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"string\\\\\\\"}},\\\\\\\"required\\\\\\\":[\\\\\\\"bizId\\\\\\\",\\\\\\\"name\\\\\\\",\\\\\\\"slug\\\\\\\"]}},{\\\\\\\"name\\\\\\\":\\\\\\\"bizing.resources.list\\\\\\\",\\\\\\\"description\\\\\\\":\\\\\\\"List resources for one biz.\\\\\\\",\\\\\\\"method\\\\\\\":\\\\\\\"GET\\\\\\\",\\\\\\\"path\\\\\\\":\\\\\\\"/api/v1/bizes/{bizId}/resources\\\\\\\",\\\\\\\"tags\\\\\\\":[\\\\\\\"resources\\\\\\\"],\\\\\\\"parameters\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"object\\\\\\\",\\\\\\\"properties\\\\\\\":{\\\\\\\"bizId\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"string\\\\\\\"},\\\\\\\"type\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"string\\\\\\\"},\\\\\\\"locationId\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"string\\\\\\\"}},\\\\\\\"required\\\\\\\":[\\\\\\\"bizId\\\\\\\"]}},{\\\\\\\"name\\\\\\\":\\\\\\\"bizing.resources.create\\\\\\\",\\\\\\\"description\\\\\\\":\\\\\\\"Create resource in one biz.\\\\\\\",\\\\\\\"method\\\\\\\":\\\\\\\"POST\\\\\\\",\\\\\\\"path\\\\\\\":\\\\\\\"/api/v1/bizes/{bizId}/resources\\\\\\\",\\\\\\\"tags\\\\\\\":[\\\\\\\"resources\\\\\\\"],\\\\\\\"parameters\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"object\\\\\\\",\\\\\\\"properties\\\\\\\":{\\\\\\\"bizId\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"string\\\\\\\"},\\\\\\\"locationId\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"string\\\\\\\"},\\\\\\\"type\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"string\\\\\\\"},\\\\\\\"name\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"string\\\\\\\"},\\\\\\\"slug\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"string\\\\\\\"}},\\\\\\\"required\\\\\\\":[\\\\\\\"bizId\\\\\\\",\\\\\\\"locationId\\\\\\\",\\\\\\\"type\\\\\\\",\\\\\\\"name\\\\\\\",\\\\\\\"slug\\\\\\\"",
+          "_size": 18870
+        },
+        "at": "2026-02-24T15:45:05.321Z"
+      },
+      {
+        "method": "POST",
+        "path": "/api/v1/sagas/runs/saga_run_3A7eB83vSYRwxn4OJDwyzewuoN7/snapshots",
+        "status": 201,
+        "requestBody": {
+          "stepKey": "runner-submit-artifacts",
+          "screenKey": "runner-submit-artifacts-1771947905285",
+          "title": "Runner submits snapshots and final report Snapshot",
+          "status": "passed",
+          "route": "/sagas/saga_run_3A7eB83vSYRwxn4OJDwyzewuoN7/runner-submit-artifacts",
+          "format": "json",
+          "view": {
+            "title": "Runner submits snapshots and final report",
+            "subtitle": "Final report artifact submitted.",
+            "blocks": [
+              {
+                "type": "alert",
+                "title": "Runner Submit Artifacts completed",
+                "message": "Final report artifact submitted.",
+                "tone": "success"
+              }
+            ]
+          },
+          "rawData": {
+            "stepKey": "runner-submit-artifacts",
+            "resultPayload": {
+              "note": "Final report artifact submitted."
+            },
+            "apiCalls": [
+              {
+                "method": "POST",
+                "path": "/api/v1/sagas/runs/saga_run_3A7eBGMwdtNzXaDbsAicER2woue/snapshots",
+                "status": 201,
+                "requestBody": {
+                  "stepKey": "member-review-bookings",
+                  "screenKey": "member-review-bookings-1771947905078",
+                  "title": "Biz member reviews and updates booking status Snapshot",
+                  "status": "passed",
+                  "route": "/sagas/saga_run_3A7eBGMwdtNzXaDbsAicER2woue/member-review-bookings",
+                  "format": "json",
+                  "view": {
+                    "title": "Biz member reviews and updates booking status",
+                    "subtitle": "Bookings reviewed and one booking progressed.",
+                    "blocks": [
+                      {
+                        "type": "alert",
+                        "title": "Member Review Bookings completed",
+                        "message": "Bookings reviewed and one booking progressed.",
+                        "tone": "success"
+                      },
+                      {
+                        "type": "key_value",
+                        "title": "Screen details",
+                        "items": [
+                          {
+                            "label": "TargetId",
+                            "value": "booking_order_3A7eBtQyJE59xM85zhxPMKeNeng"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  "rawData": {
+                    "stepKey": "member-review-bookings",
+                    "resultPayload": {
+                      "note": "Bookings reviewed and one booking progressed.",
+                      "evidence": {
+                        "targetId": "booking_order_3A7eBtQyJE59xM85zhxPMKeNeng"
+                      }
+                    },
+                    "apiCalls": [
+                      {
+                        "method": "PATCH",
+                        "path": "/api/v1/bizes/3A7eBMhALHh9fYmcgXXvYgjrKLw/booking-orders/booking_order_3A7eBpZmp9I6zzZC6PpEMLTaOur/status",
+                        "status": 200,
+                        "requestBody": {
+                          "status": "in_progress"
+                        },
+                        "responseBody": {
+                          "success": true,
+                          "data": {
+                            "id": "booking_order_3A7eBpZmp9I6zzZC6PpEMLTaOur",
+                            "bizId": "3A7eBMhALHh9fYmcgXXvYgjrKLw",
+                            "offerId": "offer_3A7eBghCjGpOWyxgTVxD5Z0AOqP",
+                            "offerVersionId": "offer_version_3A7eBeSM5ocU6X2c5KAnVcZVse6",
+                            "customerUserId": "wH9rPtpfRvBJQ654wU9Nlu2FdBywBqWz",
+                            "customerGroupAccountId": null,
+                            "status": "in_progress",
+                            "statusConfigValueId": null,
+                            "currency": "USD",
+                            "subtotalMinor": 15000,
+                            "taxMinor": 0,
+                            "feeMinor": 0,
+                            "discountMinor": 0,
+                            "totalMinor": 15000,
+                            "requestedStartAt": "2026-02-25T15:45:03.656Z",
+                            "requestedEndAt": "2026-02-25T16:35:03.656Z",
+                            "confirmedStartAt": "2026-02-25T15:45:03.656Z",
+                            "confirmedEndAt": "2026-02-25T16:35:03.656Z",
+                            "pricingSnapshot": {},
+                            "policySnapshot": {},
+                            "metadata": {},
+                            "createdAt": "2026-02-24T15:45:03.665Z",
+                            "updatedAt": "2026-02-24T15:45:03.665Z",
+                            "deletedAt": null,
+                            "createdBy": null,
+                            "updatedBy": null,
+                            "deletedBy": null
+                          },
+                          "meta": {
+                            "requestId": "d0a95de5-105b-46f6-b060-7545398024e9",
+                            "timestamp": "2026-02-24T15:45:04.943Z"
+                          }
+                        },
+                        "at": "2026-02-24T15:45:04.948Z"
+                      }
+                    ]
+                  }
+                },
+                "responseBody": {
+                  "success": true,
+                  "data": {
+                    "id": "saga_artifact_3A7eC8Cf5o6vtMBJGkyj3sIIoHN",
+                    "sagaRunId": "saga_run_3A7eBGMwdtNzXaDbsAicER2woue",
+                    "sagaRunStepId": "saga_run_step_3A7eBK3vgD6OTdxj6VZLcuLIKUr",
+                    "artifactType": "snapshot",
+                    "title": "Biz member reviews and updates booking status Snapshot",
+                    "storagePath": "testing/sagas/runs/saga_run_3A7eBGMwdtNzXaDbsAicER2woue/snapshots/2026-02-24T15-45-05-095Z-member-review-bookings-1771947905078.json",
+                    "contentType": "application/json",
+                    "bodyText": "{\n  \"schemaVersion\": \"snapshot.v1\",\n  \"screenKey\": \"member-review-bookings-1771947905078\",\n  \"title\": \"Biz member reviews and updates booking status Snapshot\",\n  \"generatedAt\": \"2026-02-24T15:45:05.089Z\",\n  \"stepKey\": \"member-review-bookings\",\n  \"status\": \"passed\",\n  \"view\": {\n    \"title\": \"Biz member reviews and updates booking status\",\n    \"subtitle\": \"Bookings reviewed and one booking progressed.\",\n    \"blocks\": [\n      {\n        \"type\": \"alert\",\n        \"title\": \"Member Review Bookings completed\",\n        \"message\": \"Bookings reviewed and one booking progressed.\",\n        \"tone\": \"success\"\n      },\n      {\n        \"type\": \"key_value\",\n        \"title\": \"Screen details\",\n        \"items\": [\n          {\n            \"label\": \"TargetId\",\n            \"value\": \"booking_order_3A7eBtQyJE59xM85zhxPMKeNeng\"\n          }\n        ]\n      }\n    ]\n  },\n  \"rawData\": {\n    \"stepKey\": \"member-review-bookings\",\n    \"resultPayload\": {\n      \"note\": \"Bookings reviewed and one booking progressed.\",\n      \"evidence\": {\n        \"targetId\": \"booking_order_3A7eBtQyJE59xM85zhxPMKeNeng\"\n      }\n    },\n    \"apiCalls\": [\n      {\n        \"method\": \"PATCH\",\n        \"path\": \"/api/v1/bizes/3A7eBMhALHh9fYmcgXXvYgjrKLw/booking-orders/booking_order_3A7eBpZmp9I6zzZC6PpEMLTaOur/status\",\n        \"status\": 200,\n        \"requestBody\": {\n          \"status\": \"in_progress\"\n        },\n        \"responseBody\": {\n          \"success\": true,\n          \"data\": {\n            \"id\": \"booking_order_3A7eBpZmp9I6zzZC6PpEMLTaOur\",\n            \"bizId\": \"3A7eBMhALHh9fYmcgXXvYgjrKLw\",\n            \"offerId\": \"offer_3A7eBghCjGpOWyxgTVxD5Z0AOqP\",\n            \"offerVersionId\": \"offer_version_3A7eBeSM5ocU6X2c5KAnVcZVse6\",\n            \"customerUserId\": \"wH9rPtpfRvBJQ654wU9Nlu2FdBywBqWz\",\n            \"customerGroupAccountId\": null,\n            \"status\": \"in_progress\",\n            \"statusConfigValueId\": null,\n            \"currency\": \"USD\",\n            \"subtotalMinor\": 15000,\n            \"taxMinor\": 0,\n            \"feeMinor\": 0,\n            \"discountMinor\": 0,\n            \"totalMinor\": 15000,\n            \"requestedStartAt\": \"2026-02-25T15:45:03.656Z\",\n            \"requestedEndAt\": \"2026-02-25T16:35:03.656Z\",\n            \"confirmedStartAt\": \"2026-02-25T15:45:03.656Z\",\n            \"confirmedEndAt\": \"2026-02-25T16:35:03.656Z\",\n            \"pricingSnapshot\": {},\n            \"policySnapshot\": {},\n            \"metadata\": {},\n            \"createdAt\": \"2026-02-24T15:45:03.665Z\",\n            \"updatedAt\": \"2026-02-24T15:45:03.665Z\",\n            \"deletedAt\": null,\n            \"createdBy\": null,\n            \"updatedBy\": null,\n            \"deletedBy\": null\n          },\n          \"meta\": {\n            \"requestId\": \"d0a95de5-105b-46f6-b060-7545398024e9\",\n            \"timestamp\": \"2026-02-24T15:45:04.943Z\"\n          }\n        },\n        \"at\": \"2026-02-24T15:45:04.948Z\"\n      }\n    ]\n  },\n  \"metadata\": {}\n}\n",
+                    "byteSize": 2875,
+                    "checksum": "5daff9bfeacc760c3e2b265891ddaccd4666c31b876dc568594a301df6471d41",
+                    "capturedAt": "2026-02-24T15:45:05.104Z",
+                    "metadata": {
+                      "format": "json",
+                      "stepKey": "member-review-bookings",
+                      "screenKey": "member-review-bookings-1771947905078",
+                      "sourceFormat": "v1",
+                      "schemaVersion": "snapshot.v1"
+                    },
+                    "createdAt": "2026-02-24T15:45:05.104Z",
+                    "updatedAt": "2026-02-24T15:45:05.104Z",
+                    "deletedAt": null,
+                    "createdBy": null,
+                    "updatedBy": null,
+                    "deletedBy": null
+                  },
+                  "meta": {
+                    "requestId": "ec0634a9-c4b5-4dc8-a8a7-5521574a24b7",
+                    "timestamp": "2026-02-24T15:45:05.122Z"
+                  }
+                },
+                "at": "2026-02-24T15:45:05.124Z"
+              }
+            ]
+          }
+        },
+        "responseBody": {
+          "success": true,
+          "data": {
+            "id": "saga_artifact_3A7eC9JmIhrkgqb32pukl0HqA4k",
+            "sagaRunId": "saga_run_3A7eB83vSYRwxn4OJDwyzewuoN7",
+            "sagaRunStepId": "saga_run_step_3A7eBAQp4gA6Tl1GNqpsYXCAy9I",
+            "artifactType": "snapshot",
+            "title": "Runner submits snapshots and final report Snapshot",
+            "storagePath": "testing/sagas/runs/saga_run_3A7eB83vSYRwxn4OJDwyzewuoN7/snapshots/2026-02-24T15-45-05-299Z-runner-submit-artifacts-1771947905285.json",
+            "contentType": "application/json",
+            "bodyText": "{\n  \"schemaVersion\": \"snapshot.v1\",\n  \"screenKey\": \"runner-submit-artifacts-1771947905285\",\n  \"title\": \"Runner submits snapshots and final report Snapshot\",\n  \"generatedAt\": \"2026-02-24T15:45:05.294Z\",\n  \"stepKey\": \"runner-submit-artifacts\",\n  \"status\": \"passed\",\n  \"view\": {\n    \"title\": \"Runner submits snapshots and final report\",\n    \"subtitle\": \"Final report artifact submitted.\",\n    \"blocks\": [\n      {\n        \"type\": \"alert\",\n        \"title\": \"Runner Submit Artifacts completed\",\n        \"message\": \"Final report artifact submitted.\",\n        \"tone\": \"success\"\n      }\n    ]\n  },\n  \"rawData\": {\n    \"stepKey\": \"runner-submit-artifacts\",\n    \"resultPayload\": {\n      \"note\": \"Final report artifact submitted.\"\n    },\n    \"apiCalls\": [\n      {\n        \"method\": \"POST\",\n        \"path\": \"/api/v1/sagas/runs/saga_run_3A7eBGMwdtNzXaDbsAicER2woue/snapshots\",\n        \"status\": 201,\n        \"requestBody\": {\n          \"stepKey\": \"member-review-bookings\",\n          \"screenKey\": \"member-review-bookings-1771947905078\",\n          \"title\": \"Biz member reviews and updates booking status Snapshot\",\n          \"status\": \"passed\",\n          \"route\": \"/sagas/saga_run_3A7eBGMwdtNzXaDbsAicER2woue/member-review-bookings\",\n          \"format\": \"json\",\n          \"view\": {\n            \"title\": \"Biz member reviews and updates booking status\",\n            \"subtitle\": \"Bookings reviewed and one booking progressed.\",\n            \"blocks\": [\n              {\n                \"type\": \"alert\",\n                \"title\": \"Member Review Bookings completed\",\n                \"message\": \"Bookings reviewed and one booking progressed.\",\n                \"tone\": \"success\"\n              },\n              {\n                \"type\": \"key_value\",\n                \"title\": \"Screen details\",\n                \"items\": [\n                  {\n                    \"label\": \"TargetId\",\n                    \"value\": \"booking_order_3A7eBtQyJE59xM85zhxPMKeNeng\"\n                  }\n                ]\n              }\n            ]\n          },\n          \"rawData\": {\n            \"stepKey\": \"member-review-bookings\",\n            \"resultPayload\": {\n              \"note\": \"Bookings reviewed and one booking progressed.\",\n              \"evidence\": {\n                \"targetId\": \"booking_order_3A7eBtQyJE59xM85zhxPMKeNeng\"\n              }\n            },\n            \"apiCalls\": [\n              {\n                \"method\": \"PATCH\",\n                \"path\": \"/api/v1/bizes/3A7eBMhALHh9fYmcgXXvYgjrKLw/booking-orders/booking_order_3A7eBpZmp9I6zzZC6PpEMLTaOur/status\",\n                \"status\": 200,\n                \"requestBody\": {\n                  \"status\": \"in_progress\"\n                },\n                \"responseBody\": {\n                  \"success\": true,\n                  \"data\": {\n                    \"id\": \"booking_order_3A7eBpZmp9I6zzZC6PpEMLTaOur\",\n                    \"bizId\": \"3A7eBMhALHh9fYmcgXXvYgjrKLw\",\n                    \"offerId\": \"offer_3A7eBghCjGpOWyxgTVxD5Z0AOqP\",\n                    \"offerVersionId\": \"offer_version_3A7eBeSM5ocU6X2c5KAnVcZVse6\",\n                    \"customerUserId\": \"wH9rPtpfRvBJQ654wU9Nlu2FdBywBqWz\",\n                    \"customerGroupAccountId\": null,\n                    \"status\": \"in_progress\",\n                    \"statusConfigValueId\": null,\n                    \"currency\": \"USD\",\n                    \"subtotalMinor\": 15000,\n                    \"taxMinor\": 0,\n                    \"feeMinor\": 0,\n                    \"discountMinor\": 0,\n                    \"totalMinor\": 15000,\n                    \"requestedStartAt\": \"2026-02-25T15:45:03.656Z\",\n                    \"requestedEndAt\": \"2026-02-25T16:35:03.656Z\",\n                    \"confirmedStartAt\": \"2026-02-25T15:45:03.656Z\",\n                    \"confirmedEndAt\": \"2026-02-25T16:35:03.656Z\",\n                    \"pricingSnapshot\": {},\n                    \"policySnapshot\": {},\n                    \"metadata\": {},\n                    \"createdAt\": \"2026-02-24T15:45:03.665Z\",\n                    \"updatedAt\": \"2026-02-24T15:45:03.665Z\",\n                    \"deletedAt\": null,\n                    \"createdBy\": null,\n                    \"updatedBy\": null,\n                    \"deletedBy\": null\n                  },\n                  \"meta\": {\n                    \"requestId\": \"d0a95de5-105b-46f6-b060-7545398024e9\",\n                    \"timestamp\": \"2026-02-24T15:45:04.943Z\"\n                  }\n                },\n                \"at\": \"2026-02-24T15:45:04.948Z\"\n              }\n            ]\n          }\n        },\n        \"responseBody\": {\n          \"success\": true,\n          \"data\": {\n            \"id\": \"saga_artifact_3A7eC8Cf5o6vtMBJGkyj3sIIoHN\",\n            \"sagaRunId\": \"saga_run_3A7eBGMwdtNzXaDbsAicER2woue\",\n            \"sagaRunStepId\": \"saga_run_step_3A7eBK3vgD6OTdxj6VZLcuLIKUr\",\n            \"artifactType\": \"snapshot\",\n            \"title\": \"Biz member reviews and updates booking status Snapshot\",\n            \"storagePath\": \"testing/sagas/runs/saga_run_3A7eBGMwdtNzXaDbsAicER2woue/snapshots/2026-02-24T15-45-05-095Z-member-review-bookings-1771947905078.json\",\n            \"contentType\": \"application/json\",\n            \"bodyText\": \"{\\n  \\\"schemaVersion\\\": \\\"snapshot.v1\\\",\\n  \\\"screenKey\\\": \\\"member-review-bookings-1771947905078\\\",\\n  \\\"title\\\": \\\"Biz member reviews and updates booking status Snapshot\\\",\\n  \\\"generatedAt\\\": \\\"2026-02-24T15:45:05.089Z\\\",\\n  \\\"stepKey\\\": \\\"member-review-bookings\\\",\\n  \\\"status\\\": \\\"passed\\\",\\n  \\\"view\\\": {\\n    \\\"title\\\": \\\"Biz member reviews and updates booking status\\\",\\n    \\\"subtitle\\\": \\\"Bookings reviewed and one booking progressed.\\\",\\n    \\\"blocks\\\": [\\n      {\\n        \\\"type\\\": \\\"alert\\\",\\n        \\\"title\\\": \\\"Member Review Bookings completed\\\",\\n        \\\"message\\\": \\\"Bookings reviewed and one booking progressed.\\\",\\n        \\\"tone\\\": \\\"success\\\"\\n      },\\n      {\\n        \\\"type\\\": \\\"key_value\\\",\\n        \\\"title\\\": \\\"Screen details\\\",\\n        \\\"items\\\": [\\n          {\\n            \\\"label\\\": \\\"TargetId\\\",\\n            \\\"value\\\": \\\"booking_order_3A7eBtQyJE59xM85zhxPMKeNeng\\\"\\n          }\\n        ]\\n      }\\n    ]\\n  },\\n  \\\"rawData\\\": {\\n    \\\"stepKey\\\": \\\"member-review-bookings\\\",\\n    \\\"resultPayload\\\": {\\n      \\\"note\\\": \\\"Bookings reviewed and one booking progressed.\\\",\\n      \\\"evidence\\\": {\\n        \\\"targetId\\\": \\\"booking_order_3A7eBtQyJE59xM85zhxPMKeNeng\\\"\\n      }\\n    },\\n    \\\"apiCalls\\\": [\\n      {\\n        \\\"method\\\": \\\"PATCH\\\",\\n        \\\"path\\\": \\\"/api/v1/bizes/3A7eBMhALHh9fYmcgXXvYgjrKLw/booking-orders/booking_order_3A7eBpZmp9I6zzZC6PpEMLTaOur/status\\\",\\n        \\\"status\\\": 200,\\n        \\\"requestBody\\\": {\\n          \\\"status\\\": \\\"in_progress\\\"\\n        },\\n        \\\"responseBody\\\": {\\n          \\\"success\\\": true,\\n          \\\"data\\\": {\\n            \\\"id\\\": \\\"booking_order_3A7eBpZmp9I6zzZC6PpEMLTaOur\\\",\\n            \\\"bizId\\\": \\\"3A7eBMhALHh9fYmcgXXvYgjrKLw\\\",\\n            \\\"offerId\\\": \\\"offer_3A7eBghCjGpOWyxgTVxD5Z0AOqP\\\",\\n            \\\"offerVersionId\\\": \\\"offer_version_3A7eBeSM5ocU6X2c5KAnVcZVse6\\\",\\n            \\\"customerUserId\\\": \\\"wH9rPtpfRvBJQ654wU9Nlu2FdBywBqWz\\\",\\n            \\\"customerGroupAccountId\\\": null,\\n            \\\"status\\\": \\\"in_progress\\\",\\n            \\\"statusConfigValueId\\\": null,\\n            \\\"currency\\\": \\\"USD\\\",\\n            \\\"subtotalMinor\\\": 15000,\\n            \\\"taxMinor\\\": 0,\\n            \\\"feeMinor\\\": 0,\\n            \\\"discountMinor\\\": 0,\\n            \\\"totalMinor\\\": 15000,\\n            \\\"requestedStartAt\\\": \\\"2026-02-25T15:45:03.656Z\\\",\\n            \\\"requestedEndAt\\\": \\\"2026-02-25T16:35:03.656Z\\\",\\n            \\\"confirmedStartAt\\\": \\\"2026-02-25T15:45:03.656Z\\\",\\n            \\\"confirmedEndAt\\\": \\\"2026-02-25T16:35:03.656Z\\\",\\n            \\\"pricingSnapshot\\\": {},\\n            \\\"policySnapshot\\\": {},\\n            \\\"metadata\\\": {},\\n            \\\"createdAt\\\": \\\"2026-02-24T15:45:03.665Z\\\",\\n            \\\"updatedAt\\\": \\\"2026-02-24T15:45:03.665Z\\\",\\n            \\\"deletedAt\\\": null,\\n            \\\"createdBy\\\": null,\\n            \\\"updatedBy\\\": null,\\n            \\\"deletedBy\\\": null\\n          },\\n          \\\"meta\\\": {\\n            \\\"requestId\\\": \\\"d0a95de5-105b-46f6-b060-7545398024e9\\\",\\n            \\\"timestamp\\\": \\\"2026-02-24T15:45:04.943Z\\\"\\n          }\\n        },\\n        \\\"at\\\": \\\"2026-02-24T15:45:04.948Z\\\"\\n      }\\n    ]\\n  },\\n  \\\"metadata\\\": {}\\n}\\n\",\n            \"byteSize\": 2875,\n            \"checksum\": \"5daff9bfeacc760c3e2b265891ddaccd4666c31b876dc568594a301df6471d41\",\n            \"capturedAt\": \"2026-02-24T15:45:05.104Z\",\n            \"metadata\": {\n              \"format\": \"json\",\n              \"stepKey\": \"member-review-bookings\",\n              \"screenKey\": \"member-review-bookings-1771947905078\",\n              \"sourceFormat\": \"v1\",\n              \"schemaVersion\": \"snapshot.v1\"\n            },\n            \"createdAt\": \"2026-02-24T15:45:05.104Z\",\n            \"updatedAt\": \"2026-02-24T15:45:05.104Z\",\n            \"deletedAt\": null,\n            \"createdBy\": null,\n            \"updatedBy\": null,\n            \"deletedBy\": null\n          },\n          \"meta\": {\n            \"requestId\": \"ec0634a9-c4b5-4dc8-a8a7-5521574a24b7\",\n            \"timestamp\": \"2026-02-24T15:45:05.122Z\"\n          }\n        },\n        \"at\": \"2026-02-24T15:45:05.124Z\"\n      }\n    ]\n  },\n  \"metadata\": {}\n}\n",
+            "byteSize": 9199,
+            "checksum": "e6834c8229142b29685a25276eb5d22182e83c9563b7a4e9b89df102b07a597a",
+            "capturedAt": "2026-02-24T15:45:05.306Z",
+            "metadata": {
+              "format": "json",
+              "stepKey": "runner-submit-artifacts",
+              "screenKey": "runner-submit-artifacts-1771947905285",
+              "sourceFormat": "v1",
+              "schemaVersion": "snapshot.v1"
+            },
+            "createdAt": "2026-02-24T15:45:05.306Z",
+            "updatedAt": "2026-02-24T15:45:05.306Z",
+            "deletedAt": null,
+            "createdBy": null,
+            "updatedBy": null,
+            "deletedBy": null
+          },
+          "meta": {
+            "requestId": "a9371f15-3cac-4b4b-b2e4-39ca6c4647ed",
+            "timestamp": "2026-02-24T15:45:05.333Z"
+          }
+        },
+        "at": "2026-02-24T15:45:05.334Z"
+      },
+      {
+        "method": "POST",
+        "path": "/api/v1/sagas/runs/saga_run_3A7eBGfqRxUOaoVCdlFV8a7gMMW/steps/owner-validate-compliance-controls/result",
+        "status": 200,
+        "requestBody": {
+          "status": "in_progress",
+          "startedAt": "2026-02-24T15:45:05.302Z",
+          "resultPayload": {
+            "note": "Started owner-validate-compliance-controls"
+          },
+          "assertionSummary": {
+            "status": "in_progress"
+          }
+        },
+        "responseBody": {
+          "success": true,
+          "data": {
+            "id": "saga_run_step_3A7eBEz9zr0Tlj9iWXoJe845v6v",
+            "sagaRunId": "saga_run_3A7eBGfqRxUOaoVCdlFV8a7gMMW",
+            "phaseKey": "operations-and-follow-up",
+            "phaseOrder": 7,
+            "phaseTitle": "Operations And Follow-up",
+            "stepKey": "owner-validate-compliance-controls",
+            "stepOrder": 18,
+            "actorKey": "biz_owner",
+            "instruction": "Run compliance workflow checks (credential sharing/access control/privacy constraints) for this scenario.",
+            "expectedResult": "Access is scoped correctly and compliance workflow state is traceable in operational records.",
+            "status": "in_progress",
+            "attemptCount": 1,
+            "startedAt": "2026-02-24T15:45:05.302Z",
+            "endedAt": null,
+            "failureCode": null,
+            "failureMessage": null,
+            "resultPayload": {
+              "note": "Started owner-validate-compliance-controls"
+            },
+            "assertionSummary": {
+              "status": "in_progress"
+            },
+            "metadata": {},
+            "createdAt": "2026-02-24T15:44:58.502Z",
+            "updatedAt": "2026-02-24T15:44:58.502Z",
+            "deletedAt": null,
+            "createdBy": null,
+            "updatedBy": null,
+            "deletedBy": null
+          },
+          "meta": {
+            "requestId": "d78de971-a6d5-4f1a-aee3-1ea7b8e48378",
+            "timestamp": "2026-02-24T15:45:05.334Z"
+          }
+        },
+        "at": "2026-02-24T15:45:05.334Z"
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/sagas/runs/saga_run_3A7eBFEoBlEFTLALvbWc2W2KVHh",
+        "status": 200,
+        "responseBody": {
+          "_truncated": true,
+          "_preview": "{\"success\":true,\"data\":{\"run\":{\"id\":\"saga_run_3A7eBFEoBlEFTLALvbWc2W2KVHh\",\"sagaDefinitionId\":\"saga_definition_3A7asRWbE3YSlimATsORIbHZq4W\",\"sagaKey\":\"uc-150-the-solo-entrepreneur-sarah\",\"bizId\":null,\"status\":\"passed\",\"mode\":\"live\",\"requestedByUserId\":\"4HsyT5uSUhPNb5qRge6JDqL33oXCb2Io\",\"runnerLabel\":\"codex-rerun-all\",\"definitionChecksum\":\"a062a4c03ee8134289bf69a9f2db18a3ffe2dfa611ed57a21fff016e747d05bc\",\"startedAt\":\"2026-02-24T15:44:58.506Z\",\"endedAt\":\"2026-02-24T15:45:05.281Z\",\"lastHeartbeatAt\":\"2026-02-24T15:45:05.281Z\",\"totalSteps\":19,\"passedSteps\":19,\"failedSteps\":0,\"skippedSteps\":0,\"runContext\":{\"createdBy\":\"apps/api/src/scripts/rerun-sagas.ts\"},\"runSummary\":{\"auto\":true,\"source\":\"rerun-sagas.ts\",\"coverage\":{\"totalSteps\":19,\"failedSteps\":0,\"passedSteps\":19,\"pendingSteps\":0,\"skippedSteps\":0,\"completionPct\":100,\"classification\":\"full\",\"inProgressSteps\":0,\"apiFailureStepCount\":0,\"notImplementedStepCount\":0,\"missingEvidenceStepCount\":0},\"failures\":[],\"missingEvidence\":[]},\"metadata\":{\"tags\":[\"uc-derived\",\"persona-derived\",\"lifecycle\",\"api-first\",\"agents\"],\"title\":\"UC-150 • The Plugin Install with Scoped Permissions • The Solo Entrepreneur (Sarah)\"},\"createdAt\":\"2026-02-24T15:44:58.053Z\",\"updatedAt\":\"2026-02-24T15:44:58.053Z\",\"deletedAt\":null,\"createdBy\":null,\"updatedBy\":null,\"deletedBy\":null},\"definition\":{\"id\":\"saga_definition_3A7asRWbE3YSlimATsORIbHZq4W\",\"bizId\":null,\"sagaKey\":\"uc-150-the-solo-entrepreneur-sarah\",\"title\":\"UC-150 • The Plugin Install with Scoped Permissions • The Solo Entrepreneur (Sarah)\",\"description\":\"Comprehensive lifecycle saga derived from UC-150 and persona P-1. Needs summary: Extension capability manifest with explicit permission keys; Grant permissions at biz, location, or scoped subject level; Allow/deny controls per permission; Required vs optional permission distinction; Expiring temporary grants; Permission decision audit trail; Ability to suspend grants without uninstalling extension\",\"status\":\"active\",\"sourceUseCaseRef\":\"UC-150\",\"sourcePersonaRef\":\"P-1\",\"sourceUseCaseFile\":\"/Users/ameer/bizing/mind/workspace/documentation/use-cases-comprehensive.md\",\"sourcePersonaFile\":\"/Users/ameer/bizing/mind/workspace/documentation/tester-personas.md\",\"specVersion\":\"saga.v0\",\"specFilePath\":\"testing/sagas/specs/uc-150-the-solo-entrepreneur-sarah.json\",\"specChecksum\":\"a062a4c03ee8134289bf69a9f2db18a3ffe2dfa611ed57a21fff016e747d05bc\",\"metadata\":{\"tags\":[\"uc-derived\",\"persona-derived\",\"lifecycle\",\"api-first\",\"agents\"],\"generatedAt\":\"2026-02-24T14:45:06.937Z\"},\"createdAt\":\"2026-02-24T15:17:48.947Z\",\"updatedAt\":\"2026-02-24T15:17:48.947Z\",\"deletedAt\":null,\"createdBy\":null,\"updatedBy\":null,\"deletedBy\":null},\"spec\":{\"schemaVersion\":\"saga.v0\",\"sagaKey\":\"uc-150-the-solo-entrepreneur-sarah\",\"title\":\"UC-150 • The Plugin Install with Scoped Permissions • The Solo Entrepreneur (Sarah)\",\"description\":\"Comprehensive lifecycle saga derived from UC-150 and persona P-1. Needs summary: Extension capability manifest with explicit permission keys; Grant permissions at biz, location, or scoped subject level; Allow/deny controls per permission; Required vs optional permission distinction; Expiring temporary grants; Permission decision audit trail; Ability to suspend grants without uninstalling extension\",\"tags\":[\"uc-derived\",\"persona-derived\",\"lifecycle\",\"api-first\",\"agents\"],\"defaults\":{\"runMode\":\"dry_run\",\"continueOnFailure\":false},\"source\":{\"useCaseRef\":\"UC-150\",\"personaRef\":\"P-1\",\"useCaseFile\":\"/Users/ameer/bizing/mind/workspace/documentation/use-cases-comprehensive.md\",\"personaFile\":\"/Users/ameer/bizing/mind/workspace/documentation/tester-personas.md\",\"generatedAt\":\"2026-02-24T14:45:06.937Z\"},\"objectives\":[\"Validate UC-150 lifecycle end-to-end using persona The Solo Entrepreneur (Sarah).\",\"Exercise owner setup, team setup, catalog publishing, and customer journeys.\",\"Stress ACL/security edge cases and verify expected denials are enforced.\",\"Collect snapshots and report artifacts for every critical milestone.\"],\"actors\":[{\"actorKey\":\"biz_owner\",\"name\":\"The Solo Entrepreneur (Sarah)\",\"role\":\"owner\",\"description\":\"Just starting out, wearing all hats\",\"personaRef\":\"P-1\"},{\"actorKey\":\"biz_member\",\"name\":\"Operations Team Member\",\"role\":\"manager\",\"description\":\"Business member invited by owner to assist with operations and booking flow.\"},{\"actorKey\":\"customer_1\",\"name\":\"Customer One\",\"role\":\"customer\",\"description\":\"Primary customer exploring catalog, booking services, and purchasing products.\"},{\"actorKey\":\"customer_2\",\"name\":\"Customer Two\",\"role\":\"customer\",\"description\":\"Concurrent customer used to simulate realistic demand and race conditions.\"},{\"actorKey\":\"adversary\",\"name\":\"Adversarial User\",\"role\":\"malicious_actor\",\"description\":\"Actor intentionally attempting unauthorized or abusive actions.\"}],\"phases\":[{\"phaseKey\":\"owner-onboarding\",\"order\":1,\"title\":\"Owner Onboarding\",\"description\":\"Business owner signs up, authenticates, and establishes tenant root.\",\"steps\":[{\"stepKey\":\"owner-sign-up\",\"order\":1,\"title\":\"Owner signs up and authenticates\",\"actorKey\":\"biz_owner\",\"intent\":\"Establish authenticated owner identity for the lifecycle.\",\"instruction\":\"Create or login the owner account through Better Auth endpoints, then verify session context can call authenticated API routes.\",\"expectedResult\":\"Owner session exists and authenticated routes return success for this user.\",\"toolHints\":[],\"assertions\":[{\"kind\":\"api_response\",\"description\":\"API call returns success and includes stable ids for created entities.\"},{\"kind\":\"acl_guard\",\"description\":\"Actor permissions are honored for this step context.\"}],\"evidenceRequired\":[{\"kind\":\"api_trace\",\"label\":\"Request/response trace for this step\"},{\"kind\":\"snapshot\",\"label\":\"Structured snapshot.v1 screen blocks (what user saw) with real API-backed data\"}],\"guardrails\":[],\"tags\":[\"auth\",\"setup\"]},{\"stepKey\":\"owner-create-biz\",\"order\":2,\"title\":\"Owner creates business tenant\",\"actorKey\":\"biz_owner\",\"intent\":\"Create the biz root for all subsequent configuration.\",\"instruction\":\"Using agents tools, create a biz representing The Plugin Install with Scoped Permissions. Use name/slug derived from saga context.\",\"expectedResult\":\"Biz is created, owner is auto-added as member with owner role, and biz id is captured.\",\"toolHints\":[\"bizing.bizes.create\"],\"assertions\":[{\"kind\":\"api_response\",\"description\":\"API call returns success and includes stable ids for created entities.\"},{\"kind\":\"acl_guard\",\"description\":\"Actor permissions are honored for this step context.\"}],\"evidenceRequired\":[{\"kind\":\"api_trace\",\"label\":\"Request/response trace for this step\"},{\"kind\":\"snapshot\",\"label\":\"Structured snapshot.v1 screen blocks (what user saw) with real API-backed data\"}],\"guardrails\":[],\"tags\":[\"biz\",\"setup\"]},{\"stepKey\":\"owner-create-location\",\"order\":3,\"title\":\"Owner creates primary location\",\"actorKey\":\"biz_owner\",\"intent\":\"Establish operational location for services/resources.\",\"instruction\":\"Create a primary location for the biz and set timezone aligned with scenario context.\",\"expectedResult\":\"Location exists and is associated with the new biz.\",\"toolHints\":[\"bizing.locations.create\"],\"assertions\":[{\"kind\":\"api_response\",\"description\":\"API call returns success and includes stable ids for created entities.\"},{\"kind\":\"acl_guard\",\"description\":\"Actor permissions are honored for this step context.\"}],\"evidenceRequired\":[{\"kind\":\"api_trace\",\"label\":\"Request/response trace for this step\"},{\"kind\":\"snapshot\",\"label\":\"Structured snapshot.v1 screen blocks (what user saw) with real API-backed data\"}],\"guardrails\":[],\"tags\":[\"location\",\"setup\"]}]},{\"phaseKey\":\"business-configuration\",\"order\":2,\"title\":\"Business Configuration\",\"description\":\"Owner configures scheduling, pricing baseline, and operational defaults.\",\"steps\":[{\"stepKey\":\"owner-configure-hours\",\"order\":4,\"title\":\"Configure default hours and availability mode\",\"actorKey\":\"biz_owner\",\"intent\":\"Set baseline availability without forcing advanced complexity.\",\"instruction\":\"Create baseline availability and lead-time rules representing the UC default business hours and booking window behavior.\",\"expectedResult\":\"Availability defaults and rules are stored and can be referenced by calendars.\",\"toolHints\":[],\"assertions\":[{\"kind\":\"api_response\",\"description\":\"API call returns success and includes stable ids for created entities.\"},{\"kind\":\"acl_guard\",\"description\":\"Actor permissions are honored for this step context.\"}],\"evidenceRequired\":[{\"kind\":\"api_trace\",\"label\":\"Request/response trace for this step\"},{\"kind\":\"snapshot\",\"label\":\"Structured snapshot.v1 screen blocks (what user saw) with real API-backed data\"}],\"guardrails\":[],\"tags\":[\"availability\",\"policy\"]},{\"stepKey\":\"owner-configure-pricing\",\"order\":5,\"title\":\"Configure default pricing rules\",\"actorKey\":\"biz_owner\",\"intent\":\"Set base pricing and optional manual demand overrides.\",\"instruction\":\"Configure pricing defaults for the offer lifecycle including call fees/manual surge if UC needs imply it.\",\"expectedResult\":\"Pricing model persists and future bookings can calculate totals deterministically.\",\"toolHints\":[],\"assertions\":[{\"kind\":\"api_response\",\"description\":\"API call returns success and includes stable ids for created entities.\"},{\"kind\":\"acl_guard\",\"description\":\"Actor permissions are honored for this step context.\"}],\"evidenceRequired\":[{\"kind\":\"api_trace\",\"label\":\"Request/response trace for this step\"},{\"kind\":\"snapshot\",\"label\":\"Structured snapshot.v1 screen blocks (what user saw) with real API-backed data\"}],\"guardrails\":[],\"tags\":[\"pricing\"]}]},{\"phaseKey\":\"supply-and-team-setup\",\"order\":3,\"title\":\"Supply And Team Setup\",\"description\":\"Business owner sets up hosts/assets/venues/resources and invites members.\",\"steps\":[{\"stepKey\":\"owner-create-resources\",\"order\":6,\"title\":\"Create resources representing hosts/assets/venues\",\"actorKey\":\"biz_owner\",\"intent\":\"Model real-world supply that bookings will consume.\",\"instruction\":\"Create at least one host resource and one non-host resource (asset or venue) suitable for the UC.\",\"expectedResult\":\"Resources are created with expected type, location, and buffers.\",\"toolHints\":[\"bizing.resources.create\"],\"assertions\":[{\"kind\":\"api_response\",\"description\":\"API call returns success and includes stable ids for created entities.\"},{\"kind\":\"acl_guard\",\"description\":\"Actor permissions are honored for this step context.\"}],\"evidenceRequired\":[{\"kind\":\"api_trace\",\"label\":\"Request/response trace for this step\"},{\"kind\":\"snapshot\",\"label\":\"Structured snapshot.v1 screen blocks (what user saw) with real API-backed data\"}],\"guardrails\":[],\"tags\":[\"resources\"]},{\"stepKey\":\"owner-invite-member\",\"order\":7,\"title\":\"Invite and provision business member\",\"actorKey\":\"biz_owner\",\"intent\":\"Validate collaboration and role assignment.\",\"instruction\":\"Invite a biz member, assign an operational role, and verify that member can authenticate into the same biz.\",\"expectedResult\":\"Biz member account/session exists with scoped role permissions.\",\"toolHints\":[],\"assertions\":[{\"kind\":\"api_response\",\"description\":\"API call returns success and includes stable ids for created entities.\"},{\"kind\":\"acl_guard\",\"description\":\"Actor permissions are honored for this step context.\"}],\"evidenceRequired\":[{\"kind\":\"api_trace\",\"label\":\"Request/response trace for this step\"},{\"kind\":\"snapshot\",\"label\":\"Structured snapshot.v1 screen blocks (what user saw) with real API-backed data\"}],\"guardrails\":[],\"tags\":[\"team\",\"acl\"]}]},{\"phaseKey\":\"catalog-publish\",\"order\":4,\"title\":\"Catalog And Publish\",\"description\":\"Owner creates services/offers/products and publishes sellable catalog entries.\",\"steps\":[{\"stepKey\":\"owner-create-offer\",\"order\":8,\"title\":\"Create offer shell\",\"actorKey\":\"biz_owner\",\"intent\":\"Define sellable service/catalog entry.\",\"instruction\":\"Create an offer representing the UC primary service; choose execution mode matching the scenario.\",\"expectedResult\":\"Offer is created in draft state with captured id.\",\"toolHints\":[\"bizing.offers.create\"]",
+          "_size": 1657897
+        },
+        "at": "2026-02-24T15:45:05.363Z"
+      },
+      {
+        "method": "POST",
+        "path": "/api/v1/sagas/runs/saga_run_3A7eBJFPjX9NySsDhy7qdKUXhWE/steps/owner-validate-compliance-controls/result",
+        "status": 200,
+        "requestBody": {
+          "status": "blocked",
+          "startedAt": "2026-02-24T15:45:05.270Z",
+          "endedAt": "2026-02-24T15:45:05.270Z",
+          "failureMessage": "owner-validate-compliance-controls: Compliance/credential verification API is not exposed yet.",
+          "resultPayload": {
+            "note": "Step blocked: owner-validate-compliance-controls: Compliance/credential verification API is not exposed yet.",
+            "evidence": {
+              "error": "owner-validate-compliance-controls: Compliance/credential verification API is not exposed yet.",
+              "failed": false,
+              "blocked": true,
+              "expected": "Compliance verification + access audit tools",
+              "foundToolCount": 43
+            }
+          },
+          "assertionSummary": {
+            "status": "blocked",
+            "hasFailure": true,
+            "assertionsPassed": 0
+          }
+        },
+        "responseBody": {
+          "success": true,
+          "data": {
+            "id": "saga_run_step_3A7eBFlGVzZ9wenBP96wzRjU6zF",
+            "sagaRunId": "saga_run_3A7eBJFPjX9NySsDhy7qdKUXhWE",
+            "phaseKey": "operations-and-follow-up",
+            "phaseOrder": 7,
+            "phaseTitle": "Operations And Follow-up",
+            "stepKey": "owner-validate-compliance-controls",
+            "stepOrder": 18,
+            "actorKey": "biz_owner",
+            "instruction": "Run compliance workflow checks (credential sharing/access control/privacy constraints) for this scenario.",
+            "expectedResult": "Access is scoped correctly and compliance workflow state is traceable in operational records.",
+            "status": "blocked",
+            "attemptCount": 1,
+            "startedAt": "2026-02-24T15:45:05.270Z",
+            "endedAt": "2026-02-24T15:45:05.270Z",
+            "failureCode": null,
+            "failureMessage": "owner-validate-compliance-controls: Compliance/credential verification API is not exposed yet.",
+            "resultPayload": {
+              "note": "Step blocked: owner-validate-compliance-controls: Compliance/credential verification API is not exposed yet.",
+              "evidence": {
+                "error": "owner-validate-compliance-controls: Compliance/credential verification API is not exposed yet.",
+                "failed": false,
+                "blocked": true,
+                "expected": "Compliance verification + access audit tools",
+                "foundToolCount": 43
+              }
+            },
+            "assertionSummary": {
+              "status": "blocked",
+              "hasFailure": true,
+              "assertionsPassed": 0
+            },
+            "metadata": {},
+            "createdAt": "2026-02-24T15:44:58.603Z",
+            "updatedAt": "2026-02-24T15:44:58.603Z",
+            "deletedAt": null,
+            "createdBy": null,
+            "updatedBy": null,
+            "deletedBy": null
+          },
+          "meta": {
+            "requestId": "749aa846-4ef3-4a50-bc85-178080d9a6ee",
+            "timestamp": "2026-02-24T15:45:05.345Z"
+          }
+        },
+        "at": "2026-02-24T15:45:05.364Z"
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/bizes/3A7eBJDR30v6UuEG2GDf4gpFzlZ/booking-orders?perPage=100",
+        "status": 200,
+        "responseBody": {
+          "success": true,
+          "data": [
+            {
+              "id": "booking_order_3A7eBtQyJE59xM85zhxPMKeNeng",
+              "bizId": "3A7eBJDR30v6UuEG2GDf4gpFzlZ",
+              "offerId": "offer_3A7eBUb4mokI3V2DnMvXXusbliG",
+              "offerVersionId": "offer_version_3A7eBaeS5U2TisIeFvK0WNLpmmk",
+              "customerUserId": "QXw2Rb0M7SEBSq6kvtmMTncJwFTb2txA",
+              "customerGroupAccountId": null,
+              "status": "in_progress",
+              "statusConfigValueId": null,
+              "currency": "USD",
+              "subtotalMinor": 15000,
+              "taxMinor": 0,
+              "feeMinor": 0,
+              "discountMinor": 0,
+              "totalMinor": 15000,
+              "requestedStartAt": "2026-02-25T15:45:03.153Z",
+              "requestedEndAt": "2026-02-25T16:35:03.153Z",
+              "confirmedStartAt": "2026-02-25T15:45:03.153Z",
+              "confirmedEndAt": "2026-02-25T16:35:03.153Z",
+              "pricingSnapshot": {},
+              "policySnapshot": {},
+              "metadata": {},
+              "createdAt": "2026-02-24T15:45:03.159Z",
+              "updatedAt": "2026-02-24T15:45:03.159Z",
+              "deletedAt": null,
+              "createdBy": null,
+              "updatedBy": null,
+              "deletedBy": null
+            },
+            {
+              "id": "booking_order_3A7eBkQJcfh5S4GYbkef4Gpwmf0",
+              "bizId": "3A7eBJDR30v6UuEG2GDf4gpFzlZ",
+              "offerId": "offer_3A7eBUb4mokI3V2DnMvXXusbliG",
+              "offerVersionId": "offer_version_3A7eBaeS5U2TisIeFvK0WNLpmmk",
+              "customerUserId": "HZiPs3gBZswUkMY9mrKqcU9RjNCGEHdJ",
+              "customerGroupAccountId": null,
+              "status": "confirmed",
+              "statusConfigValueId": null,
+              "currency": "USD",
+              "subtotalMinor": 15000,
+              "taxMinor": 0,
+              "feeMinor": 0,
+              "discountMinor": 0,
+              "totalMinor": 15000,
+              "requestedStartAt": "2026-02-25T15:45:02.542Z",
+              "requestedEndAt": "2026-02-25T16:35:02.542Z",
+              "confirmedStartAt": "2026-02-25T15:45:02.542Z",
+              "confirmedEndAt": "2026-02-25T16:35:02.542Z",
+              "pricingSnapshot": {},
+              "policySnapshot": {},
+              "metadata": {},
+              "createdAt": "2026-02-24T15:45:02.649Z",
+              "updatedAt": "2026-02-24T15:45:02.649Z",
+              "deletedAt": null,
+              "createdBy": null,
+              "updatedBy": null,
+              "deletedBy": null
+            }
+          ],
+          "meta": {
+            "requestId": "b3fee950-280b-460a-b199-dc27d05558e0",
+            "timestamp": "2026-02-24T15:45:05.351Z"
+          },
+          "pagination": {
+            "page": 1,
+            "perPage": 100,
+            "total": 2,
+            "hasMore": false
+          }
+        },
+        "at": "2026-02-24T15:45:05.364Z"
+      }
+    ]
+  },
+  "metadata": {}
+}

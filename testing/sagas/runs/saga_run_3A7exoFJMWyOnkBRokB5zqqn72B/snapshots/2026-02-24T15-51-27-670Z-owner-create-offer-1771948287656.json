@@ -1,0 +1,206 @@
+{
+  "schemaVersion": "snapshot.v1",
+  "screenKey": "owner-create-offer-1771948287656",
+  "title": "Create offer shell Snapshot",
+  "generatedAt": "2026-02-24T15:51:27.667Z",
+  "stepKey": "owner-create-offer",
+  "status": "passed",
+  "view": {
+    "title": "Create offer shell",
+    "subtitle": "Offer created.",
+    "blocks": [
+      {
+        "type": "alert",
+        "title": "Owner Create Offer completed",
+        "message": "Offer created.",
+        "tone": "success"
+      },
+      {
+        "type": "key_value",
+        "title": "Screen details",
+        "items": [
+          {
+            "label": "OfferId",
+            "value": "offer_3A7ey8ilYHNR8xEKlddI2pnzYaF"
+          }
+        ]
+      }
+    ]
+  },
+  "rawData": {
+    "stepKey": "owner-create-offer",
+    "resultPayload": {
+      "note": "Offer created.",
+      "evidence": {
+        "offerId": "offer_3A7ey8ilYHNR8xEKlddI2pnzYaF"
+      }
+    },
+    "apiCalls": [
+      {
+        "method": "POST",
+        "path": "/api/v1/bizes/3A7exfayXmup0CNbGy3filolqt5/booking-orders",
+        "status": 403,
+        "requestBody": {
+          "offerId": "offer_3A7exmOK24VCrMMXVwnlNtk51uB",
+          "offerVersionId": "offer_version_3A7exnDehdHjjNuaSHOtdDmy4YY",
+          "status": "draft",
+          "subtotalMinor": 1000,
+          "taxMinor": 0,
+          "feeMinor": 0,
+          "discountMinor": 0,
+          "totalMinor": 1000,
+          "currency": "USD"
+        },
+        "responseBody": {
+          "success": false,
+          "error": {
+            "code": "FORBIDDEN",
+            "message": "You are not a member of this biz."
+          },
+          "meta": {
+            "requestId": "e63f486a-4e56-4697-b7cb-9dc2e8eacccf",
+            "timestamp": "2026-02-24T15:51:27.513Z"
+          }
+        },
+        "at": "2026-02-24T15:51:27.527Z"
+      },
+      {
+        "method": "POST",
+        "path": "/api/v1/sagas/runs/saga_run_3A7exjMJ53ter4rE84U26pLp2xX/steps/owner-create-offer-version/result",
+        "status": 200,
+        "requestBody": {
+          "status": "in_progress",
+          "startedAt": "2026-02-24T15:51:27.494Z",
+          "resultPayload": {
+            "note": "Started owner-create-offer-version"
+          },
+          "assertionSummary": {
+            "status": "in_progress"
+          }
+        },
+        "responseBody": {
+          "success": true,
+          "data": {
+            "id": "saga_run_step_3A7exlPjzTUF0ayGdr5owhKkxcX",
+            "sagaRunId": "saga_run_3A7exjMJ53ter4rE84U26pLp2xX",
+            "phaseKey": "catalog-publish",
+            "phaseOrder": 4,
+            "phaseTitle": "Catalog And Publish",
+            "stepKey": "owner-create-offer-version",
+            "stepOrder": 9,
+            "actorKey": "biz_owner",
+            "instruction": "Create a published offer version with realistic duration and base price for this UC.",
+            "expectedResult": "Offer version exists and is ready for booking order references.",
+            "status": "in_progress",
+            "attemptCount": 1,
+            "startedAt": "2026-02-24T15:51:27.494Z",
+            "endedAt": null,
+            "failureCode": null,
+            "failureMessage": null,
+            "resultPayload": {
+              "note": "Started owner-create-offer-version"
+            },
+            "assertionSummary": {
+              "status": "in_progress"
+            },
+            "metadata": {},
+            "createdAt": "2026-02-24T15:51:24.099Z",
+            "updatedAt": "2026-02-24T15:51:24.099Z",
+            "deletedAt": null,
+            "createdBy": null,
+            "updatedBy": null,
+            "deletedBy": null
+          },
+          "meta": {
+            "requestId": "3197d65a-19f7-4bdf-b176-cdf90d702e93",
+            "timestamp": "2026-02-24T15:51:27.514Z"
+          }
+        },
+        "at": "2026-02-24T15:51:27.527Z"
+      },
+      {
+        "method": "POST",
+        "path": "/api/v1/sagas/runs/saga_run_3A7exWk2T3pwvd4IqDc6dLRmBSr/steps/adversary-cross-biz-read/result",
+        "status": 200,
+        "requestBody": {
+          "status": "passed",
+          "startedAt": "2026-02-24T15:51:27.476Z",
+          "endedAt": "2026-02-24T15:51:27.476Z",
+          "failureMessage": null,
+          "resultPayload": {
+            "note": "Cross-biz read blocked for non-member account.",
+            "evidence": {
+              "adversaryUserId": "u3L0PQuK1CB2ddr89NgXmqcrFygphkRW"
+            }
+          },
+          "assertionSummary": {
+            "status": "passed",
+            "hasFailure": false,
+            "assertionsPassed": 1
+          }
+        },
+        "responseBody": {
+          "success": true,
+          "data": {
+            "id": "saga_run_step_3A7exZMb4F2mBcSYriMmLxIywj8",
+            "sagaRunId": "saga_run_3A7exWk2T3pwvd4IqDc6dLRmBSr",
+            "phaseKey": "security-and-abuse",
+            "phaseOrder": 6,
+            "phaseTitle": "Security And Abuse Checks",
+            "stepKey": "adversary-cross-biz-read",
+            "stepOrder": 14,
+            "actorKey": "adversary",
+            "instruction": "Using credentials from another context, attempt to read or mutate booking/order resources for this biz.",
+            "expectedResult": "Request is rejected with forbidden/unauthorized error and no data leakage.",
+            "status": "passed",
+            "attemptCount": 1,
+            "startedAt": "2026-02-24T15:51:27.476Z",
+            "endedAt": "2026-02-24T15:51:27.476Z",
+            "failureCode": null,
+            "failureMessage": null,
+            "resultPayload": {
+              "note": "Cross-biz read blocked for non-member account.",
+              "evidence": {
+                "adversaryUserId": "u3L0PQuK1CB2ddr89NgXmqcrFygphkRW"
+              }
+            },
+            "assertionSummary": {
+              "status": "passed",
+              "hasFailure": false,
+              "assertionsPassed": 1
+            },
+            "metadata": {},
+            "createdAt": "2026-02-24T15:51:22.888Z",
+            "updatedAt": "2026-02-24T15:51:22.888Z",
+            "deletedAt": null,
+            "createdBy": null,
+            "updatedBy": null,
+            "deletedBy": null
+          },
+          "meta": {
+            "requestId": "661998ac-37ef-4f15-9faa-189a28ffd14e",
+            "timestamp": "2026-02-24T15:51:27.521Z"
+          }
+        },
+        "at": "2026-02-24T15:51:27.528Z"
+      },
+      {
+        "method": "POST",
+        "path": "/api/v1/sagas/runs/saga_run_3A7exbnOATgaOJ8SAcNDduz3wmN/snapshots",
+        "status": 201,
+        "requestBody": {
+          "_truncated": true,
+          "_preview": "{\"stepKey\":\"customer-two-concurrent\",\"screenKey\":\"customer-two-concurrent-1771948287505\",\"title\":\"Customer two performs concurrent booking attempt Snapshot\",\"status\":\"passed\",\"route\":\"/sagas/saga_run_3A7exbnOATgaOJ8SAcNDduz3wmN/customer-two-concurrent\",\"format\":\"json\",\"view\":{\"title\":\"Customer two performs concurrent booking attempt\",\"subtitle\":\"Second concurrent booking created.\",\"blocks\":[{\"type\":\"alert\",\"title\":\"Customer Two Concurrent completed\",\"message\":\"Second concurrent booking created.\",\"tone\":\"success\"},{\"type\":\"key_value\",\"title\":\"Booking confirmation\",\"items\":[{\"label\":\"Booking id\",\"value\":\"booking_order_3A7eyBpD2hPyiAg8EKeuNzgBscw\"},{\"label\":\"Status\",\"value\":\"confirmed\"},{\"label\":\"Starts at\",\"value\":\"2026-02-25T15:51:27.298Z\"},{\"label\":\"Total\",\"value\":\"15000\"}]},{\"type\":\"actions\",\"title\":\"Visible actions\",\"items\":[{\"label\":\"Download receipt\",\"kind\":\"secondary\",\"enabled\":true},{\"label\":\"Reschedule\",\"kind\":\"secondary\",\"enabled\":true},{\"label\":\"Cancel booking\",\"kind\":\"danger\",\"enabled\":true}]},{\"type\":\"stats\",\"title\":\"What user sees at a glance\",\"items\":[{\"label\":\"SubtotalMinor\",\"value\":\"15000\"},{\"label\":\"TaxMinor\",\"value\":\"0\"},{\"label\":\"FeeMinor\",\"value\":\"0\"},{\"label\":\"DiscountMinor\",\"value\":\"0\"},{\"label\":\"TotalMinor\",\"value\":\"15000\"}]},{\"type\":\"key_value\",\"title\":\"Screen details\",\"items\":[{\"label\":\"Id\",\"value\":\"booking_order_3A7eyBpD2hPyiAg8EKeuNzgBscw\"},{\"label\":\"BizId\",\"value\":\"3A7exe82Uzqw5QYDJtYQui1hyiD\"},{\"label\":\"OfferId\",\"value\":\"offer_3A7exq72AIYdQ9q8b5s8h1qIWif\"},{\"label\":\"OfferVersionId\",\"value\":\"offer_version_3A7exv3qoDhWxsIxS2wwjBKVjhY\"},{\"label\":\"CustomerUserId\",\"value\":\"rGJnI3aIHdrv8pGiGLivLOrsm1GlOC3X\"},{\"label\":\"CustomerGroupAccountId\",\"value\":\"null\"},{\"label\":\"Status\",\"value\":\"confirmed\"},{\"label\":\"StatusConfigValueId\",\"value\":\"null\"},{\"label\":\"Currency\",\"value\":\"USD\"},{\"label\":\"SubtotalMinor\",\"value\":\"15000\"},{\"label\":\"TaxMinor\",\"value\":\"0\"},{\"label\":\"FeeMinor\",\"value\":\"0\"},{\"label\":\"DiscountMinor\",\"value\":\"0\"},{\"label\":\"TotalMinor\",\"value\":\"15000\"},{\"label\":\"RequestedStartAt\",\"value\":\"2026-02-25T15:51:27.298Z\"},{\"label\":\"RequestedEndAt\",\"value\":\"2026-02-25T16:41:27.298Z\"}]}]},\"rawData\":{\"stepKey\":\"customer-two-concurrent\",\"resultPayload\":{\"note\":\"Second concurrent booking created.\",\"evidence\":{\"id\":\"booking_order_3A7eyBpD2hPyiAg8EKeuNzgBscw\",\"bizId\":\"3A7exe82Uzqw5QYDJtYQui1hyiD\",\"offerId\":\"offer_3A7exq72AIYdQ9q8b5s8h1qIWif\",\"offerVersionId\":\"offer_version_3A7exv3qoDhWxsIxS2wwjBKVjhY\",\"customerUserId\":\"rGJnI3aIHdrv8pGiGLivLOrsm1GlOC3X\",\"customerGroupAccountId\":null,\"status\":\"confirmed\",\"statusConfigValueId\":null,\"currency\":\"USD\",\"subtotalMinor\":15000,\"taxMinor\":0,\"feeMinor\":0,\"discountMinor\":0,\"totalMinor\":15000,\"requestedStartAt\":\"2026-02-25T15:51:27.298Z\",\"requestedEndAt\":\"2026-02-25T16:41:27.298Z\",\"confirmedStartAt\":\"2026-02-25T15:51:27.298Z\",\"confirmedEndAt\":\"2026-02-25T16:41:27.298Z\",\"pricingSnapshot\":{},\"policySnapshot\":{},\"metadata\":{},\"createdAt\":\"2026-02-24T15:51:27.304Z\",\"updatedAt\":\"2026-02-24T15:51:27.304Z\",\"deletedAt\":null,\"createdBy\":null,\"updatedBy\":null,\"deletedBy\":null}},\"apiCalls\":[{\"method\":\"POST\",\"path\":\"/api/v1/sagas/runs/saga_run_3A7exd3uLXtZELpxzdd9r3qTM3y/snapshots\",\"status\":201,\"requestBody\":{\"_truncated\":true,\"_preview\":\"{\\\"stepKey\\\":\\\"owner-publish-catalog\\\",\\\"screenKey\\\":\\\"owner-publish-catalog-1771948286958\\\",\\\"title\\\":\\\"Publish catalog visibility Snapshot\\\",\\\"status\\\":\\\"passed\\\",\\\"route\\\":\\\"/sagas/saga_run_3A7exd3uLXtZELpxzdd9r3qTM3y/owner-publish-catalog\\\",\\\"format\\\":\\\"json\\\",\\\"view\\\":{\\\"title\\\":\\\"Publish catalog visibility\\\",\\\"subtitle\\\":\\\"Offer published and activated.\\\",\\\"blocks\\\":[{\\\"type\\\":\\\"alert\\\",\\\"title\\\":\\\"Owner Publish Catalog completed\\\",\\\"message\\\":\\\"Offer published and activated.\\\",\\\"tone\\\":\\\"success\\\"}]},\\\"rawData\\\":{\\\"stepKey\\\":\\\"owner-publish-catalog\\\",\\\"resultPayload\\\":{\\\"note\\\":\\\"Offer published and activated.\\\"},\\\"apiCalls\\\":[{\\\"method\\\":\\\"POST\\\",\\\"path\\\":\\\"/api/v1/sagas/runs/saga_run_3A7exkZSNZ3KO9uCejlb4SMN4K0/steps/owner-invite-member/result\\\",\\\"status\\\":200,\\\"requestBody\\\":{\\\"status\\\":\\\"passed\\\",\\\"startedAt\\\":\\\"2026-02-24T15:51:26.596Z\\\",\\\"endedAt\\\":\\\"2026-02-24T15:51:26.596Z\\\",\\\"failureMessage\\\":null,\\\"resultPayload\\\":{\\\"note\\\":\\\"Member invited and accepted invitation.\\\",\\\"evidence\\\":{\\\"memberEmail\\\":\\\"member-uc-255-the-solo-entrepreneur-sarah-1771948286181-j4fcq3@example.com\\\",\\\"invitationId\\\":\\\"XVCZ4aGVSz7A2MuBm5IpEJScxSnAKg9q\\\"}},\\\"assertionSummary\\\":{\\\"status\\\":\\\"passed\\\",\\\"hasFailure\\\":false,\\\"assertionsPassed\\\":1}},\\\"responseBody\\\":{\\\"success\\\":true,\\\"data\\\":{\\\"id\\\":\\\"saga_run_step_3A7exjZXxM2L3M57cFgAKVv0u2n\\\",\\\"sagaRunId\\\":\\\"saga_run_3A7exkZSNZ3KO9uCejlb4SMN4K0\\\",\\\"phaseKey\\\":\\\"supply-and-team-setup\\\",\\\"phaseOrder\\\":3,\\\"phaseTitle\\\":\\\"Supply And Team Setup\\\",\\\"stepKey\\\":\\\"owner-invite-member\\\",\\\"stepOrder\\\":7,\\\"actorKey\\\":\\\"biz_owner\\\",\\\"instruction\\\":\\\"Invite a biz member, assign an operational role, and verify that member can authenticate into the same biz.\\\",\\\"expectedResult\\\":\\\"Biz member account/session exists with scoped role permissions.\\\",\\\"status\\\":\\\"passed\\\",\\\"attemptCount\\\":1,\\\"startedAt\\\":\\\"2026-02-24T15:51:26.596Z\\\",\\\"endedAt\\\":\\\"2026-02-24T15:51:26.596Z\\\",\\\"failureCode\\\":null,\\\"failureMessage\\\":null,\\\"resultPayload\\\":{\\\"note\\\":\\\"Member invited and accepted invitation.\\\",\\\"evidence\\\":{\\\"memberEmail\\\":\\\"member-uc-255-the-solo-entrepreneur-sarah-1771948286181-j4fcq3@example.com\\\",\\\"invitationId\\\":\\\"XVCZ4aGVSz7A2MuBm5IpEJScxSnAKg9q\\\"}},\\\"assertionSummary\\\":{\\\"status\\\":\\\"passed\\\",\\\"hasFailure\\\":false,\\\"assertionsPassed\\\":1},\\\"metadata\\\":{},\\\"createdAt\\\":\\\"2026-02-24T15:51:24.029Z\\\",\\\"updatedAt\\\":\\\"2026-02-24T15:51:24.029Z\\\",\\\"deletedAt\\\":null,\\\"createdBy\\\":null,\\\"updatedBy\\\":null,\\\"deletedBy\\\":null},\\\"meta\\\":{\\\"requestId\\\":\\\"ae15c103-36a6-4077-9b8c-1c4b81bbb3e3\\\",\\\"timestamp\\\":\\\"2026-02-24T15:51:26.646Z\\\"}},\\\"at\\\":\\\"2026-02-24T15:51:26.650Z\\\"},{\\\"method\\\":\\\"POST\\\",\\\"path\\\":\\\"/api/v1/sagas/runs/saga_run_3A7exjMJ53ter4rE84U26pLp2xX/steps/owner-invite-member/result\\\",\\\"status\\\":200,\\\"requestBody\\\":{\\\"status\\\":\\\"in_progress\\\",\\\"startedAt\\\":\\\"2026-02-24T15:51:26.631Z\\\",\\\"resultPayload\\\":{\\\"note\\\":\\\"Started owner-invite-member\\\"},\\\"assertionSummary\\\":{\\\"status\\\":\\\"in_progress\\\"}},\\\"responseBody\\\":{\\\"success\\\":true,\\\"data\\\":{\\\"id\\\":\\\"saga_run_step_3A7exjbCzF0StunQHFNsTe3hHZQ\\\",\\\"sagaRunId\\\":\\\"saga_run_3A7exjMJ53ter4rE84U26pLp2xX\\\",\\\"phaseKey\\\":\\\"supply-and-team-setup\\\",\\\"phaseOrder\\\":3,\\\"phaseTitle\\\":\\\"Supply And Team Setup\\\",\\\"stepKey\\\":\\\"owner-invite-member\\\",\\\"stepOrder\\\":7,\\\"actorKey\\\":\\\"biz_owner\\\",\\\"instruction\\\":\\\"Invite a biz member, assign an operational role, and verify that member can authenticate into the same biz.\\\",\\\"expectedResult\\\":\\\"Biz member account/session exists with scoped role permissions.\\\",\\\"status\\\":\\\"in_progress\\\",\\\"attemptCount\\\":1,\\\"startedAt\\\":\\\"2026-02-24T15:51:26.631Z\\\",\\\"endedAt\\\":null,\\\"failureCode\\\":null,\\\"failureMessage\\\":null,\\\"resultPayload\\\":{\\\"note\\\":\\\"Started owner-invite-member\\\"},\\\"assertionSummary\\\":{\\\"status\\\":\\\"in_progress\\\"},\\\"metadata\\\":{},\\\"createdAt\\\":\\\"2026-02-24T15:51:24.099Z\\\",\\\"updatedAt\\\":\\\"2026-02-24T15:51:24.099Z\\\",\\\"deletedAt\\\":null,\\\"createdBy\\\":null,\\\"updatedBy\\\":null,\\\"deletedBy\\\":null},\\\"meta\\\":{\\\"requestId\\\":\\\"b2627921-41e4-4a09-a885-485d4aa9cfa9\\\",\\\"timestamp\\\":\\\"2026-02-24T15:51:26.661Z\\\"}},\\\"at\\\":\\\"2026-02-24T15:51:26.662Z\\\"},{\\\"method\\\":\\\"POST\\\",\\\"path\\\":\\\"/api/v1/sagas/runs/saga_run_3A7exoFJMWyOnkBRokB5zqqn72B/traces\\\",\\\"status\\\":201,\\\"requestBody\\\":{\\\"_truncated\\\":true,\\\"_preview\\\":\\\"{\\\\\\\"stepKey\\\\\\\":\\\\\\\"owner-create-resources\\\\\\\",\\\\\\\"title\\\\\\\":\\\\\\\"Create resources representing hosts/assets/venues API Trace\\\\\\\",\\\\\\\"trace\\\\\\\":{\\\\\\\"stepKey\\\\\\\":\\\\\\\"owner-create-resources\\\\\\\",\\\\\\\"callCount\\\\\\\":10,\\\\\\\"calls\\\\\\\":[{\\\\\\\"method\\\\\\\":\\\\\\\"POST\\\\\\\",\\\\\\\"path\\\\\\\":\\\\\\\"/api/v1/sagas/runs/saga_run_3A7exYKPcrhATqgmIITUQPJXSbQ/steps/customer-two-concurrent/result\\\\\\\",\\\\\\\"status\\\\\\\":200,\\\\\\\"requestBody\\\\\\\":{\\\\\\\"status\\\\\\\":\\\\\\\"passed\\\\\\\",\\\\\\\"startedAt\\\\\\\":\\\\\\\"2026-02-24T15:51:26.498Z\\\\\\\",\\\\\\\"endedAt\\\\\\\":\\\\\\\"2026-02-24T15:51:26.498Z\\\\\\\",\\\\\\\"failureMessage\\\\\\\":null,\\\\\\\"resultPayload\\\\\\\":{\\\\\\\"note\\\\\\\":\\\\\\\"Second concurrent booking created.\\\\\\\",\\\\\\\"evidence\\\\\\\":{\\\\\\\"id\\\\\\\":\\\\\\\"booking_order_3A7ey3yFRQ6AKF6aE0U5s0XHF7p\\\\\\\",\\\\\\\"bizId\\\\\\\":\\\\\\\"3A7exfayXmup0CNbGy3filolqt5\\\\\\\",\\\\\\\"offerId\\\\\\\":\\\\\\\"offer_3A7exmOK24VCrMMXVwnlNtk51uB\\\\\\\",\\\\\\\"offerVersionId\\\\\\\":\\\\\\\"offer_version_3A7exnDehdHjjNuaSHOtdDmy4YY\\\\\\\",\\\\\\\"customerUserId\\\\\\\":\\\\\\\"F6htrtkWPK0Wul87WjytyipGWHQ4RT4M\\\\\\\",\\\\\\\"customerGroupAccountId\\\\\\\":null,\\\\\\\"status\\\\\\\":\\\\\\\"confirmed\\\\\\\",\\\\\\\"statusConfigValueId\\\\\\\":null,\\\\\\\"currency\\\\\\\":\\\\\\\"USD\\\\\\\",\\\\\\\"subtotalMinor\\\\\\\":15000,\\\\\\\"taxMinor\\\\\\\":0,\\\\\\\"feeMinor\\\\\\\":0,\\\\\\\"discountMinor\\\\\\\":0,\\\\\\\"totalMinor\\\\\\\":15000,\\\\\\\"requestedStartAt\\\\\\\":\\\\\\\"2026-02-25T15:51:26.152Z\\\\\\\",\\\\\\\"requestedEndAt\\\\\\\":\\\\\\\"2026-02-25T16:41:26.152Z\\\\\\\",\\\\\\\"confirmedStartAt\\\\\\\":\\\\\\\"2026-02-25T15:51:26.152Z\\\\\\\",\\\\\\\"confirmedEndAt\\\\\\\":\\\\\\\"2026-02-25T16:41:26.152Z\\\\\\\",\\\\\\\"pricingSnapshot\\\\\\\":{},\\\\\\\"policySnapshot\\\\\\\":{},\\\\\\\"metadata\\\\\\\":{},\\\\\\\"createdAt\\\\\\\":\\\\\\\"2026-02-24T15:51:26.160Z\\\\\\\",\\\\\\\"updatedAt\\\\\\\":\\\\\\\"2026-02-24T15:51:26.160Z\\\\\\\",\\\\\\\"deletedAt\\\\\\\":null,\\\\\\\"createdBy\\\\\\\":null,\\\\\\\"updatedBy\\\\\\\":null,\\\\\\\"deletedBy\\\\\\\":null}},\\\\\\\"assertionSummary\\\\\\\":{\\\\\\\"status\\\\\\\":\\\\\\\"passed\\\\\\\",\\\\\\\"hasFailure\\\\\\\":false,\\\\\\\"assertionsPassed\\\\\\\":1}},\\\\\\\"responseBody\\\\\\\":{\\\\\\\"success\\\\\\\":true,\\\\\\\"data\\\\\\\":{\\\\\\\"id\\\\\\\":\\\\\\\"saga_run_step_3A7exV2vFnDGoTqbXh1c4nwRqCc\\\\\\\",\\\\\\\"sagaRunId\\\\\\\":\\\\\\\"saga_run_3A7exYKPcrhATqgmIITUQPJXSbQ\\\\\\\",\\\\\\\"phaseKey\\\\\\\":\\\\\\\"customer-lifecycle\\\\\\\",\\\\\\\"phaseOrder\\\\\\\":5,\\\\\\\"phaseTitle\\\\\\\":\\\\\\\"Customer Lifecycle\\\\\\\",\\\\\\\"stepKey\\\\\\\":\\\\\\\"customer-two-concurrent\\\\\\\",\\\\\\\"stepOrder\\\\\\\":13,\\\\\\\"actorKey\\\\\\\":\\\\\\\"customer_2\\\\\\\",\\\\\\\"instruction\\\\\\\":\\\\\\\"Customer two attempts booking overlapping demand for the same offer/resource window.\\\\\\\",\\\\\\\"expectedResult\\\\\\\":\\\\\\\"System either books correctly under capacity rules or rejects with deterministic conflict response.\\\\\\\",\\\\\\\"status\\\\\\\":\\\\\\\"passed\\\\\\\",\\\\\\\"attemptCount\\\\\\\":1,\\\\\\\"startedAt\\\\\\\":\\\\\\\"2026-02-24T15:51:26.498Z\\\\\\\",\\\\\\\"endedAt\\\\\\\":\\\\\\\"2026-02-24T15:51:26.498Z\\\\\\\",\\\\\\\"failureCode\\\\\\\":null,\\\\\\\"failureMessage\\\\\\\":null,\\\\\\\"resultPayload\\\\\\\":{\\\\\\\"note\\\\\\\":\\\\\\\"Second concurrent booking created.\\\\\\\",\\\\\\\"evidence\\\\\\\":{\\\\\\\"id\\\\\\\":\\\\\\\"booking_order_3A7ey3yFRQ6AKF6aE0U5s0XHF7p\\\\\\\",\\\\\\\"bizId\\\\\\\":\\\\\\\"3A7exfayXmup0CNbGy3filolqt5\\\\\\\",\\\\\\\"status\\\\\\\":\\\\\\\"confirmed\\\\\\\",\\\\\\\"offerId\\\\\\\":\\\\\\\"offer_3A7exmOK24VCrMMXVwnlNtk51uB\\\\\\\",\\\\\\\"currency\\\\\\\":\\\\\\\"USD\\\\\\\",\\\\\\\"feeMinor\\\\\\\":0,\\\\\\\"metadata\\\\\\\":{},\\\\\\\"taxMinor\\\\\\\":0,\\\\\\\"createdAt\\\\\\\":\\\\\\\"2026-02-24T15:51:26.160Z\\\\\\\",\\\\\\\"createdBy\\\\\\\":null,\\\\\\\"deletedAt\\\\\\\":null,\\\\\\\"deletedBy\\\\\\\":null,\\\\\\\"updatedAt\\\\\\\":\\\\\\\"2026-02-24T15:51:26.160Z\\\\\\\",\\\\\\\"updatedBy\\\\\\\":null,\\\\\\\"totalMinor\\\\\\\":15000,\\\\\\\"discountMinor\\\\\\\":0,\\\\\\\"subtotalMinor\\\\\\\":15000,\\\\\\\"confirmedEndAt\\\\\\\":\\\\\\\"2026-02-25T16:41:26.152Z\\\\\\\",\\\\\\\"customerUserId\\\\\\\":\\\\\\\"F6htrtkWPK0Wul87WjytyipGWHQ4RT4M\\\\\\\",\\\\\\\"offerVersionId\\\\\\\":\\\\\\\"offer_version_3A7exnDehdHjjNuaSHOtdDmy4YY\\\\\\\",\\\\\\\"policySnapshot\\\\\\\":{},\\\\\\\"requestedEndAt\\\\\\\":\\\\\\\"2026-02-25T16:41:26.152Z\\\\\\\",\\\\\\\"pricingSnapshot\\\\\\\":{},\\\\\\\"confirmedStartAt\\\\\\\":\\\\\\\"2026-02-25T15:51:26.152Z\\\\\\\",\\\\\\\"requestedStartAt\\\\\\\":\\\\\\\"2026-02-25T15:51:26.152Z\\\\\\\",\\\\\\\"statusConfigValueId\\\\\\\":null,\\\\\\\"customerGroupAccountId\\\\\\\":null}},\\\\\\\"assertionSummary\\\\\\\":{\\\\\\\"status\\\\\\\":\\\\\\\"passed\\\\\\\",\\\\\\\"hasFailure\\\\\\\":false,\\\\\\\"assertionsPassed\\\\\\\":1},\\\\\\\"metadata\\\\\\\":{},\\\\\\\"createdAt\\\\\\\":\\\\\\\"2026-02-24T15:51:22.729Z\\\\\\\",\\\\\\\"updatedAt\\\\\\\":\\\\\\\"2026-02-24T15:51:22.729Z\\\\\\\",\\\\\\\"deletedAt\\\\\\\":null,\\\\\\\"createdBy\\\\\\\":null,\\\\\\\"updatedBy\\\\\\\":null,\\\\\\\"deletedBy\\\\\\\":null},\\\\\\\"meta\\\\\\\":{\\\\\\\"requestId\\\\\\\":\\\\\\\"d31161c7-2b18-4104-ab4f-7465f8512bcc\\\\\\\",\\\\\\\"timestamp\\\\\\\":\\\\\\\"2026-02-24T15:51:26.548Z\\\\\\\"}},\\\\\\\"at\\\\\\\":\\\\\\\"2026-02-24T15:51:26.561Z\\\\\\\"},{\\\\\\\"method\\\\\\\":\\\\\\\"POST\\\\\\\",\\\\\\\"path\\\\\\\":\\\\\\\"/api/v1/sagas/runs/saga_run_3A7exWk2T3pwvd4IqDc6dLRmBSr/steps/customer-book-primary/result\\\\\\\",\\\\\\\"status\\\\\\\":200,\\\\\\\"requestBody\\\\\\\":{\\\\\\\"status\\\\\\\"",
+          "_size": 31904
+        },
+        "responseBody": {
+          "_truncated": true,
+          "_preview": "{\"success\":true,\"data\":{\"id\":\"saga_artifact_3A7eyBto9pZEC2Ep2sAquODRI1k\",\"sagaRunId\":\"saga_run_3A7exbnOATgaOJ8SAcNDduz3wmN\",\"sagaRunStepId\":\"saga_run_step_3A7excbXr7XkYOGdraDXhqi5uz6\",\"artifactType\":\"snapshot\",\"title\":\"Customer two performs concurrent booking attempt Snapshot\",\"storagePath\":\"testing/sagas/runs/saga_run_3A7exbnOATgaOJ8SAcNDduz3wmN/snapshots/2026-02-24T15-51-27-512Z-customer-two-concurrent-1771948287505.json\",\"contentType\":\"application/json\",\"bodyText\":\"{\\n  \\\"schemaVersion\\\": \\\"snapshot.v1\\\",\\n  \\\"screenKey\\\": \\\"customer-two-concurrent-1771948287505\\\",\\n  \\\"title\\\": \\\"Customer two performs concurrent booking attempt Snapshot\\\",\\n  \\\"generatedAt\\\": \\\"2026-02-24T15:51:27.511Z\\\",\\n  \\\"stepKey\\\": \\\"customer-two-concurrent\\\",\\n  \\\"status\\\": \\\"passed\\\",\\n  \\\"view\\\": {\\n    \\\"title\\\": \\\"Customer two performs concurrent booking attempt\\\",\\n    \\\"subtitle\\\": \\\"Second concurrent booking created.\\\",\\n    \\\"blocks\\\": [\\n      {\\n        \\\"type\\\": \\\"alert\\\",\\n        \\\"title\\\": \\\"Customer Two Concurrent completed\\\",\\n        \\\"message\\\": \\\"Second concurrent booking created.\\\",\\n        \\\"tone\\\": \\\"success\\\"\\n      },\\n      {\\n        \\\"type\\\": \\\"key_value\\\",\\n        \\\"title\\\": \\\"Booking confirmation\\\",\\n        \\\"items\\\": [\\n          {\\n            \\\"label\\\": \\\"Booking id\\\",\\n            \\\"value\\\": \\\"booking_order_3A7eyBpD2hPyiAg8EKeuNzgBscw\\\"\\n          },\\n          {\\n            \\\"label\\\": \\\"Status\\\",\\n            \\\"value\\\": \\\"confirmed\\\"\\n          },\\n          {\\n            \\\"label\\\": \\\"Starts at\\\",\\n            \\\"value\\\": \\\"2026-02-25T15:51:27.298Z\\\"\\n          },\\n          {\\n            \\\"label\\\": \\\"Total\\\",\\n            \\\"value\\\": \\\"15000\\\"\\n          }\\n        ]\\n      },\\n      {\\n        \\\"type\\\": \\\"actions\\\",\\n        \\\"title\\\": \\\"Visible actions\\\",\\n        \\\"items\\\": [\\n          {\\n            \\\"label\\\": \\\"Download receipt\\\",\\n            \\\"kind\\\": \\\"secondary\\\",\\n            \\\"enabled\\\": true\\n          },\\n          {\\n            \\\"label\\\": \\\"Reschedule\\\",\\n            \\\"kind\\\": \\\"secondary\\\",\\n            \\\"enabled\\\": true\\n          },\\n          {\\n            \\\"label\\\": \\\"Cancel booking\\\",\\n            \\\"kind\\\": \\\"danger\\\",\\n            \\\"enabled\\\": true\\n          }\\n        ]\\n      },\\n      {\\n        \\\"type\\\": \\\"stats\\\",\\n        \\\"title\\\": \\\"What user sees at a glance\\\",\\n        \\\"items\\\": [\\n          {\\n            \\\"label\\\": \\\"SubtotalMinor\\\",\\n            \\\"value\\\": \\\"15000\\\"\\n          },\\n          {\\n            \\\"label\\\": \\\"TaxMinor\\\",\\n            \\\"value\\\": \\\"0\\\"\\n          },\\n          {\\n            \\\"label\\\": \\\"FeeMinor\\\",\\n            \\\"value\\\": \\\"0\\\"\\n          },\\n          {\\n            \\\"label\\\": \\\"DiscountMinor\\\",\\n            \\\"value\\\": \\\"0\\\"\\n          },\\n          {\\n            \\\"label\\\": \\\"TotalMinor\\\",\\n            \\\"value\\\": \\\"15000\\\"\\n          }\\n        ]\\n      },\\n      {\\n        \\\"type\\\": \\\"key_value\\\",\\n        \\\"title\\\": \\\"Screen details\\\",\\n        \\\"items\\\": [\\n          {\\n            \\\"label\\\": \\\"Id\\\",\\n            \\\"value\\\": \\\"booking_order_3A7eyBpD2hPyiAg8EKeuNzgBscw\\\"\\n          },\\n          {\\n            \\\"label\\\": \\\"BizId\\\",\\n            \\\"value\\\": \\\"3A7exe82Uzqw5QYDJtYQui1hyiD\\\"\\n          },\\n          {\\n            \\\"label\\\": \\\"OfferId\\\",\\n            \\\"value\\\": \\\"offer_3A7exq72AIYdQ9q8b5s8h1qIWif\\\"\\n          },\\n          {\\n            \\\"label\\\": \\\"OfferVersionId\\\",\\n            \\\"value\\\": \\\"offer_version_3A7exv3qoDhWxsIxS2wwjBKVjhY\\\"\\n          },\\n          {\\n            \\\"label\\\": \\\"CustomerUserId\\\",\\n            \\\"value\\\": \\\"rGJnI3aIHdrv8pGiGLivLOrsm1GlOC3X\\\"\\n          },\\n          {\\n            \\\"label\\\": \\\"CustomerGroupAccountId\\\",\\n            \\\"value\\\": \\\"null\\\"\\n          },\\n          {\\n            \\\"label\\\": \\\"Status\\\",\\n            \\\"value\\\": \\\"confirmed\\\"\\n          },\\n          {\\n            \\\"label\\\": \\\"StatusConfigValueId\\\",\\n            \\\"value\\\": \\\"null\\\"\\n          },\\n          {\\n            \\\"label\\\": \\\"Currency\\\",\\n            \\\"value\\\": \\\"USD\\\"\\n          },\\n          {\\n            \\\"label\\\": \\\"SubtotalMinor\\\",\\n            \\\"value\\\": \\\"15000\\\"\\n          },\\n          {\\n            \\\"label\\\": \\\"TaxMinor\\\",\\n            \\\"value\\\": \\\"0\\\"\\n          },\\n          {\\n            \\\"label\\\": \\\"FeeMinor\\\",\\n            \\\"value\\\": \\\"0\\\"\\n          },\\n          {\\n            \\\"label\\\": \\\"DiscountMinor\\\",\\n            \\\"value\\\": \\\"0\\\"\\n          },\\n          {\\n            \\\"label\\\": \\\"TotalMinor\\\",\\n            \\\"value\\\": \\\"15000\\\"\\n          },\\n          {\\n            \\\"label\\\": \\\"RequestedStartAt\\\",\\n            \\\"value\\\": \\\"2026-02-25T15:51:27.298Z\\\"\\n          },\\n          {\\n            \\\"label\\\": \\\"RequestedEndAt\\\",\\n            \\\"value\\\": \\\"2026-02-25T16:41:27.298Z\\\"\\n          }\\n        ]\\n      }\\n    ]\\n  },\\n  \\\"rawData\\\": {\\n    \\\"stepKey\\\": \\\"customer-two-concurrent\\\",\\n    \\\"resultPayload\\\": {\\n      \\\"note\\\": \\\"Second concurrent booking created.\\\",\\n      \\\"evidence\\\": {\\n        \\\"id\\\": \\\"booking_order_3A7eyBpD2hPyiAg8EKeuNzgBscw\\\",\\n        \\\"bizId\\\": \\\"3A7exe82Uzqw5QYDJtYQui1hyiD\\\",\\n        \\\"offerId\\\": \\\"offer_3A7exq72AIYdQ9q8b5s8h1qIWif\\\",\\n        \\\"offerVersionId\\\": \\\"offer_version_3A7exv3qoDhWxsIxS2wwjBKVjhY\\\",\\n        \\\"customerUserId\\\": \\\"rGJnI3aIHdrv8pGiGLivLOrsm1GlOC3X\\\",\\n        \\\"customerGroupAccountId\\\": null,\\n        \\\"status\\\": \\\"confirmed\\\",\\n        \\\"statusConfigValueId\\\": null,\\n        \\\"currency\\\": \\\"USD\\\",\\n        \\\"subtotalMinor\\\": 15000,\\n        \\\"taxMinor\\\": 0,\\n        \\\"feeMinor\\\": 0,\\n        \\\"discountMinor\\\": 0,\\n        \\\"totalMinor\\\": 15000,\\n        \\\"requestedStartAt\\\": \\\"2026-02-25T15:51:27.298Z\\\",\\n        \\\"requestedEndAt\\\": \\\"2026-02-25T16:41:27.298Z\\\",\\n        \\\"confirmedStartAt\\\": \\\"2026-02-25T15:51:27.298Z\\\",\\n        \\\"confirmedEndAt\\\": \\\"2026-02-25T16:41:27.298Z\\\",\\n        \\\"pricingSnapshot\\\": {},\\n        \\\"policySnapshot\\\": {},\\n        \\\"metadata\\\": {},\\n        \\\"createdAt\\\": \\\"2026-02-24T15:51:27.304Z\\\",\\n        \\\"updatedAt\\\": \\\"2026-02-24T15:51:27.304Z\\\",\\n        \\\"deletedAt\\\": null,\\n        \\\"createdBy\\\": null,\\n        \\\"updatedBy\\\": null,\\n        \\\"deletedBy\\\": null\\n      }\\n    },\\n    \\\"apiCalls\\\": [\\n      {\\n        \\\"method\\\": \\\"POST\\\",\\n        \\\"path\\\": \\\"/api/v1/sagas/runs/saga_run_3A7exd3uLXtZELpxzdd9r3qTM3y/snapshots\\\",\\n        \\\"status\\\": 201,\\n        \\\"requestBody\\\": {\\n          \\\"_truncated\\\": true,\\n          \\\"_preview\\\": \\\"{\\\\\\\"stepKey\\\\\\\":\\\\\\\"owner-publish-catalog\\\\\\\",\\\\\\\"screenKey\\\\\\\":\\\\\\\"owner-publish-catalog-1771948286958\\\\\\\",\\\\\\\"title\\\\\\\":\\\\\\\"Publish catalog visibility Snapshot\\\\\\\",\\\\\\\"status\\\\\\\":\\\\\\\"passed\\\\\\\",\\\\\\\"route\\\\\\\":\\\\\\\"/sagas/saga_run_3A7exd3uLXtZELpxzdd9r3qTM3y/owner-publish-catalog\\\\\\\",\\\\\\\"format\\\\\\\":\\\\\\\"json\\\\\\\",\\\\\\\"view\\\\\\\":{\\\\\\\"title\\\\\\\":\\\\\\\"Publish catalog visibility\\\\\\\",\\\\\\\"subtitle\\\\\\\":\\\\\\\"Offer published and activated.\\\\\\\",\\\\\\\"blocks\\\\\\\":[{\\\\\\\"type\\\\\\\":\\\\\\\"alert\\\\\\\",\\\\\\\"title\\\\\\\":\\\\\\\"Owner Publish Catalog completed\\\\\\\",\\\\\\\"message\\\\\\\":\\\\\\\"Offer published and activated.\\\\\\\",\\\\\\\"tone\\\\\\\":\\\\\\\"success\\\\\\\"}]},\\\\\\\"rawData\\\\\\\":{\\\\\\\"stepKey\\\\\\\":\\\\\\\"owner-publish-catalog\\\\\\\",\\\\\\\"resultPayload\\\\\\\":{\\\\\\\"note\\\\\\\":\\\\\\\"Offer published and activated.\\\\\\\"},\\\\\\\"apiCalls\\\\\\\":[{\\\\\\\"method\\\\\\\":\\\\\\\"POST\\\\\\\",\\\\\\\"path\\\\\\\":\\\\\\\"/api/v1/sagas/runs/saga_run_3A7exkZSNZ3KO9uCejlb4SMN4K0/steps/owner-invite-member/result\\\\\\\",\\\\\\\"status\\\\\\\":200,\\\\\\\"requestBody\\\\\\\":{\\\\\\\"status\\\\\\\":\\\\\\\"passed\\\\\\\",\\\\\\\"startedAt\\\\\\\":\\\\\\\"2026-02-24T15:51:26.596Z\\\\\\\",\\\\\\\"endedAt\\\\\\\":\\\\\\\"2026-02-24T15:51:26.596Z\\\\\\\",\\\\\\\"failureMessage\\\\\\\":null,\\\\\\\"resultPayload\\\\\\\":{\\\\\\\"note\\\\\\\":\\\\\\\"Member invited and accepted invitation.\\\\\\\",\\\\\\\"evidence\\\\\\\":{\\\\\\\"memberEmail\\\\\\\":\\\\\\\"member-uc-255-the-solo-entrepreneur-sarah-1771948286181-j4fcq3@example.com\\\\\\\",\\\\\\\"invitationId\\\\\\\":\\\\\\\"XVCZ4aGVSz7A2MuBm5IpEJScxSnAKg9q\\\\\\\"}},\\\\\\\"assertionSummary\\\\\\\":{\\\\\\\"status\\\\\\\":\\\\\\\"passed\\\\\\\",\\\\\\\"hasFailure\\\\\\\":false,\\\\\\\"assertionsPassed\\\\\\\":1}},\\\\\\\"responseBody\\\\\\\":{\\\\\\\"success\\\\\\\":true,\\\\\\\"data\\\\\\\":{\\\\\\\"id\\\\\\\":\\\\\\\"saga_run_step_3A7exjZXxM2L3M57cFgAKVv0u2n\\\\\\\",\\\\\\\"sagaRunId\\\\\\\":\\\\\\\"saga_run_3A7exkZSNZ3KO9uCejlb4SMN4K0\\\\\\\",\\\\\\\"phaseKey\\\\\\\":\\\\\\\"supply-and-team-setup\\\\\\\",\\\\\\\"phaseOrder\\\\\\\":3,\\\\\\\"phaseTitle\\\\\\\":\\\\\\\"Supply And Team Setup\\\\\\\",\\\\\\\"stepKey\\\\\\\":\\\\\\\"owner-invite-member\\\\\\\",\\\\\\\"stepOrder\\\\\\\":7,\\\\\\\"actorKey\\\\\\\":\\\\\\\"biz_owner\\\\\\\",\\\\\\\"instruction\\\\\\\":\\\\\\\"Invite a biz member, assign an operational role, and verify that member can authenticate into the same biz.\\\\\\\",\\\\\\\"expectedResult\\\\\\\":\\\\\\\"Biz member account/session exists with scoped role permissions.\\\\\\\",\\\\\\\"status\\\\\\\":\\\\\\\"passed\\\\\\\",\\\\\\\"attemptCount\\\\\\\":1,\\\\\\\"startedAt\\\\\\\":\\\\\\\"2026-02-24T15:51:26.596Z\\\\\\\",\\\\\\\"endedAt\\\\\\\":\\\\\\\"2026-02-24T15:51:26.596Z\\\\\\\",\\\\\\\"failureCode\\\\\\\":null,\\\\\\\"failureMessage\\\\\\\":null,\\\\\\\"resultPayload\\\\\\\":{\\\\\\\"note\\\\\\\":\\\\\\\"Member invited and accepted invitation.\\\\\\\",\\\\\\\"evidence\\\\\\\":{\\\\\\\"memberEmail\\\\\\\":\\\\\\\"member-uc-255-the-solo-entrepreneur-sarah-1771948286181-j4fcq3@example.com\\\\\\\",\\\\\\\"invitationId\\\\\\\":\\\\\\\"XVCZ4aGVSz7A2MuBm5IpEJScxSnAKg9q\\\\\\\"}},\\\\\\\"assertionSummary\\\\\\\":{\\\\\\\"status\\\\\\\":\\\\\\\"passed\\\\\\\",\\\\\\\"hasFailure\\\\\\\":false,\\\\\\\"assertionsPassed\\\\\\\":1},\\\\\\\"metadata\\\\\\\":{},\\\\\\\"createdAt\\\\\\\":\\\\\\\"2026-02-24T15:51:24.029Z\\\\\\\",\\\\\\\"updatedAt\\\\\\\":\\\\\\\"2026-02-24T15:51:24.029Z\\\\\\\",\\\\\\\"deletedAt\\\\\\\":null,\\\\\\\"createdBy\\\\\\\":null,\\\\\\\"updatedBy\\\\\\\":null,\\\\\\\"deletedBy\\\\\\\":null},\\\\\\\"meta\\\\\\\":{\\\\\\\"requestId\\\\\\\":\\\\\\\"ae15c103-36a6-4077-9b8c-1c4b81bbb3e3\\\\\\\",\\\\\\\"timestamp\\\\\\\":\\\\\\\"2026-02-24T15:51:26.646Z\\\\\\\"}},\\\\\\\"at\\\\\\\":\\\\\\\"2026-02-24T15:51:26.650Z\\\\\\\"},{\\\\\\\"method\\\\\\\":\\\\\\\"POST\\\\\\\",\\\\\\\"path\\\\\\\":\\\\\\\"/api/v1/sagas/runs/saga_run_3A7exjMJ53ter4rE84U26pLp2xX/steps/owner-invite-member/result\\\\\\\",\\\\\\\"status\\\\\\\":200,\\\\\\\"requestBody\\\\\\\":{\\\\\\\"status\\\\\\\":\\\\\\\"in_progress\\\\\\\",\\\\\\\"startedAt\\\\\\\":\\\\\\\"2026-02-24T15:51:26.631Z\\\\\\\",\\\\\\\"resultPayload\\\\\\\":{\\\\\\\"note\\\\\\\":\\\\\\\"Started owner-invite-member\\\\\\\"},\\\\\\\"assertionSummary\\\\\\\":{\\\\\\\"status\\\\\\\":\\\\\\\"in_progress\\\\\\\"}},\\\\\\\"responseBody\\\\\\\":{\\\\\\\"success\\\\\\\":true,\\\\\\\"data\\\\\\\":{\\\\\\\"id\\\\\\\":\\\\\\\"saga_run_step_3A7exjbCzF0StunQHFNsTe3hHZQ\\\\\\\",\\\\\\\"sagaRunId\\\\\\\":\\\\\\\"saga_run_3A7exjMJ53ter4rE84U26pLp2xX\\\\\\\",\\\\\\\"phaseKey\\\\\\\":\\\\\\\"supply-and-team-setup\\\\\\\",\\\\\\\"phaseOrder\\\\\\\":3,\\\\\\\"phaseTitle\\\\\\\":\\\\\\\"Supply And Team Setup\\\\\\\",\\\\\\\"stepKey\\\\\\\":\\\\\\\"owner-invite-member\\\\\\\",\\\\\\\"stepOrder\\\\\\\":7,\\\\\\\"actorKey\\\\\\\":\\\\\\\"biz_owner\\\\\\\",\\\\\\\"instruction\\\\\\\":\\\\\\\"Invite a biz member, assign an operational role, and verify that member can authenticate into the same biz.\\\\\\\",\\\\\\\"expectedResult\\\\\\\":\\\\\\\"Biz member account/session exists with scoped role permissions.\\\\\\\",\\\\\\\"status\\\\\\\":\\\\\\\"in_progress\\\\\\\",\\\\\\\"attemptCount\\\\\\\":1,\\\\\\\"startedAt\\\\\\\":\\\\\\\"2026-02-24T15:51:26.631Z\\\\\\\",\\\\\\\"endedAt\\\\\\\":null,\\\\\\\"failureCode\\\\\\\":null,\\\\\\\"failureMessage\\\\\\\":null,\\\\\\\"resultPayload\\\\\\\":{\\\\\\\"note\\\\\\\":\\\\\\\"Started owner-invite-member\\\\\\\"},\\\\\\\"assertionSummary\\\\\\\":{\\\\\\\"status\\\\\\\":\\\\\\\"in_progress\\\\\\\"},\\\\\\\"metadata\\\\\\\":{},\\\\\\\"createdAt\\\\\\\":\\\\\\\"2026-02-24T15:51:24.099Z\\\\\\\",\\\\\\\"updatedAt\\\\\\\":\\\\\\\"2026-02-24T15:51:24.099Z\\\\\\\",\\\\\\\"deletedAt\\\\\\\":null,\\\\\\\"createdBy\\\\\\\":null,\\\\\\\"updatedBy\\\\\\\":null,\\\\\\\"deletedBy\\\\\\\":null},\\\\\\\"meta\\\\\\\":{\\\\\\\"requestId\\\\\\\":\\\\\\\"b2627921-41e4-4a09-a885-485d4aa9cfa9\\\\\\\",\\\\\\\"timestamp\\\\\\\":\\\\\\\"2026-02-24T15:51:26.661Z\\\\\\\"}},\\\\\\\"at\\\\\\\":\\\\\\\"2026-02-24T15:51:26.662Z\\\\\\\"},{\\\\\\\"method\\\\\\\":\\\\\\\"POST\\\\\\\",\\\\\\\"path\\\\\\\":\\\\\\\"/api/v1/sagas/runs/saga_run_3A7exoFJMWyOnkBRokB5zqqn72B/traces\\\\\\\",\\\\\\\"status\\\\\\\":201,\\\\\\\"requestBody\\\\\\\":{\\\\\\\"_truncated\\\\\\\":true,\\\\\\\"_preview\\\\\\\":\\\\\\\"{\\\\\\\\\\\\\\\"stepKey\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"owner-create-resources\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"title\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Create resources representing hosts/assets/venues API Trace\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"trace\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"stepKey\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"owner-create-resources\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"callCount\\\\\\\\\\\\\\\":10,\\\\\\\\\\\\\\\"calls\\\\\\\\\\\\\\\":[{\\\\\\\\\\\\\\\"method\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"POST\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"path\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"/api/v1/sagas/runs/saga_run_3A7exYKPcrhATqgmIITUQPJXSbQ/steps/customer-two-concurrent/result\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"status\\\\\\\\\\\\\\\":200",
+          "_size": 44953
+        },
+        "at": "2026-02-24T15:51:27.532Z"
+      }
+    ]
+  },
+  "metadata": {}
+}

@@ -1,0 +1,298 @@
+{
+  "stepKey": "adversary-hold-abuse",
+  "callCount": 6,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AAQ0Sn7SnT0QxZcb0rZK2z01Jx/steps/customer-two-concurrent/result",
+      "status": 200,
+      "requestBody": {
+        "status": "in_progress",
+        "startedAt": "2026-02-25T15:17:59.715Z",
+        "resultPayload": {
+          "note": "Started customer-two-concurrent"
+        },
+        "assertionSummary": {
+          "status": "in_progress"
+        }
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "id": "saga_run_step_3AAQ0PCkxDq3VvpXcUf4T4ry04f",
+          "sagaRunId": "saga_run_3AAQ0Sn7SnT0QxZcb0rZK2z01Jx",
+          "phaseKey": "customer-lifecycle",
+          "phaseOrder": 5,
+          "phaseTitle": "Customer Lifecycle",
+          "stepKey": "customer-two-concurrent",
+          "stepOrder": 13,
+          "actorKey": "customer_2",
+          "instruction": "Customer two attempts booking overlapping demand for the same offer/resource window.",
+          "expectedResult": "System either books correctly under capacity rules or rejects with deterministic conflict response.",
+          "delayMode": "none",
+          "delayMs": null,
+          "delayConditionKey": null,
+          "delayTimeoutMs": null,
+          "delayPollMs": null,
+          "delayJitterMs": 0,
+          "status": "in_progress",
+          "attemptCount": 1,
+          "startedAt": "2026-02-25T15:17:59.715Z",
+          "endedAt": null,
+          "failureCode": null,
+          "failureMessage": null,
+          "resultPayload": {
+            "note": "Started customer-two-concurrent"
+          },
+          "assertionSummary": {
+            "status": "in_progress"
+          },
+          "metadata": {},
+          "createdAt": "2026-02-25T15:17:51.271Z",
+          "updatedAt": "2026-02-25T15:17:51.271Z",
+          "deletedAt": null,
+          "createdBy": null,
+          "updatedBy": null,
+          "deletedBy": null
+        },
+        "meta": {
+          "requestId": "2cef8844-f6f9-402b-9508-9cba48d0b9cf",
+          "timestamp": "2026-02-25T15:17:59.776Z"
+        }
+      },
+      "at": "2026-02-25T15:17:59.777Z"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AAQ0Dua5ukI9auj4qd1LmZgSxT/steps/adversary-hold-abuse/result",
+      "status": 200,
+      "requestBody": {
+        "status": "passed",
+        "startedAt": "2026-02-25T15:17:59.647Z",
+        "endedAt": "2026-02-25T15:17:59.647Z",
+        "failureMessage": null,
+        "resultPayload": {
+          "note": "Repeated unauthorized hold attempts were blocked (403)."
+        },
+        "assertionSummary": {
+          "status": "passed",
+          "hasFailure": false,
+          "assertionsPassed": 1
+        }
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "id": "saga_run_step_3AAQ0E7FWfoVP6OlEcaAFRK9TPc",
+          "sagaRunId": "saga_run_3AAQ0Dua5ukI9auj4qd1LmZgSxT",
+          "phaseKey": "security-and-abuse",
+          "phaseOrder": 6,
+          "phaseTitle": "Security And Abuse Checks",
+          "stepKey": "adversary-hold-abuse",
+          "stepOrder": 16,
+          "actorKey": "adversary",
+          "instruction": "Trigger repeated booking/hold-like attempts to validate throttling, expiry, or non-blocking demand visibility behavior.",
+          "expectedResult": "Abusive attempts are rate-limited or isolated without blocking legitimate customer flow.",
+          "delayMode": "none",
+          "delayMs": null,
+          "delayConditionKey": null,
+          "delayTimeoutMs": null,
+          "delayPollMs": null,
+          "delayJitterMs": 0,
+          "status": "passed",
+          "attemptCount": 1,
+          "startedAt": "2026-02-25T15:17:59.647Z",
+          "endedAt": "2026-02-25T15:17:59.647Z",
+          "failureCode": null,
+          "failureMessage": null,
+          "resultPayload": {
+            "note": "Repeated unauthorized hold attempts were blocked (403)."
+          },
+          "assertionSummary": {
+            "status": "passed",
+            "hasFailure": false,
+            "assertionsPassed": 1
+          },
+          "metadata": {},
+          "createdAt": "2026-02-25T15:17:49.161Z",
+          "updatedAt": "2026-02-25T15:17:49.161Z",
+          "deletedAt": null,
+          "createdBy": null,
+          "updatedBy": null,
+          "deletedBy": null
+        },
+        "meta": {
+          "requestId": "efed3c89-8cd2-4d52-9323-32eb7048d902",
+          "timestamp": "2026-02-25T15:17:59.778Z"
+        }
+      },
+      "at": "2026-02-25T15:17:59.782Z"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/bizes/3AAQ08nIOYEGyvAg0vjb3YYV1Cu/booking-orders",
+      "status": 403,
+      "requestBody": {
+        "offerId": "offer_3AAQ0slZl2flCrMohgoNkayZB0X",
+        "offerVersionId": "offer_version_3AAQ0vyYa7GVUKkaMKpRIvTWaAV",
+        "status": "draft",
+        "subtotalMinor": 1000,
+        "taxMinor": 0,
+        "feeMinor": 0,
+        "discountMinor": 0,
+        "totalMinor": 1000,
+        "currency": "USD"
+      },
+      "responseBody": {
+        "success": false,
+        "error": {
+          "code": "FORBIDDEN",
+          "message": "You are not a member of this biz."
+        },
+        "meta": {
+          "requestId": "bbe376a8-ce97-4db5-b4e7-67a934d548d4",
+          "timestamp": "2026-02-25T15:17:59.780Z"
+        }
+      },
+      "at": "2026-02-25T15:17:59.782Z"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AAPzhuiHOpEyJdl9tP67JI7WmL/steps/uc-need-validate-2/result",
+      "status": 200,
+      "requestBody": {
+        "status": "skipped",
+        "startedAt": "2026-02-25T15:17:59.650Z",
+        "endedAt": "2026-02-25T15:17:59.650Z",
+        "failureMessage": "Exploratory validation step skipped by deterministic runner (semantic/manual review step).",
+        "resultPayload": {
+          "note": "Step skipped: Exploratory validation step skipped by deterministic runner (semantic/manual review step).",
+          "evidence": {
+            "error": "Exploratory validation step skipped by deterministic runner (semantic/manual review step).",
+            "failed": false,
+            "blocked": false,
+            "skipped": true,
+            "stepFamily": "uc-need-validation",
+            "reasonCode": "DETERMINISTIC_RUNNER_SKIPS_EXPLORATORY_STEP"
+          }
+        },
+        "assertionSummary": {
+          "status": "skipped",
+          "hasFailure": true,
+          "assertionsPassed": 0
+        }
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "id": "saga_run_step_3AAPzlGy0XCKQuFglKxuNozUgIq",
+          "sagaRunId": "saga_run_3AAPzhuiHOpEyJdl9tP67JI7WmL",
+          "phaseKey": "reporting-and-closeout",
+          "phaseOrder": 8,
+          "phaseTitle": "Reporting And Closeout",
+          "stepKey": "uc-need-validate-2",
+          "stepOrder": 22,
+          "actorKey": "biz_owner",
+          "instruction": "Using concrete API reads and persisted state checks, validate this requirement is satisfied: \"Attendance tracking and participation scoring\". If not satisfied, record exact gap and failing entities/endpoints.",
+          "expectedResult": "Evidence either confirms requirement coverage or captures a precise, reproducible gap.",
+          "delayMode": "none",
+          "delayMs": null,
+          "delayConditionKey": null,
+          "delayTimeoutMs": null,
+          "delayPollMs": null,
+          "delayJitterMs": 0,
+          "status": "skipped",
+          "attemptCount": 1,
+          "startedAt": "2026-02-25T15:17:59.650Z",
+          "endedAt": "2026-02-25T15:17:59.650Z",
+          "failureCode": null,
+          "failureMessage": "Exploratory validation step skipped by deterministic runner (semantic/manual review step).",
+          "resultPayload": {
+            "note": "Step skipped: Exploratory validation step skipped by deterministic runner (semantic/manual review step).",
+            "evidence": {
+              "error": "Exploratory validation step skipped by deterministic runner (semantic/manual review step).",
+              "failed": false,
+              "blocked": false,
+              "skipped": true,
+              "reasonCode": "DETERMINISTIC_RUNNER_SKIPS_EXPLORATORY_STEP",
+              "stepFamily": "uc-need-validation"
+            }
+          },
+          "assertionSummary": {
+            "status": "skipped",
+            "hasFailure": true,
+            "assertionsPassed": 0
+          },
+          "metadata": {},
+          "createdAt": "2026-02-25T15:17:45.814Z",
+          "updatedAt": "2026-02-25T15:17:45.814Z",
+          "deletedAt": null,
+          "createdBy": null,
+          "updatedBy": null,
+          "deletedBy": null
+        },
+        "meta": {
+          "requestId": "4cdf8655-e31f-4b08-8812-dd4893305a5c",
+          "timestamp": "2026-02-25T15:17:59.787Z"
+        }
+      },
+      "at": "2026-02-25T15:17:59.788Z"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/bizes/3AAQ08nIOYEGyvAg0vjb3YYV1Cu/booking-orders",
+      "status": 403,
+      "requestBody": {
+        "offerId": "offer_3AAQ0slZl2flCrMohgoNkayZB0X",
+        "offerVersionId": "offer_version_3AAQ0vyYa7GVUKkaMKpRIvTWaAV",
+        "status": "draft",
+        "subtotalMinor": 1000,
+        "taxMinor": 0,
+        "feeMinor": 0,
+        "discountMinor": 0,
+        "totalMinor": 1000,
+        "currency": "USD"
+      },
+      "responseBody": {
+        "success": false,
+        "error": {
+          "code": "FORBIDDEN",
+          "message": "You are not a member of this biz."
+        },
+        "meta": {
+          "requestId": "73607f26-fa0f-4001-862d-6f154699d44e",
+          "timestamp": "2026-02-25T15:17:59.792Z"
+        }
+      },
+      "at": "2026-02-25T15:17:59.792Z"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/bizes/3AAQ08nIOYEGyvAg0vjb3YYV1Cu/booking-orders",
+      "status": 403,
+      "requestBody": {
+        "offerId": "offer_3AAQ0slZl2flCrMohgoNkayZB0X",
+        "offerVersionId": "offer_version_3AAQ0vyYa7GVUKkaMKpRIvTWaAV",
+        "status": "draft",
+        "subtotalMinor": 1000,
+        "taxMinor": 0,
+        "feeMinor": 0,
+        "discountMinor": 0,
+        "totalMinor": 1000,
+        "currency": "USD"
+      },
+      "responseBody": {
+        "success": false,
+        "error": {
+          "code": "FORBIDDEN",
+          "message": "You are not a member of this biz."
+        },
+        "meta": {
+          "requestId": "19a57ecd-b7eb-4c9a-a3d1-34971ef9e60d",
+          "timestamp": "2026-02-25T15:17:59.801Z"
+        }
+      },
+      "at": "2026-02-25T15:17:59.802Z"
+    }
+  ]
+}

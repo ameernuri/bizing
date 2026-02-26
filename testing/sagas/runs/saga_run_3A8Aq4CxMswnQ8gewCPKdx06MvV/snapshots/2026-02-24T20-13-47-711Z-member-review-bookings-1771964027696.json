@@ -1,0 +1,838 @@
+{
+  "schemaVersion": "snapshot.v1",
+  "screenKey": "member-review-bookings-1771964027696",
+  "title": "Biz member reviews and updates booking status Snapshot",
+  "generatedAt": "2026-02-24T20:13:47.707Z",
+  "stepKey": "member-review-bookings",
+  "status": "passed",
+  "view": {
+    "title": "Biz member reviews and updates booking status",
+    "subtitle": "Bookings reviewed and one booking progressed.",
+    "blocks": [
+      {
+        "type": "alert",
+        "title": "Member Review Bookings completed",
+        "message": "Bookings reviewed and one booking progressed.",
+        "tone": "success"
+      },
+      {
+        "type": "key_value",
+        "title": "Screen details",
+        "items": [
+          {
+            "label": "TargetId",
+            "value": "booking_order_3A8AroBsfBumwjMbeQxbNc4XW3f"
+          }
+        ]
+      }
+    ]
+  },
+  "rawData": {
+    "stepKey": "member-review-bookings",
+    "resultPayload": {
+      "note": "Bookings reviewed and one booking progressed.",
+      "evidence": {
+        "targetId": "booking_order_3A8AroBsfBumwjMbeQxbNc4XW3f"
+      }
+    },
+    "apiCalls": [
+      {
+        "method": "GET",
+        "path": "/api/v1/bizes/3A8AqEcbxXMIGseoTSCgWlpPDpf/payment-intents?bookingOrderId=booking_order_3A8ArwTmGpPyH0fWNncghexBjzE",
+        "status": 200,
+        "responseBody": {
+          "success": true,
+          "data": [
+            {
+              "id": "payment_intent_3A8As6l3Jy0d1PcuJ659SzShFkD",
+              "bizId": "3A8AqEcbxXMIGseoTSCgWlpPDpf",
+              "bookingOrderId": "booking_order_3A8ArwTmGpPyH0fWNncghexBjzE",
+              "crossBizOrderId": null,
+              "paymentProcessorAccountId": "pay_proc_account_3A8As8LMNww4ZDuAZl8dvdiUkTj",
+              "status": "succeeded",
+              "currency": "USD",
+              "amountTargetMinor": 15500,
+              "amountCapturedMinor": 15500,
+              "amountRefundedMinor": 0,
+              "requiresCapture": false,
+              "providerIntentRef": null,
+              "source": "public_checkout",
+              "authorizedAt": null,
+              "capturedAt": "2026-02-24T20:13:47.223Z",
+              "failedAt": null,
+              "amountSnapshot": {
+                "tipMinor": 500,
+                "bookingTotalMinor": 15000,
+                "expectedTotalMinor": 15500
+              },
+              "metadata": {
+                "source": "rerun-sagas"
+              },
+              "createdAt": "2026-02-24T20:13:47.223Z",
+              "updatedAt": "2026-02-24T20:13:47.223Z",
+              "deletedAt": null,
+              "createdBy": null,
+              "updatedBy": null,
+              "deletedBy": null
+            }
+          ],
+          "meta": {
+            "requestId": "6bc7e4e6-9147-4398-8e25-ccac0aedfe78",
+            "timestamp": "2026-02-24T20:13:47.275Z"
+          },
+          "pagination": {
+            "page": 1,
+            "perPage": 20,
+            "total": 1,
+            "hasMore": false
+          }
+        },
+        "at": "2026-02-24T20:13:47.276Z"
+      },
+      {
+        "method": "POST",
+        "path": "/api/v1/sagas/runs/saga_run_3A8ApyTBOFnS75mUPXcbSiPbrTB/traces",
+        "status": 201,
+        "requestBody": {
+          "stepKey": "customer-advanced-payment-flow",
+          "title": "Customer uses advanced payment instruments API Trace",
+          "trace": {
+            "stepKey": "customer-advanced-payment-flow",
+            "callCount": 1,
+            "calls": [
+              {
+                "method": "POST",
+                "path": "/api/v1/bizes/3A8AqB3OemoYsAVrjNFBLOHfpiL/booking-orders",
+                "status": 403,
+                "requestBody": {
+                  "offerId": "offer_3A8AqgnDN8qllOjbRztUADmekZ2",
+                  "offerVersionId": "offer_version_3A8Aqoxa2DZXSHJnJwbh7IndUzM",
+                  "status": "draft",
+                  "subtotalMinor": 1000,
+                  "taxMinor": 0,
+                  "feeMinor": 0,
+                  "discountMinor": 0,
+                  "totalMinor": 1000,
+                  "currency": "USD"
+                },
+                "responseBody": {
+                  "success": false,
+                  "error": {
+                    "code": "FORBIDDEN",
+                    "message": "You are not a member of this biz."
+                  },
+                  "meta": {
+                    "requestId": "94d17228-9545-44b0-a3af-70b86fa1c134",
+                    "timestamp": "2026-02-24T20:13:46.766Z"
+                  }
+                },
+                "at": "2026-02-24T20:13:46.768Z"
+              }
+            ]
+          },
+          "metadata": {
+            "source": "rerun-sagas.ts"
+          }
+        },
+        "responseBody": {
+          "success": true,
+          "data": {
+            "id": "saga_artifact_3A8As9pz0GawPSP3R5BFiTUfyMl",
+            "sagaRunId": "saga_run_3A8ApyTBOFnS75mUPXcbSiPbrTB",
+            "sagaRunStepId": "saga_run_step_3A8Aq1y7oY6hmE7Hl2ovbRynWrk",
+            "artifactType": "api_trace",
+            "title": "Customer uses advanced payment instruments API Trace",
+            "storagePath": "testing/sagas/runs/saga_run_3A8ApyTBOFnS75mUPXcbSiPbrTB/artifacts/1771964027261-Customer_uses_advanced_payment_instruments_API_Trace.json",
+            "contentType": "application/json",
+            "bodyText": "{\n  \"stepKey\": \"customer-advanced-payment-flow\",\n  \"callCount\": 1,\n  \"calls\": [\n    {\n      \"method\": \"POST\",\n      \"path\": \"/api/v1/bizes/3A8AqB3OemoYsAVrjNFBLOHfpiL/booking-orders\",\n      \"status\": 403,\n      \"requestBody\": {\n        \"offerId\": \"offer_3A8AqgnDN8qllOjbRztUADmekZ2\",\n        \"offerVersionId\": \"offer_version_3A8Aqoxa2DZXSHJnJwbh7IndUzM\",\n        \"status\": \"draft\",\n        \"subtotalMinor\": 1000,\n        \"taxMinor\": 0,\n        \"feeMinor\": 0,\n        \"discountMinor\": 0,\n        \"totalMinor\": 1000,\n        \"currency\": \"USD\"\n      },\n      \"responseBody\": {\n        \"success\": false,\n        \"error\": {\n          \"code\": \"FORBIDDEN\",\n          \"message\": \"You are not a member of this biz.\"\n        },\n        \"meta\": {\n          \"requestId\": \"94d17228-9545-44b0-a3af-70b86fa1c134\",\n          \"timestamp\": \"2026-02-24T20:13:46.766Z\"\n        }\n      },\n      \"at\": \"2026-02-24T20:13:46.768Z\"\n    }\n  ]\n}\n",
+            "byteSize": 919,
+            "checksum": "d30c0d2e118a08600fba22f1b1d28189351cd27f8544af04e70fc4fbfb3ea03b",
+            "capturedAt": "2026-02-24T20:13:47.273Z",
+            "metadata": {
+              "source": "rerun-sagas.ts"
+            },
+            "createdAt": "2026-02-24T20:13:47.273Z",
+            "updatedAt": "2026-02-24T20:13:47.273Z",
+            "deletedAt": null,
+            "createdBy": null,
+            "updatedBy": null,
+            "deletedBy": null
+          },
+          "meta": {
+            "requestId": "d3ce10fb-c185-4d75-be5c-ace194d20a6d",
+            "timestamp": "2026-02-24T20:13:47.301Z"
+          }
+        },
+        "at": "2026-02-24T20:13:47.303Z"
+      },
+      {
+        "method": "POST",
+        "path": "/api/v1/sagas/runs/saga_run_3A8AqCMn7n9Cxjp7zgfQHXbGwno/traces",
+        "status": 201,
+        "requestBody": {
+          "_truncated": true,
+          "_preview": "{\"stepKey\":\"adversary-cross-biz-read\",\"title\":\"Adversary attempts unauthorized cross-biz read API Trace\",\"trace\":{\"stepKey\":\"adversary-cross-biz-read\",\"callCount\":3,\"calls\":[{\"method\":\"POST\",\"path\":\"/api/v1/public/bizes/3A8AqJVEIvIU18Vu8C6vEL1eYYe/booking-orders/booking_order_3A8Arqlgi4qyosTvYqvMMoBr6Ph/payments/advanced\",\"status\":201,\"requestBody\":{\"tipMinor\":500,\"tenders\":[{\"methodType\":\"card\",\"allocatedMinor\":10000,\"label\":\"Primary card\"},{\"methodType\":\"cash\",\"allocatedMinor\":5500,\"label\":\"Cash supplement\"}],\"metadata\":{\"source\":\"rerun-sagas\"}},\"responseBody\":{\"success\":true,\"data\":{\"paymentIntentId\":\"payment_intent_3A8As0n1WTqhaDevcCRNmxkrS5k\",\"bookingOrderId\":\"booking_order_3A8Arqlgi4qyosTvYqvMMoBr6Ph\",\"status\":\"succeeded\",\"currency\":\"USD\",\"amountTargetMinor\":15500,\"amountCapturedMinor\":15500,\"tenderCount\":2,\"lineAllocationCount\":3,\"transactionCount\":2},\"meta\":{\"requestId\":\"59f39c23-44cc-47dc-8393-d8c122bdf1fd\",\"timestamp\":\"2026-02-24T20:13:46.964Z\"}},\"at\":\"2026-02-24T20:13:46.981Z\"},{\"method\":\"POST\",\"path\":\"/api/v1/bizes/3A8AqHsvEBsVrcfowy5MNqckCv0/booking-orders\",\"status\":403,\"requestBody\":{\"offerId\":\"offer_3A8Ar39xCPm4IjImmHPbUf0mE7i\",\"offerVersionId\":\"offer_version_3A8Ar56mUP7OCpe0bhkdO1GQVHi\",\"status\":\"draft\",\"subtotalMinor\":1000,\"taxMinor\":0,\"feeMinor\":0,\"discountMinor\":0,\"totalMinor\":1000,\"currency\":\"USD\"},\"responseBody\":{\"success\":false,\"error\":{\"code\":\"FORBIDDEN\",\"message\":\"You are not a member of this biz.\"},\"meta\":{\"requestId\":\"8e035416-8666-412a-9313-54f6bcd81fd2\",\"timestamp\":\"2026-02-24T20:13:46.968Z\"}},\"at\":\"2026-02-24T20:13:46.982Z\"},{\"method\":\"POST\",\"path\":\"/api/v1/sagas/runs/saga_run_3A8AqAWLrzneuJq6AmYyBt9GwRp/snapshots\",\"status\":201,\"requestBody\":{\"_truncated\":true,\"_preview\":\"{\\\"stepKey\\\":\\\"customer-two-concurrent\\\",\\\"screenKey\\\":\\\"customer-two-concurrent-1771964026796\\\",\\\"title\\\":\\\"Customer two performs concurrent booking attempt Snapshot\\\",\\\"status\\\":\\\"passed\\\",\\\"route\\\":\\\"/sagas/saga_run_3A8AqAWLrzneuJq6AmYyBt9GwRp/customer-two-concurrent\\\",\\\"format\\\":\\\"json\\\",\\\"view\\\":{\\\"title\\\":\\\"Customer two performs concurrent booking attempt\\\",\\\"subtitle\\\":\\\"Second concurrent booking created.\\\",\\\"blocks\\\":[{\\\"type\\\":\\\"alert\\\",\\\"title\\\":\\\"Customer Two Concurrent completed\\\",\\\"message\\\":\\\"Second concurrent booking created.\\\",\\\"tone\\\":\\\"success\\\"},{\\\"type\\\":\\\"key_value\\\",\\\"title\\\":\\\"Booking confirmation\\\",\\\"items\\\":[{\\\"label\\\":\\\"Booking id\\\",\\\"value\\\":\\\"booking_order_3A8As1ETxcp00IabqOwsJOsGOuY\\\"},{\\\"label\\\":\\\"Status\\\",\\\"value\\\":\\\"confirmed\\\"},{\\\"label\\\":\\\"Starts at\\\",\\\"value\\\":\\\"2026-02-25T20:13:46.429Z\\\"},{\\\"label\\\":\\\"Total\\\",\\\"value\\\":\\\"15000\\\"}]},{\\\"type\\\":\\\"actions\\\",\\\"title\\\":\\\"Visible actions\\\",\\\"items\\\":[{\\\"label\\\":\\\"Download receipt\\\",\\\"kind\\\":\\\"secondary\\\",\\\"enabled\\\":true},{\\\"label\\\":\\\"Reschedule\\\",\\\"kind\\\":\\\"secondary\\\",\\\"enabled\\\":true},{\\\"label\\\":\\\"Cancel booking\\\",\\\"kind\\\":\\\"danger\\\",\\\"enabled\\\":true}]},{\\\"type\\\":\\\"stats\\\",\\\"title\\\":\\\"What user sees at a glance\\\",\\\"items\\\":[{\\\"label\\\":\\\"SubtotalMinor\\\",\\\"value\\\":\\\"15000\\\"},{\\\"label\\\":\\\"TaxMinor\\\",\\\"value\\\":\\\"0\\\"},{\\\"label\\\":\\\"FeeMinor\\\",\\\"value\\\":\\\"0\\\"},{\\\"label\\\":\\\"DiscountMinor\\\",\\\"value\\\":\\\"0\\\"},{\\\"label\\\":\\\"TotalMinor\\\",\\\"value\\\":\\\"15000\\\"}]},{\\\"type\\\":\\\"key_value\\\",\\\"title\\\":\\\"Screen details\\\",\\\"items\\\":[{\\\"label\\\":\\\"Id\\\",\\\"value\\\":\\\"booking_order_3A8As1ETxcp00IabqOwsJOsGOuY\\\"},{\\\"label\\\":\\\"BizId\\\",\\\"value\\\":\\\"3A8AqEcbxXMIGseoTSCgWlpPDpf\\\"},{\\\"label\\\":\\\"OfferId\\\",\\\"value\\\":\\\"offer_3A8ArM1ySv0lVK5grIHlbVr5rIw\\\"},{\\\"label\\\":\\\"OfferVersionId\\\",\\\"value\\\":\\\"offer_version_3A8ArXchREjBGt6uPyTc6nvsGyf\\\"},{\\\"label\\\":\\\"CustomerUserId\\\",\\\"value\\\":\\\"Y2e7fuVFiyTCrnBImAFXD1p4jGH06QmJ\\\"},{\\\"label\\\":\\\"CustomerGroupAccountId\\\",\\\"value\\\":\\\"null\\\"},{\\\"label\\\":\\\"Status\\\",\\\"value\\\":\\\"confirmed\\\"},{\\\"label\\\":\\\"StatusConfigValueId\\\",\\\"value\\\":\\\"null\\\"},{\\\"label\\\":\\\"Currency\\\",\\\"value\\\":\\\"USD\\\"},{\\\"label\\\":\\\"SubtotalMinor\\\",\\\"value\\\":\\\"15000\\\"},{\\\"label\\\":\\\"TaxMinor\\\",\\\"value\\\":\\\"0\\\"},{\\\"label\\\":\\\"FeeMinor\\\",\\\"value\\\":\\\"0\\\"},{\\\"label\\\":\\\"DiscountMinor\\\",\\\"value\\\":\\\"0\\\"},{\\\"label\\\":\\\"TotalMinor\\\",\\\"value\\\":\\\"15000\\\"},{\\\"label\\\":\\\"RequestedStartAt\\\",\\\"value\\\":\\\"2026-02-25T20:13:46.429Z\\\"},{\\\"label\\\":\\\"RequestedEndAt\\\",\\\"value\\\":\\\"2026-02-25T21:03:46.429Z\\\"}]}]},\\\"rawData\\\":{\\\"stepKey\\\":\\\"customer-two-concurrent\\\",\\\"resultPayload\\\":{\\\"note\\\":\\\"Second concurrent booking created.\\\",\\\"evidence\\\":{\\\"id\\\":\\\"booking_order_3A8As1ETxcp00IabqOwsJOsGOuY\\\",\\\"bizId\\\":\\\"3A8AqEcbxXMIGseoTSCgWlpPDpf\\\",\\\"offerId\\\":\\\"offer_3A8ArM1ySv0lVK5grIHlbVr5rIw\\\",\\\"offerVersionId\\\":\\\"offer_version_3A8ArXchREjBGt6uPyTc6nvsGyf\\\",\\\"customerUserId\\\":\\\"Y2e7fuVFiyTCrnBImAFXD1p4jGH06QmJ\\\",\\\"customerGroupAccountId\\\":null,\\\"status\\\":\\\"confirmed\\\",\\\"statusConfigValueId\\\":null,\\\"currency\\\":\\\"USD\\\",\\\"subtotalMinor\\\":15000,\\\"taxMinor\\\":0,\\\"feeMinor\\\":0,\\\"discountMinor\\\":0,\\\"totalMinor\\\":15000,\\\"requestedStartAt\\\":\\\"2026-02-25T20:13:46.429Z\\\",\\\"requestedEndAt\\\":\\\"2026-02-25T21:03:46.429Z\\\",\\\"confirmedStartAt\\\":\\\"2026-02-25T20:13:46.429Z\\\",\\\"confirmedEndAt\\\":\\\"2026-02-25T21:03:46.429Z\\\",\\\"pricingSnapshot\\\":{},\\\"policySnapshot\\\":{},\\\"metadata\\\":{},\\\"createdAt\\\":\\\"2026-02-24T20:13:46.441Z\\\",\\\"updatedAt\\\":\\\"2026-02-24T20:13:46.441Z\\\",\\\"deletedAt\\\":null,\\\"createdBy\\\":null,\\\"updatedBy\\\":null,\\\"deletedBy\\\":null}},\\\"apiCalls\\\":[{\\\"method\\\":\\\"POST\\\",\\\"path\\\":\\\"/api/v1/sagas/runs/saga_run_3A8Aq4CxMswnQ8gewCPKdx06MvV/traces\\\",\\\"status\\\":201,\\\"requestBody\\\":{\\\"_truncated\\\":true,\\\"_preview\\\":\\\"{\\\\\\\"stepKey\\\\\\\":\\\\\\\"adversary-cross-biz-read\\\\\\\",\\\\\\\"title\\\\\\\":\\\\\\\"Adversary attempts unauthorized cross-biz read API Trace\\\\\\\",\\\\\\\"trace\\\\\\\":{\\\\\\\"stepKey\\\\\\\":\\\\\\\"adversary-cross-biz-read\\\\\\\",\\\\\\\"callCount\\\\\\\":12,\\\\\\\"calls\\\\\\\":[{\\\\\\\"method\\\\\\\":\\\\\\\"POST\\\\\\\",\\\\\\\"path\\\\\\\":\\\\\\\"/api/v1/sagas/runs/saga_run_3A8AqCMn7n9Cxjp7zgfQHXbGwno/steps/customer-book-primary/result\\\\\\\",\\\\\\\"status\\\\\\\":200,\\\\\\\"requestBody\\\\\\\":{\\\\\\\"status\\\\\\\":\\\\\\\"in_progress\\\\\\\",\\\\\\\"startedAt\\\\\\\":\\\\\\\"2026-02-24T20:13:45.633Z\\\\\\\",\\\\\\\"resultPayload\\\\\\\":{\\\\\\\"note\\\\\\\":\\\\\\\"Started customer-book-primary\\\\\\\"},\\\\\\\"assertionSummary\\\\\\\":{\\\\\\\"status\\\\\\\":\\\\\\\"in_progress\\\\\\\"}},\\\\\\\"responseBody\\\\\\\":{\\\\\\\"success\\\\\\\":true,\\\\\\\"data\\\\\\\":{\\\\\\\"id\\\\\\\":\\\\\\\"saga_run_step_3A8AqA0ZoD7Vbqun9JpBqW3lTo2\\\\\\\",\\\\\\\"sagaRunId\\\\\\\":\\\\\\\"saga_run_3A8AqCMn7n9Cxjp7zgfQHXbGwno\\\\\\\",\\\\\\\"phaseKey\\\\\\\":\\\\\\\"customer-lifecycle\\\\\\\",\\\\\\\"phaseOrder\\\\\\\":5,\\\\\\\"phaseTitle\\\\\\\":\\\\\\\"Customer Lifecycle\\\\\\\",\\\\\\\"stepKey\\\\\\\":\\\\\\\"customer-book-primary\\\\\\\",\\\\\\\"stepOrder\\\\\\\":12,\\\\\\\"actorKey\\\\\\\":\\\\\\\"customer_1\\\\\\\",\\\\\\\"instruction\\\\\\\":\\\\\\\"Create a booking order using the published offer version with realistic times and monetary totals.\\\\\\\",\\\\\\\"expectedResult\\\\\\\":\\\\\\\"Booking order is created and linked to offer/offer version with coherent totals.\\\\\\\",\\\\\\\"status\\\\\\\":\\\\\\\"in_progress\\\\\\\",\\\\\\\"attemptCount\\\\\\\":1,\\\\\\\"startedAt\\\\\\\":\\\\\\\"2026-02-24T20:13:45.633Z\\\\\\\",\\\\\\\"endedAt\\\\\\\":null,\\\\\\\"failureCode\\\\\\\":null,\\\\\\\"failureMessage\\\\\\\":null,\\\\\\\"resultPayload\\\\\\\":{\\\\\\\"note\\\\\\\":\\\\\\\"Started customer-book-primary\\\\\\\"},\\\\\\\"assertionSummary\\\\\\\":{\\\\\\\"status\\\\\\\":\\\\\\\"in_progress\\\\\\\"},\\\\\\\"metadata\\\\\\\":{},\\\\\\\"createdAt\\\\\\\":\\\\\\\"2026-02-24T20:13:31.781Z\\\\\\\",\\\\\\\"updatedAt\\\\\\\":\\\\\\\"2026-02-24T20:13:31.781Z\\\\\\\",\\\\\\\"deletedAt\\\\\\\":null,\\\\\\\"createdBy\\\\\\\":null,\\\\\\\"updatedBy\\\\\\\":null,\\\\\\\"deletedBy\\\\\\\":null},\\\\\\\"meta\\\\\\\":{\\\\\\\"requestId\\\\\\\":\\\\\\\"54b41ac1-98dc-4111-9d7a-b61a0c1d3153\\\\\\\",\\\\\\\"timestamp\\\\\\\":\\\\\\\"2026-02-24T20:13:45.676Z\\\\\\\"}},\\\\\\\"at\\\\\\\":\\\\\\\"2026-02-24T20:13:45.685Z\\\\\\\"},{\\\\\\\"method\\\\\\\":\\\\\\\"POST\\\\\\\",\\\\\\\"path\\\\\\\":\\\\\\\"/api/v1/sagas/runs/saga_run_3A8AqAWLrzneuJq6AmYyBt9GwRp/steps/customer-book-primary/result\\\\\\\",\\\\\\\"status\\\\\\\":200,\\\\\\\"requestBody\\\\\\\":{\\\\\\\"status\\\\\\\":\\\\\\\"in_progress\\\\\\\",\\\\\\\"startedAt\\\\\\\":\\\\\\\"2026-02-24T20:13:45.635Z\\\\\\\",\\\\\\\"resultPayload\\\\\\\":{\\\\\\\"note\\\\\\\":\\\\\\\"Started customer-book-primary\\\\\\\"},\\\\\\\"assertionSummary\\\\\\\":{\\\\\\\"status\\\\\\\":\\\\\\\"in_progress\\\\\\\"}},\\\\\\\"responseBody\\\\\\\":{\\\\\\\"success\\\\\\\":true,\\\\\\\"data\\\\\\\":{\\\\\\\"id\\\\\\\":\\\\\\\"saga_run_step_3A8AqB7FR1tgHwuBkPDb1Sb8Ah6\\\\\\\",\\\\\\\"sagaRunId\\\\\\\":\\\\\\\"saga_run_3A8AqAWLrzneuJq6AmYyBt9GwRp\\\\\\\",\\\\\\\"phaseKey\\\\\\\":\\\\\\\"customer-lifecycle\\\\\\\",\\\\\\\"phaseOrder\\\\\\\":5,\\\\\\\"phaseTitle\\\\\\\":\\\\\\\"Customer Lifecycle\\\\\\\",\\\\\\\"stepKey\\\\\\\":\\\\\\\"customer-book-primary\\\\\\\",\\\\\\\"stepOrder\\\\\\\":12,\\\\\\\"actorKey\\\\\\\":\\\\\\\"customer_1\\\\\\\",\\\\\\\"instruction\\\\\\\":\\\\\\\"Create a booking order using the published offer version with realistic times and monetary totals.\\\\\\\",\\\\\\\"expectedResult\\\\\\\":\\\\\\\"Booking order is created and linked to offer/offer version with coherent totals.\\\\\\\",\\\\\\\"status\\\\\\\":\\\\\\\"in_progress\\\\\\\",\\\\\\\"attemptCount\\\\\\\":1,\\\\\\\"startedAt\\\\\\\":\\\\\\\"2026-02-24T20:13:45.635Z\\\\\\\",\\\\\\\"endedAt\\\\\\\":null,\\\\\\\"failureCode\\\\\\\":null,\\\\\\\"failureMessage\\\\\\\":null,\\\\\\\"resultPayload\\\\\\\":{\\\\\\\"note\\\\\\\":\\\\\\\"Started customer-book-primary\\\\\\\"},\\\\\\\"assertionSummary\\\\\\\":{\\\\\\\"status\\\\\\\":\\\\\\\"in_progress\\\\\\\"},\\\\\\\"metadata\\\\\\\":{},\\\\\\\"createdAt\\\\\\\":\\\\\\\"2026-02-24T20:13:31.882Z\\\\\\\",\\\\\\\"updatedAt\\\\\\\":\\\\\\\"2026-02-24T20:13:31.882Z\\\\\\\",\\\\\\\"deletedAt\\\\\\\":null,\\\\\\\"createdBy\\\\\\\":null,\\\\\\\"updatedBy\\\\\\\":null,\\\\\\\"deletedBy\\\\\\\":null},\\\\\\\"meta\\\\\\\":{\\\\\\\"requestId\\\\\\\":\\\\\\\"56812727-b0ab-4e07-ac9d-ed31b34eaf29\\\\\\\",\\\\\\\"timestamp\\\\\\\":\\\\\\\"2026-02-24T20:13:45.798Z\\\\\\\"}},\\\\\\\"at\\\\\\\":\\\\\\\"2026-02-24T20:13:45.800Z\\\\\\\"},{\\\\\\\"method\\\\\\\":\\\\\\\"POST\\\\\\\",\\\\\\\"path\\\\\\\":\\\\\\\"/api/v1/sagas/runs/saga_run_3A8AqIEo2bTgeuUqcyxO98611EN/steps/customer-sign-up/result\\\\\\\",\\\\\\\"status\\\\\\\":200,\\\\\\\"requestBody\\\\\\\":{\\\\\\\"status\\\\\\\":\\\\\\\"in_progress\\\\\\\",\\\\\\\"startedAt\\\\\\\":\\\\\\\"2026-02-24T20:13:45.643Z\\\\\\\",\\\\\\\"resultPayload\\\\\\\":{\\\\\\\"note\\\\\\\":\\\\\\\"Started customer-sign-up\\\\\\\"},\\\\\\\"assertionSummary\\\\\\\":{\\\\\\\"status\\\\\\\":\\\\\\\"in_progress\\\\\\\"}},\\\\\\\"responseBody\\\\\\\":{\\\\\\\"success\\\\\\\":true,\\\\\\\"data\\\\\\\":{\\\\\\\"id\\\\\\\":\\\\\\\"saga_run_step_3A8AqG15BRf4rT1SXj9CQ5HecaZ\\\\\\\",\\\\\\\"sagaRunId\\\\\\\":\\\\\\\"saga_run_3A8AqIEo2bTgeuUqcyxO98611EN\\\\\\\",\\\\\\\"phaseKey\\\\\\\":\\\\\\\"customer-lifecycle\\\\\\\",\\\\\\\"phaseOrder\\\\\\\":5,\\\\\\\"phaseTitle\\\\\\\":\\\\\\\"Customer Lifecycle\\\\\\\",\\\\\\\"stepKey\\\\\\\":\\\\\\\"customer-sign-up\\\\\\\",\\\\\\\"stepOrder\\\\\\\":11,\\\\\\\"actorKey\\\\\\\":\\\\\\\"customer_1\\\\\\\",\\\\\\\"instruction\\\\\\\":\\\\\\\"Create customer account/session and verify customer can browse published offers.\\\\\\\",\\\\\\\"expectedResult\\\\\\\":\\\\\\\"Customer session established and offer discovery succeeds.\\\\\\\",\\\\\\\"status\\\\\\\":\\\\\\\"in_progress\\\\\\\",\\\\\\\"attemptCount\\\\\\\":1,\\\\\\\"startedAt\\\\\\\":\\\\\\\"2026-02-24T20:13:45.643Z\\\\\\\",\\\\\\\"endedAt\\\\\\\":null,\\\\\\\"failureCode\\\\\\\":null,\\\\\\\"failureMessage\\\\\\\":null,\\\\\\\"resultPayload\\\\\\\":{\\\\\\\"note\\\\\\\":\\\\\\\"Started customer-sign-up\\\\\\\"},\\\\\\\"assertionSummary\\\\\\\":{\\\\\\\"status\\\\\\\":\\\\\\\"in_progress\\\\\\\"},\\\\\\\"metadata\\\\\\\":{},\\\\\\\"createdAt\\\\\\\":\\\\\\\"2026-02-24T20:13:32.044Z\\\\\\\",\\\\\\\"updatedAt\\\\\\\":\\\\\\\"2026-02-24T20:13:32.044Z\\\\\\\",\\\\\\\"deletedAt\\\\\\\":null,\\\\\\\"createdBy\\\\\\\":null,\\\\\\\"updatedBy\\\\\\\":null,\\\\\\\"deletedBy\\\\\\\":null},\\\\\\\"meta\\\\\\\":{\\\\\\\"requestId\\\\\\\":\\\\\\\"113b5e13-8ba0-42d6-aa50-caf8bc84ee28\\\\\\\",\\\\\\\"timestamp\\\\\\\":\\\\\\\"2026-02-24T20:13:45.923Z\\\\\\\"}},\\\\\\\"at\\\\\\\":\\\\\\\"2026-02-24T20:13:45.925Z\\\\\\\"},{\\\\\\\"method\\\\\\\":\\\\\\\"POST\\\\\\\",\\\\\\\"path\\\\\\\":\\\\\\\"/api/v1/sagas/runs/saga_run_3A8ApzquD8KASkqbaTc7FfBSIrb/steps/customer-two-concurrent/result\\\\\\\",\\\\\\\"status\\\\\\\":200,\\\\\\\"requestBody\\\\\\\":{\\\\\\\"status\\\\\\\":\\\\\\\"passed\\\\\\\",\\\\\\\"startedAt\\\\\\\":\\\\\\\"2026-02-24T20:13:45.471Z\\\\\\\",\\\\\\\"endedAt\\\\\\\":\\\\\\\"2026-02-24T20:13:45.471Z\\\\\\\",\\\\\\\"failureMessage\\\\\\\":null,\\\\\\\"resultPayload\\\\\\\":{\\\\\\\"note\\\\\\\":\\\\\\\"Second concurrent booking created.\\\\\\\",\\\\\\\"evidence\\\\\\\":{\\\\\\\"id\\\\\\\":\\\\\\\"booking_order_3A8ArxEuRIpGqqqnyYHzCy4GL0r\\\\\\\",\\\\\\\"bizId\\\\\\\":\\\\\\\"3A8AqGCNHUMvKbsCpK1VJLcz7Rk\\\\\\\",\\\\\\\"offerId\\\\\\\":\\\\\\\"offer_3A8Ar4P7zZ4t1hVAnZTlN3QzIVW\\\\\\\",\\\\\\\"offerVersionId\\\\\\\":\\\\\\\"offer_version_3A8Ar570VppPQzVpA5dCRjRiAm1\\\\\\\",\\\\\\\"customerUserId\\\\\\\":\\\\\\\"vx594CCFGdc8KM5eaMiCT58mHxwWWIJn\\\\\\\",\\\\\\\"customerGroupAccountId\\\\\\\":null,\\\\\\\"status\\\\\\\":\\\\\\\"confirmed\\\\\\\",\\\\\\\"statusConfigValueId\\\\\\\":null,\\\\\\\"currency\\\\\\\":\\\\\\\"USD\\\\\\\",\\\\\\\"subtotalMinor\\\\\\\":15000,\\\\\\\"taxMinor\\\\\\\":0,\\\\\\\"feeMinor\\\\\\\":0,\\\\\\\"discountMinor\\\\\\\":0,\\\\\\\"totalMinor\\\\\\\":15000,\\\\\\\"requestedStartAt\\\\\\\":\\\\\\\"2026-02-25T20:13:45.189Z\\\\\\\",\\\\\\\"requestedEndAt\\\\\\\":\\\\\\\"2026-02-25T21:03:45.189Z\\\\\\\",\\\\\\\"confirmedStartAt\\\\\\\":\\\\\\\"2026-02-25T20:13:45.189Z\\\\\\\",\\\\\\\"confirmedEndAt\\\\\\\":\\\\",
+          "_size": 30737
+        },
+        "responseBody": {
+          "_truncated": true,
+          "_preview": "{\"success\":true,\"data\":{\"id\":\"saga_artifact_3A8As8i7nOZwNpzMlFb6otb2y1u\",\"sagaRunId\":\"saga_run_3A8AqCMn7n9Cxjp7zgfQHXbGwno\",\"sagaRunStepId\":\"saga_run_step_3A8AqBgX5MlshdmPKLDHDpt9WVd\",\"artifactType\":\"api_trace\",\"title\":\"Adversary attempts unauthorized cross-biz read API Trace\",\"storagePath\":\"testing/sagas/runs/saga_run_3A8AqCMn7n9Cxjp7zgfQHXbGwno/artifacts/1771964027259-Adversary_attempts_unauthorized_cross-biz_read_API_Trace.json\",\"contentType\":\"application/json\",\"bodyText\":\"{\\n  \\\"stepKey\\\": \\\"adversary-cross-biz-read\\\",\\n  \\\"callCount\\\": 3,\\n  \\\"calls\\\": [\\n    {\\n      \\\"method\\\": \\\"POST\\\",\\n      \\\"path\\\": \\\"/api/v1/public/bizes/3A8AqJVEIvIU18Vu8C6vEL1eYYe/booking-orders/booking_order_3A8Arqlgi4qyosTvYqvMMoBr6Ph/payments/advanced\\\",\\n      \\\"status\\\": 201,\\n      \\\"requestBody\\\": {\\n        \\\"tipMinor\\\": 500,\\n        \\\"tenders\\\": [\\n          {\\n            \\\"methodType\\\": \\\"card\\\",\\n            \\\"allocatedMinor\\\": 10000,\\n            \\\"label\\\": \\\"Primary card\\\"\\n          },\\n          {\\n            \\\"methodType\\\": \\\"cash\\\",\\n            \\\"allocatedMinor\\\": 5500,\\n            \\\"label\\\": \\\"Cash supplement\\\"\\n          }\\n        ],\\n        \\\"metadata\\\": {\\n          \\\"source\\\": \\\"rerun-sagas\\\"\\n        }\\n      },\\n      \\\"responseBody\\\": {\\n        \\\"success\\\": true,\\n        \\\"data\\\": {\\n          \\\"paymentIntentId\\\": \\\"payment_intent_3A8As0n1WTqhaDevcCRNmxkrS5k\\\",\\n          \\\"bookingOrderId\\\": \\\"booking_order_3A8Arqlgi4qyosTvYqvMMoBr6Ph\\\",\\n          \\\"status\\\": \\\"succeeded\\\",\\n          \\\"currency\\\": \\\"USD\\\",\\n          \\\"amountTargetMinor\\\": 15500,\\n          \\\"amountCapturedMinor\\\": 15500,\\n          \\\"tenderCount\\\": 2,\\n          \\\"lineAllocationCount\\\": 3,\\n          \\\"transactionCount\\\": 2\\n        },\\n        \\\"meta\\\": {\\n          \\\"requestId\\\": \\\"59f39c23-44cc-47dc-8393-d8c122bdf1fd\\\",\\n          \\\"timestamp\\\": \\\"2026-02-24T20:13:46.964Z\\\"\\n        }\\n      },\\n      \\\"at\\\": \\\"2026-02-24T20:13:46.981Z\\\"\\n    },\\n    {\\n      \\\"method\\\": \\\"POST\\\",\\n      \\\"path\\\": \\\"/api/v1/bizes/3A8AqHsvEBsVrcfowy5MNqckCv0/booking-orders\\\",\\n      \\\"status\\\": 403,\\n      \\\"requestBody\\\": {\\n        \\\"offerId\\\": \\\"offer_3A8Ar39xCPm4IjImmHPbUf0mE7i\\\",\\n        \\\"offerVersionId\\\": \\\"offer_version_3A8Ar56mUP7OCpe0bhkdO1GQVHi\\\",\\n        \\\"status\\\": \\\"draft\\\",\\n        \\\"subtotalMinor\\\": 1000,\\n        \\\"taxMinor\\\": 0,\\n        \\\"feeMinor\\\": 0,\\n        \\\"discountMinor\\\": 0,\\n        \\\"totalMinor\\\": 1000,\\n        \\\"currency\\\": \\\"USD\\\"\\n      },\\n      \\\"responseBody\\\": {\\n        \\\"success\\\": false,\\n        \\\"error\\\": {\\n          \\\"code\\\": \\\"FORBIDDEN\\\",\\n          \\\"message\\\": \\\"You are not a member of this biz.\\\"\\n        },\\n        \\\"meta\\\": {\\n          \\\"requestId\\\": \\\"8e035416-8666-412a-9313-54f6bcd81fd2\\\",\\n          \\\"timestamp\\\": \\\"2026-02-24T20:13:46.968Z\\\"\\n        }\\n      },\\n      \\\"at\\\": \\\"2026-02-24T20:13:46.982Z\\\"\\n    },\\n    {\\n      \\\"method\\\": \\\"POST\\\",\\n      \\\"path\\\": \\\"/api/v1/sagas/runs/saga_run_3A8AqAWLrzneuJq6AmYyBt9GwRp/snapshots\\\",\\n      \\\"status\\\": 201,\\n      \\\"requestBody\\\": {\\n        \\\"_truncated\\\": true,\\n        \\\"_preview\\\": \\\"{\\\\\\\"stepKey\\\\\\\":\\\\\\\"customer-two-concurrent\\\\\\\",\\\\\\\"screenKey\\\\\\\":\\\\\\\"customer-two-concurrent-1771964026796\\\\\\\",\\\\\\\"title\\\\\\\":\\\\\\\"Customer two performs concurrent booking attempt Snapshot\\\\\\\",\\\\\\\"status\\\\\\\":\\\\\\\"passed\\\\\\\",\\\\\\\"route\\\\\\\":\\\\\\\"/sagas/saga_run_3A8AqAWLrzneuJq6AmYyBt9GwRp/customer-two-concurrent\\\\\\\",\\\\\\\"format\\\\\\\":\\\\\\\"json\\\\\\\",\\\\\\\"view\\\\\\\":{\\\\\\\"title\\\\\\\":\\\\\\\"Customer two performs concurrent booking attempt\\\\\\\",\\\\\\\"subtitle\\\\\\\":\\\\\\\"Second concurrent booking created.\\\\\\\",\\\\\\\"blocks\\\\\\\":[{\\\\\\\"type\\\\\\\":\\\\\\\"alert\\\\\\\",\\\\\\\"title\\\\\\\":\\\\\\\"Customer Two Concurrent completed\\\\\\\",\\\\\\\"message\\\\\\\":\\\\\\\"Second concurrent booking created.\\\\\\\",\\\\\\\"tone\\\\\\\":\\\\\\\"success\\\\\\\"},{\\\\\\\"type\\\\\\\":\\\\\\\"key_value\\\\\\\",\\\\\\\"title\\\\\\\":\\\\\\\"Booking confirmation\\\\\\\",\\\\\\\"items\\\\\\\":[{\\\\\\\"label\\\\\\\":\\\\\\\"Booking id\\\\\\\",\\\\\\\"value\\\\\\\":\\\\\\\"booking_order_3A8As1ETxcp00IabqOwsJOsGOuY\\\\\\\"},{\\\\\\\"label\\\\\\\":\\\\\\\"Status\\\\\\\",\\\\\\\"value\\\\\\\":\\\\\\\"confirmed\\\\\\\"},{\\\\\\\"label\\\\\\\":\\\\\\\"Starts at\\\\\\\",\\\\\\\"value\\\\\\\":\\\\\\\"2026-02-25T20:13:46.429Z\\\\\\\"},{\\\\\\\"label\\\\\\\":\\\\\\\"Total\\\\\\\",\\\\\\\"value\\\\\\\":\\\\\\\"15000\\\\\\\"}]},{\\\\\\\"type\\\\\\\":\\\\\\\"actions\\\\\\\",\\\\\\\"title\\\\\\\":\\\\\\\"Visible actions\\\\\\\",\\\\\\\"items\\\\\\\":[{\\\\\\\"label\\\\\\\":\\\\\\\"Download receipt\\\\\\\",\\\\\\\"kind\\\\\\\":\\\\\\\"secondary\\\\\\\",\\\\\\\"enabled\\\\\\\":true},{\\\\\\\"label\\\\\\\":\\\\\\\"Reschedule\\\\\\\",\\\\\\\"kind\\\\\\\":\\\\\\\"secondary\\\\\\\",\\\\\\\"enabled\\\\\\\":true},{\\\\\\\"label\\\\\\\":\\\\\\\"Cancel booking\\\\\\\",\\\\\\\"kind\\\\\\\":\\\\\\\"danger\\\\\\\",\\\\\\\"enabled\\\\\\\":true}]},{\\\\\\\"type\\\\\\\":\\\\\\\"stats\\\\\\\",\\\\\\\"title\\\\\\\":\\\\\\\"What user sees at a glance\\\\\\\",\\\\\\\"items\\\\\\\":[{\\\\\\\"label\\\\\\\":\\\\\\\"SubtotalMinor\\\\\\\",\\\\\\\"value\\\\\\\":\\\\\\\"15000\\\\\\\"},{\\\\\\\"label\\\\\\\":\\\\\\\"TaxMinor\\\\\\\",\\\\\\\"value\\\\\\\":\\\\\\\"0\\\\\\\"},{\\\\\\\"label\\\\\\\":\\\\\\\"FeeMinor\\\\\\\",\\\\\\\"value\\\\\\\":\\\\\\\"0\\\\\\\"},{\\\\\\\"label\\\\\\\":\\\\\\\"DiscountMinor\\\\\\\",\\\\\\\"value\\\\\\\":\\\\\\\"0\\\\\\\"},{\\\\\\\"label\\\\\\\":\\\\\\\"TotalMinor\\\\\\\",\\\\\\\"value\\\\\\\":\\\\\\\"15000\\\\\\\"}]},{\\\\\\\"type\\\\\\\":\\\\\\\"key_value\\\\\\\",\\\\\\\"title\\\\\\\":\\\\\\\"Screen details\\\\\\\",\\\\\\\"items\\\\\\\":[{\\\\\\\"label\\\\\\\":\\\\\\\"Id\\\\\\\",\\\\\\\"value\\\\\\\":\\\\\\\"booking_order_3A8As1ETxcp00IabqOwsJOsGOuY\\\\\\\"},{\\\\\\\"label\\\\\\\":\\\\\\\"BizId\\\\\\\",\\\\\\\"value\\\\\\\":\\\\\\\"3A8AqEcbxXMIGseoTSCgWlpPDpf\\\\\\\"},{\\\\\\\"label\\\\\\\":\\\\\\\"OfferId\\\\\\\",\\\\\\\"value\\\\\\\":\\\\\\\"offer_3A8ArM1ySv0lVK5grIHlbVr5rIw\\\\\\\"},{\\\\\\\"label\\\\\\\":\\\\\\\"OfferVersionId\\\\\\\",\\\\\\\"value\\\\\\\":\\\\\\\"offer_version_3A8ArXchREjBGt6uPyTc6nvsGyf\\\\\\\"},{\\\\\\\"label\\\\\\\":\\\\\\\"CustomerUserId\\\\\\\",\\\\\\\"value\\\\\\\":\\\\\\\"Y2e7fuVFiyTCrnBImAFXD1p4jGH06QmJ\\\\\\\"},{\\\\\\\"label\\\\\\\":\\\\\\\"CustomerGroupAccountId\\\\\\\",\\\\\\\"value\\\\\\\":\\\\\\\"null\\\\\\\"},{\\\\\\\"label\\\\\\\":\\\\\\\"Status\\\\\\\",\\\\\\\"value\\\\\\\":\\\\\\\"confirmed\\\\\\\"},{\\\\\\\"label\\\\\\\":\\\\\\\"StatusConfigValueId\\\\\\\",\\\\\\\"value\\\\\\\":\\\\\\\"null\\\\\\\"},{\\\\\\\"label\\\\\\\":\\\\\\\"Currency\\\\\\\",\\\\\\\"value\\\\\\\":\\\\\\\"USD\\\\\\\"},{\\\\\\\"label\\\\\\\":\\\\\\\"SubtotalMinor\\\\\\\",\\\\\\\"value\\\\\\\":\\\\\\\"15000\\\\\\\"},{\\\\\\\"label\\\\\\\":\\\\\\\"TaxMinor\\\\\\\",\\\\\\\"value\\\\\\\":\\\\\\\"0\\\\\\\"},{\\\\\\\"label\\\\\\\":\\\\\\\"FeeMinor\\\\\\\",\\\\\\\"value\\\\\\\":\\\\\\\"0\\\\\\\"},{\\\\\\\"label\\\\\\\":\\\\\\\"DiscountMinor\\\\\\\",\\\\\\\"value\\\\\\\":\\\\\\\"0\\\\\\\"},{\\\\\\\"label\\\\\\\":\\\\\\\"TotalMinor\\\\\\\",\\\\\\\"value\\\\\\\":\\\\\\\"15000\\\\\\\"},{\\\\\\\"label\\\\\\\":\\\\\\\"RequestedStartAt\\\\\\\",\\\\\\\"value\\\\\\\":\\\\\\\"2026-02-25T20:13:46.429Z\\\\\\\"},{\\\\\\\"label\\\\\\\":\\\\\\\"RequestedEndAt\\\\\\\",\\\\\\\"value\\\\\\\":\\\\\\\"2026-02-25T21:03:46.429Z\\\\\\\"}]}]},\\\\\\\"rawData\\\\\\\":{\\\\\\\"stepKey\\\\\\\":\\\\\\\"customer-two-concurrent\\\\\\\",\\\\\\\"resultPayload\\\\\\\":{\\\\\\\"note\\\\\\\":\\\\\\\"Second concurrent booking created.\\\\\\\",\\\\\\\"evidence\\\\\\\":{\\\\\\\"id\\\\\\\":\\\\\\\"booking_order_3A8As1ETxcp00IabqOwsJOsGOuY\\\\\\\",\\\\\\\"bizId\\\\\\\":\\\\\\\"3A8AqEcbxXMIGseoTSCgWlpPDpf\\\\\\\",\\\\\\\"offerId\\\\\\\":\\\\\\\"offer_3A8ArM1ySv0lVK5grIHlbVr5rIw\\\\\\\",\\\\\\\"offerVersionId\\\\\\\":\\\\\\\"offer_version_3A8ArXchREjBGt6uPyTc6nvsGyf\\\\\\\",\\\\\\\"customerUserId\\\\\\\":\\\\\\\"Y2e7fuVFiyTCrnBImAFXD1p4jGH06QmJ\\\\\\\",\\\\\\\"customerGroupAccountId\\\\\\\":null,\\\\\\\"status\\\\\\\":\\\\\\\"confirmed\\\\\\\",\\\\\\\"statusConfigValueId\\\\\\\":null,\\\\\\\"currency\\\\\\\":\\\\\\\"USD\\\\\\\",\\\\\\\"subtotalMinor\\\\\\\":15000,\\\\\\\"taxMinor\\\\\\\":0,\\\\\\\"feeMinor\\\\\\\":0,\\\\\\\"discountMinor\\\\\\\":0,\\\\\\\"totalMinor\\\\\\\":15000,\\\\\\\"requestedStartAt\\\\\\\":\\\\\\\"2026-02-25T20:13:46.429Z\\\\\\\",\\\\\\\"requestedEndAt\\\\\\\":\\\\\\\"2026-02-25T21:03:46.429Z\\\\\\\",\\\\\\\"confirmedStartAt\\\\\\\":\\\\\\\"2026-02-25T20:13:46.429Z\\\\\\\",\\\\\\\"confirmedEndAt\\\\\\\":\\\\\\\"2026-02-25T21:03:46.429Z\\\\\\\",\\\\\\\"pricingSnapshot\\\\\\\":{},\\\\\\\"policySnapshot\\\\\\\":{},\\\\\\\"metadata\\\\\\\":{},\\\\\\\"createdAt\\\\\\\":\\\\\\\"2026-02-24T20:13:46.441Z\\\\\\\",\\\\\\\"updatedAt\\\\\\\":\\\\\\\"2026-02-24T20:13:46.441Z\\\\\\\",\\\\\\\"deletedAt\\\\\\\":null,\\\\\\\"createdBy\\\\\\\":null,\\\\\\\"updatedBy\\\\\\\":null,\\\\\\\"deletedBy\\\\\\\":null}},\\\\\\\"apiCalls\\\\\\\":[{\\\\\\\"method\\\\\\\":\\\\\\\"POST\\\\\\\",\\\\\\\"path\\\\\\\":\\\\\\\"/api/v1/sagas/runs/saga_run_3A8Aq4CxMswnQ8gewCPKdx06MvV/traces\\\\\\\",\\\\\\\"status\\\\\\\":201,\\\\\\\"requestBody\\\\\\\":{\\\\\\\"_truncated\\\\\\\":true,\\\\\\\"_preview\\\\\\\":\\\\\\\"{\\\\\\\\\\\\\\\"stepKey\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"adversary-cross-biz-read\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"title\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Adversary attempts unauthorized cross-biz read API Trace\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"trace\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"stepKey\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"adversary-cross-biz-read\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"callCount\\\\\\\\\\\\\\\":12,\\\\\\\\\\\\\\\"calls\\\\\\\\\\\\\\\":[{\\\\\\\\\\\\\\\"method\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"POST\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"path\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"/api/v1/sagas/runs/saga_run_3A8AqCMn7n9Cxjp7zgfQHXbGwno/steps/customer-book-primary/result\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"status\\\\\\\\\\\\\\\":200,\\\\\\\\\\\\\\\"requestBody\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"status\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"in_progress\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"startedAt\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"2026-02-24T20:13:45.633Z\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"resultPayload\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"note\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Started customer-book-primary\\\\\\\\\\\\\\\"},\\\\\\\\\\\\\\\"assertionSummary\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"status\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"in_progress\\\\\\\\\\\\\\\"}},\\\\\\\\\\\\\\\"responseBody\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"success\\\\\\\\\\\\\\\":true,\\\\\\\\\\\\\\\"data\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"id\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"saga_run_step_3A8AqA0ZoD7Vbqun9JpBqW3lTo2\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"sagaRunId\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"saga_run_3A8AqCMn7n9Cxjp7zgfQHXbGwno\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"phaseKey\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"customer-lifecycle\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"phaseOrder\\\\\\\\\\\\\\\":5,\\\\\\\\\\\\\\\"phaseTitle\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Customer Lifecycle\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"stepKey\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"customer-book-primary\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"stepOrder\\\\\\\\\\\\\\\":12,\\\\\\\\\\\\\\\"actorKey\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"customer_1\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"instruction\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Create a booking order using the published offer version with realistic times and monetary totals.\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"expectedResult\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Booking order is created and linked to offer/offer version with coherent totals.\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"status\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"in_progress\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"attemptCount\\\\\\\\\\\\\\\":1,\\\\\\\\\\\\\\\"startedAt\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"2026-02-24T20:13:45.633Z\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"endedAt\\\\\\\\\\\\\\\":null,\\\\\\\\\\\\\\\"failureCode\\\\\\\\\\\\\\\":null,\\\\\\\\\\\\\\\"failureMessage\\\\\\\\\\\\\\\":null,\\\\\\\\\\\\\\\"resultPayload\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"note\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Started customer-book-primary\\\\\\\\\\\\\\\"},\\\\\\\\\\\\\\\"assertionSummary\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"status\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"in_progress\\\\\\\\\\\\\\\"},\\\\\\\\\\\\\\\"metadata\\\\\\\\\\\\\\\":{},\\\\\\\\\\\\\\\"createdAt\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"2026-02-24T20:13:31.781Z\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"updatedAt\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"2026-02-24T20:13:31.781Z\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"deletedAt\\\\\\\\\\\\\\\":null,\\\\\\\\\\\\\\\"createdBy\\\\\\\\\\\\\\\":null,\\\\\\\\\\\\\\\"updatedBy\\\\\\\\\\\\\\\":null,\\\\\\\\\\\\\\\"deletedBy\\\\\\\\\\\\\\\":null},\\\\\\\\\\\\\\\"meta\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"requestId\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"54b41ac1-98dc-4111-9d7a-b61a0c1d3153\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"timestamp\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"2026-02-24T20:13:45.676Z\\\\\\\\\\\\\\\"}},\\\\\\\\\\\\\\\"at\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"2026-02-24T20:13:45.685Z\\\\\\\\\\\\\\\"},{\\\\\\\\\\\\\\\"method\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"POST\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"path\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"/api/v1/sagas/runs/saga_run_3A8AqAWLrzneuJq6AmYyBt9GwRp/steps/customer-book-primary/result\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"status\\\\\\\\\\\\\\\":200,\\\\\\\\\\\\\\\"requestBody\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"status\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"in_progress\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"startedAt\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"2026-02-24T20:13:45.635Z\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"resultPayload\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"note\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Started customer-book-primary\\\\\\\\\\\\\\\"},\\\\\\\\\\\\\\\"assertionSummary\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"status\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"in_progress\\\\\\\\\\\\\\\"}},\\\\\\\\\\\\\\\"responseBody\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"success\\\\\\\\\\\\\\\":true,\\\\\\\\\\\\\\\"data\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"id\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"saga_run_step_3A8AqB7FR1tgHwuBkPDb1Sb8Ah6\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"sagaRunId\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"saga_run_3A8AqAWLrzneuJq6AmYyBt9GwRp\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"phaseKey\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"customer-lifecycle\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"phaseOrder\\\\\\\\\\\\\\\":5,\\\\\\\\\\\\\\\"phaseTitle\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Customer Lifecycle\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"stepKey\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"customer-book-primary\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"stepOrder\\\\\\\\\\\\\\\":12,\\\\\\\\\\\\\\\"actorKey\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"customer_1\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"instruction\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Create a booking order using the published offer version with realistic times and monetary totals.\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"expectedResult\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Booking order is created and linked to offer/offer version with coherent totals.\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"status\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"in_progress\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"attemptCount\\\\\\\\\\\\\\\":1,\\\\\\\\\\\\\\\"startedAt\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"2026-02-24T20:13:45.635Z\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"endedAt\\\\\\\\\\\\\\\":null,\\\\\\\\\\\\\\\"failureCode\\\\\\\\\\\\\\\":null,\\\\\\\\\\\\\\\"failureMessage\\\\\\\\\\\\\\\":null,\\\\\\\\\\\\\\\"resultPayload\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"note\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Started customer-book-primary\\\\\\\\\\\\\\\"},\\\\\\\\\\\\\\\"assertionSummary\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"status\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"in_prog",
+          "_size": 42328
+        },
+        "at": "2026-02-24T20:13:47.307Z"
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/bizes/3A8AqB3OemoYsAVrjNFBLOHfpiL/booking-orders?perPage=20",
+        "status": 200,
+        "responseBody": {
+          "success": true,
+          "data": [
+            {
+              "id": "booking_order_3A8AroBsfBumwjMbeQxbNc4XW3f",
+              "bizId": "3A8AqB3OemoYsAVrjNFBLOHfpiL",
+              "offerId": "offer_3A8AqgnDN8qllOjbRztUADmekZ2",
+              "offerVersionId": "offer_version_3A8Aqoxa2DZXSHJnJwbh7IndUzM",
+              "customerUserId": "jRqNnfj89mDkMhae4rmG5Y6uqqAVIfPA",
+              "customerGroupAccountId": null,
+              "status": "confirmed",
+              "statusConfigValueId": null,
+              "currency": "USD",
+              "subtotalMinor": 15000,
+              "taxMinor": 0,
+              "feeMinor": 0,
+              "discountMinor": 0,
+              "totalMinor": 15000,
+              "requestedStartAt": "2026-02-25T20:13:44.279Z",
+              "requestedEndAt": "2026-02-25T21:03:44.279Z",
+              "confirmedStartAt": "2026-02-25T20:13:44.279Z",
+              "confirmedEndAt": "2026-02-25T21:03:44.279Z",
+              "pricingSnapshot": {},
+              "policySnapshot": {},
+              "metadata": {},
+              "createdAt": "2026-02-24T20:13:44.293Z",
+              "updatedAt": "2026-02-24T20:13:44.293Z",
+              "deletedAt": null,
+              "createdBy": null,
+              "updatedBy": null,
+              "deletedBy": null
+            },
+            {
+              "id": "booking_order_3A8ArTMULFUiY6Ztyjilokgt1mn",
+              "bizId": "3A8AqB3OemoYsAVrjNFBLOHfpiL",
+              "offerId": "offer_3A8AqgnDN8qllOjbRztUADmekZ2",
+              "offerVersionId": "offer_version_3A8Aqoxa2DZXSHJnJwbh7IndUzM",
+              "customerUserId": "W2TtlMu8E6htOMWAk9hjEvGCwgN9nT5C",
+              "customerGroupAccountId": null,
+              "status": "confirmed",
+              "statusConfigValueId": null,
+              "currency": "USD",
+              "subtotalMinor": 15000,
+              "taxMinor": 0,
+              "feeMinor": 0,
+              "discountMinor": 0,
+              "totalMinor": 15000,
+              "requestedStartAt": "2026-02-25T20:13:42.395Z",
+              "requestedEndAt": "2026-02-25T21:03:42.395Z",
+              "confirmedStartAt": "2026-02-25T20:13:42.395Z",
+              "confirmedEndAt": "2026-02-25T21:03:42.395Z",
+              "pricingSnapshot": {},
+              "policySnapshot": {},
+              "metadata": {},
+              "createdAt": "2026-02-24T20:13:42.497Z",
+              "updatedAt": "2026-02-24T20:13:42.497Z",
+              "deletedAt": null,
+              "createdBy": null,
+              "updatedBy": null,
+              "deletedBy": null
+            }
+          ],
+          "meta": {
+            "requestId": "09301757-df5d-4adb-8593-423c8ddbc004",
+            "timestamp": "2026-02-24T20:13:47.302Z"
+          },
+          "pagination": {
+            "page": 1,
+            "perPage": 20,
+            "total": 2,
+            "hasMore": false
+          }
+        },
+        "at": "2026-02-24T20:13:47.309Z"
+      },
+      {
+        "method": "POST",
+        "path": "/api/v1/sagas/runs/saga_run_3A8Aq1H3NmozGtf8geevpXSxENB/steps/adversary-hold-abuse/result",
+        "status": 200,
+        "requestBody": {
+          "status": "in_progress",
+          "startedAt": "2026-02-24T20:13:47.261Z",
+          "resultPayload": {
+            "note": "Started adversary-hold-abuse"
+          },
+          "assertionSummary": {
+            "status": "in_progress"
+          }
+        },
+        "responseBody": {
+          "success": true,
+          "data": {
+            "id": "saga_run_step_3A8Aq2kiscVrikT49A6r3tx1oyk",
+            "sagaRunId": "saga_run_3A8Aq1H3NmozGtf8geevpXSxENB",
+            "phaseKey": "security-and-abuse",
+            "phaseOrder": 6,
+            "phaseTitle": "Security And Abuse Checks",
+            "stepKey": "adversary-hold-abuse",
+            "stepOrder": 15,
+            "actorKey": "adversary",
+            "instruction": "Trigger repeated booking/hold-like attempts to validate throttling, expiry, or non-blocking demand visibility behavior.",
+            "expectedResult": "Abusive attempts are rate-limited or isolated without blocking legitimate customer flow.",
+            "status": "in_progress",
+            "attemptCount": 1,
+            "startedAt": "2026-02-24T20:13:47.261Z",
+            "endedAt": null,
+            "failureCode": null,
+            "failureMessage": null,
+            "resultPayload": {
+              "note": "Started adversary-hold-abuse"
+            },
+            "assertionSummary": {
+              "status": "in_progress"
+            },
+            "metadata": {},
+            "createdAt": "2026-02-24T20:13:30.506Z",
+            "updatedAt": "2026-02-24T20:13:30.506Z",
+            "deletedAt": null,
+            "createdBy": null,
+            "updatedBy": null,
+            "deletedBy": null
+          },
+          "meta": {
+            "requestId": "258d8df3-0fc8-47c2-821b-f7955a4fa5ce",
+            "timestamp": "2026-02-24T20:13:47.305Z"
+          }
+        },
+        "at": "2026-02-24T20:13:47.310Z"
+      },
+      {
+        "method": "POST",
+        "path": "/api/v1/sagas/runs/saga_run_3A8ApzquD8KASkqbaTc7FfBSIrb/traces",
+        "status": 201,
+        "requestBody": {
+          "stepKey": "adversary-cross-biz-read",
+          "title": "Adversary attempts unauthorized cross-biz read API Trace",
+          "trace": {
+            "stepKey": "adversary-cross-biz-read",
+            "callCount": 5,
+            "calls": [
+              {
+                "method": "POST",
+                "path": "/api/v1/sagas/runs/saga_run_3A8Aq4CxMswnQ8gewCPKdx06MvV/steps/adversary-hold-abuse/result",
+                "status": 200,
+                "requestBody": {
+                  "status": "in_progress",
+                  "startedAt": "2026-02-24T20:13:46.947Z",
+                  "resultPayload": {
+                    "note": "Started adversary-hold-abuse"
+                  },
+                  "assertionSummary": {
+                    "status": "in_progress"
+                  }
+                },
+                "responseBody": {
+                  "success": true,
+                  "data": {
+                    "id": "saga_run_step_3A8Aq1JOn3XTT9AIWts5zYfhcL6",
+                    "sagaRunId": "saga_run_3A8Aq4CxMswnQ8gewCPKdx06MvV",
+                    "phaseKey": "security-and-abuse",
+                    "phaseOrder": 6,
+                    "phaseTitle": "Security And Abuse Checks",
+                    "stepKey": "adversary-hold-abuse",
+                    "stepOrder": 16,
+                    "actorKey": "adversary",
+                    "instruction": "Trigger repeated booking/hold-like attempts to validate throttling, expiry, or non-blocking demand visibility behavior.",
+                    "expectedResult": "Abusive attempts are rate-limited or isolated without blocking legitimate customer flow.",
+                    "status": "in_progress",
+                    "attemptCount": 1,
+                    "startedAt": "2026-02-24T20:13:46.947Z",
+                    "endedAt": null,
+                    "failureCode": null,
+                    "failureMessage": null,
+                    "resultPayload": {
+                      "note": "Started adversary-hold-abuse"
+                    },
+                    "assertionSummary": {
+                      "status": "in_progress"
+                    },
+                    "metadata": {},
+                    "createdAt": "2026-02-24T20:13:30.048Z",
+                    "updatedAt": "2026-02-24T20:13:30.048Z",
+                    "deletedAt": null,
+                    "createdBy": null,
+                    "updatedBy": null,
+                    "deletedBy": null
+                  },
+                  "meta": {
+                    "requestId": "f84e6b20-f014-4bcb-8dd4-cf67cf54dad9",
+                    "timestamp": "2026-02-24T20:13:46.974Z"
+                  }
+                },
+                "at": "2026-02-24T20:13:46.997Z"
+              },
+              {
+                "method": "GET",
+                "path": "/api/auth/get-session",
+                "status": 200,
+                "responseBody": {
+                  "session": {
+                    "expiresAt": "2026-03-03T20:13:46.949Z",
+                    "token": "UHzl9nqWBGszk8JmSy9sPzbWIhDQIz5E",
+                    "createdAt": "2026-02-24T20:13:46.949Z",
+                    "updatedAt": "2026-02-24T20:13:46.949Z",
+                    "ipAddress": "",
+                    "userAgent": "node",
+                    "userId": "MD5sAT8GV9cS4QlpO0WTu80hAhWRfZ3k",
+                    "activeOrganizationId": null,
+                    "impersonatedBy": null,
+                    "id": "XOffMGREfTYZotQCsldkIfp7AedOC1FY"
+                  },
+                  "user": {
+                    "name": "customer2-uc-12-the-solo-entrepreneur-sarah",
+                    "email": "customer2-uc-12-the-solo-entrepreneur-sarah-1771964026828-vo0gtq@example.com",
+                    "emailVerified": false,
+                    "image": null,
+                    "createdAt": "2026-02-24T20:13:46.940Z",
+                    "updatedAt": "2026-02-24T20:13:46.940Z",
+                    "role": "user",
+                    "banned": false,
+                    "banReason": null,
+                    "banExpires": null,
+                    "id": "MD5sAT8GV9cS4QlpO0WTu80hAhWRfZ3k"
+                  }
+                },
+                "at": "2026-02-24T20:13:47.204Z"
+              },
+              {
+                "method": "POST",
+                "path": "/api/v1/bizes/3A8AqHsvEBsVrcfowy5MNqckCv0/booking-orders",
+                "status": 403,
+                "requestBody": {
+                  "offerId": "offer_3A8Ar39xCPm4IjImmHPbUf0mE7i",
+                  "offerVersionId": "offer_version_3A8Ar56mUP7OCpe0bhkdO1GQVHi",
+                  "status": "draft",
+                  "subtotalMinor": 1000,
+                  "taxMinor": 0,
+                  "feeMinor": 0,
+                  "discountMinor": 0,
+                  "totalMinor": 1000,
+                  "currency": "USD"
+                },
+                "responseBody": {
+                  "success": false,
+                  "error": {
+                    "code": "FORBIDDEN",
+                    "message": "You are not a member of this biz."
+                  },
+                  "meta": {
+                    "requestId": "8eccf59e-9329-4da1-a9e5-dc326606bd9f",
+                    "timestamp": "2026-02-24T20:13:47.206Z"
+                  }
+                },
+                "at": "2026-02-24T20:13:47.207Z"
+              },
+              {
+                "method": "GET",
+                "path": "/api/v1/bizes/3A8AqJVEIvIU18Vu8C6vEL1eYYe/payment-intents?bookingOrderId=booking_order_3A8Arqlgi4qyosTvYqvMMoBr6Ph",
+                "status": 200,
+                "responseBody": {
+                  "success": true,
+                  "data": [
+                    {
+                      "id": "payment_intent_3A8As0n1WTqhaDevcCRNmxkrS5k",
+                      "bizId": "3A8AqJVEIvIU18Vu8C6vEL1eYYe",
+                      "bookingOrderId": "booking_order_3A8Arqlgi4qyosTvYqvMMoBr6Ph",
+                      "crossBizOrderId": null,
+                      "paymentProcessorAccountId": "pay_proc_account_3A8AryErqnjvzUwxaxO4MHE7MTv",
+                      "status": "succeeded",
+                      "currency": "USD",
+                      "amountTargetMinor": 15500,
+                      "amountCapturedMinor": 15500,
+                      "amountRefundedMinor": 0,
+                      "requiresCapture": false,
+                      "providerIntentRef": null,
+                      "source": "public_checkout",
+                      "authorizedAt": null,
+                      "capturedAt": "2026-02-24T20:13:46.806Z",
+                      "failedAt": null,
+                      "amountSnapshot": {
+                        "tipMinor": 500,
+                        "bookingTotalMinor": 15000,
+                        "expectedTotalMinor": 15500
+                      },
+                      "metadata": {
+                        "source": "rerun-sagas"
+                      },
+                      "createdAt": "2026-02-24T20:13:46.807Z",
+                      "updatedAt": "2026-02-24T20:13:46.807Z",
+                      "deletedAt": null,
+                      "createdBy": null,
+                      "updatedBy": null,
+                      "deletedBy": null
+                    }
+                  ],
+                  "meta": {
+                    "requestId": "d67e847f-c69f-465e-af4d-786e4c362220",
+                    "timestamp": "2026-02-24T20:13:47.214Z"
+                  },
+                  "pagination": {
+                    "page": 1,
+                    "perPage": 20,
+                    "total": 1,
+                    "hasMore": false
+                  }
+                },
+                "at": "2026-02-24T20:13:47.215Z"
+              },
+              {
+                "method": "POST",
+                "path": "/api/v1/bizes/3A8AqHsvEBsVrcfowy5MNqckCv0/booking-orders",
+                "status": 403,
+                "requestBody": {
+                  "offerId": "offer_3A8Ar39xCPm4IjImmHPbUf0mE7i",
+                  "offerVersionId": "offer_version_3A8Ar56mUP7OCpe0bhkdO1GQVHi",
+                  "status": "draft",
+                  "subtotalMinor": 1000,
+                  "taxMinor": 0,
+                  "feeMinor": 0,
+                  "discountMinor": 0,
+                  "totalMinor": 1000,
+                  "currency": "USD"
+                },
+                "responseBody": {
+                  "success": false,
+                  "error": {
+                    "code": "FORBIDDEN",
+                    "message": "You are not a member of this biz."
+                  },
+                  "meta": {
+                    "requestId": "5e02feae-dd9a-467c-9c38-2d1965ef13b3",
+                    "timestamp": "2026-02-24T20:13:47.216Z"
+                  }
+                },
+                "at": "2026-02-24T20:13:47.218Z"
+              }
+            ]
+          },
+          "metadata": {
+            "source": "rerun-sagas.ts"
+          }
+        },
+        "responseBody": {
+          "success": true,
+          "data": {
+            "id": "saga_artifact_3A8As9z0Yn8WzBk3uaBbh1bMJqI",
+            "sagaRunId": "saga_run_3A8ApzquD8KASkqbaTc7FfBSIrb",
+            "sagaRunStepId": "saga_run_step_3A8Aq3DuBLiJnam2k6Yah7fesxK",
+            "artifactType": "api_trace",
+            "title": "Adversary attempts unauthorized cross-biz read API Trace",
+            "storagePath": "testing/sagas/runs/saga_run_3A8ApzquD8KASkqbaTc7FfBSIrb/artifacts/1771964027256-Adversary_attempts_unauthorized_cross-biz_read_API_Trace.json",
+            "contentType": "application/json",
+            "bodyText": "{\n  \"stepKey\": \"adversary-cross-biz-read\",\n  \"callCount\": 5,\n  \"calls\": [\n    {\n      \"method\": \"POST\",\n      \"path\": \"/api/v1/sagas/runs/saga_run_3A8Aq4CxMswnQ8gewCPKdx06MvV/steps/adversary-hold-abuse/result\",\n      \"status\": 200,\n      \"requestBody\": {\n        \"status\": \"in_progress\",\n        \"startedAt\": \"2026-02-24T20:13:46.947Z\",\n        \"resultPayload\": {\n          \"note\": \"Started adversary-hold-abuse\"\n        },\n        \"assertionSummary\": {\n          \"status\": \"in_progress\"\n        }\n      },\n      \"responseBody\": {\n        \"success\": true,\n        \"data\": {\n          \"id\": \"saga_run_step_3A8Aq1JOn3XTT9AIWts5zYfhcL6\",\n          \"sagaRunId\": \"saga_run_3A8Aq4CxMswnQ8gewCPKdx06MvV\",\n          \"phaseKey\": \"security-and-abuse\",\n          \"phaseOrder\": 6,\n          \"phaseTitle\": \"Security And Abuse Checks\",\n          \"stepKey\": \"adversary-hold-abuse\",\n          \"stepOrder\": 16,\n          \"actorKey\": \"adversary\",\n          \"instruction\": \"Trigger repeated booking/hold-like attempts to validate throttling, expiry, or non-blocking demand visibility behavior.\",\n          \"expectedResult\": \"Abusive attempts are rate-limited or isolated without blocking legitimate customer flow.\",\n          \"status\": \"in_progress\",\n          \"attemptCount\": 1,\n          \"startedAt\": \"2026-02-24T20:13:46.947Z\",\n          \"endedAt\": null,\n          \"failureCode\": null,\n          \"failureMessage\": null,\n          \"resultPayload\": {\n            \"note\": \"Started adversary-hold-abuse\"\n          },\n          \"assertionSummary\": {\n            \"status\": \"in_progress\"\n          },\n          \"metadata\": {},\n          \"createdAt\": \"2026-02-24T20:13:30.048Z\",\n          \"updatedAt\": \"2026-02-24T20:13:30.048Z\",\n          \"deletedAt\": null,\n          \"createdBy\": null,\n          \"updatedBy\": null,\n          \"deletedBy\": null\n        },\n        \"meta\": {\n          \"requestId\": \"f84e6b20-f014-4bcb-8dd4-cf67cf54dad9\",\n          \"timestamp\": \"2026-02-24T20:13:46.974Z\"\n        }\n      },\n      \"at\": \"2026-02-24T20:13:46.997Z\"\n    },\n    {\n      \"method\": \"GET\",\n      \"path\": \"/api/auth/get-session\",\n      \"status\": 200,\n      \"responseBody\": {\n        \"session\": {\n          \"expiresAt\": \"2026-03-03T20:13:46.949Z\",\n          \"token\": \"UHzl9nqWBGszk8JmSy9sPzbWIhDQIz5E\",\n          \"createdAt\": \"2026-02-24T20:13:46.949Z\",\n          \"updatedAt\": \"2026-02-24T20:13:46.949Z\",\n          \"ipAddress\": \"\",\n          \"userAgent\": \"node\",\n          \"userId\": \"MD5sAT8GV9cS4QlpO0WTu80hAhWRfZ3k\",\n          \"activeOrganizationId\": null,\n          \"impersonatedBy\": null,\n          \"id\": \"XOffMGREfTYZotQCsldkIfp7AedOC1FY\"\n        },\n        \"user\": {\n          \"name\": \"customer2-uc-12-the-solo-entrepreneur-sarah\",\n          \"email\": \"customer2-uc-12-the-solo-entrepreneur-sarah-1771964026828-vo0gtq@example.com\",\n          \"emailVerified\": false,\n          \"image\": null,\n          \"createdAt\": \"2026-02-24T20:13:46.940Z\",\n          \"updatedAt\": \"2026-02-24T20:13:46.940Z\",\n          \"role\": \"user\",\n          \"banned\": false,\n          \"banReason\": null,\n          \"banExpires\": null,\n          \"id\": \"MD5sAT8GV9cS4QlpO0WTu80hAhWRfZ3k\"\n        }\n      },\n      \"at\": \"2026-02-24T20:13:47.204Z\"\n    },\n    {\n      \"method\": \"POST\",\n      \"path\": \"/api/v1/bizes/3A8AqHsvEBsVrcfowy5MNqckCv0/booking-orders\",\n      \"status\": 403,\n      \"requestBody\": {\n        \"offerId\": \"offer_3A8Ar39xCPm4IjImmHPbUf0mE7i\",\n        \"offerVersionId\": \"offer_version_3A8Ar56mUP7OCpe0bhkdO1GQVHi\",\n        \"status\": \"draft\",\n        \"subtotalMinor\": 1000,\n        \"taxMinor\": 0,\n        \"feeMinor\": 0,\n        \"discountMinor\": 0,\n        \"totalMinor\": 1000,\n        \"currency\": \"USD\"\n      },\n      \"responseBody\": {\n        \"success\": false,\n        \"error\": {\n          \"code\": \"FORBIDDEN\",\n          \"message\": \"You are not a member of this biz.\"\n        },\n        \"meta\": {\n          \"requestId\": \"8eccf59e-9329-4da1-a9e5-dc326606bd9f\",\n          \"timestamp\": \"2026-02-24T20:13:47.206Z\"\n        }\n      },\n      \"at\": \"2026-02-24T20:13:47.207Z\"\n    },\n    {\n      \"method\": \"GET\",\n      \"path\": \"/api/v1/bizes/3A8AqJVEIvIU18Vu8C6vEL1eYYe/payment-intents?bookingOrderId=booking_order_3A8Arqlgi4qyosTvYqvMMoBr6Ph\",\n      \"status\": 200,\n      \"responseBody\": {\n        \"success\": true,\n        \"data\": [\n          {\n            \"id\": \"payment_intent_3A8As0n1WTqhaDevcCRNmxkrS5k\",\n            \"bizId\": \"3A8AqJVEIvIU18Vu8C6vEL1eYYe\",\n            \"bookingOrderId\": \"booking_order_3A8Arqlgi4qyosTvYqvMMoBr6Ph\",\n            \"crossBizOrderId\": null,\n            \"paymentProcessorAccountId\": \"pay_proc_account_3A8AryErqnjvzUwxaxO4MHE7MTv\",\n            \"status\": \"succeeded\",\n            \"currency\": \"USD\",\n            \"amountTargetMinor\": 15500,\n            \"amountCapturedMinor\": 15500,\n            \"amountRefundedMinor\": 0,\n            \"requiresCapture\": false,\n            \"providerIntentRef\": null,\n            \"source\": \"public_checkout\",\n            \"authorizedAt\": null,\n            \"capturedAt\": \"2026-02-24T20:13:46.806Z\",\n            \"failedAt\": null,\n            \"amountSnapshot\": {\n              \"tipMinor\": 500,\n              \"bookingTotalMinor\": 15000,\n              \"expectedTotalMinor\": 15500\n            },\n            \"metadata\": {\n              \"source\": \"rerun-sagas\"\n            },\n            \"createdAt\": \"2026-02-24T20:13:46.807Z\",\n            \"updatedAt\": \"2026-02-24T20:13:46.807Z\",\n            \"deletedAt\": null,\n            \"createdBy\": null,\n            \"updatedBy\": null,\n            \"deletedBy\": null\n          }\n        ],\n        \"meta\": {\n          \"requestId\": \"d67e847f-c69f-465e-af4d-786e4c362220\",\n          \"timestamp\": \"2026-02-24T20:13:47.214Z\"\n        },\n        \"pagination\": {\n          \"page\": 1,\n          \"perPage\": 20,\n          \"total\": 1,\n          \"hasMore\": false\n        }\n      },\n      \"at\": \"2026-02-24T20:13:47.215Z\"\n    },\n    {\n      \"method\": \"POST\",\n      \"path\": \"/api/v1/bizes/3A8AqHsvEBsVrcfowy5MNqckCv0/booking-orders\",\n      \"status\": 403,\n      \"requestBody\": {\n        \"offerId\": \"offer_3A8Ar39xCPm4IjImmHPbUf0mE7i\",\n        \"offerVersionId\": \"offer_version_3A8Ar56mUP7OCpe0bhkdO1GQVHi\",\n        \"status\": \"draft\",\n        \"subtotalMinor\": 1000,\n        \"taxMinor\": 0,\n        \"feeMinor\": 0,\n        \"discountMinor\": 0,\n        \"totalMinor\": 1000,\n        \"currency\": \"USD\"\n      },\n      \"responseBody\": {\n        \"success\": false,\n        \"error\": {\n          \"code\": \"FORBIDDEN\",\n          \"message\": \"You are not a member of this biz.\"\n        },\n        \"meta\": {\n          \"requestId\": \"5e02feae-dd9a-467c-9c38-2d1965ef13b3\",\n          \"timestamp\": \"2026-02-24T20:13:47.216Z\"\n        }\n      },\n      \"at\": \"2026-02-24T20:13:47.218Z\"\n    }\n  ]\n}\n",
+            "byteSize": 6683,
+            "checksum": "fc2fff5af102033f5cde39c08960f8ed68b880aa560ef5cd28f03b76fc58d7f8",
+            "capturedAt": "2026-02-24T20:13:47.267Z",
+            "metadata": {
+              "source": "rerun-sagas.ts"
+            },
+            "createdAt": "2026-02-24T20:13:47.267Z",
+            "updatedAt": "2026-02-24T20:13:47.267Z",
+            "deletedAt": null,
+            "createdBy": null,
+            "updatedBy": null,
+            "deletedBy": null
+          },
+          "meta": {
+            "requestId": "c3ce4729-cb70-4581-b382-a48c2732175e",
+            "timestamp": "2026-02-24T20:13:47.307Z"
+          }
+        },
+        "at": "2026-02-24T20:13:47.311Z"
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/bizes/3A8AqEcbxXMIGseoTSCgWlpPDpf/payment-intents/payment_intent_3A8As6l3Jy0d1PcuJ659SzShFkD",
+        "status": 200,
+        "responseBody": {
+          "success": true,
+          "data": {
+            "intent": {
+              "id": "payment_intent_3A8As6l3Jy0d1PcuJ659SzShFkD",
+              "bizId": "3A8AqEcbxXMIGseoTSCgWlpPDpf",
+              "bookingOrderId": "booking_order_3A8ArwTmGpPyH0fWNncghexBjzE",
+              "crossBizOrderId": null,
+              "paymentProcessorAccountId": "pay_proc_account_3A8As8LMNww4ZDuAZl8dvdiUkTj",
+              "status": "succeeded",
+              "currency": "USD",
+              "amountTargetMinor": 15500,
+              "amountCapturedMinor": 15500,
+              "amountRefundedMinor": 0,
+              "requiresCapture": false,
+              "providerIntentRef": null,
+              "source": "public_checkout",
+              "authorizedAt": null,
+              "capturedAt": "2026-02-24T20:13:47.223Z",
+              "failedAt": null,
+              "amountSnapshot": {
+                "tipMinor": 500,
+                "bookingTotalMinor": 15000,
+                "expectedTotalMinor": 15500
+              },
+              "metadata": {
+                "source": "rerun-sagas"
+              },
+              "createdAt": "2026-02-24T20:13:47.223Z",
+              "updatedAt": "2026-02-24T20:13:47.223Z",
+              "deletedAt": null,
+              "createdBy": null,
+              "updatedBy": null,
+              "deletedBy": null
+            },
+            "tenders": [
+              {
+                "id": "intent_tender_3A8AsAqJznKODXNpdKoav28Rgvy",
+                "bizId": "3A8AqEcbxXMIGseoTSCgWlpPDpf",
+                "paymentIntentId": "payment_intent_3A8As6l3Jy0d1PcuJ659SzShFkD",
+                "paymentMethodId": "payment_method_3A8AsCFqiCJ5okL2rE5Msl2Gv1U",
+                "giftInstrumentId": null,
+                "methodType": "card",
+                "allocatedMinor": 10000,
+                "capturedMinor": 10000,
+                "refundedMinor": 0,
+                "sortOrder": 1,
+                "externalTenderRef": null,
+                "metadata": {},
+                "createdAt": "2026-02-24T20:13:47.230Z",
+                "updatedAt": "2026-02-24T20:13:47.230Z",
+                "deletedAt": null,
+                "createdBy": null,
+                "updatedBy": null,
+                "deletedBy": null
+              },
+              {
+                "id": "intent_tender_3A8AsCb3LxErOk6CoGPqEbMLo8l",
+                "bizId": "3A8AqEcbxXMIGseoTSCgWlpPDpf",
+                "paymentIntentId": "payment_intent_3A8As6l3Jy0d1PcuJ659SzShFkD",
+                "paymentMethodId": "payment_method_3A8AsCxh3axtHx4GDKbWL2qc2MA",
+                "giftInstrumentId": null,
+                "methodType": "cash",
+                "allocatedMinor": 5500,
+                "capturedMinor": 5500,
+                "refundedMinor": 0,
+                "sortOrder": 2,
+                "externalTenderRef": null,
+                "metadata": {},
+                "createdAt": "2026-02-24T20:13:47.235Z",
+                "updatedAt": "2026-02-24T20:13:47.235Z",
+                "deletedAt": null,
+                "createdBy": null,
+                "updatedBy": null,
+                "deletedBy": null
+              }
+            ],
+            "lineAllocations": [
+              {
+                "id": "intent_line_alloc_3A8AsCWaJGDmzttBBTp0RLhuDEU",
+                "bizId": "3A8AqEcbxXMIGseoTSCgWlpPDpf",
+                "paymentIntentId": "payment_intent_3A8As6l3Jy0d1PcuJ659SzShFkD",
+                "paymentIntentTenderId": "intent_tender_3A8AsAqJznKODXNpdKoav28Rgvy",
+                "bookingOrderId": "booking_order_3A8ArwTmGpPyH0fWNncghexBjzE",
+                "bookingOrderLineId": "booking_line_3A8As7pCb2YXDMuyFO2xCmYmceq",
+                "allocatedMinor": 10000,
+                "capturedMinor": 10000,
+                "refundedMinor": 0,
+                "sortOrder": 1,
+                "metadata": {},
+                "createdAt": "2026-02-24T20:13:47.237Z",
+                "updatedAt": "2026-02-24T20:13:47.237Z",
+                "deletedAt": null,
+                "createdBy": null,
+                "updatedBy": null,
+                "deletedBy": null
+              },
+              {
+                "id": "intent_line_alloc_3A8As6tt2urAZZCJ3jzh5Un9lyD",
+                "bizId": "3A8AqEcbxXMIGseoTSCgWlpPDpf",
+                "paymentIntentId": "payment_intent_3A8As6l3Jy0d1PcuJ659SzShFkD",
+                "paymentIntentTenderId": "intent_tender_3A8AsCb3LxErOk6CoGPqEbMLo8l",
+                "bookingOrderId": "booking_order_3A8ArwTmGpPyH0fWNncghexBjzE",
+                "bookingOrderLineId": "booking_line_3A8As7pCb2YXDMuyFO2xCmYmceq",
+                "allocatedMinor": 5000,
+                "capturedMinor": 5000,
+                "refundedMinor": 0,
+                "sortOrder": 2,
+                "metadata": {},
+                "createdAt": "2026-02-24T20:13:47.237Z",
+                "updatedAt": "2026-02-24T20:13:47.237Z",
+                "deletedAt": null,
+                "createdBy": null,
+                "updatedBy": null,
+                "deletedBy": null
+              },
+              {
+                "id": "intent_line_alloc_3A8AsCQBBSniKXPgWv6I2wjOhP4",
+                "bizId": "3A8AqEcbxXMIGseoTSCgWlpPDpf",
+                "paymentIntentId": "payment_intent_3A8As6l3Jy0d1PcuJ659SzShFkD",
+                "paymentIntentTenderId": "intent_tender_3A8AsCb3LxErOk6CoGPqEbMLo8l",
+                "bookingOrderId": "booking_order_3A8ArwTmGpPyH0fWNncghexBjzE",
+                "bookingOrderLineId": "booking_line_3A8As6MZHpkdw8lMTD4cPn3v0lC",
+                "allocatedMinor": 500,
+                "capturedMinor": 500,
+                "refundedMinor": 0,
+                "sortOrder": 3,
+                "metadata": {},
+                "createdAt": "2026-02-24T20:13:47.237Z",
+                "updatedAt": "2026-02-24T20:13:47.237Z",
+                "deletedAt": null,
+                "createdBy": null,
+                "updatedBy": null,
+                "deletedBy": null
+              }
+            ],
+            "transactions": [
+              {
+                "id": "payment_txn_3A8AsCWkmEsXH9fMF0gJ8IsDXIb",
+                "bizId": "3A8AqEcbxXMIGseoTSCgWlpPDpf",
+                "paymentIntentId": "payment_intent_3A8As6l3Jy0d1PcuJ659SzShFkD",
+                "bookingOrderId": "booking_order_3A8ArwTmGpPyH0fWNncghexBjzE",
+                "crossBizOrderId": null,
+                "paymentIntentTenderId": "intent_tender_3A8AsAqJznKODXNpdKoav28Rgvy",
+                "paymentMethodId": "payment_method_3A8AsCFqiCJ5okL2rE5Msl2Gv1U",
+                "paymentProcessorAccountId": "pay_proc_account_3A8As8LMNww4ZDuAZl8dvdiUkTj",
+                "giftInstrumentId": null,
+                "type": "charge",
+                "status": "succeeded",
+                "amountMinor": 10000,
+                "currency": "USD",
+                "providerTransactionRef": null,
+                "idempotencyKey": null,
+                "occurredAt": "2026-02-24T20:13:47.240Z",
+                "failureReason": null,
+                "providerPayload": {
+                  "source": "simulated_advanced_checkout"
+                },
+                "metadata": {
+                  "tenderIndex": 0
+                },
+                "createdAt": "2026-02-24T20:13:47.240Z",
+                "updatedAt": "2026-02-24T20:13:47.240Z",
+                "deletedAt": null,
+                "createdBy": null,
+                "updatedBy": null,
+                "deletedBy": null
+              },
+              {
+                "id": "payment_txn_3A8AsCJKlZXxHUwcvSldRDgIdOk",
+                "bizId": "3A8AqEcbxXMIGseoTSCgWlpPDpf",
+                "paymentIntentId": "payment_intent_3A8As6l3Jy0d1PcuJ659SzShFkD",
+                "bookingOrderId": "booking_order_3A8ArwTmGpPyH0fWNncghexBjzE",
+                "crossBizOrderId": null,
+                "paymentIntentTenderId": "intent_tender_3A8AsCb3LxErOk6CoGPqEbMLo8l",
+                "paymentMethodId": "payment_method_3A8AsCxh3axtHx4GDKbWL2qc2MA",
+                "paymentProcessorAccountId": "pay_proc_account_3A8As8LMNww4ZDuAZl8dvdiUkTj",
+                "giftInstrumentId": null,
+                "type": "charge",
+                "status": "succeeded",
+                "amountMinor": 5500,
+                "currency": "USD",
+                "providerTransactionRef": null,
+                "idempotencyKey": null,
+                "occurredAt": "2026-02-24T20:13:47.240Z",
+                "failureReason": null,
+                "providerPayload": {
+                  "source": "simulated_advanced_checkout"
+                },
+                "metadata": {
+                  "tenderIndex": 1
+                },
+                "createdAt": "2026-02-24T20:13:47.240Z",
+                "updatedAt": "2026-02-24T20:13:47.240Z",
+                "deletedAt": null,
+                "createdBy": null,
+                "updatedBy": null,
+                "deletedBy": null
+              }
+            ],
+            "transactionLineAllocations": [
+              {
+                "id": "txn_line_alloc_3A8As5zK1H09ksXunRfJMI52wbq",
+                "bizId": "3A8AqEcbxXMIGseoTSCgWlpPDpf",
+                "paymentTransactionId": "payment_txn_3A8AsCJKlZXxHUwcvSldRDgIdOk",
+                "paymentIntentId": "payment_intent_3A8As6l3Jy0d1PcuJ659SzShFkD",
+                "paymentIntentTenderId": "intent_tender_3A8AsCb3LxErOk6CoGPqEbMLo8l",
+                "bookingOrderId": "booking_order_3A8ArwTmGpPyH0fWNncghexBjzE",
+                "bookingOrderLineId": "booking_line_3A8As6MZHpkdw8lMTD4cPn3v0lC",
+                "paymentIntentLineAllocationId": "intent_line_alloc_3A8AsCQBBSniKXPgWv6I2wjOhP4",
+                "amountMinor": 500,
+                "occurredAt": "2026-02-24T20:13:47.242Z",
+                "idempotencyKey": null,
+                "metadata": {},
+                "createdAt": "2026-02-24T20:13:47.242Z",
+                "updatedAt": "2026-02-24T20:13:47.242Z",
+                "deletedAt": null,
+                "createdBy": null,
+                "updatedBy": null,
+                "deletedBy": null
+              },
+              {
+                "id": "txn_line_alloc_3A8AsChZ2AqyC4YTm6vB3nUqhg3",
+                "bizId": "3A8AqEcbxXMIGseoTSCgWlpPDpf",
+                "paymentTransactionId": "payment_txn_3A8AsCWkmEsXH9fMF0gJ8IsDXIb",
+                "paymentIntentId": "payment_intent_3A8As6l3Jy0d1PcuJ659SzShFkD",
+                "paymentIntentTenderId": "intent_tender_3A8AsAqJznKODXNpdKoav28Rgvy",
+                "bookingOrderId": "booking_order_3A8ArwTmGpPyH0fWNncghexBjzE",
+                "bookingOrderLineId": "booking_line_3A8As7pCb2YXDMuyFO2xCmYmceq",
+                "paymentIntentLineAllocationId": "intent_line_alloc_3A8AsCWaJGDmzttBBTp0RLhuDEU",
+                "amountMinor": 10000,
+                "occurredAt": "2026-02-24T20:13:47.242Z",
+                "idempotencyKey": null,
+                "metadata": {},
+                "createdAt": "2026-02-24T20:13:47.242Z",
+                "updatedAt": "2026-02-24T20:13:47.242Z",
+                "deletedAt": null,
+                "createdBy": null,
+                "updatedBy": null,
+                "deletedBy": null
+              },
+              {
+                "id": "txn_line_alloc_3A8As6BOJrQLmsbtnxfPeZ9R5MB",
+                "bizId": "3A8AqEcbxXMIGseoTSCgWlpPDpf",
+                "paymentTransactionId": "payment_txn_3A8AsCJKlZXxHUwcvSldRDgIdOk",
+                "paymentIntentId": "payment_intent_3A8As6l3Jy0d1PcuJ659SzShFkD",
+                "paymentIntentTenderId": "intent_tender_3A8AsCb3LxErOk6CoGPqEbMLo8l",
+                "bookingOrderId": "booking_order_3A8ArwTmGpPyH0fWNncghexBjzE",
+                "bookingOrderLineId": "booking_line_3A8As7pCb2YXDMuyFO2xCmYmceq",
+                "paymentIntentLineAllocationId": "intent_line_alloc_3A8As6tt2urAZZCJ3jzh5Un9lyD",
+                "amountMinor": 5000,
+                "occurredAt": "2026-02-24T20:13:47.242Z",
+                "idempotencyKey": null,
+                "metadata": {},
+                "createdAt": "2026-02-24T20:13:47.242Z",
+                "updatedAt": "2026-02-24T20:13:47.242Z",
+                "deletedAt": null,
+                "createdBy": null,
+                "updatedBy": null,
+                "deletedBy": null
+              }
+            ]
+          },
+          "meta": {
+            "requestId": "d20145ed-20d1-41b6-8170-32c9605491c8",
+            "timestamp": "2026-02-24T20:13:47.310Z"
+          }
+        },
+        "at": "2026-02-24T20:13:47.313Z"
+      }
+    ]
+  },
+  "metadata": {}
+}

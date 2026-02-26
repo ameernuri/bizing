@@ -1,0 +1,524 @@
+{
+  "stepKey": "owner-create-biz",
+  "callCount": 3,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs",
+      "status": 201,
+      "requestBody": {
+        "sagaKey": "uc-133-the-solo-entrepreneur-sarah",
+        "mode": "dry_run",
+        "runnerLabel": "codex-rerun-all",
+        "runContext": {
+          "createdBy": "apps/api/src/scripts/rerun-sagas.ts"
+        }
+      },
+      "responseBody": {
+        "_truncated": true,
+        "_preview": "{\"success\":true,\"data\":{\"run\":{\"id\":\"saga_run_3A8CLwMRJybOwo9sKVnPBfNuHKW\",\"sagaDefinitionId\":\"saga_definition_3A7asNxSTZC5EYsUZGPUCAUKeyx\",\"sagaKey\":\"uc-133-the-solo-entrepreneur-sarah\",\"bizId\":null,\"status\":\"pending\",\"mode\":\"dry_run\",\"requestedByUserId\":\"vJUXCpuOSnzw3Ip5DMcOKoeo7d2V6Hwc\",\"runnerLabel\":\"codex-rerun-all\",\"definitionChecksum\":\"7ea85dee3105743c9b6b3a5a0edc51bd69b29e45e362da0ae362effe38023f1e\",\"startedAt\":null,\"endedAt\":null,\"lastHeartbeatAt\":null,\"totalSteps\":22,\"passedSteps\":0,\"failedSteps\":0,\"skippedSteps\":0,\"runContext\":{\"createdBy\":\"apps/api/src/scripts/rerun-sagas.ts\"},\"runSummary\":{},\"metadata\":{\"tags\":[\"uc-derived\",\"persona-derived\",\"lifecycle\",\"api-first\",\"agents\"],\"title\":\"UC-133 • The Post-Appointment Survey • The Solo Entrepreneur (Sarah)\"},\"createdAt\":\"2026-02-24T20:25:57.625Z\",\"updatedAt\":\"2026-02-24T20:25:57.625Z\",\"deletedAt\":null,\"createdBy\":null,\"updatedBy\":null,\"deletedBy\":null},\"definition\":{\"id\":\"saga_definition_3A7asNxSTZC5EYsUZGPUCAUKeyx\",\"bizId\":null,\"sagaKey\":\"uc-133-the-solo-entrepreneur-sarah\",\"title\":\"UC-133 • The Post-Appointment Survey • The Solo Entrepreneur (Sarah)\",\"description\":\"Comprehensive lifecycle saga derived from UC-133 and persona P-1. Needs summary: Multiple question types (NPS, rating, multiple choice, open text); Timing options (immediate, 1 hour, 24 hours, custom); Conditional questions based on responses; Anonymous vs attributed options; Photo/video upload for testimonials; Incentive integration (complete survey for discount); Response routing (negative feedback to manager); Aggregate reporting and trends; Individual response review; Public review request after positive survey\",\"status\":\"active\",\"sourceUseCaseRef\":\"UC-133\",\"sourcePersonaRef\":\"P-1\",\"sourceUseCaseFile\":\"/Users/ameer/bizing/mind/workspace/documentation/use-cases-comprehensive.md\",\"sourcePersonaFile\":\"/Users/ameer/bizing/mind/workspace/documentation/tester-personas.md\",\"specVersion\":\"saga.v0\",\"specFilePath\":\"testing/sagas/specs/uc-133-the-solo-entrepreneur-sarah.json\",\"specChecksum\":\"7ea85dee3105743c9b6b3a5a0edc51bd69b29e45e362da0ae362effe38023f1e\",\"metadata\":{\"tags\":[\"uc-derived\",\"persona-derived\",\"lifecycle\",\"api-first\",\"agents\"],\"generatedAt\":\"2026-02-24T20:23:28.663Z\"},\"createdAt\":\"2026-02-24T15:17:48.892Z\",\"updatedAt\":\"2026-02-24T15:17:48.892Z\",\"deletedAt\":null,\"createdBy\":null,\"updatedBy\":null,\"deletedBy\":null},\"spec\":{\"schemaVersion\":\"saga.v0\",\"sagaKey\":\"uc-133-the-solo-entrepreneur-sarah\",\"title\":\"UC-133 • The Post-Appointment Survey • The Solo Entrepreneur (Sarah)\",\"description\":\"Comprehensive lifecycle saga derived from UC-133 and persona P-1. Needs summary: Multiple question types (NPS, rating, multiple choice, open text); Timing options (immediate, 1 hour, 24 hours, custom); Conditional questions based on responses; Anonymous vs attributed options; Photo/video upload for testimonials; Incentive integration (complete survey for discount); Response routing (negative feedback to manager); Aggregate reporting and trends; Individual response review; Public review request after positive survey\",\"tags\":[\"uc-derived\",\"persona-derived\",\"lifecycle\",\"api-first\",\"agents\"],\"defaults\":{\"runMode\":\"dry_run\",\"continueOnFailure\":false},\"source\":{\"useCaseRef\":\"UC-133\",\"personaRef\":\"P-1\",\"useCaseFile\":\"/Users/ameer/bizing/mind/workspace/documentation/use-cases-comprehensive.md\",\"personaFile\":\"/Users/ameer/bizing/mind/workspace/documentation/tester-personas.md\",\"generatedAt\":\"2026-02-24T20:23:28.663Z\"},\"objectives\":[\"Validate UC-133 lifecycle end-to-end using persona The Solo Entrepreneur (Sarah).\",\"Exercise owner setup, team setup, catalog publishing, and customer journeys.\",\"Stress ACL/security edge cases and verify expected denials are enforced.\",\"Collect snapshots and report artifacts for every critical milestone.\"],\"actors\":[{\"actorKey\":\"biz_owner\",\"name\":\"The Solo Entrepreneur (Sarah)\",\"role\":\"owner\",\"description\":\"Just starting out, wearing all hats\",\"personaRef\":\"P-1\"},{\"actorKey\":\"biz_member\",\"name\":\"Operations Team Member\",\"role\":\"manager\",\"description\":\"Business member invited by owner to assist with operations and booking flow.\"},{\"actorKey\":\"customer_1\",\"name\":\"Customer One\",\"role\":\"customer\",\"description\":\"Primary customer exploring catalog, booking services, and purchasing products.\"},{\"actorKey\":\"customer_2\",\"name\":\"Customer Two\",\"role\":\"customer\",\"description\":\"Concurrent customer used to simulate realistic demand and race conditions.\"},{\"actorKey\":\"adversary\",\"name\":\"Adversarial User\",\"role\":\"malicious_actor\",\"description\":\"Actor intentionally attempting unauthorized or abusive actions.\"}],\"phases\":[{\"phaseKey\":\"owner-onboarding\",\"order\":1,\"title\":\"Owner Onboarding\",\"description\":\"Business owner signs up, authenticates, and establishes tenant root.\",\"steps\":[{\"stepKey\":\"owner-sign-up\",\"order\":1,\"title\":\"Owner signs up and authenticates\",\"actorKey\":\"biz_owner\",\"intent\":\"Establish authenticated owner identity for the lifecycle.\",\"instruction\":\"Create or login the owner account through Better Auth endpoints, then verify session context can call authenticated API routes.\",\"expectedResult\":\"Owner session exists and authenticated routes return success for this user.\",\"toolHints\":[],\"assertions\":[{\"kind\":\"api_response\",\"description\":\"API call returns success and includes stable ids for created entities.\"},{\"kind\":\"acl_guard\",\"description\":\"Actor permissions are honored for this step context.\"}],\"evidenceRequired\":[{\"kind\":\"api_trace\",\"label\":\"Request/response trace for this step\"},{\"kind\":\"snapshot\",\"label\":\"Structured snapshot.v1 screen blocks (what user saw) with real API-backed data\"}],\"guardrails\":[],\"tags\":[\"auth\",\"setup\"]},{\"stepKey\":\"owner-create-biz\",\"order\":2,\"title\":\"Owner creates business tenant\",\"actorKey\":\"biz_owner\",\"intent\":\"Create the biz root for all subsequent configuration.\",\"instruction\":\"Using agents tools, create a biz representing The Post-Appointment Survey. Use name/slug derived from saga context.\",\"expectedResult\":\"Biz is created, owner is auto-added as member with owner role, and biz id is captured.\",\"toolHints\":[\"bizing.bizes.create\"],\"assertions\":[{\"kind\":\"api_response\",\"description\":\"API call returns success and includes stable ids for created entities.\"},{\"kind\":\"acl_guard\",\"description\":\"Actor permissions are honored for this step context.\"}],\"evidenceRequired\":[{\"kind\":\"api_trace\",\"label\":\"Request/response trace for this step\"},{\"kind\":\"snapshot\",\"label\":\"Structured snapshot.v1 screen blocks (what user saw) with real API-backed data\"}],\"guardrails\":[],\"tags\":[\"biz\",\"setup\"]},{\"stepKey\":\"owner-create-location\",\"order\":3,\"title\":\"Owner creates primary location\",\"actorKey\":\"biz_owner\",\"intent\":\"Establish operational location for services/resources.\",\"instruction\":\"Create a primary location for the biz and set timezone aligned with scenario context.\",\"expectedResult\":\"Location exists and is associated with the new biz.\",\"toolHints\":[\"bizing.locations.create\"],\"assertions\":[{\"kind\":\"api_response\",\"description\":\"API call returns success and includes stable ids for created entities.\"},{\"kind\":\"acl_guard\",\"description\":\"Actor permissions are honored for this step context.\"}],\"evidenceRequired\":[{\"kind\":\"api_trace\",\"label\":\"Request/response trace for this step\"},{\"kind\":\"snapshot\",\"label\":\"Structured snapshot.v1 screen blocks (what user saw) with real API-backed data\"}],\"guardrails\":[],\"tags\":[\"location\",\"setup\"]}]},{\"phaseKey\":\"business-configuration\",\"order\":2,\"title\":\"Business Configuration\",\"description\":\"Owner configures scheduling, pricing baseline, and operational defaults.\",\"steps\":[{\"stepKey\":\"owner-configure-hours\",\"order\":4,\"title\":\"Configure default hours and availability mode\",\"actorKey\":\"biz_owner\",\"intent\":\"Set baseline availability without forcing advanced complexity.\",\"instruction\":\"Create baseline availability and lead-time rules representing the UC default business hours and booking window behavior.\",\"expectedResult\":\"Availability defaults and rules are stored and can be referenced by calendars.\",\"toolHints\":[],\"assertions\":[{\"kind\":\"api_response\",\"description\":\"API call returns success and includes stable ids for created entities.\"},{\"kind\":\"acl_guard\",\"description\":\"Actor permissions are honored for this step context.\"}],\"evidenceRequired\":[{\"kind\":\"api_trace\",\"label\":\"Request/response trace for this step\"},{\"kind\":\"snapshot\",\"label\":\"Structured snapshot.v1 screen blocks (what user saw) with real API-backed data\"}],\"guardrails\":[],\"tags\":[\"availability\",\"policy\"]},{\"stepKey\":\"owner-configure-pricing\",\"order\":5,\"title\":\"Configure default pricing rules\",\"actorKey\":\"biz_owner\",\"intent\":\"Set base pricing and optional manual demand overrides.\",\"instruction\":\"Configure pricing defaults for the offer lifecycle including call fees/manual surge if UC needs imply it.\",\"expectedResult\":\"Pricing model persists and future bookings can calculate totals deterministically.\",\"toolHints\":[],\"assertions\":[{\"kind\":\"api_response\",\"description\":\"API call returns success and includes stable ids for created entities.\"},{\"kind\":\"acl_guard\",\"description\":\"Actor permissions are honored for this step context.\"}],\"evidenceRequired\":[{\"kind\":\"api_trace\",\"label\":\"Request/response trace for this step\"},{\"kind\":\"snapshot\",\"label\":\"Structured snapshot.v1 screen blocks (what user saw) with real API-backed data\"}],\"guardrails\":[],\"tags\":[\"pricing\"]}]},{\"phaseKey\":\"supply-and-team-setup\",\"order\":3,\"title\":\"Supply And Team Setup\",\"description\":\"Business owner sets up hosts/assets/venues/resources and invites members.\",\"steps\":[{\"stepKey\":\"owner-create-resources\",\"order\":6,\"title\":\"Create resources representing hosts/assets/venues\",\"actorKey\":\"biz_owner\",\"intent\":\"Model real-world supply that bookings will consume.\",\"instruction\":\"Create at least one host resource and one non-host resource (asset or venue) suitable for the UC.\",\"expectedResult\":\"Resources are created with expected type, location, and buffers.\",\"toolHints\":[\"bizing.resources.create\"],\"assertions\":[{\"kind\":\"api_response\",\"description\":\"API call returns success and includes stable ids for created entities.\"},{\"kind\":\"acl_guard\",\"description\":\"Actor permissions are honored for this step context.\"}],\"evidenceRequired\":[{\"kind\":\"api_trace\",\"label\":\"Request/response trace for this step\"},{\"kind\":\"snapshot\",\"label\":\"Structured snapshot.v1 screen blocks (what user saw) with real API-backed data\"}],\"guardrails\":[],\"tags\":[\"resources\"]},{\"stepKey\":\"owner-invite-member\",\"order\":7,\"title\":\"Invite and provision business member\",\"actorKey\":\"biz_owner\",\"intent\":\"Validate collaboration and role assignment.\",\"instruction\":\"Invite a biz member, assign an operational role, and verify that member can authenticate into the same biz.\",\"expectedResult\":\"Biz member account/session exists with scoped role permissions.\",\"toolHints\":[],\"assertions\":[{\"kind\":\"api_response\",\"description\":\"API call returns success and includes stable ids for created entities.\"},{\"kind\":\"acl_guard\",\"description\":\"Actor permissions are honored for this step context.\"}],\"evidenceRequired\":[{\"kind\":\"api_trace\",\"label\":\"Request/response trace for this step\"},{\"kind\":\"snapshot\",\"label\":\"Structured snapshot.v1 screen blocks (what user saw) with real API-backed data\"}],\"guardrails\":[],\"tags\":[\"team\",\"acl\"]}]},{\"phaseKey\":\"catalog-publish\",\"order\":4,\"title\":\"Catalog And Publish\",\"description\":\"Owner creates services/offers/products and publishes sellable catalog entries.\",\"steps\":[{\"stepKey\":\"owner-create-offer\",\"order\":8,\"title\":\"Create offer shell\",\"actorKey\":\"biz_owner\",\"intent\":\"Define sellable service/catalog entry.\",\"instruction\":\"Create an offer representing the UC primary service; choose execution mode matching the scenario.\",\"expectedResult\":\"Offer is created in draft state with captured id.\",\"toolHints\":[\"bizing.offers.create\"],\"assertions\":[{\"kind\":\"api_response\",\"description\":\"API call returns success and includes stable ids for created entities.\"},{\"kind\":\"acl_guard\",\"description\":\"Actor permissions are honored for t",
+        "_size": 51922
+      },
+      "at": "2026-02-24T20:25:57.696Z"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3A8CLm5DxTWDwwO1884rUyIBSqX/steps/owner-sign-up/result",
+      "status": 200,
+      "requestBody": {
+        "status": "passed",
+        "startedAt": "2026-02-24T20:25:57.484Z",
+        "endedAt": "2026-02-24T20:25:57.484Z",
+        "failureMessage": null,
+        "resultPayload": {
+          "note": "Owner session is active.",
+          "evidence": {
+            "ownerUserId": "vJUXCpuOSnzw3Ip5DMcOKoeo7d2V6Hwc",
+            "ownerEmail": "owner-runner-1771964627006-ch2fo2@example.com"
+          }
+        },
+        "assertionSummary": {
+          "status": "passed",
+          "hasFailure": false,
+          "assertionsPassed": 1
+        }
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "id": "saga_run_step_3A8CLmrsSQkonTCAGzOskAJ8yhX",
+          "sagaRunId": "saga_run_3A8CLm5DxTWDwwO1884rUyIBSqX",
+          "phaseKey": "owner-onboarding",
+          "phaseOrder": 1,
+          "phaseTitle": "Owner Onboarding",
+          "stepKey": "owner-sign-up",
+          "stepOrder": 1,
+          "actorKey": "biz_owner",
+          "instruction": "Create or login the owner account through Better Auth endpoints, then verify session context can call authenticated API routes.",
+          "expectedResult": "Owner session exists and authenticated routes return success for this user.",
+          "status": "passed",
+          "attemptCount": 1,
+          "startedAt": "2026-02-24T20:25:57.484Z",
+          "endedAt": "2026-02-24T20:25:57.484Z",
+          "failureCode": null,
+          "failureMessage": null,
+          "resultPayload": {
+            "note": "Owner session is active.",
+            "evidence": {
+              "ownerEmail": "owner-runner-1771964627006-ch2fo2@example.com",
+              "ownerUserId": "vJUXCpuOSnzw3Ip5DMcOKoeo7d2V6Hwc"
+            }
+          },
+          "assertionSummary": {
+            "status": "passed",
+            "hasFailure": false,
+            "assertionsPassed": 1
+          },
+          "metadata": {},
+          "createdAt": "2026-02-24T20:25:56.897Z",
+          "updatedAt": "2026-02-24T20:25:56.897Z",
+          "deletedAt": null,
+          "createdBy": null,
+          "updatedBy": null,
+          "deletedBy": null
+        },
+        "meta": {
+          "requestId": "cac586d6-70bd-4bd5-9611-ba2215da461a",
+          "timestamp": "2026-02-24T20:25:57.668Z"
+        }
+      },
+      "at": "2026-02-24T20:25:57.697Z"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3A8CLUjRsGECWkwF8nxYJH1qdNx/snapshots",
+      "status": 201,
+      "requestBody": {
+        "stepKey": "owner-create-location",
+        "screenKey": "owner-create-location-1771964757617",
+        "title": "Owner creates primary location Snapshot",
+        "status": "passed",
+        "route": "/sagas/saga_run_3A8CLUjRsGECWkwF8nxYJH1qdNx/owner-create-location",
+        "format": "json",
+        "view": {
+          "title": "Owner creates primary location",
+          "subtitle": "Location created.",
+          "blocks": [
+            {
+              "type": "alert",
+              "title": "Owner Create Location completed",
+              "message": "Location created.",
+              "tone": "success"
+            },
+            {
+              "type": "key_value",
+              "title": "Screen details",
+              "items": [
+                {
+                  "label": "Id",
+                  "value": "3A8CLuzr7bxHoZP6axWxpqGjQQc"
+                },
+                {
+                  "label": "BizId",
+                  "value": "3A8CLlgKdAyMsNFnjiGABKBH06F"
+                },
+                {
+                  "label": "Name",
+                  "value": "Primary Location"
+                },
+                {
+                  "label": "Slug",
+                  "value": "loc-rhzilqc3"
+                },
+                {
+                  "label": "Type",
+                  "value": "physical"
+                },
+                {
+                  "label": "Timezone",
+                  "value": "UTC"
+                },
+                {
+                  "label": "Status",
+                  "value": "active"
+                },
+                {
+                  "label": "IsDefault",
+                  "value": "false"
+                },
+                {
+                  "label": "CreatedAt",
+                  "value": "2026-02-24T20:25:57.285Z"
+                },
+                {
+                  "label": "UpdatedAt",
+                  "value": "2026-02-24T20:25:57.285Z"
+                },
+                {
+                  "label": "DeletedAt",
+                  "value": "null"
+                }
+              ]
+            }
+          ]
+        },
+        "rawData": {
+          "stepKey": "owner-create-location",
+          "resultPayload": {
+            "note": "Location created.",
+            "evidence": {
+              "id": "3A8CLuzr7bxHoZP6axWxpqGjQQc",
+              "bizId": "3A8CLlgKdAyMsNFnjiGABKBH06F",
+              "name": "Primary Location",
+              "slug": "loc-rhzilqc3",
+              "type": "physical",
+              "timezone": "UTC",
+              "address": {},
+              "operatingHours": {},
+              "configOverride": {},
+              "serviceArea": {},
+              "status": "active",
+              "isDefault": false,
+              "metadata": {},
+              "createdAt": "2026-02-24T20:25:57.285Z",
+              "updatedAt": "2026-02-24T20:25:57.285Z",
+              "deletedAt": null
+            }
+          },
+          "apiCalls": [
+            {
+              "method": "GET",
+              "path": "/api/v1/auth/me",
+              "status": 200,
+              "responseBody": {
+                "success": true,
+                "data": {
+                  "user": {
+                    "id": "vJUXCpuOSnzw3Ip5DMcOKoeo7d2V6Hwc",
+                    "email": "owner-runner-1771964627006-ch2fo2@example.com",
+                    "role": "user"
+                  },
+                  "session": {
+                    "id": "epwwFWV19fWYOGlC3HKInWrqXBYFeqbN",
+                    "activeOrganizationId": null
+                  },
+                  "memberships": [
+                    {
+                      "id": "3A8C6WhbOFkEi88wiWYJGPMIx3a",
+                      "name": "Saga uc-1-the-solo-entrepreneur-sarah",
+                      "slug": "uc-1-the-solo-entrepreneur-sarah-21802cgc",
+                      "membershipId": "member_6f90dae34bce4edb992a7e1bc90ac9d4",
+                      "membershipRole": "owner",
+                      "membershipCreatedAt": "2026-02-24T20:23:55.088Z"
+                    },
+                    {
+                      "id": "3A8C6ZTGOVSW6P4zNaVagGTT722",
+                      "name": "Saga uc-10-the-multi-location-owner-marcus",
+                      "slug": "uc-10-the-multi-location-owner-marcus-b2ks1re5",
+                      "membershipId": "member_c0b77ebd1b8249ee83032527601e32ec",
+                      "membershipRole": "owner",
+                      "membershipCreatedAt": "2026-02-24T20:23:55.387Z"
+                    },
+                    {
+                      "id": "3A8C6ZftqY9Kj4ncyMvM9uRKVev",
+                      "name": "Saga uc-100-the-solo-entrepreneur-sarah",
+                      "slug": "uc-100-the-solo-entrepreneur-sarah-fm760zp7",
+                      "membershipId": "member_b73be43b40894b9a8f7dd5467a769d93",
+                      "membershipRole": "owner",
+                      "membershipCreatedAt": "2026-02-24T20:23:55.387Z"
+                    },
+                    {
+                      "id": "3A8C6b3PDupP7p9RCdPGmrKQvzC",
+                      "name": "Saga uc-101-the-solo-entrepreneur-sarah",
+                      "slug": "uc-101-the-solo-entrepreneur-sarah-5o9wswer",
+                      "membershipId": "member_77968a90e8cb49dd8d702742a6a7ee3f",
+                      "membershipRole": "owner",
+                      "membershipCreatedAt": "2026-02-24T20:23:55.789Z"
+                    },
+                    {
+                      "id": "3A8C6iqga9e9koTwaAn3WcAfqr4",
+                      "name": "Saga uc-102-the-solo-entrepreneur-sarah",
+                      "slug": "uc-102-the-solo-entrepreneur-sarah-dqfjarbe",
+                      "membershipId": "member_d10bc26db9b3452d9f2368367a8e621a",
+                      "membershipRole": "owner",
+                      "membershipCreatedAt": "2026-02-24T20:23:56.984Z"
+                    },
+                    {
+                      "id": "3A8C6d1wCixAKtFKh4hw3Q4HQFK",
+                      "name": "Saga uc-103-the-solo-entrepreneur-sarah",
+                      "slug": "uc-103-the-solo-entrepreneur-sarah-f8zjh85r",
+                      "membershipId": "member_1775a18f4b4849a4b089637dc73421cf",
+                      "membershipRole": "owner",
+                      "membershipCreatedAt": "2026-02-24T20:23:56.918Z"
+                    },
+                    {
+                      "id": "3A8C6fumDoH7F0gRtkXYPcSMWrn",
+                      "name": "Saga uc-104-the-solo-entrepreneur-sarah",
+                      "slug": "uc-104-the-solo-entrepreneur-sarah-qfb8k5ia",
+                      "membershipId": "member_13397d7d8ea141e6a1b4c657c15f91dd",
+                      "membershipRole": "owner",
+                      "membershipCreatedAt": "2026-02-24T20:23:56.936Z"
+                    },
+                    {
+                      "id": "3A8C6dP2yEE8Job6i4JURmqS7Zd",
+                      "name": "Saga uc-105-the-solo-entrepreneur-sarah",
+                      "slug": "uc-105-the-solo-entrepreneur-sarah-0o17w95p",
+                      "membershipId": "member_a74429ed4c904dd69334518fbefc57d8",
+                      "membershipRole": "owner",
+                      "membershipCreatedAt": "2026-02-24T20:23:56.937Z"
+                    },
+                    {
+                      "id": "3A8C8QT5YInOqFaMrifWs4IEpPA",
+                      "name": "Saga uc-106-the-solo-entrepreneur-sarah",
+                      "slug": "uc-106-the-solo-entrepreneur-sarah-9xho7hs2",
+                      "membershipId": "member_73f4830c52384ce1a07291441d471777",
+                      "membershipRole": "owner",
+                      "membershipCreatedAt": "2026-02-24T20:24:10.851Z"
+                    },
+                    {
+                      "id": "3A8C8Ump9ILiEhuX9dj4m2cnSLV",
+                      "name": "Saga uc-107-the-solo-entrepreneur-sarah",
+                      "slug": "uc-107-the-solo-entrepreneur-sarah-hjb6rguj",
+                      "membershipId": "member_244a2bd27b054c2483cfa034f92ed76e",
+                      "membershipRole": "owner",
+                      "membershipCreatedAt": "2026-02-24T20:24:10.844Z"
+                    },
+                    {
+                      "id": "3A8C8ScCBRPrwIuMWYeAKrKdUOq",
+                      "name": "Saga uc-108-the-solo-entrepreneur-sarah",
+                      "slug": "uc-108-the-solo-entrepreneur-sarah-ok8qu7dp",
+                      "membershipId": "member_4dad8ef9ca704ec388db1fb4f929d6c5",
+                      "membershipRole": "owner",
+                      "membershipCreatedAt": "2026-02-24T20:24:10.972Z"
+                    },
+                    {
+                      "id": "3A8C8OoLx1XtsoCd4az7SIf2aqJ",
+                      "name": "Saga uc-109-the-solo-entrepreneur-sarah",
+                      "slug": "uc-109-the-solo-entrepreneur-sarah-tysxd5qs",
+                      "membershipId": "member_88b5bea1e1854a8ebdf5666a98be5fa7",
+                      "membershipRole": "owner",
+                      "membershipCreatedAt": "2026-02-24T20:24:10.998Z"
+                    },
+                    {
+                      "id": "3A8C8bPx0IXOm8zbPcb8HvAWxrq",
+                      "name": "Saga uc-11-the-solo-entrepreneur-sarah",
+                      "slug": "uc-11-the-solo-entrepreneur-sarah-z5x8e50o",
+                      "membershipId": "member_4126fd23107a4105aa05a8485f0b280e",
+                      "membershipRole": "owner",
+                      "membershipCreatedAt": "2026-02-24T20:24:11.114Z"
+                    },
+                    {
+                      "id": "3A8C8YBdmiBQ6XpVhvJGOwt7Ufp",
+                      "name": "Saga uc-110-the-solo-entrepreneur-sarah",
+                      "slug": "uc-110-the-solo-entrepreneur-sarah-azku0mg1",
+                      "membershipId": "member_d8b36ac0167841fea54dcaa9d49e9717",
+                      "membershipRole": "owner",
+                      "membershipCreatedAt": "2026-02-24T20:24:11.250Z"
+                    },
+                    {
+                      "id": "3A8C8VVf8iCJR5SeeqXZOmVJKgr",
+                      "name": "Saga uc-111-the-solo-entrepreneur-sarah",
+                      "slug": "uc-111-the-solo-entrepreneur-sarah-ft7w2mgy",
+                      "membershipId": "member_6f407503b455409b8e7664fbcc10a0bc",
+                      "membershipRole": "owner",
+                      "membershipCreatedAt": "2026-02-24T20:24:11.261Z"
+                    },
+                    {
+                      "id": "3A8C8Yiqb9Ej6caTTbLcUU1Dkna",
+                      "name": "Saga uc-112-the-solo-entrepreneur-sarah",
+                      "slug": "uc-112-the-solo-entrepreneur-sarah-qvt1rsit",
+                      "membershipId": "member_89b70bfcc99b4c1fbddff085fdb7f3d8",
+                      "membershipRole": "owner",
+                      "membershipCreatedAt": "2026-02-24T20:24:11.303Z"
+                    },
+                    {
+                      "id": "3A8CAcaz3uzoR5qWTXSyTkA8ypJ",
+                      "name": "Saga uc-113-the-solo-entrepreneur-sarah",
+                      "slug": "uc-113-the-solo-entrepreneur-sarah-l752lq49",
+                      "membershipId": "member_b11cb89a104541f3884283cdc5d1182f",
+                      "membershipRole": "owner",
+                      "membershipCreatedAt": "2026-02-24T20:24:27.834Z"
+                    },
+                    {
+                      "id": "3A8CAeYH6rMAYVL8nfU74BeIAAJ",
+                      "name": "Saga uc-114-the-solo-entrepreneur-sarah",
+                      "slug": "uc-114-the-solo-entrepreneur-sarah-66buy1un",
+                      "membershipId": "member_5fb441393dae44438ae740b24620259c",
+                      "membershipRole": "owner",
+                      "membershipCreatedAt": "2026-02-24T20:24:28.492Z"
+                    },
+                    {
+                      "id": "3A8CAvMhvCYKzz2MG3yz21D2kWH",
+                      "name": "Saga uc-115-the-solo-entrepreneur-sarah",
+                      "slug": "uc-115-the-solo-entrepreneur-sarah-59yll9ud",
+                      "membershipId": "member_daada7b83b9649869fd81384e5cb581d",
+                      "membershipRole": "owner",
+                      "membershipCreatedAt": "2026-02-24T20:24:30.120Z"
+                    },
+                    {
+                      "id": "3A8CBNsUCqPZ0aynCoBQka6SHBb",
+                      "name": "Saga uc-116-the-solo-entrepreneur-sarah",
+                      "slug": "uc-116-the-solo-entrepreneur-sarah-2swac2bk",
+                      "membershipId": "member_9b805ce7c95b4918b081f7707f662969",
+                      "membershipRole": "owner",
+                      "membershipCreatedAt": "2026-02-24T20:24:33.917Z"
+                    },
+                    {
+                      "id": "3A8CBKBYh57bKKaQK3uTQD9K6Yb",
+                      "name": "Saga uc-117-the-solo-entrepreneur-sarah",
+                      "slug": "uc-117-the-solo-entrepreneur-sarah-w0b1njhr",
+                      "membershipId": "member_2adda45ce27647ec9950f8e73e534dd2",
+                      "membershipRole": "owner",
+                      "membershipCreatedAt": "2026-02-24T20:24:33.658Z"
+                    },
+                    {
+                      "id": "3A8CBYscmzj2SKUTjQhj8LxNDgb",
+                      "name": "Saga uc-118-the-solo-entrepreneur-sarah",
+                      "slug": "uc-118-the-solo-entrepreneur-sarah-2q06mu3d",
+                      "membershipId": "member_063bfaba4b544a7dad071e5f06e69dd9",
+                      "membershipRole": "owner",
+                      "membershipCreatedAt": "2026-02-24T20:24:35.532Z"
+                    },
+                    {
+                      "id": "3A8CBZMgFM4yyWBXH06uA3RjoKt",
+                      "name": "Saga uc-119-the-solo-entrepreneur-sarah",
+                      "slug": "uc-119-the-solo-entrepreneur-sarah-wv62niql",
+                      "membershipId": "member_4ec0299c839441c587f20c935d1ee784",
+                      "membershipRole": "owner",
+                      "membershipCreatedAt": "2026-02-24T20:24:35.524Z"
+                    },
+                    {
+                      "id": "3A8CC7ckGQ9R9EMGVd3XesvktKU",
+                      "name": "Saga uc-12-the-solo-entrepreneur-sarah",
+                      "slug": "uc-12-the-solo-entrepreneur-sarah-qbfmrd1v",
+                      "membershipId": "member_2ca11e1b5ec34469848a19a651777fa7",
+                      "membershipRole": "owner",
+                      "membershipCreatedAt": "2026-02-24T20:24:39.692Z"
+                    },
+                    {
+                      "id": "3A8CH5Cywg1x1MLNt0m3c5ycjH3",
+                      "name": "Saga uc-120-the-solo-entrepreneur-sarah",
+                      "slug": "uc-120-the-solo-entrepreneur-sarah-6ze55byu",
+                      "membershipId": "member_7aca7f7030ac4b94b9ed28f023ced06b",
+                      "membershipRole": "owner",
+                      "membershipCreatedAt": "2026-02-24T20:25:19.754Z"
+                    },
+                    {
+                      "id": "3A8CH57MrYg3n0z669Qe75sCXCH",
+                      "name": "Saga uc-121-the-solo-entrepreneur-sarah",
+                      "slug": "uc-121-the-solo-entrepreneur-sarah-mj9bo102",
+                      "membershipId": "member_ec4faf2ca1d74291a375f45d3e06a75d",
+                      "membershipRole": "owner",
+                      "membershipCreatedAt": "2026-02-24T20:25:19.987Z"
+                    },
+                    {
+                      "id": "3A8CHPrgGNnEDMxvOGMsDIvwd1I",
+                      "name": "Saga uc-122-the-solo-entrepreneur-sarah",
+                      "slug": "uc-122-the-solo-entrepreneur-sarah-sgj19t59",
+                      "membershipId": "member_b94ffa7590d04c50adf9d742b1f583d9",
+                      "membershipRole": "owner",
+                      "membershipCreatedAt": "2026-02-24T20:25:21.666Z"
+                    },
+                    {
+                      "id": "3A8CHJum6s1WPds8GEs9XqfTzft",
+                      "name": "Saga uc-123-the-solo-entrepreneur-sarah",
+                      "slug": "uc-123-the-solo-entrepreneur-sarah-f05zv374",
+                      "membershipId": "member_54ee413645ea454085a4c0f334f28a18",
+                      "membershipRole": "owner",
+                      "membershipCreatedAt": "2026-02-24T20:25:21.919Z"
+                    },
+                    {
+                      "id": "3A8CHULdolzBlgTrySH3ZdIUvdf",
+                      "name": "Saga uc-124-the-solo-entrepreneur-sarah",
+                      "slug": "uc-124-the-solo-entrepreneur-sarah-j9kzv2eq",
+                      "membershipId": "member_6cb9195293bc4bf884e0821beeb5f41e",
+                      "membershipRole": "owner",
+                      "membershipCreatedAt": "2026-02-24T20:25:22.171Z"
+                    },
+                    {
+                      "id": "3A8CHVeOoV0wBRsc0rhhbcA3IYa",
+                      "name": "Saga uc-125-the-solo-entrepreneur-sarah",
+                      "slug": "uc-125-the-solo-entrepreneur-sarah-rhr2z2jw",
+                      "membershipId": "member_c7292ff46b0444fcacc9f3698ff71bc3",
+                      "membershipRole": "owner",
+                      "membershipCreatedAt": "2026-02-24T20:25:22.251Z"
+                    },
+                    {
+                      "id": "3A8CHRkcAcVeeubZqFDOKbs7S97",
+                      "name": "Saga uc-126-the-solo-entrepreneur-sarah",
+                      "slug": "uc-126-the-solo-entrepreneur-sarah-y6s6opq4",
+                      "membershipId": "member_98b738524c1043a5990aa843e28d2d52",
+                      "membershipRole": "owner",
+                      "membershipCreatedAt": "2026-02-24T20:25:22.613Z"
+                    },
+                    {
+                      "id": "3A8CHu5G6PlzJffjWWilzvsoHtF",
+                      "name": "Saga uc-127-the-solo-entrepreneur-sarah",
+                      "slug": "uc-127-the-solo-entrepreneur-sarah-seafk2f4",
+                      "membershipId": "member_9f80d21fe2f047acb5d7e48f3a6ae60c",
+                      "membershipRole": "owner",
+                      "membershipCreatedAt": "2026-02-24T20:25:25.715Z"
+                    },
+                    {
+                      "id": "3A8CLlgKdAyMsNFnjiGABKBH06F",
+                      "name": "Saga uc-128-the-solo-entrepreneur-sarah",
+                      "slug": "uc-128-the-solo-entrepreneur-sarah-qlt5hqob",
+                      "membershipId": "member_1707c7d0152f459cae6bc0e2fd31897f",
+                      "membershipRole": "owner",
+                      "membershipCreatedAt": "2026-02-24T20:25:56.721Z"
+                    }
+                  ],
+                  "activeBizId": "3A8C6WhbOFkEi88wiWYJGPMIx3a",
+                  "permissionKeys": [
+                    "acl.read",
+                    "acl.write",
+                    "auth.switch_active_biz",
+                    "bizes.archive",
+                    "bizes.create",
+                    "bizes.read",
+                    "bizes.update",
+                    "booking_orders.cancel",
+                    "booking_orders.create",
+                    "booking_orders.read",
+                    "booking_orders.status.update",
+                    "booking_orders.update",
+                    "invitations.manage",
+                    "invitations.read",
+                    "locations.archive",
+                    "locations.create",
+                    "locations.read",
+                    "locations.update",
+                    "members.manage",
+                    "members.read",
+                    "offers.archive",
+                    "offers.create",
+                    "offers.read",
+                    "offers.update",
+                    "resources.archive",
+                    "resources.create",
+                    "resources.read",
+                    "resources.update",
+                    "sagas.manage",
+                    "sagas.read",
+                    "sagas.run"
+                  ]
+                },
+                "meta": {
+                  "requestId": "1ea9228e-84be-48f2-b4a7-c29f7cb21e42",
+                  "timestamp": "2026-02-24T20:25:57.098Z"
+                }
+              },
+              "at": "2026-02-24T20:25:57.264Z"
+            }
+          ]
+        }
+      },
+      "responseBody": {
+        "_truncated": true,
+        "_preview": "{\"success\":true,\"data\":{\"id\":\"saga_artifact_3A8CLwIGkoXW3hXXZgdudjvsHpI\",\"sagaRunId\":\"saga_run_3A8CLUjRsGECWkwF8nxYJH1qdNx\",\"sagaRunStepId\":\"saga_run_step_3A8CLRtO2WdzfyCXnwYj59tsW0n\",\"artifactType\":\"snapshot\",\"title\":\"Owner creates primary location Snapshot\",\"storagePath\":\"testing/sagas/runs/saga_run_3A8CLUjRsGECWkwF8nxYJH1qdNx/snapshots/2026-02-24T20-25-57-636Z-owner-create-location-1771964757617.json\",\"contentType\":\"application/json\",\"bodyText\":\"{\\n  \\\"schemaVersion\\\": \\\"snapshot.v1\\\",\\n  \\\"screenKey\\\": \\\"owner-create-location-1771964757617\\\",\\n  \\\"title\\\": \\\"Owner creates primary location Snapshot\\\",\\n  \\\"generatedAt\\\": \\\"2026-02-24T20:25:57.630Z\\\",\\n  \\\"stepKey\\\": \\\"owner-create-location\\\",\\n  \\\"status\\\": \\\"passed\\\",\\n  \\\"view\\\": {\\n    \\\"title\\\": \\\"Owner creates primary location\\\",\\n    \\\"subtitle\\\": \\\"Location created.\\\",\\n    \\\"blocks\\\": [\\n      {\\n        \\\"type\\\": \\\"alert\\\",\\n        \\\"title\\\": \\\"Owner Create Location completed\\\",\\n        \\\"message\\\": \\\"Location created.\\\",\\n        \\\"tone\\\": \\\"success\\\"\\n      },\\n      {\\n        \\\"type\\\": \\\"key_value\\\",\\n        \\\"title\\\": \\\"Screen details\\\",\\n        \\\"items\\\": [\\n          {\\n            \\\"label\\\": \\\"Id\\\",\\n            \\\"value\\\": \\\"3A8CLuzr7bxHoZP6axWxpqGjQQc\\\"\\n          },\\n          {\\n            \\\"label\\\": \\\"BizId\\\",\\n            \\\"value\\\": \\\"3A8CLlgKdAyMsNFnjiGABKBH06F\\\"\\n          },\\n          {\\n            \\\"label\\\": \\\"Name\\\",\\n            \\\"value\\\": \\\"Primary Location\\\"\\n          },\\n          {\\n            \\\"label\\\": \\\"Slug\\\",\\n            \\\"value\\\": \\\"loc-rhzilqc3\\\"\\n          },\\n          {\\n            \\\"label\\\": \\\"Type\\\",\\n            \\\"value\\\": \\\"physical\\\"\\n          },\\n          {\\n            \\\"label\\\": \\\"Timezone\\\",\\n            \\\"value\\\": \\\"UTC\\\"\\n          },\\n          {\\n            \\\"label\\\": \\\"Status\\\",\\n            \\\"value\\\": \\\"active\\\"\\n          },\\n          {\\n            \\\"label\\\": \\\"IsDefault\\\",\\n            \\\"value\\\": \\\"false\\\"\\n          },\\n          {\\n            \\\"label\\\": \\\"CreatedAt\\\",\\n            \\\"value\\\": \\\"2026-02-24T20:25:57.285Z\\\"\\n          },\\n          {\\n            \\\"label\\\": \\\"UpdatedAt\\\",\\n            \\\"value\\\": \\\"2026-02-24T20:25:57.285Z\\\"\\n          },\\n          {\\n            \\\"label\\\": \\\"DeletedAt\\\",\\n            \\\"value\\\": \\\"null\\\"\\n          }\\n        ]\\n      }\\n    ]\\n  },\\n  \\\"rawData\\\": {\\n    \\\"stepKey\\\": \\\"owner-create-location\\\",\\n    \\\"resultPayload\\\": {\\n      \\\"note\\\": \\\"Location created.\\\",\\n      \\\"evidence\\\": {\\n        \\\"id\\\": \\\"3A8CLuzr7bxHoZP6axWxpqGjQQc\\\",\\n        \\\"bizId\\\": \\\"3A8CLlgKdAyMsNFnjiGABKBH06F\\\",\\n        \\\"name\\\": \\\"Primary Location\\\",\\n        \\\"slug\\\": \\\"loc-rhzilqc3\\\",\\n        \\\"type\\\": \\\"physical\\\",\\n        \\\"timezone\\\": \\\"UTC\\\",\\n        \\\"address\\\": {},\\n        \\\"operatingHours\\\": {},\\n        \\\"configOverride\\\": {},\\n        \\\"serviceArea\\\": {},\\n        \\\"status\\\": \\\"active\\\",\\n        \\\"isDefault\\\": false,\\n        \\\"metadata\\\": {},\\n        \\\"createdAt\\\": \\\"2026-02-24T20:25:57.285Z\\\",\\n        \\\"updatedAt\\\": \\\"2026-02-24T20:25:57.285Z\\\",\\n        \\\"deletedAt\\\": null\\n      }\\n    },\\n    \\\"apiCalls\\\": [\\n      {\\n        \\\"method\\\": \\\"GET\\\",\\n        \\\"path\\\": \\\"/api/v1/auth/me\\\",\\n        \\\"status\\\": 200,\\n        \\\"responseBody\\\": {\\n          \\\"success\\\": true,\\n          \\\"data\\\": {\\n            \\\"user\\\": {\\n              \\\"id\\\": \\\"vJUXCpuOSnzw3Ip5DMcOKoeo7d2V6Hwc\\\",\\n              \\\"email\\\": \\\"owner-runner-1771964627006-ch2fo2@example.com\\\",\\n              \\\"role\\\": \\\"user\\\"\\n            },\\n            \\\"session\\\": {\\n              \\\"id\\\": \\\"epwwFWV19fWYOGlC3HKInWrqXBYFeqbN\\\",\\n              \\\"activeOrganizationId\\\": null\\n            },\\n            \\\"memberships\\\": [\\n              {\\n                \\\"id\\\": \\\"3A8C6WhbOFkEi88wiWYJGPMIx3a\\\",\\n                \\\"name\\\": \\\"Saga uc-1-the-solo-entrepreneur-sarah\\\",\\n                \\\"slug\\\": \\\"uc-1-the-solo-entrepreneur-sarah-21802cgc\\\",\\n                \\\"membershipId\\\": \\\"member_6f90dae34bce4edb992a7e1bc90ac9d4\\\",\\n                \\\"membershipRole\\\": \\\"owner\\\",\\n                \\\"membershipCreatedAt\\\": \\\"2026-02-24T20:23:55.088Z\\\"\\n              },\\n              {\\n                \\\"id\\\": \\\"3A8C6ZTGOVSW6P4zNaVagGTT722\\\",\\n                \\\"name\\\": \\\"Saga uc-10-the-multi-location-owner-marcus\\\",\\n                \\\"slug\\\": \\\"uc-10-the-multi-location-owner-marcus-b2ks1re5\\\",\\n                \\\"membershipId\\\": \\\"member_c0b77ebd1b8249ee83032527601e32ec\\\",\\n                \\\"membershipRole\\\": \\\"owner\\\",\\n                \\\"membershipCreatedAt\\\": \\\"2026-02-24T20:23:55.387Z\\\"\\n              },\\n              {\\n                \\\"id\\\": \\\"3A8C6ZftqY9Kj4ncyMvM9uRKVev\\\",\\n                \\\"name\\\": \\\"Saga uc-100-the-solo-entrepreneur-sarah\\\",\\n                \\\"slug\\\": \\\"uc-100-the-solo-entrepreneur-sarah-fm760zp7\\\",\\n                \\\"membershipId\\\": \\\"member_b73be43b40894b9a8f7dd5467a769d93\\\",\\n                \\\"membershipRole\\\": \\\"owner\\\",\\n                \\\"membershipCreatedAt\\\": \\\"2026-02-24T20:23:55.387Z\\\"\\n              },\\n              {\\n                \\\"id\\\": \\\"3A8C6b3PDupP7p9RCdPGmrKQvzC\\\",\\n                \\\"name\\\": \\\"Saga uc-101-the-solo-entrepreneur-sarah\\\",\\n                \\\"slug\\\": \\\"uc-101-the-solo-entrepreneur-sarah-5o9wswer\\\",\\n                \\\"membershipId\\\": \\\"member_77968a90e8cb49dd8d702742a6a7ee3f\\\",\\n                \\\"membershipRole\\\": \\\"owner\\\",\\n                \\\"membershipCreatedAt\\\": \\\"2026-02-24T20:23:55.789Z\\\"\\n              },\\n              {\\n                \\\"id\\\": \\\"3A8C6iqga9e9koTwaAn3WcAfqr4\\\",\\n                \\\"name\\\": \\\"Saga uc-102-the-solo-entrepreneur-sarah\\\",\\n                \\\"slug\\\": \\\"uc-102-the-solo-entrepreneur-sarah-dqfjarbe\\\",\\n                \\\"membershipId\\\": \\\"member_d10bc26db9b3452d9f2368367a8e621a\\\",\\n                \\\"membershipRole\\\": \\\"owner\\\",\\n                \\\"membershipCreatedAt\\\": \\\"2026-02-24T20:23:56.984Z\\\"\\n              },\\n              {\\n                \\\"id\\\": \\\"3A8C6d1wCixAKtFKh4hw3Q4HQFK\\\",\\n                \\\"name\\\": \\\"Saga uc-103-the-solo-entrepreneur-sarah\\\",\\n                \\\"slug\\\": \\\"uc-103-the-solo-entrepreneur-sarah-f8zjh85r\\\",\\n                \\\"membershipId\\\": \\\"member_1775a18f4b4849a4b089637dc73421cf\\\",\\n                \\\"membershipRole\\\": \\\"owner\\\",\\n                \\\"membershipCreatedAt\\\": \\\"2026-02-24T20:23:56.918Z\\\"\\n              },\\n              {\\n                \\\"id\\\": \\\"3A8C6fumDoH7F0gRtkXYPcSMWrn\\\",\\n                \\\"name\\\": \\\"Saga uc-104-the-solo-entrepreneur-sarah\\\",\\n                \\\"slug\\\": \\\"uc-104-the-solo-entrepreneur-sarah-qfb8k5ia\\\",\\n                \\\"membershipId\\\": \\\"member_13397d7d8ea141e6a1b4c657c15f91dd\\\",\\n                \\\"membershipRole\\\": \\\"owner\\\",\\n                \\\"membershipCreatedAt\\\": \\\"2026-02-24T20:23:56.936Z\\\"\\n              },\\n              {\\n                \\\"id\\\": \\\"3A8C6dP2yEE8Job6i4JURmqS7Zd\\\",\\n                \\\"name\\\": \\\"Saga uc-105-the-solo-entrepreneur-sarah\\\",\\n                \\\"slug\\\": \\\"uc-105-the-solo-entrepreneur-sarah-0o17w95p\\\",\\n                \\\"membershipId\\\": \\\"member_a74429ed4c904dd69334518fbefc57d8\\\",\\n                \\\"membershipRole\\\": \\\"owner\\\",\\n                \\\"membershipCreatedAt\\\": \\\"2026-02-24T20:23:56.937Z\\\"\\n              },\\n              {\\n                \\\"id\\\": \\\"3A8C8QT5YInOqFaMrifWs4IEpPA\\\",\\n                \\\"name\\\": \\\"Saga uc-106-the-solo-entrepreneur-sarah\\\",\\n                \\\"slug\\\": \\\"uc-106-the-solo-entrepreneur-sarah-9xho7hs2\\\",\\n                \\\"membershipId\\\": \\\"member_73f4830c52384ce1a07291441d471777\\\",\\n                \\\"membershipRole\\\": \\\"owner\\\",\\n                \\\"membershipCreatedAt\\\": \\\"2026-02-24T20:24:10.851Z\\\"\\n              },\\n              {\\n                \\\"id\\\": \\\"3A8C8Ump9ILiEhuX9dj4m2cnSLV\\\",\\n                \\\"name\\\": \\\"Saga uc-107-the-solo-entrepreneur-sarah\\\",\\n                \\\"slug\\\": \\\"uc-107-the-solo-entrepreneur-sarah-hjb6rguj\\\",\\n                \\\"membershipId\\\": \\\"member_244a2bd27b054c2483cfa034f92ed76e\\\",\\n                \\\"membershipRole\\\": \\\"owner\\\",\\n                \\\"membershipCreatedAt\\\": \\\"2026-02-24T20:24:10.844Z\\\"\\n              },\\n              {\\n                \\\"id\\\": \\\"3A8C8ScCBRPrwIuMWYeAKrKdUOq\\\",\\n                \\\"name\\\": \\\"Saga uc-108-the-solo-entrepreneur-sarah\\\",\\n                \\\"slug\\\": \\\"uc-108-the-solo-entrepreneur-sarah-ok8qu7dp\\\",\\n                \\\"membershipId\\\": \\\"member_4dad8ef9ca704ec388db1fb4f929d6c5\\\",\\n                \\\"membershipRole\\\": \\\"owner\\\",\\n                \\\"membershipCreatedAt\\\": \\\"2026-02-24T20:24:10.972Z\\\"\\n              },\\n              {\\n                \\\"id\\\": \\\"3A8C8OoLx1XtsoCd4az7SIf2aqJ\\\",\\n                \\\"name\\\": \\\"Saga uc-109-the-solo-entrepreneur-sarah\\\",\\n                \\\"slug\\\": \\\"uc-109-the-solo-entrepreneur-sarah-tysxd5qs\\\",\\n                \\\"membershipId\\\": \\\"member_88b5bea1e1854a8ebdf5666a98be5fa7\\\",\\n                \\\"membershipRole\\\": \\\"owner\\\",\\n                \\\"membershipCreatedAt\\\": \\\"2026-02-24T20:24:10.998Z\\\"\\n              },\\n              {\\n                \\\"id\\\": \\\"3A8C8bPx0IXOm8zbPcb8HvAWxrq\\\",\\n                \\\"name\\\": \\\"Saga uc-11-the-solo-entrepreneur-sarah\\\",\\n                \\\"slug\\\": \\\"uc-11-the-solo-entrepreneur-sarah-z5x8e50o\\\",\\n                \\\"membershipId\\\": \\\"member_4126fd23107a4105aa05a8485f0b280e\\\",\\n                \\\"membershipRole\\\": \\\"owner\\\",\\n                \\\"membershipCreatedAt\\\": \\\"2026-02-24T20:24:11.114Z\\\"\\n              },\\n              {\\n                \\\"id\\\": \\\"3A8C8YBdmiBQ6XpVhvJGOwt7Ufp\\\",\\n                \\\"name\\\": \\\"Saga uc-110-the-solo-entrepreneur-sarah\\\",\\n                \\\"slug\\\": \\\"uc-110-the-solo-entrepreneur-sarah-azku0mg1\\\",\\n                \\\"membershipId\\\": \\\"member_d8b36ac0167841fea54dcaa9d49e9717\\\",\\n                \\\"membershipRole\\\": \\\"owner\\\",\\n                \\\"membershipCreatedAt\\\": \\\"2026-02-24T20:24:11.250Z\\\"\\n              },\\n              {\\n                \\\"id\\\": \\\"3A8C8VVf8iCJR5SeeqXZOmVJKgr\\\",\\n                \\\"name\\\": \\\"Saga uc-111-the-solo-entrepreneur-sarah\\\",\\n                \\\"slug\\\": \\\"uc-111-the-solo-entrepreneur-sarah-ft7w2mgy\\\",\\n                \\\"membershipId\\\": \\\"member_6f407503b455409b8e7664fbcc10a0bc\\\",\\n                \\\"membershipRole\\\": \\\"owner\\\",\\n                \\\"membershipCreatedAt\\\": \\\"2026-02-24T20:24:11.261Z\\\"\\n              },\\n              {\\n                \\\"id\\\": \\\"3A8C8Yiqb9Ej6caTTbLcUU1Dkna\\\",\\n                \\\"name\\\": \\\"Saga uc-112-the-solo-entrepreneur-sarah\\\",\\n                \\\"slug\\\": \\\"uc-112-the-solo-entrepreneur-sarah-qvt1rsit\\\",\\n                \\\"membershipId\\\": \\\"member_89b70bfcc99b4c1fbddff085fdb7f3d8\\\",\\n                \\\"membershipRole\\\": \\\"owner\\\",\\n                \\\"membershipCreatedAt\\\": \\\"2026-02-24T20:24:11.303Z\\\"\\n              },\\n              {\\n                \\\"id\\\": \\\"3A8CAcaz3uzoR5qWTXSyTkA8ypJ\\\",\\n                \\\"name\\\": \\\"Saga uc-113-the-solo-entrepreneur-sarah\\\",\\n                \\\"slug\\\": \\\"uc-113-the-solo-entrepreneur-sarah-l752lq49\\\",\\n                \\\"membershipId\\\": \\\"member_b11cb89a104541f3884283cdc5d1182f\\\",\\n                \\\"membershipRole\\\": \\\"owner\\\",\\n                \\\"membershipCreatedAt\\\": \\\"2026-02-24T20:24:27.834Z\\\"\\n              },\\n              {\\n                \\\"id\\\": \\\"3A8CAeYH6rMAYVL8nfU74BeIAAJ\\\",\\n                \\\"name\\\": \\\"Saga uc-114-the-solo-entrepreneur-sarah\\\",\\n                \\\"slug\\\": \\\"uc-114-the-solo-entrepreneur-sarah-66buy1un\\\",\\n                \\\"membershipId\\\": \\\"member_5fb441393dae44438ae740b24620259c\\\",\\n                \\\"membershipRole\\\": \\\"owner\\\",\\n                \\\"membershipCreatedAt\\\": \\\"2026-02-24T20:24:28.492Z\\\"\\n              },\\n              {\\n                \\\"id\\\": \\\"3A8CAvMhvCYKzz2MG3yz21D2kWH\\\",\\n                \\\"name\\\": \\\"Saga uc-115-the-solo-entrepreneur-sarah\\\",\\n                \\\"slug\\\": \\\"uc-115-the-solo-entrepreneur-sarah-59yll9ud\\\",\\n                \\\"membershipId\\\": \\\"member_daada7b83b9649869fd81384e5cb581d\\\",\\n                \\\"membershipRole\\\": \\\"owner\\\",\\n         ",
+        "_size": 20306
+      },
+      "at": "2026-02-24T20:25:57.744Z"
+    }
+  ]
+}

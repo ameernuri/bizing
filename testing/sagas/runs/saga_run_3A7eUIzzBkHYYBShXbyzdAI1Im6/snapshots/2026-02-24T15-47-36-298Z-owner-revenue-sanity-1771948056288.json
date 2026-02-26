@@ -1,0 +1,148 @@
+{
+  "schemaVersion": "snapshot.v1",
+  "screenKey": "owner-revenue-sanity-1771948056288",
+  "title": "Owner validates financial/reporting outputs Snapshot",
+  "generatedAt": "2026-02-24T15:47:36.296Z",
+  "stepKey": "owner-revenue-sanity",
+  "status": "passed",
+  "view": {
+    "title": "Owner validates financial/reporting outputs",
+    "subtitle": "Revenue sanity computed from booking orders.",
+    "blocks": [
+      {
+        "type": "alert",
+        "title": "Owner Revenue Sanity completed",
+        "message": "Revenue sanity computed from booking orders.",
+        "tone": "success"
+      },
+      {
+        "type": "stats",
+        "title": "What user sees at a glance",
+        "items": [
+          {
+            "label": "BookingCount",
+            "value": "2"
+          },
+          {
+            "label": "TotalMinor",
+            "value": "30000"
+          }
+        ]
+      },
+      {
+        "type": "key_value",
+        "title": "Screen details",
+        "items": [
+          {
+            "label": "BookingCount",
+            "value": "2"
+          },
+          {
+            "label": "TotalMinor",
+            "value": "30000"
+          },
+          {
+            "label": "Currency",
+            "value": "USD"
+          }
+        ]
+      }
+    ]
+  },
+  "rawData": {
+    "stepKey": "owner-revenue-sanity",
+    "resultPayload": {
+      "note": "Revenue sanity computed from booking orders.",
+      "evidence": {
+        "bookingCount": 2,
+        "totalMinor": 30000,
+        "currency": "USD"
+      }
+    },
+    "apiCalls": [
+      {
+        "method": "POST",
+        "path": "/api/v1/sagas/runs/saga_run_3A7eUNbUZM87fVDjjj6qIxUrt6O/steps/adversary-cross-biz-read/result",
+        "status": 200,
+        "requestBody": {
+          "status": "in_progress",
+          "startedAt": "2026-02-24T15:47:36.148Z",
+          "resultPayload": {
+            "note": "Started adversary-cross-biz-read"
+          },
+          "assertionSummary": {
+            "status": "in_progress"
+          }
+        },
+        "responseBody": {
+          "success": true,
+          "data": {
+            "id": "saga_run_step_3A7eUL6JnMUPwGrVTE5TzOhnkVT",
+            "sagaRunId": "saga_run_3A7eUNbUZM87fVDjjj6qIxUrt6O",
+            "phaseKey": "security-and-abuse",
+            "phaseOrder": 6,
+            "phaseTitle": "Security And Abuse Checks",
+            "stepKey": "adversary-cross-biz-read",
+            "stepOrder": 16,
+            "actorKey": "adversary",
+            "instruction": "Using credentials from another context, attempt to read or mutate booking/order resources for this biz.",
+            "expectedResult": "Request is rejected with forbidden/unauthorized error and no data leakage.",
+            "status": "in_progress",
+            "attemptCount": 1,
+            "startedAt": "2026-02-24T15:47:36.148Z",
+            "endedAt": null,
+            "failureCode": null,
+            "failureMessage": null,
+            "resultPayload": {
+              "note": "Started adversary-cross-biz-read"
+            },
+            "assertionSummary": {
+              "status": "in_progress"
+            },
+            "metadata": {},
+            "createdAt": "2026-02-24T15:47:30.814Z",
+            "updatedAt": "2026-02-24T15:47:30.814Z",
+            "deletedAt": null,
+            "createdBy": null,
+            "updatedBy": null,
+            "deletedBy": null
+          },
+          "meta": {
+            "requestId": "2c8054e9-e638-40cf-90dc-520ed1d0a799",
+            "timestamp": "2026-02-24T15:47:36.173Z"
+          }
+        },
+        "at": "2026-02-24T15:47:36.176Z"
+      },
+      {
+        "method": "POST",
+        "path": "/api/v1/bizes/3A7eUSCmkTWjbsN7gpn18qFvOzN/booking-orders",
+        "status": 403,
+        "requestBody": {
+          "offerId": "offer_3A7eUi0Cq2AK2YA6YzTTxpbtOcQ",
+          "offerVersionId": "offer_version_3A7eUndWWXnCQyog3dxpOmoLjt5",
+          "status": "draft",
+          "subtotalMinor": 1000,
+          "taxMinor": 0,
+          "feeMinor": 0,
+          "discountMinor": 0,
+          "totalMinor": 1000,
+          "currency": "USD"
+        },
+        "responseBody": {
+          "success": false,
+          "error": {
+            "code": "FORBIDDEN",
+            "message": "You are not a member of this biz."
+          },
+          "meta": {
+            "requestId": "b366f752-6f05-4ba3-ade7-d03e9f83b416",
+            "timestamp": "2026-02-24T15:47:36.177Z"
+          }
+        },
+        "at": "2026-02-24T15:47:36.178Z"
+      }
+    ]
+  },
+  "metadata": {}
+}

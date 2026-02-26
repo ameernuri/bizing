@@ -1,0 +1,335 @@
+{
+  "schemaVersion": "snapshot.v1",
+  "screenKey": "adversary-hold-abuse-1771944306992",
+  "title": "Adversary attempts demand/hold abuse Snapshot",
+  "generatedAt": "2026-02-24T14:45:07.136Z",
+  "stepKey": "adversary-hold-abuse",
+  "status": "passed",
+  "view": {
+    "title": "Adversary attempts demand/hold abuse",
+    "subtitle": "Repeated unauthorized hold attempts were blocked (403).",
+    "blocks": [
+      {
+        "type": "alert",
+        "title": "Adversary Hold Abuse completed",
+        "message": "Repeated unauthorized hold attempts were blocked (403).",
+        "tone": "success"
+      }
+    ]
+  },
+  "rawData": {
+    "stepKey": "adversary-hold-abuse",
+    "resultPayload": {
+      "note": "Repeated unauthorized hold attempts were blocked (403)."
+    },
+    "apiCalls": [
+      {
+        "method": "POST",
+        "path": "/api/v1/sagas/runs/saga_run_3A7WojNcNiLu4p5Bu0WiWWhEn4j/steps/adversary-cross-biz-read/result",
+        "status": 200,
+        "requestBody": {
+          "status": "passed",
+          "startedAt": "2026-02-24T14:45:04.376Z",
+          "endedAt": "2026-02-24T14:45:04.376Z",
+          "failureMessage": null,
+          "resultPayload": {
+            "note": "Cross-biz read blocked for non-member account.",
+            "evidence": {
+              "adversaryUserId": "RACaMXJ2ORQ2hGLtBrOoSI1pfnqz5F53"
+            }
+          },
+          "assertionSummary": {
+            "status": "passed",
+            "hasFailure": false,
+            "assertionsPassed": 1
+          }
+        },
+        "responseBody": {
+          "success": true,
+          "data": {
+            "id": "saga_run_step_3A7WoksR20hzVF92oHcUwz7P14G",
+            "sagaRunId": "saga_run_3A7WojNcNiLu4p5Bu0WiWWhEn4j",
+            "phaseKey": "security-and-abuse",
+            "phaseOrder": 6,
+            "phaseTitle": "Security And Abuse Checks",
+            "stepKey": "adversary-cross-biz-read",
+            "stepOrder": 14,
+            "actorKey": "adversary",
+            "instruction": "Using credentials from another context, attempt to read or mutate booking/order resources for this biz.",
+            "expectedResult": "Request is rejected with forbidden/unauthorized error and no data leakage.",
+            "status": "passed",
+            "attemptCount": 1,
+            "startedAt": "2026-02-24T14:45:04.376Z",
+            "endedAt": "2026-02-24T14:45:04.376Z",
+            "failureCode": null,
+            "failureMessage": null,
+            "resultPayload": {
+              "note": "Cross-biz read blocked for non-member account.",
+              "evidence": {
+                "adversaryUserId": "RACaMXJ2ORQ2hGLtBrOoSI1pfnqz5F53"
+              }
+            },
+            "assertionSummary": {
+              "status": "passed",
+              "hasFailure": false,
+              "assertionsPassed": 1
+            },
+            "metadata": {},
+            "createdAt": "2026-02-24T14:44:25.606Z",
+            "updatedAt": "2026-02-24T14:44:25.606Z",
+            "deletedAt": null,
+            "createdBy": null,
+            "updatedBy": null,
+            "deletedBy": null
+          },
+          "meta": {
+            "requestId": "b61e2805-6189-48eb-a36d-7f8ed160f75e",
+            "timestamp": "2026-02-24T14:45:05.308Z"
+          }
+        },
+        "at": "2026-02-24T14:45:05.309Z"
+      },
+      {
+        "method": "POST",
+        "path": "/api/v1/bizes/3A7Wpk1Fv8GjMvzQNej0SUCYoW3/booking-orders",
+        "status": 403,
+        "requestBody": {
+          "offerId": "offer_3A7WrbsVWXc2xqQFBzPvhy9i4Np",
+          "offerVersionId": "offer_version_3A7Wrso3TeTKBXgElRfzKasp4PW",
+          "status": "draft",
+          "subtotalMinor": 1000,
+          "taxMinor": 0,
+          "feeMinor": 0,
+          "discountMinor": 0,
+          "totalMinor": 1000,
+          "currency": "USD"
+        },
+        "responseBody": {
+          "success": false,
+          "error": {
+            "code": "FORBIDDEN",
+            "message": "You are not a member of this biz."
+          },
+          "meta": {
+            "requestId": "a8cbeceb-8701-425c-8182-ee38332d6940",
+            "timestamp": "2026-02-24T14:45:05.354Z"
+          }
+        },
+        "at": "2026-02-24T14:45:05.355Z"
+      },
+      {
+        "method": "POST",
+        "path": "/api/v1/sagas/runs/saga_run_3A7WoZWzsuAOhvzYWaxAX3W8tds/steps/adversary-hold-abuse/result",
+        "status": 200,
+        "requestBody": {
+          "status": "in_progress",
+          "startedAt": "2026-02-24T14:45:04.925Z",
+          "resultPayload": {
+            "note": "Started adversary-hold-abuse"
+          },
+          "assertionSummary": {
+            "status": "in_progress"
+          }
+        },
+        "responseBody": {
+          "success": true,
+          "data": {
+            "id": "saga_run_step_3A7WoXEYL3jEl08yskM2rPPNRQN",
+            "sagaRunId": "saga_run_3A7WoZWzsuAOhvzYWaxAX3W8tds",
+            "phaseKey": "security-and-abuse",
+            "phaseOrder": 6,
+            "phaseTitle": "Security And Abuse Checks",
+            "stepKey": "adversary-hold-abuse",
+            "stepOrder": 15,
+            "actorKey": "adversary",
+            "instruction": "Trigger repeated booking/hold-like attempts to validate throttling, expiry, or non-blocking demand visibility behavior.",
+            "expectedResult": "Abusive attempts are rate-limited or isolated without blocking legitimate customer flow.",
+            "status": "in_progress",
+            "attemptCount": 1,
+            "startedAt": "2026-02-24T14:45:04.925Z",
+            "endedAt": null,
+            "failureCode": null,
+            "failureMessage": null,
+            "resultPayload": {
+              "note": "Started adversary-hold-abuse"
+            },
+            "assertionSummary": {
+              "status": "in_progress"
+            },
+            "metadata": {},
+            "createdAt": "2026-02-24T14:44:24.658Z",
+            "updatedAt": "2026-02-24T14:44:24.658Z",
+            "deletedAt": null,
+            "createdBy": null,
+            "updatedBy": null,
+            "deletedBy": null
+          },
+          "meta": {
+            "requestId": "efe6df79-5674-471f-afa9-d7ea1a1b72db",
+            "timestamp": "2026-02-24T14:45:05.397Z"
+          }
+        },
+        "at": "2026-02-24T14:45:05.397Z"
+      },
+      {
+        "method": "POST",
+        "path": "/api/v1/sagas/runs/saga_run_3A7WoqvTY34qChbLDjjyVVEhyPX/steps/adversary-cross-biz-read/result",
+        "status": 200,
+        "requestBody": {
+          "status": "in_progress",
+          "startedAt": "2026-02-24T14:45:04.926Z",
+          "resultPayload": {
+            "note": "Started adversary-cross-biz-read"
+          },
+          "assertionSummary": {
+            "status": "in_progress"
+          }
+        },
+        "responseBody": {
+          "success": true,
+          "data": {
+            "id": "saga_run_step_3A7WorfY7S0MrYpUpu74mOAGfK7",
+            "sagaRunId": "saga_run_3A7WoqvTY34qChbLDjjyVVEhyPX",
+            "phaseKey": "security-and-abuse",
+            "phaseOrder": 6,
+            "phaseTitle": "Security And Abuse Checks",
+            "stepKey": "adversary-cross-biz-read",
+            "stepOrder": 14,
+            "actorKey": "adversary",
+            "instruction": "Using credentials from another context, attempt to read or mutate booking/order resources for this biz.",
+            "expectedResult": "Request is rejected with forbidden/unauthorized error and no data leakage.",
+            "status": "in_progress",
+            "attemptCount": 1,
+            "startedAt": "2026-02-24T14:45:04.926Z",
+            "endedAt": null,
+            "failureCode": null,
+            "failureMessage": null,
+            "resultPayload": {
+              "note": "Started adversary-cross-biz-read"
+            },
+            "assertionSummary": {
+              "status": "in_progress"
+            },
+            "metadata": {},
+            "createdAt": "2026-02-24T14:44:26.822Z",
+            "updatedAt": "2026-02-24T14:44:26.822Z",
+            "deletedAt": null,
+            "createdBy": null,
+            "updatedBy": null,
+            "deletedBy": null
+          },
+          "meta": {
+            "requestId": "46222d8c-d7eb-4d75-9d20-8deae3457b84",
+            "timestamp": "2026-02-24T14:45:05.423Z"
+          }
+        },
+        "at": "2026-02-24T14:45:05.424Z"
+      },
+      {
+        "method": "POST",
+        "path": "/api/v1/bizes/3A7Wpk1Fv8GjMvzQNej0SUCYoW3/booking-orders",
+        "status": 403,
+        "requestBody": {
+          "offerId": "offer_3A7WrbsVWXc2xqQFBzPvhy9i4Np",
+          "offerVersionId": "offer_version_3A7Wrso3TeTKBXgElRfzKasp4PW",
+          "status": "draft",
+          "subtotalMinor": 1000,
+          "taxMinor": 0,
+          "feeMinor": 0,
+          "discountMinor": 0,
+          "totalMinor": 1000,
+          "currency": "USD"
+        },
+        "responseBody": {
+          "success": false,
+          "error": {
+            "code": "FORBIDDEN",
+            "message": "You are not a member of this biz."
+          },
+          "meta": {
+            "requestId": "97dd1b9e-d58c-4f4e-9052-8798ae3b4e98",
+            "timestamp": "2026-02-24T14:45:05.464Z"
+          }
+        },
+        "at": "2026-02-24T14:45:05.465Z"
+      },
+      {
+        "method": "POST",
+        "path": "/api/v1/sagas/runs/saga_run_3A7WoawNGgtTFE440JenlJIJePW/steps/adversary-hold-abuse/result",
+        "status": 200,
+        "requestBody": {
+          "status": "passed",
+          "startedAt": "2026-02-24T14:45:04.607Z",
+          "endedAt": "2026-02-24T14:45:04.607Z",
+          "failureMessage": null,
+          "resultPayload": {
+            "note": "Repeated unauthorized hold attempts were blocked (403)."
+          },
+          "assertionSummary": {
+            "status": "passed",
+            "hasFailure": false,
+            "assertionsPassed": 1
+          }
+        },
+        "responseBody": {
+          "success": true,
+          "data": {
+            "id": "saga_run_step_3A7WoaUR2eZb278EtQRj1XnB7Tc",
+            "sagaRunId": "saga_run_3A7WoawNGgtTFE440JenlJIJePW",
+            "phaseKey": "security-and-abuse",
+            "phaseOrder": 6,
+            "phaseTitle": "Security And Abuse Checks",
+            "stepKey": "adversary-hold-abuse",
+            "stepOrder": 15,
+            "actorKey": "adversary",
+            "instruction": "Trigger repeated booking/hold-like attempts to validate throttling, expiry, or non-blocking demand visibility behavior.",
+            "expectedResult": "Abusive attempts are rate-limited or isolated without blocking legitimate customer flow.",
+            "status": "passed",
+            "attemptCount": 1,
+            "startedAt": "2026-02-24T14:45:04.607Z",
+            "endedAt": "2026-02-24T14:45:04.607Z",
+            "failureCode": null,
+            "failureMessage": null,
+            "resultPayload": {
+              "note": "Repeated unauthorized hold attempts were blocked (403)."
+            },
+            "assertionSummary": {
+              "status": "passed",
+              "hasFailure": false,
+              "assertionsPassed": 1
+            },
+            "metadata": {},
+            "createdAt": "2026-02-24T14:44:24.539Z",
+            "updatedAt": "2026-02-24T14:44:24.539Z",
+            "deletedAt": null,
+            "createdBy": null,
+            "updatedBy": null,
+            "deletedBy": null
+          },
+          "meta": {
+            "requestId": "f5085315-53e1-4cd8-a50d-81a3ebb7715e",
+            "timestamp": "2026-02-24T14:45:05.467Z"
+          }
+        },
+        "at": "2026-02-24T14:45:05.468Z"
+      },
+      {
+        "method": "POST",
+        "path": "/api/v1/sagas/runs/saga_run_3A7Woq0tFXsTsvaaxAMaKXPPq8o/snapshots",
+        "status": 201,
+        "requestBody": {
+          "_truncated": true,
+          "_preview": "{\"stepKey\":\"adversary-cross-biz-read\",\"screenKey\":\"adversary-cross-biz-read-1771944305018\",\"title\":\"Adversary attempts unauthorized cross-biz read Snapshot\",\"status\":\"passed\",\"route\":\"/sagas/saga_run_3A7Woq0tFXsTsvaaxAMaKXPPq8o/adversary-cross-biz-read\",\"format\":\"json\",\"view\":{\"title\":\"Adversary attempts unauthorized cross-biz read\",\"subtitle\":\"Cross-biz read blocked for non-member account.\",\"blocks\":[{\"type\":\"alert\",\"title\":\"Adversary Cross Biz Read completed\",\"message\":\"Cross-biz read blocked for non-member account.\",\"tone\":\"success\"},{\"type\":\"key_value\",\"title\":\"Screen details\",\"items\":[{\"label\":\"AdversaryUserId\",\"value\":\"ubR71IBl4poBLOGuVahAyBgYQ0N05DGy\"}]}]},\"rawData\":{\"stepKey\":\"adversary-cross-biz-read\",\"resultPayload\":{\"note\":\"Cross-biz read blocked for non-member account.\",\"evidence\":{\"adversaryUserId\":\"ubR71IBl4poBLOGuVahAyBgYQ0N05DGy\"}},\"apiCalls\":[{\"method\":\"POST\",\"path\":\"/api/v1/sagas/runs/saga_run_3A7WoawNGgtTFE440JenlJIJePW/steps/adversary-cross-biz-read/result\",\"status\":200,\"requestBody\":{\"status\":\"passed\",\"startedAt\":\"2026-02-24T14:45:02.046Z\",\"endedAt\":\"2026-02-24T14:45:02.046Z\",\"failureMessage\":null,\"resultPayload\":{\"note\":\"Cross-biz read blocked for non-member account.\",\"evidence\":{\"adversaryUserId\":\"4p5VJ1T2zujP3MktKPwolyNy03yFSyGz\"}},\"assertionSummary\":{\"status\":\"passed\",\"hasFailure\":false,\"assertionsPassed\":1}},\"responseBody\":{\"success\":true,\"data\":{\"id\":\"saga_run_step_3A7WocmnWI3BfTFXAoWUR3vAQ1h\",\"sagaRunId\":\"saga_run_3A7WoawNGgtTFE440JenlJIJePW\",\"phaseKey\":\"security-and-abuse\",\"phaseOrder\":6,\"phaseTitle\":\"Security And Abuse Checks\",\"stepKey\":\"adversary-cross-biz-read\",\"stepOrder\":14,\"actorKey\":\"adversary\",\"instruction\":\"Using credentials from another context, attempt to read or mutate booking/order resources for this biz.\",\"expectedResult\":\"Request is rejected with forbidden/unauthorized error and no data leakage.\",\"status\":\"passed\",\"attemptCount\":1,\"startedAt\":\"2026-02-24T14:45:02.046Z\",\"endedAt\":\"2026-02-24T14:45:02.046Z\",\"failureCode\":null,\"failureMessage\":null,\"resultPayload\":{\"note\":\"Cross-biz read blocked for non-member account.\",\"evidence\":{\"adversaryUserId\":\"4p5VJ1T2zujP3MktKPwolyNy03yFSyGz\"}},\"assertionSummary\":{\"status\":\"passed\",\"hasFailure\":false,\"assertionsPassed\":1},\"metadata\":{},\"createdAt\":\"2026-02-24T14:44:24.539Z\",\"updatedAt\":\"2026-02-24T14:44:24.539Z\",\"deletedAt\":null,\"createdBy\":null,\"updatedBy\":null,\"deletedBy\":null},\"meta\":{\"requestId\":\"d680bbb3-4b12-450a-9074-03a98954e62e\",\"timestamp\":\"2026-02-24T14:45:03.086Z\"}},\"at\":\"2026-02-24T14:45:03.087Z\"},{\"method\":\"POST\",\"path\":\"/api/v1/sagas/runs/saga_run_3A7WocLfFYU5flcectqIV3lo4Wh/snapshots\",\"status\":201,\"requestBody\":{\"_truncated\":true,\"_preview\":\"{\\\"stepKey\\\":\\\"adversary-cross-biz-read\\\",\\\"screenKey\\\":\\\"adversary-cross-biz-read-1771944302527\\\",\\\"title\\\":\\\"Adversary attempts unauthorized cross-biz read Snapshot\\\",\\\"status\\\":\\\"passed\\\",\\\"route\\\":\\\"/sagas/saga_run_3A7WocLfFYU5flcectqIV3lo4Wh/adversary-cross-biz-read\\\",\\\"format\\\":\\\"json\\\",\\\"view\\\":{\\\"title\\\":\\\"Adversary attempts unauthorized cross-biz read\\\",\\\"subtitle\\\":\\\"Cross-biz read blocked for non-member account.\\\",\\\"blocks\\\":[{\\\"type\\\":\\\"alert\\\",\\\"title\\\":\\\"Adversary Cross Biz Read completed\\\",\\\"message\\\":\\\"Cross-biz read blocked for non-member account.\\\",\\\"tone\\\":\\\"success\\\"},{\\\"type\\\":\\\"key_value\\\",\\\"title\\\":\\\"Screen details\\\",\\\"items\\\":[{\\\"label\\\":\\\"AdversaryUserId\\\",\\\"value\\\":\\\"Sp2rN4duEXbvq9y7EP8RFhXnPEd4knyF\\\"}]}]},\\\"rawData\\\":{\\\"stepKey\\\":\\\"adversary-cross-biz-read\\\",\\\"resultPayload\\\":{\\\"note\\\":\\\"Cross-biz read blocked for non-member account.\\\",\\\"evidence\\\":{\\\"adversaryUserId\\\":\\\"Sp2rN4duEXbvq9y7EP8RFhXnPEd4knyF\\\"}},\\\"apiCalls\\\":[{\\\"method\\\":\\\"POST\\\",\\\"path\\\":\\\"/api/v1/sagas/runs/saga_run_3A7WojNcNiLu4p5Bu0WiWWhEn4j/snapshots\\\",\\\"status\\\":201,\\\"requestBody\\\":{\\\"_truncated\\\":true,\\\"_preview\\\":\\\"{\\\\\\\"stepKey\\\\\\\":\\\\\\\"customer-book-primary\\\\\\\",\\\\\\\"screenKey\\\\\\\":\\\\\\\"customer-book-primary-1771944299856\\\\\\\",\\\\\\\"title\\\\\\\":\\\\\\\"Customer one books primary offer Snapshot\\\\\\\",\\\\\\\"status\\\\\\\":\\\\\\\"passed\\\\\\\",\\\\\\\"route\\\\\\\":\\\\\\\"/sagas/saga_run_3A7WojNcNiLu4p5Bu0WiWWhEn4j/customer-book-primary\\\\\\\",\\\\\\\"format\\\\\\\":\\\\\\\"json\\\\\\\",\\\\\\\"view\\\\\\\":{\\\\\\\"title\\\\\\\":\\\\\\\"Customer one books primary offer\\\\\\\",\\\\\\\"subtitle\\\\\\\":\\\\\\\"Primary booking created.\\\\\\\",\\\\\\\"blocks\\\\\\\":[{\\\\\\\"type\\\\\\\":\\\\\\\"alert\\\\\\\",\\\\\\\"title\\\\\\\":\\\\\\\"Customer Book Primary completed\\\\\\\",\\\\\\\"message\\\\\\\":\\\\\\\"Primary booking created.\\\\\\\",\\\\\\\"tone\\\\\\\":\\\\\\\"success\\\\\\\"},{\\\\\\\"type\\\\\\\":\\\\\\\"key_value\\\\\\\",\\\\\\\"title\\\\\\\":\\\\\\\"Booking confirmation\\\\\\\",\\\\\\\"items\\\\\\\":[{\\\\\\\"label\\\\\\\":\\\\\\\"Booking id\\\\\\\",\\\\\\\"value\\\\\\\":\\\\\\\"booking_order_3A7Wsr3phe9qq8nQ0kCW5BbHBo2\\\\\\\"},{\\\\\\\"label\\\\\\\":\\\\\\\"Status\\\\\\\",\\\\\\\"value\\\\\\\":\\\\\\\"confirmed\\\\\\\"},{\\\\\\\"label\\\\\\\":\\\\\\\"Starts at\\\\\\\",\\\\\\\"value\\\\\\\":\\\\\\\"2026-02-25T14:44:57.944Z\\\\\\\"},{\\\\\\\"label\\\\\\\":\\\\\\\"Total\\\\\\\",\\\\\\\"value\\\\\\\":\\\\\\\"15000\\\\\\\"}]},{\\\\\\\"type\\\\\\\":\\\\\\\"actions\\\\\\\",\\\\\\\"title\\\\\\\":\\\\\\\"Visible actions\\\\\\\",\\\\\\\"items\\\\\\\":[{\\\\\\\"label\\\\\\\":\\\\\\\"Download receipt\\\\\\\",\\\\\\\"kind\\\\\\\":\\\\\\\"secondary\\\\\\\",\\\\\\\"enabled\\\\\\\":true},{\\\\\\\"label\\\\\\\":\\\\\\\"Reschedule\\\\\\\",\\\\\\\"kind\\\\\\\":\\\\\\\"secondary\\\\\\\",\\\\\\\"enabled\\\\\\\":true},{\\\\\\\"label\\\\\\\":\\\\\\\"Cancel booking\\\\\\\",\\\\\\\"kind\\\\\\\":\\\\\\\"danger\\\\\\\",\\\\\\\"enabled\\\\\\\":true}]},{\\\\\\\"type\\\\\\\":\\\\\\\"stats\\\\\\\",\\\\\\\"title\\\\\\\":\\\\\\\"What user sees at a glance\\\\\\\",\\\\\\\"items\\\\\\\":[{\\\\\\\"label\\\\\\\":\\\\\\\"SubtotalMinor\\\\\\\",\\\\\\\"value\\\\\\\":\\\\\\\"15000\\\\\\\"},{\\\\\\\"label\\\\\\\":\\\\\\\"TaxMinor\\\\\\\",\\\\\\\"value\\\\\\\":\\\\\\\"0\\\\\\\"},{\\\\\\\"label\\\\\\\":\\\\\\\"FeeMinor\\\\\\\",\\\\\\\"value\\\\\\\":\\\\\\\"0\\\\\\\"},{\\\\\\\"label\\\\\\\":\\\\\\\"DiscountMinor\\\\\\\",\\\\\\\"value\\\\\\\":\\\\\\\"0\\\\\\\"},{\\\\\\\"label\\\\\\\":\\\\\\\"TotalMinor\\\\\\\",\\\\\\\"value\\\\\\\":\\\\\\\"15000\\\\\\\"}]},{\\\\\\\"type\\\\\\\":\\\\\\\"key_value\\\\\\\",\\\\\\\"title\\\\\\\":\\\\\\\"Screen details\\\\\\\",\\\\\\\"items\\\\\\\":[{\\\\\\\"label\\\\\\\":\\\\\\\"Id\\\\\\\",\\\\\\\"value\\\\\\\":\\\\\\\"booking_order_3A7Wsr3phe9qq8nQ0kCW5BbHBo2\\\\\\\"},{\\\\\\\"label\\\\\\\":\\\\\\\"BizId\\\\\\\",\\\\\\\"value\\\\\\\":\\\\\\\"3A7WposRk60tJSoOQYKrsdIcT0d\\\\\\\"},{\\\\\\\"label\\\\\\\":\\\\\\\"OfferId\\\\\\\",\\\\\\\"value\\\\\\\":\\\\\\\"offer_3A7WrcaPp1alZexXXvPb2Zcyz0E\\\\\\\"},{\\\\\\\"label\\\\\\\":\\\\\\\"OfferVersionId\\\\\\\",\\\\\\\"value\\\\\\\":\\\\\\\"offer_version_3A7WryOuzrkoQP4xmmwcy3btku5\\\\\\\"},{\\\\\\\"label\\\\\\\":\\\\\\\"CustomerUserId\\\\\\\",\\\\\\\"value\\\\\\\":\\\\\\\"VM4M8qAF8oIokDYxVYLIYoYASlHRWy0e\\\\\\\"},{\\\\\\\"label\\\\\\\":\\\\\\\"CustomerGroupAccountId\\\\\\\",\\\\\\\"value\\\\\\\":\\\\\\\"null\\\\\\\"},{\\\\\\\"label\\\\\\\":\\\\\\\"Status\\\\\\\",\\\\\\\"value\\\\\\\":\\\\\\\"confirmed\\\\\\\"},{\\\\\\\"label\\\\\\\":\\\\\\\"StatusConfigValueId\\\\\\\",\\\\\\\"value\\\\\\\":\\\\\\\"null\\\\\\\"},{\\\\\\\"label\\\\\\\":\\\\\\\"Currency\\\\\\\",\\\\\\\"value\\\\\\\":\\\\\\\"USD\\\\\\\"},{\\\\\\\"label\\\\\\\":\\\\\\\"SubtotalMinor\\\\\\\",\\\\\\\"value\\\\\\\":\\\\\\\"15000\\\\\\\"},{\\\\\\\"label\\\\\\\":\\\\\\\"TaxMinor\\\\\\\",\\\\\\\"value\\\\\\\":\\\\\\\"0\\\\\\\"},{\\\\\\\"label\\\\\\\":\\\\\\\"FeeMinor\\\\\\\",\\\\\\\"value\\\\\\\":\\\\\\\"0\\\\\\\"},{\\\\\\\"label\\\\\\\":\\\\\\\"DiscountMinor\\\\\\\",\\\\\\\"value\\\\\\\":\\\\\\\"0\\\\\\\"},{\\\\\\\"label\\\\\\\":\\\\\\\"TotalMinor\\\\\\\",\\\\\\\"value\\\\\\\":\\\\\\\"15000\\\\\\\"},{\\\\\\\"label\\\\\\\":\\\\\\\"RequestedStartAt\\\\\\\",\\\\\\\"value\\\\\\\":\\\\\\\"2026-02-25T14:44:57.944Z\\\\\\\"},{\\\\\\\"label\\\\\\\":\\\\\\\"RequestedEndAt\\\\\\\",\\\\\\\"value\\\\\\\":\\\\\\\"2026-02-25T15:34:57.944Z\\\\\\\"}]}]},\\\\\\\"rawData\\\\\\\":{\\\\\\\"stepKey\\\\\\\":\\\\\\\"customer-book-primary\\\\\\\",\\\\\\\"resultPayload\\\\\\\":{\\\\\\\"note\\\\\\\":\\\\\\\"Primary booking created.\\\\\\\",\\\\\\\"evidence\\\\\\\":{\\\\\\\"id\\\\\\\":\\\\\\\"booking_order_3A7Wsr3phe9qq8nQ0kCW5BbHBo2\\\\\\\",\\\\\\\"bizId\\\\\\\":\\\\\\\"3A7WposRk60tJSoOQYKrsdIcT0d\\\\\\\",\\\\\\\"offerId\\\\\\\":\\\\\\\"offer_3A7WrcaPp1alZexXXvPb2Zcyz0E\\\\\\\",\\\\\\\"offerVersionId\\\\\\\":\\\\\\\"offer_version_3A7WryOuzrkoQP4xmmwcy3btku5\\\\\\\",\\\\\\\"customerUserId\\\\\\\":\\\\\\\"VM4M8qAF8oIokDYxVYLIYoYASlHRWy0e\\\\\\\",\\\\\\\"customerGroupAccountId\\\\\\\":null,\\\\\\\"status\\\\\\\":\\\\\\\"confirmed\\\\\\\",\\\\\\\"statusConfigValueId\\\\\\\":null,\\\\\\\"currency\\\\\\\":\\\\\\\"USD\\\\\\\",\\\\\\\"subtotalMinor\\\\\\\":15000,\\\\\\\"taxMinor\\\\\\\":0,\\\\\\\"feeMinor\\\\\\\":0,\\\\\\\"discountMinor\\\\\\\":0,\\\\\\\"totalMinor\\\\\\\":15000,\\\\\\\"requestedStartAt\\\\\\\":\\\\\\\"2026-02-25T14:44:57.944Z\\\\\\\",\\\\\\\"requestedEndAt\\\\\\\":\\\\\\\"2026-02-25T15:34:57.944Z\\\\\\\",\\\\\\\"confirmedStartAt\\\\\\\":\\\\\\\"2026-02-25T14:44:57.944Z\\\\\\\",\\\\\\\"confirmedEndAt\\\\\\\":\\\\\\\"2026-02-25T15:34:57.944Z\\\\\\\",\\\\\\\"pricingSnapshot\\\\\\\":{},\\\\\\\"policySnapshot\\\\\\\":{},\\\\\\\"metadata\\\\\\\":{},\\\\\\\"createdAt\\\\\\\":\\\\\\\"2026-02-24T14:44:58.235Z\\\\\\\",\\\\\\\"updatedAt\\\\\\\":\\\\\\\"2026-02-24T14:44:58.235Z\\\\\\\",\\\\\\\"deletedAt\\\\\\\":null,\\\\\\\"createdBy\\\\\\\":null,\\\\\\\"updatedBy\\\\\\\":null,\\\\\\\"deletedBy\\\\\\\":null}},\\\\\\\"apiCalls\\\\\\\":[{\\\\\\\"method\\\\\\\":\\\\\\\"POST\\\\\\\",\\\\\\\"path\\\\\\\":\\\\\\\"/api/v1/sagas/runs/saga_run_3A7WogsmPwpso3OFAnqBaUDUVBd/traces\\\\\\\",\\\\\\\"status\\\\\\\":201,\\\\\\\"requestBody\\\\\\\":{\\\\\\\"stepKey\\\\\\\":\\\\\\\"customer-book-primary\\\\\\\",\\\\\\\"title\\\\\\\":\\\\\\\"Customer one books primary offer API Trace\\\\\\\",\\\\\\\"trace\\\\\\\":{\\\\\\\"stepKey\\\\\\\":\\\\\\\"customer-book-primary\\\\\\\",\\\\\\\"callCount\\\\\\\":3,\\\\\\\"calls\\\\\\\":[{\\\\\\\"method\\\\\\\":\\\\\\\"POST\\\\\\\",\\\\\\\"path\\\\\\\":\\\\\\\"/api/v1/sagas/runs/saga_run_3A7WojNcNiLu4p5Bu0WiWWhEn4j/steps/customer-sign-up/result\\\\\\\",\\\\\\\"status\\\\\\\":200,\\\\\\\"requestBody\\\\\\\":{\\\\\\\"status\\\\\\\":\\\\\\\"passed\\\\\\\",\\\\\\\"startedAt\\\\\\\":\\\\\\\"2026-02-24T14:44:56.422Z\\\\\\\",\\\\\\\"endedAt\\\\\\\":\\\\\\\"2026-02-24T14:44:56.422Z\\\\\\\",\\\\\\\"failureMessage\\\\\\\":null,\\\\\\\"resultPayload\\\\\\\":{\\\\\\\"note\\\\\\\":\\\\\\\"Primary customer account created.\\\\\\\",\\\\\\\"evidence\\\\\\\":{\\\\\\\"customerUserId\\\\\\\":\\\\\\\"VM4M8qAF8oIokDYxVYLIYoYASlHRWy0e\\\\\\\",\\\\\\\"email\\\\\\\":\\\\\\\"customer1-uc-147-the-solo-entrepreneur-sarah-1771944295451-388c1n@example.com\\\\\\\"}},\\\\\\\"assertionSummary\\\\\\\":{\\\\\\\"status\\\\\\\":\\\\\\\"passed\\\\\\\",\\\\\\\"hasFailure\\\\\\\":false,\\\\\\\"assertionsPassed\\\\\\\":1}},\\\\\\\"responseBody\\\\\\\":{\\\\\\\"success\\\\\\\":true,\\\\\\\"data\\\\\\\":{\\\\\\\"id\\\\\\\":\\\\\\\"saga_run_step_3A7Wolwm4uF1RnZuGLx4FMaeAGh\\\\\\\",\\\\\\\"sagaRunId\\\\\\\":\\\\\\\"saga_run_3A7WojNcNiLu4p5Bu0WiWWhEn4j\\\\\\\",\\\\\\\"phaseKey\\\\\\\":\\\\\\\"customer-lifecycle\\\\\\\",\\\\\\\"phaseOrder\\\\\\\":5,\\\\\\\"phaseTitle\\\\\\\":\\\\\\\"Customer Lifecycle\\\\\\\",\\\\\\\"stepKey\\\\\\\":\\\\\\\"customer-sign-up\\\\\\\",\\\\\\\"stepOrder\\\\\\\":11,\\\\\\\"actorKey\\\\\\\":\\\\\\\"customer_1\\\\\\\",\\\\\\\"instruction\\\\\\\":\\\\\\\"Create customer account/session and verify customer can browse published offers.\\\\\\\",\\\\\\\"expectedResult\\\\\\\":\\\\\\\"Customer session established and offer discovery succeeds.\\\\\\\",\\\\\\\"status\\\\\\\":\\\\\\\"passed\\\\\\\",\\\\\\\"attemptCount\\\\\\\":1,\\\\\\\"startedAt\\\\\\\":\\\\\\\"2026-02-24T14:44:56.422Z\\\\\\\",\\\\\\\"endedAt\\\\\\\":\\\\\\\"2026-02-24T14:44:56.422Z\\\\\\\",\\\\\\\"failureCode\\\\\\\":null,\\\\\\\"failureMessage\\\\\\\":null,\\\\\\\"resultPayload\\\\\\\":{\\\\\\\"note\\\\\\\":\\\\\\\"Primary customer account created.\\\\\\\",\\\\\\\"evidence\\\\\\\":{\\\\\\\"email\\\\\\\":\\\\\\\"customer1-uc-147-the-solo-entrepreneur-sarah-1771944295451-388c1n@example.com\\\\\\\",\\\\\\\"customerUserId\\\\\\\":\\\\\\\"VM4M8qAF8oIokDYxVYLIYoYASlHRWy0e\\\\\\\"}},\\\\\\\"assertionSummary\\\\\\\":{\\\\\\\"status\\\\\\\":\\\\\\\"passed\\\\\\\",\\\\\\\"hasFailure\\\\\\\":false,\\\\\\\"assertionsPassed\\\\\\\":1},\\\\\\\"metadata\\\\\\\":{},\\\\\\\"createdAt\\\\\\\":\\\\\\\"2026-02-24T14:44:25.606Z\\\\\\\",\\\\\\\"updatedAt\\\\\\\":\\\\\\\"2026-02-24T14:44:25.606Z\\\\\\\",\\\\\\\"deletedAt\\\\\\\":null,\\\\\\\"createdBy\\\\\\\":null,\\\\\\\"updatedBy\\\\\\\":null,\\\\\\\"deletedBy\\\\\\\":null},\\\\\\\"meta\\\\\\\":{\\\\\\\"requestId\\\\\\\":\\\\\\\"0370ebf1-25a8-4233-be05-ee8c27990621\\\\\\\",\\\\\\\"timestamp\\\\\\\":\\\\\\\"2026-02-24T14:44:57.449Z\\\\\\\"}},\\\\\\\"at\\\\\\\":\\\\\\\"2026-02-24T14:44:57.450Z\\\\\\\"},{\\\\\\\"method\\\\\\\":\\\\\\\"POST\\\\\\\",\\\\\\\"path\\\\\\\":\\\\\\\"/api/v1/sagas/runs/saga_run_3A7WoZWzsuAOhvzYWaxAX3W8tds/steps/customer-book-primary/result\\\\\\\",\\\\\\\"status\\\\\\\":200,\\\\\\\"requestBody\\\\\\\":{\\\\\\\"status\\\\\\\":\\\\\\\"in_progress\\\\\\\",\\\\\\\"startedAt\\\\\\\":\\\\\\\"2026-02-24T14:44:57.125Z\\\\\\\",\\\\\\\"resultPayload\\\\\\\":{\\\\\\\"note\\\\\\\":\\\\\\\"Started customer-book-primary\\\\\\\"},\\\\\\\"assertionSummary\\\\\\\":{\\\\\\\"status\\\\\\\":\\\\\\\"in_progress\\\\\\\"}},\\\\\\\"responseBody\\\\\\\":{\\\\\\\"success\\\\\\\":true,\\\\\\\"data\\\\\\\":{\\\\\\\"id\\\\\\\":\\\\\\\"saga_run_step_3A7Wob1vBdP6SAEEGng7PSbjjCJ\\\\\\\",\\\\\\\"sagaRunId\\\\\\\":\\\\\\\"saga_run_3A7WoZWzsuAOhvzYWaxAX3W8tds\\\\\\\",\\\\\\\"phaseKey\\\\\\\":\\\\\\\"customer-lifecycle\\\\\\\",\\\\\\\"phaseOrder\\\\\\\":5,\\\\\\\"phaseTitle\\\\\\\":\\\\\\\"Customer Lifecycle\\\\\\\",\\\\\\\"stepKey\\\\\\\":\\\\\\\"customer-book-primary\\\\\\\",\\\\\\\"stepOrder\\\\\\\":12,\\\\\\\"actorKey\\\\\\\":\\\\\\\"customer_1\\\\\\\",\\\\\\\"instruction\\\\\\\":\\\\\\\"Create a booking order using the published offer version with realistic times and monetary totals.\\\\\\\",\\\\\\\"expectedResult\\\\\\\":\\\\\\\"Booking order is created and linked to offer/offer version with coherent totals.\\\\\\\",\\\\\\\"status\\\\\\\":\\\\\\\"in_progress\\\\\\\",\\\\\\\"attemptCount\\\\\\\":1,\\\\\\\"startedAt\\\\\\\":\\\\\\\"2026-02-24T14:44:57.125Z\\\\\\\",\\\\\\\"endedAt\\\\\\\":null,\\\\\\\"failureCode\\\\\\\":null,\\\\\\\"failureMessage\\\\\\\":null,\\\\\\\"resultPayload\\\\\\\":{\\\\\\\"note\\\\\\\":\\\\\\\"Started customer-book-primary\\\\\\\"",
+          "_size": 32986
+        },
+        "responseBody": {
+          "_truncated": true,
+          "_preview": "{\"success\":true,\"data\":{\"id\":\"saga_artifact_3A7Wtj5c3el2CpBAeqvdjwAzFfZ\",\"sagaRunId\":\"saga_run_3A7Woq0tFXsTsvaaxAMaKXPPq8o\",\"sagaRunStepId\":\"saga_run_step_3A7WornDb34VpBskjZ5LShKCqxZ\",\"artifactType\":\"snapshot\",\"title\":\"Adversary attempts unauthorized cross-biz read Snapshot\",\"storagePath\":\"testing/sagas/runs/saga_run_3A7Woq0tFXsTsvaaxAMaKXPPq8o/snapshots/2026-02-24T14-45-05-178Z-adversary-cross-biz-read-1771944305018.json\",\"contentType\":\"application/json\",\"bodyText\":\"{\\n  \\\"schemaVersion\\\": \\\"snapshot.v1\\\",\\n  \\\"screenKey\\\": \\\"adversary-cross-biz-read-1771944305018\\\",\\n  \\\"title\\\": \\\"Adversary attempts unauthorized cross-biz read Snapshot\\\",\\n  \\\"generatedAt\\\": \\\"2026-02-24T14:45:05.178Z\\\",\\n  \\\"stepKey\\\": \\\"adversary-cross-biz-read\\\",\\n  \\\"status\\\": \\\"passed\\\",\\n  \\\"view\\\": {\\n    \\\"title\\\": \\\"Adversary attempts unauthorized cross-biz read\\\",\\n    \\\"subtitle\\\": \\\"Cross-biz read blocked for non-member account.\\\",\\n    \\\"blocks\\\": [\\n      {\\n        \\\"type\\\": \\\"alert\\\",\\n        \\\"title\\\": \\\"Adversary Cross Biz Read completed\\\",\\n        \\\"message\\\": \\\"Cross-biz read blocked for non-member account.\\\",\\n        \\\"tone\\\": \\\"success\\\"\\n      },\\n      {\\n        \\\"type\\\": \\\"key_value\\\",\\n        \\\"title\\\": \\\"Screen details\\\",\\n        \\\"items\\\": [\\n          {\\n            \\\"label\\\": \\\"AdversaryUserId\\\",\\n            \\\"value\\\": \\\"ubR71IBl4poBLOGuVahAyBgYQ0N05DGy\\\"\\n          }\\n        ]\\n      }\\n    ]\\n  },\\n  \\\"rawData\\\": {\\n    \\\"stepKey\\\": \\\"adversary-cross-biz-read\\\",\\n    \\\"resultPayload\\\": {\\n      \\\"note\\\": \\\"Cross-biz read blocked for non-member account.\\\",\\n      \\\"evidence\\\": {\\n        \\\"adversaryUserId\\\": \\\"ubR71IBl4poBLOGuVahAyBgYQ0N05DGy\\\"\\n      }\\n    },\\n    \\\"apiCalls\\\": [\\n      {\\n        \\\"method\\\": \\\"POST\\\",\\n        \\\"path\\\": \\\"/api/v1/sagas/runs/saga_run_3A7WoawNGgtTFE440JenlJIJePW/steps/adversary-cross-biz-read/result\\\",\\n        \\\"status\\\": 200,\\n        \\\"requestBody\\\": {\\n          \\\"status\\\": \\\"passed\\\",\\n          \\\"startedAt\\\": \\\"2026-02-24T14:45:02.046Z\\\",\\n          \\\"endedAt\\\": \\\"2026-02-24T14:45:02.046Z\\\",\\n          \\\"failureMessage\\\": null,\\n          \\\"resultPayload\\\": {\\n            \\\"note\\\": \\\"Cross-biz read blocked for non-member account.\\\",\\n            \\\"evidence\\\": {\\n              \\\"adversaryUserId\\\": \\\"4p5VJ1T2zujP3MktKPwolyNy03yFSyGz\\\"\\n            }\\n          },\\n          \\\"assertionSummary\\\": {\\n            \\\"status\\\": \\\"passed\\\",\\n            \\\"hasFailure\\\": false,\\n            \\\"assertionsPassed\\\": 1\\n          }\\n        },\\n        \\\"responseBody\\\": {\\n          \\\"success\\\": true,\\n          \\\"data\\\": {\\n            \\\"id\\\": \\\"saga_run_step_3A7WocmnWI3BfTFXAoWUR3vAQ1h\\\",\\n            \\\"sagaRunId\\\": \\\"saga_run_3A7WoawNGgtTFE440JenlJIJePW\\\",\\n            \\\"phaseKey\\\": \\\"security-and-abuse\\\",\\n            \\\"phaseOrder\\\": 6,\\n            \\\"phaseTitle\\\": \\\"Security And Abuse Checks\\\",\\n            \\\"stepKey\\\": \\\"adversary-cross-biz-read\\\",\\n            \\\"stepOrder\\\": 14,\\n            \\\"actorKey\\\": \\\"adversary\\\",\\n            \\\"instruction\\\": \\\"Using credentials from another context, attempt to read or mutate booking/order resources for this biz.\\\",\\n            \\\"expectedResult\\\": \\\"Request is rejected with forbidden/unauthorized error and no data leakage.\\\",\\n            \\\"status\\\": \\\"passed\\\",\\n            \\\"attemptCount\\\": 1,\\n            \\\"startedAt\\\": \\\"2026-02-24T14:45:02.046Z\\\",\\n            \\\"endedAt\\\": \\\"2026-02-24T14:45:02.046Z\\\",\\n            \\\"failureCode\\\": null,\\n            \\\"failureMessage\\\": null,\\n            \\\"resultPayload\\\": {\\n              \\\"note\\\": \\\"Cross-biz read blocked for non-member account.\\\",\\n              \\\"evidence\\\": {\\n                \\\"adversaryUserId\\\": \\\"4p5VJ1T2zujP3MktKPwolyNy03yFSyGz\\\"\\n              }\\n            },\\n            \\\"assertionSummary\\\": {\\n              \\\"status\\\": \\\"passed\\\",\\n              \\\"hasFailure\\\": false,\\n              \\\"assertionsPassed\\\": 1\\n            },\\n            \\\"metadata\\\": {},\\n            \\\"createdAt\\\": \\\"2026-02-24T14:44:24.539Z\\\",\\n            \\\"updatedAt\\\": \\\"2026-02-24T14:44:24.539Z\\\",\\n            \\\"deletedAt\\\": null,\\n            \\\"createdBy\\\": null,\\n            \\\"updatedBy\\\": null,\\n            \\\"deletedBy\\\": null\\n          },\\n          \\\"meta\\\": {\\n            \\\"requestId\\\": \\\"d680bbb3-4b12-450a-9074-03a98954e62e\\\",\\n            \\\"timestamp\\\": \\\"2026-02-24T14:45:03.086Z\\\"\\n          }\\n        },\\n        \\\"at\\\": \\\"2026-02-24T14:45:03.087Z\\\"\\n      },\\n      {\\n        \\\"method\\\": \\\"POST\\\",\\n        \\\"path\\\": \\\"/api/v1/sagas/runs/saga_run_3A7WocLfFYU5flcectqIV3lo4Wh/snapshots\\\",\\n        \\\"status\\\": 201,\\n        \\\"requestBody\\\": {\\n          \\\"_truncated\\\": true,\\n          \\\"_preview\\\": \\\"{\\\\\\\"stepKey\\\\\\\":\\\\\\\"adversary-cross-biz-read\\\\\\\",\\\\\\\"screenKey\\\\\\\":\\\\\\\"adversary-cross-biz-read-1771944302527\\\\\\\",\\\\\\\"title\\\\\\\":\\\\\\\"Adversary attempts unauthorized cross-biz read Snapshot\\\\\\\",\\\\\\\"status\\\\\\\":\\\\\\\"passed\\\\\\\",\\\\\\\"route\\\\\\\":\\\\\\\"/sagas/saga_run_3A7WocLfFYU5flcectqIV3lo4Wh/adversary-cross-biz-read\\\\\\\",\\\\\\\"format\\\\\\\":\\\\\\\"json\\\\\\\",\\\\\\\"view\\\\\\\":{\\\\\\\"title\\\\\\\":\\\\\\\"Adversary attempts unauthorized cross-biz read\\\\\\\",\\\\\\\"subtitle\\\\\\\":\\\\\\\"Cross-biz read blocked for non-member account.\\\\\\\",\\\\\\\"blocks\\\\\\\":[{\\\\\\\"type\\\\\\\":\\\\\\\"alert\\\\\\\",\\\\\\\"title\\\\\\\":\\\\\\\"Adversary Cross Biz Read completed\\\\\\\",\\\\\\\"message\\\\\\\":\\\\\\\"Cross-biz read blocked for non-member account.\\\\\\\",\\\\\\\"tone\\\\\\\":\\\\\\\"success\\\\\\\"},{\\\\\\\"type\\\\\\\":\\\\\\\"key_value\\\\\\\",\\\\\\\"title\\\\\\\":\\\\\\\"Screen details\\\\\\\",\\\\\\\"items\\\\\\\":[{\\\\\\\"label\\\\\\\":\\\\\\\"AdversaryUserId\\\\\\\",\\\\\\\"value\\\\\\\":\\\\\\\"Sp2rN4duEXbvq9y7EP8RFhXnPEd4knyF\\\\\\\"}]}]},\\\\\\\"rawData\\\\\\\":{\\\\\\\"stepKey\\\\\\\":\\\\\\\"adversary-cross-biz-read\\\\\\\",\\\\\\\"resultPayload\\\\\\\":{\\\\\\\"note\\\\\\\":\\\\\\\"Cross-biz read blocked for non-member account.\\\\\\\",\\\\\\\"evidence\\\\\\\":{\\\\\\\"adversaryUserId\\\\\\\":\\\\\\\"Sp2rN4duEXbvq9y7EP8RFhXnPEd4knyF\\\\\\\"}},\\\\\\\"apiCalls\\\\\\\":[{\\\\\\\"method\\\\\\\":\\\\\\\"POST\\\\\\\",\\\\\\\"path\\\\\\\":\\\\\\\"/api/v1/sagas/runs/saga_run_3A7WojNcNiLu4p5Bu0WiWWhEn4j/snapshots\\\\\\\",\\\\\\\"status\\\\\\\":201,\\\\\\\"requestBody\\\\\\\":{\\\\\\\"_truncated\\\\\\\":true,\\\\\\\"_preview\\\\\\\":\\\\\\\"{\\\\\\\\\\\\\\\"stepKey\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"customer-book-primary\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"screenKey\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"customer-book-primary-1771944299856\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"title\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Customer one books primary offer Snapshot\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"status\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"passed\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"route\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"/sagas/saga_run_3A7WojNcNiLu4p5Bu0WiWWhEn4j/customer-book-primary\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"format\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"json\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"view\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"title\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Customer one books primary offer\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"subtitle\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Primary booking created.\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"blocks\\\\\\\\\\\\\\\":[{\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"alert\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"title\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Customer Book Primary completed\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"message\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Primary booking created.\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"tone\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"success\\\\\\\\\\\\\\\"},{\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"key_value\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"title\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Booking confirmation\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"items\\\\\\\\\\\\\\\":[{\\\\\\\\\\\\\\\"label\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Booking id\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"value\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"booking_order_3A7Wsr3phe9qq8nQ0kCW5BbHBo2\\\\\\\\\\\\\\\"},{\\\\\\\\\\\\\\\"label\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Status\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"value\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"confirmed\\\\\\\\\\\\\\\"},{\\\\\\\\\\\\\\\"label\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Starts at\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"value\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"2026-02-25T14:44:57.944Z\\\\\\\\\\\\\\\"},{\\\\\\\\\\\\\\\"label\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Total\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"value\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"15000\\\\\\\\\\\\\\\"}]},{\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"actions\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"title\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Visible actions\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"items\\\\\\\\\\\\\\\":[{\\\\\\\\\\\\\\\"label\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Download receipt\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"kind\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"secondary\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"enabled\\\\\\\\\\\\\\\":true},{\\\\\\\\\\\\\\\"label\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Reschedule\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"kind\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"secondary\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"enabled\\\\\\\\\\\\\\\":true},{\\\\\\\\\\\\\\\"label\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Cancel booking\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"kind\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"danger\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"enabled\\\\\\\\\\\\\\\":true}]},{\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"stats\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"title\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"What user sees at a glance\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"items\\\\\\\\\\\\\\\":[{\\\\\\\\\\\\\\\"label\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"SubtotalMinor\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"value\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"15000\\\\\\\\\\\\\\\"},{\\\\\\\\\\\\\\\"label\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"TaxMinor\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"value\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"0\\\\\\\\\\\\\\\"},{\\\\\\\\\\\\\\\"label\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"FeeMinor\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"value\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"0\\\\\\\\\\\\\\\"},{\\\\\\\\\\\\\\\"label\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"DiscountMinor\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"value\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"0\\\\\\\\\\\\\\\"},{\\\\\\\\\\\\\\\"label\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"TotalMinor\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"value\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"15000\\\\\\\\\\\\\\\"}]},{\\\\\\\\\\\\\\\"type\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"key_value\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"title\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Screen details\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"items\\\\\\\\\\\\\\\":[{\\\\\\\\\\\\\\\"label\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Id\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"value\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"booking_order_3A7Wsr3phe9qq8nQ0kCW5BbHBo2\\\\\\\\\\\\\\\"},{\\\\\\\\\\\\\\\"label\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"BizId\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"value\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"3A7WposRk60tJSoOQYKrsdIcT0d\\\\\\\\\\\\\\\"},{\\\\\\\\\\\\\\\"label\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"OfferId\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"value\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"offer_3A7WrcaPp1alZexXXvPb2Zcyz0E\\\\\\\\\\\\\\\"},{\\\\\\\\\\\\\\\"label\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"OfferVersionId\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"value\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"offer_version_3A7WryOuzrkoQP4xmmwcy3btku5\\\\\\\\\\\\\\\"},{\\\\\\\\\\\\\\\"label\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"CustomerUserId\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"value\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"VM4M8qAF8oIokDYxVYLIYoYASlHRWy0e\\\\\\\\\\\\\\\"},{\\\\\\\\\\\\\\\"label\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"CustomerGroupAccountId\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"value\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"null\\\\\\\\\\\\\\\"},{\\\\\\\\\\\\\\\"label\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Status\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"value\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"confirmed\\\\\\\\\\\\\\\"},{\\\\\\\\\\\\\\\"label\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"StatusConfigValueId\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"value\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"null\\\\\\\\\\\\\\\"},{\\\\\\\\\\\\\\\"label\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Currency\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"value\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"USD\\\\\\\\\\\\\\\"},{\\\\\\\\\\\\\\\"label\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"SubtotalMinor\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"value\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"15000\\\\\\\\\\\\\\\"},{\\\\\\\\\\\\\\\"label\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"TaxMinor\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"value\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"0\\\\\\\\\\\\\\\"},{\\\\\\\\\\\\\\\"label\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"FeeMinor\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"value\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"0\\\\\\\\\\\\\\\"},{\\\\\\\\\\\\\\\"label\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"DiscountMinor\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"value\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"0\\\\\\\\\\\\\\\"},{\\\\\\\\\\\\\\\"label\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"TotalMinor\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"value\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"15000\\\\\\\\\\\\\\\"},{\\\\\\\\\\\\\\\"label\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"RequestedStartAt\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"value\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"2026-02-25T14:44:57.944Z\\\\\\\\\\\\\\\"},{\\\\\\\\\\\\\\\"label\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"RequestedEndAt\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"value\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"2026-02-25T15:34:57.944Z\\\\\\\\\\\\\\\"}]}]},\\\\\\\\\\\\\\\"rawData\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"stepKey\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"customer-book-primary\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"resultPayload\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"note\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Primary booking created.\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"evidence\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"id\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"booking_order_3A7Wsr3phe9qq8nQ0kCW5BbHBo2\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"bizId\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"3A7WposRk60tJSoOQYKrsdIcT0d\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"offerId\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"offer_3A7WrcaPp1alZexXXvPb2Zcyz0E\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"offerVersionId\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"offer_version_3A7WryOuzrkoQP4xmmwcy3btku5\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"customerUserId\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"VM4M8qAF8oIokDYxVYLIYoYASlHRWy0e\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"customerGroupAccountId\\\\\\\\\\\\\\\":null,\\\\\\\\\\\\\\\"status\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"confirmed\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"statusConfigValueId\\\\\\\\\\\\\\\":null,\\\\\\\\\\\\\\\"currency\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"USD\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"subtotalMinor\\\\\\\\\\\\\\\":15000,\\\\\\\\\\\\\\\"taxMinor\\\\\\\\\\\\\\\":0,\\\\\\\\\\\\\\\"feeMinor\\\\\\\\\\\\\\\":0,\\\\\\\\\\\\\\\"discountMinor\\\\\\\\\\\\\\\":0,\\\\\\\\\\\\\\\"totalMinor\\\\\\\\\\\\\\\":15000,\\\\\\\\\\\\\\\"requestedStartAt\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"2026-02-25T14:44:57.944Z\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"requestedEndAt\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"2026-02-25T15:34:57.944Z\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"confirmedStartAt\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"2026-02-25T14:44:57.944Z\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"confirmedEndAt\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"2026-02-25T15:34:57.944Z\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"pricingSnapshot\\\\\\\\\\\\\\\":{},\\\\\\\\\\\\\\\"policySnapshot\\\\\\\\\\\\\\\":{},\\\\\\\\\\\\\\\"metadata\\\\\\\\\\\\\\\":{},\\\\\\\\\\\\\\\"createdAt\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"2026-02-24T14:44:58.235Z\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"updatedAt\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"2026-02-24T14:44:58.235Z\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"deletedAt\\\\\\\\\\\\\\\":null,\\\\\\\\\\\\\\\"createdBy\\\\\\\\\\\\\\\":null,\\\\\\\\\\\\\\\"updatedBy\\\\\\\\\\\\\\\":null,\\\\\\\\\\\\\\\"deletedBy\\\\\\\\\\\\\\\":null}},\\\\\\\\\\\\\\\"apiCalls\\\\\\\\\\\\\\\":[{\\",
+          "_size": 48089
+        },
+        "at": "2026-02-24T14:45:05.508Z"
+      }
+    ]
+  },
+  "metadata": {}
+}

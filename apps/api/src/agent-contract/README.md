@@ -37,6 +37,24 @@ So this layer uses:
   - Input: list of scenarios (prompt-based and/or direct request-based).
   - Output: per-scenario translation/execution results.
 
+- `POST /api/v1/agent/lifecycle/run`
+  - Input: phase-based lifecycle pack with assertions + captures.
+  - Output: per-step verdicts, phase summaries, issue classification.
+  - Execution safety: each step runs behind a SQL savepoint so expected failing
+    steps (for example overlap guard checks) do not corrupt the rest of the run.
+
+- `GET /api/v1/agent/testing/catalog`
+  - Lists discoverable test packs from `mind/workspace`.
+
+- `POST /api/v1/agent/testing/run-loop`
+  - Runs mixed suites (lifecycle + scenario + api_journey) and returns one consolidated fitness report.
+
+- `POST /api/v1/agent/testing/run-default`
+  - Runs the workspace default loop config (`agent-fitness-loop-v0.json`) for one-command agent execution.
+
+- `GET /api/v1/agent/testing/openapi.json`
+  - Minimal OpenAPI descriptor for Code Mode / UTCP HTTP manual discovery.
+
 ## Canonical request envelope
 
 ```json
@@ -67,7 +85,7 @@ So this layer uses:
 ## Example: natural language -> simulate
 
 ```bash
-curl -X POST http://localhost:6131/api/v1/agent/simulate \
+curl -X POST http://localhost:6129/api/v1/agent/simulate \
   -H 'content-type: application/json' \
   -d '{
     "input": "list booking orders where status = confirmed limit 5",
@@ -95,6 +113,61 @@ curl -X POST http://localhost:6131/api/v1/agent/simulate \
   ]
 }
 ```
+
+## Lifecycle runner (phase-based end-to-end simulation)
+
+When you need to answer:
+"Would this schema support the full product lifecycle if real API/UI existed?"
+use `/api/v1/agent/lifecycle/run`.
+
+### What lifecycle runner adds on top of scenario runner
+
+- **Phases**: group steps by journey stage (setup, publish, browse, booking, edge cases).
+- **Assertions**: verify expected success/failure, row counts, and path-level checks.
+- **Captures**: save values from responses and reuse them in later steps.
+- **Templates**: dynamic token interpolation in prompts/requests:
+  - `{{id:biz}}` -> stable generated id for this run
+  - `{{nowIso}}` -> current timestamp
+  - `{{nowPlusMinutes:30}}` -> timestamp offset
+  - `{{someCapturedVar}}` -> captured variable reference
+
+### Minimal lifecycle payload shape
+
+```json
+{
+  "defaults": {
+    "dryRun": true,
+    "scope": { "bizId": "{{id:biz}}" },
+    "continueOnFailure": true
+  },
+  "variables": {
+    "ownerUserId": "{{id:user}}"
+  },
+  "phases": [
+    {
+      "name": "Setup",
+      "steps": [
+        {
+          "name": "Create business",
+          "prompt": "insert into bizes id = {{id:biz}} name = Demo Biz slug = demo-biz-{{id:slug}} status = active timezone = America/Los_Angeles",
+          "expect": { "success": true }
+        }
+      ]
+    }
+  ]
+}
+```
+
+### Lifecycle output highlights
+
+- `summary`: total/passed/failed steps.
+- `phaseSummaries`: rollup per phase.
+- `issues`: compact actionable failures with classification:
+  - `scenario_contract`
+  - `schema_constraint`
+  - `expectation_mismatch`
+  - `execution_error`
+- `variables`: final capture/template variable bag for debugging and replay.
 
 ## Important limitation (intentional)
 

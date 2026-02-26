@@ -1,0 +1,353 @@
+{
+  "stepKey": "owner-create-offer",
+  "callCount": 5,
+  "calls": [
+    {
+      "method": "GET",
+      "path": "/api/v1/sagas/runs/saga_run_3AAPfLZzFAschDyWbfWI0ikmdAx",
+      "status": 200,
+      "responseBody": {
+        "_truncated": true,
+        "_preview": "{\"success\":true,\"data\":{\"run\":{\"id\":\"saga_run_3AAPfLZzFAschDyWbfWI0ikmdAx\",\"sagaDefinitionId\":\"saga_definition_3A8dZpTogfbPGq6RFRzjY3rnc1G\",\"sagaKey\":\"uc-71-the-solo-entrepreneur-sarah\",\"bizId\":null,\"status\":\"passed\",\"mode\":\"dry_run\",\"requestedByUserId\":\"n1sZmxkoRU3I056ePPa62zeC77c08bew\",\"runnerLabel\":\"codex-rerun-all\",\"definitionChecksum\":\"57e7d0cc293fd708e9610616ed25a1f336972b0c087baf12f470c7fc31f9b8f4\",\"startedAt\":\"2026-02-25T15:15:04.736Z\",\"endedAt\":\"2026-02-25T15:15:25.841Z\",\"lastHeartbeatAt\":\"2026-02-25T15:15:25.841Z\",\"totalSteps\":28,\"passedSteps\":19,\"failedSteps\":0,\"skippedSteps\":9,\"runContext\":{\"createdBy\":\"apps/api/src/scripts/rerun-sagas.ts\"},\"runSummary\":{\"auto\":true,\"source\":\"rerun-sagas.ts\",\"coverage\":{\"totalSteps\":28,\"failedSteps\":0,\"passedSteps\":19,\"pendingSteps\":0,\"skippedSteps\":9,\"completionPct\":68,\"classification\":\"partial\",\"inProgressSteps\":0,\"apiFailureStepCount\":0,\"notImplementedStepCount\":0,\"missingEvidenceStepCount\":0},\"failures\":[],\"missingEvidence\":[]},\"metadata\":{\"tags\":[\"uc-derived\",\"persona-derived\",\"lifecycle\",\"api-first\",\"agents\"],\"title\":\"UC-71 • The Phone/Call Booking Fee • The Solo Entrepreneur (Sarah)\"},\"createdAt\":\"2026-02-25T15:15:03.188Z\",\"updatedAt\":\"2026-02-25T15:15:03.188Z\",\"deletedAt\":null,\"createdBy\":null,\"updatedBy\":null,\"deletedBy\":null},\"definition\":{\"id\":\"saga_definition_3A8dZpTogfbPGq6RFRzjY3rnc1G\",\"bizId\":null,\"sagaKey\":\"uc-71-the-solo-entrepreneur-sarah\",\"title\":\"UC-71 • The Phone/Call Booking Fee • The Solo Entrepreneur (Sarah)\",\"description\":\"Comprehensive lifecycle saga derived from UC-71 and persona P-1. Needs summary: Optional phone booking fee (flat or percentage); Waive fee for members/VIP/customers with accessibility needs; Separate line item on receipt; Staff override with reason; Different fee rules by service type\",\"status\":\"active\",\"sourceUseCaseRef\":\"UC-71\",\"sourcePersonaRef\":\"P-1\",\"sourceUseCaseFile\":\"/Users/ameer/bizing/mind/workspace/documentation/use-cases-comprehensive.md\",\"sourcePersonaFile\":\"/Users/ameer/bizing/mind/workspace/documentation/tester-personas.md\",\"specVersion\":\"saga.v0\",\"specFilePath\":\"testing/sagas/specs/uc-71-the-solo-entrepreneur-sarah.json\",\"specChecksum\":\"57e7d0cc293fd708e9610616ed25a1f336972b0c087baf12f470c7fc31f9b8f4\",\"metadata\":{\"tags\":[\"uc-derived\",\"persona-derived\",\"lifecycle\",\"api-first\",\"agents\"],\"generatedAt\":\"2026-02-25T06:41:04.701Z\"},\"createdAt\":\"2026-02-25T00:09:49.818Z\",\"updatedAt\":\"2026-02-25T00:09:49.818Z\",\"deletedAt\":null,\"createdBy\":null,\"updatedBy\":null,\"deletedBy\":null},\"spec\":{\"schemaVersion\":\"saga.v0\",\"sagaKey\":\"uc-71-the-solo-entrepreneur-sarah\",\"title\":\"UC-71 • The Phone/Call Booking Fee • The Solo Entrepreneur (Sarah)\",\"description\":\"Comprehensive lifecycle saga derived from UC-71 and persona P-1. Needs summary: Optional phone booking fee (flat or percentage); Waive fee for members/VIP/customers with accessibility needs; Separate line item on receipt; Staff override with reason; Different fee rules by service type\",\"tags\":[\"uc-derived\",\"persona-derived\",\"lifecycle\",\"api-first\",\"agents\"],\"defaults\":{\"runMode\":\"dry_run\",\"continueOnFailure\":false},\"source\":{\"useCaseRef\":\"UC-71\",\"personaRef\":\"P-1\",\"useCaseFile\":\"/Users/ameer/bizing/mind/workspace/documentation/use-cases-comprehensive.md\",\"personaFile\":\"/Users/ameer/bizing/mind/workspace/documentation/tester-personas.md\",\"generatedAt\":\"2026-02-25T06:41:04.701Z\"},\"objectives\":[\"Validate UC-71 lifecycle end-to-end using persona The Solo Entrepreneur (Sarah).\",\"Exercise owner setup, team setup, catalog publishing, and customer journeys.\",\"Stress ACL/security edge cases and verify expected denials are enforced.\",\"Collect snapshots and report artifacts for every critical milestone.\"],\"actors\":[{\"actorKey\":\"biz_owner\",\"name\":\"The Solo Entrepreneur (Sarah)\",\"role\":\"owner\",\"description\":\"Just starting out, wearing all hats\",\"personaRef\":\"P-1\"},{\"actorKey\":\"biz_member\",\"name\":\"Operations Team Member\",\"role\":\"manager\",\"description\":\"Business member invited by owner to assist with operations and booking flow.\"},{\"actorKey\":\"customer_1\",\"name\":\"Customer One\",\"role\":\"customer\",\"description\":\"Primary customer exploring catalog, booking services, and purchasing products.\"},{\"actorKey\":\"customer_2\",\"name\":\"Customer Two\",\"role\":\"customer\",\"description\":\"Concurrent customer used to simulate realistic demand and race conditions.\"},{\"actorKey\":\"adversary\",\"name\":\"Adversarial User\",\"role\":\"malicious_actor\",\"description\":\"Actor intentionally attempting unauthorized or abusive actions.\"}],\"phases\":[{\"phaseKey\":\"owner-onboarding\",\"order\":1,\"title\":\"Owner Onboarding\",\"description\":\"Business owner signs up, authenticates, and establishes tenant root.\",\"steps\":[{\"stepKey\":\"owner-sign-up\",\"order\":1,\"title\":\"Owner signs up and authenticates\",\"actorKey\":\"biz_owner\",\"intent\":\"Establish authenticated owner identity for the lifecycle.\",\"instruction\":\"Create or login the owner account through Better Auth endpoints, then verify session context can call authenticated API routes.\",\"expectedResult\":\"Owner session exists and authenticated routes return success for this user.\",\"toolHints\":[],\"assertions\":[{\"kind\":\"api_response\",\"description\":\"API call returns success and includes stable ids for created entities.\"},{\"kind\":\"acl_guard\",\"description\":\"Actor permissions are honored for this step context.\"}],\"evidenceRequired\":[{\"kind\":\"api_trace\",\"label\":\"Request/response trace for this step\"},{\"kind\":\"snapshot\",\"label\":\"Structured snapshot.v1 screen blocks (what user saw) with real API-backed data\"}],\"guardrails\":[],\"tags\":[\"auth\",\"setup\"],\"delay\":{\"mode\":\"none\",\"jitterMs\":0}},{\"stepKey\":\"owner-create-biz\",\"order\":2,\"title\":\"Owner creates business tenant\",\"actorKey\":\"biz_owner\",\"intent\":\"Create the biz root for all subsequent configuration.\",\"instruction\":\"Using agents tools, create a biz representing The Phone/Call Booking Fee. Use name/slug derived from saga context.\",\"expectedResult\":\"Biz is created, owner is auto-added as member with owner role, and biz id is captured.\",\"toolHints\":[\"bizing.bizes.create\"],\"assertions\":[{\"kind\":\"api_response\",\"description\":\"API call returns success and includes stable ids for created entities.\"},{\"kind\":\"acl_guard\",\"description\":\"Actor permissions are honored for this step context.\"}],\"evidenceRequired\":[{\"kind\":\"api_trace\",\"label\":\"Request/response trace for this step\"},{\"kind\":\"snapshot\",\"label\":\"Structured snapshot.v1 screen blocks (what user saw) with real API-backed data\"}],\"guardrails\":[],\"tags\":[\"biz\",\"setup\"],\"delay\":{\"mode\":\"none\",\"jitterMs\":0}},{\"stepKey\":\"owner-create-location\",\"order\":3,\"title\":\"Owner creates primary location\",\"actorKey\":\"biz_owner\",\"intent\":\"Establish operational location for services/resources.\",\"instruction\":\"Create a primary location for the biz and set timezone aligned with scenario context.\",\"expectedResult\":\"Location exists and is associated with the new biz.\",\"toolHints\":[\"bizing.locations.create\"],\"assertions\":[{\"kind\":\"api_response\",\"description\":\"API call returns success and includes stable ids for created entities.\"},{\"kind\":\"acl_guard\",\"description\":\"Actor permissions are honored for this step context.\"}],\"evidenceRequired\":[{\"kind\":\"api_trace\",\"label\":\"Request/response trace for this step\"},{\"kind\":\"snapshot\",\"label\":\"Structured snapshot.v1 screen blocks (what user saw) with real API-backed data\"}],\"guardrails\":[],\"tags\":[\"location\",\"setup\"],\"delay\":{\"mode\":\"none\",\"jitterMs\":0}}]},{\"phaseKey\":\"business-configuration\",\"order\":2,\"title\":\"Business Configuration\",\"description\":\"Owner configures scheduling, pricing baseline, and operational defaults.\",\"steps\":[{\"stepKey\":\"owner-configure-hours\",\"order\":4,\"title\":\"Configure default hours and availability mode\",\"actorKey\":\"biz_owner\",\"intent\":\"Set baseline availability without forcing advanced complexity.\",\"instruction\":\"Create baseline availability and lead-time rules representing the UC default business hours and booking window behavior.\",\"expectedResult\":\"Availability defaults and rules are stored and can be referenced by calendars.\",\"toolHints\":[],\"assertions\":[{\"kind\":\"api_response\",\"description\":\"API call returns success and includes stable ids for created entities.\"},{\"kind\":\"acl_guard\",\"description\":\"Actor permissions are honored for this step context.\"}],\"evidenceRequired\":[{\"kind\":\"api_trace\",\"label\":\"Request/response trace for this step\"},{\"kind\":\"snapshot\",\"label\":\"Structured snapshot.v1 screen blocks (what user saw) with real API-backed data\"}],\"guardrails\":[],\"tags\":[\"availability\",\"policy\"],\"delay\":{\"mode\":\"none\",\"jitterMs\":0}},{\"stepKey\":\"owner-configure-pricing\",\"order\":5,\"title\":\"Configure default pricing rules\",\"actorKey\":\"biz_owner\",\"intent\":\"Set base pricing and optional manual demand overrides.\",\"instruction\":\"Configure pricing defaults for the offer lifecycle including call fees/manual surge if UC needs imply it.\",\"expectedResult\":\"Pricing model persists and future bookings can calculate totals deterministically.\",\"toolHints\":[],\"assertions\":[{\"kind\":\"api_response\",\"description\":\"API call returns success and includes stable ids for created entities.\"},{\"kind\":\"acl_guard\",\"description\":\"Actor permissions are honored for this step context.\"}],\"evidenceRequired\":[{\"kind\":\"api_trace\",\"label\":\"Request/response trace for this step\"},{\"kind\":\"snapshot\",\"label\":\"Structured snapshot.v1 screen blocks (what user saw) with real API-backed data\"}],\"guardrails\":[],\"tags\":[\"pricing\"],\"delay\":{\"mode\":\"none\",\"jitterMs\":0}}]},{\"phaseKey\":\"supply-and-team-setup\",\"order\":3,\"title\":\"Supply And Team Setup\",\"description\":\"Business owner sets up hosts/assets/venues/resources and invites members.\",\"steps\":[{\"stepKey\":\"owner-create-resources\",\"order\":6,\"title\":\"Create resources representing hosts/assets/venues\",\"actorKey\":\"biz_owner\",\"intent\":\"Model real-world supply that bookings will consume.\",\"instruction\":\"Create at least one host resource and one non-host resource (asset or venue) suitable for the UC.\",\"expectedResult\":\"Resources are created with expected type, location, and buffers.\",\"toolHints\":[\"bizing.resources.create\"],\"assertions\":[{\"kind\":\"api_response\",\"description\":\"API call returns success and includes stable ids for created entities.\"},{\"kind\":\"acl_guard\",\"description\":\"Actor permissions are honored for this step context.\"}],\"evidenceRequired\":[{\"kind\":\"api_trace\",\"label\":\"Request/response trace for this step\"},{\"kind\":\"snapshot\",\"label\":\"Structured snapshot.v1 screen blocks (what user saw) with real API-backed data\"}],\"guardrails\":[],\"tags\":[\"resources\"],\"delay\":{\"mode\":\"none\",\"jitterMs\":0}},{\"stepKey\":\"owner-invite-member\",\"order\":7,\"title\":\"Invite and provision business member\",\"actorKey\":\"biz_owner\",\"intent\":\"Validate collaboration and role assignment.\",\"instruction\":\"Invite a biz member, assign an operational role, and verify that member can authenticate into the same biz.\",\"expectedResult\":\"Biz member account/session exists with scoped role permissions.\",\"toolHints\":[],\"assertions\":[{\"kind\":\"api_response\",\"description\":\"API call returns success and includes stable ids for created entities.\"},{\"kind\":\"acl_guard\",\"description\":\"Actor permissions are honored for this step context.\"}],\"evidenceRequired\":[{\"kind\":\"api_trace\",\"label\":\"Request/response trace for this step\"},{\"kind\":\"snapshot\",\"label\":\"Structured snapshot.v1 screen blocks (what user saw) with real API-backed data\"}],\"guardrails\":[],\"tags\":[\"team\",\"acl\"],\"delay\":{\"mode\":\"none\",\"jitterMs\":0}}]},{\"phaseKey\":\"catalog-publish\",\"order\":4,\"title\":\"Catalog And Publish\",\"description\":\"Owner creates services/offers/products and publishes sellable catalog entries.\",\"steps\":[{\"stepKey\":\"owner-create-offer\",\"order\":8,\"title\":\"Create offer shell\",\"actorKey\":\"biz_owner\",\"intent\":\"Define sellable service/catalog entry.\",\"instruction\":\"Create an offer representing the UC primary service; choose execution mode matching the scenario.\",\"expectedResult\":\"Offer is created in draft state with captured id.\",\"toolHints\":[\"bizing.offers.create\"],\"assertions\":[{\"kind\":\"api_response\",\"d",
+        "_size": 1083226
+      },
+      "at": "2026-02-25T15:15:26.073Z"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AAPhJZHgbZqR02UuKo3AKi7jrY/traces",
+      "status": 201,
+      "requestBody": {
+        "_truncated": true,
+        "_preview": "{\"stepKey\":\"owner-create-offer-version\",\"title\":\"Create and publish offer version API Trace\",\"trace\":{\"stepKey\":\"owner-create-offer-version\",\"callCount\":3,\"calls\":[{\"method\":\"POST\",\"path\":\"/api/v1/sagas/runs/saga_run_3AAPhNZDbuCFFoKtUYhG9jAHPuD/steps/owner-invite-member/result\",\"status\":200,\"requestBody\":{\"status\":\"passed\",\"startedAt\":\"2026-02-25T15:15:25.543Z\",\"endedAt\":\"2026-02-25T15:15:25.543Z\",\"failureMessage\":null,\"resultPayload\":{\"note\":\"Member invited and accepted invitation.\",\"evidence\":{\"memberEmail\":\"member-uc-74-the-multi-agent-orchestrator-conductor-c-1772032525054-p4zkq9@example.com\",\"invitationId\":\"AgWhrfLwAgBkTlUCtzgslTtEXVi19Aem\"}},\"assertionSummary\":{\"status\":\"passed\",\"hasFailure\":false,\"assertionsPassed\":1}},\"responseBody\":{\"success\":true,\"data\":{\"id\":\"saga_run_step_3AAPhLdjO4cmErPWwRtwnJbL0dx\",\"sagaRunId\":\"saga_run_3AAPhNZDbuCFFoKtUYhG9jAHPuD\",\"phaseKey\":\"supply-and-team-setup\",\"phaseOrder\":3,\"phaseTitle\":\"Supply And Team Setup\",\"stepKey\":\"owner-invite-member\",\"stepOrder\":8,\"actorKey\":\"biz_owner\",\"instruction\":\"Invite a biz member, assign an operational role, and verify that member can authenticate into the same biz.\",\"expectedResult\":\"Biz member account/session exists with scoped role permissions.\",\"delayMode\":\"none\",\"delayMs\":null,\"delayConditionKey\":null,\"delayTimeoutMs\":null,\"delayPollMs\":null,\"delayJitterMs\":0,\"status\":\"passed\",\"attemptCount\":1,\"startedAt\":\"2026-02-25T15:15:25.543Z\",\"endedAt\":\"2026-02-25T15:15:25.543Z\",\"failureCode\":null,\"failureMessage\":null,\"resultPayload\":{\"note\":\"Member invited and accepted invitation.\",\"evidence\":{\"memberEmail\":\"member-uc-74-the-multi-agent-orchestrator-conductor-c-1772032525054-p4zkq9@example.com\",\"invitationId\":\"AgWhrfLwAgBkTlUCtzgslTtEXVi19Aem\"}},\"assertionSummary\":{\"status\":\"passed\",\"hasFailure\":false,\"assertionsPassed\":1},\"metadata\":{},\"createdAt\":\"2026-02-25T15:15:19.566Z\",\"updatedAt\":\"2026-02-25T15:15:19.566Z\",\"deletedAt\":null,\"createdBy\":null,\"updatedBy\":null,\"deletedBy\":null},\"meta\":{\"requestId\":\"9a435304-24dc-4a94-a744-6f5746d4ae41\",\"timestamp\":\"2026-02-25T15:15:25.855Z\"}},\"at\":\"2026-02-25T15:15:25.855Z\"},{\"method\":\"POST\",\"path\":\"/api/v1/sagas/runs/saga_run_3AAPhaG76S9wWuKBgHtIlksagoz/traces\",\"status\":201,\"requestBody\":{\"_truncated\":true,\"_preview\":\"{\\\"stepKey\\\":\\\"owner-invite-member\\\",\\\"title\\\":\\\"Invite and provision business member API Trace\\\",\\\"trace\\\":{\\\"stepKey\\\":\\\"owner-invite-member\\\",\\\"callCount\\\":2,\\\"calls\\\":[{\\\"method\\\":\\\"POST\\\",\\\"path\\\":\\\"/api/v1/sagas/runs/saga_run_3AAPhNZDbuCFFoKtUYhG9jAHPuD/traces\\\",\\\"status\\\":201,\\\"requestBody\\\":{\\\"stepKey\\\":\\\"owner-invite-member\\\",\\\"title\\\":\\\"Invite and provision business member API Trace\\\",\\\"trace\\\":{\\\"stepKey\\\":\\\"owner-invite-member\\\",\\\"callCount\\\":2,\\\"calls\\\":[{\\\"method\\\":\\\"POST\\\",\\\"path\\\":\\\"/api/v1/sagas/runs/saga_run_3AAPhaG76S9wWuKBgHtIlksagoz/steps/owner-create-resources/result\\\",\\\"status\\\":200,\\\"requestBody\\\":{\\\"status\\\":\\\"in_progress\\\",\\\"startedAt\\\":\\\"2026-02-25T15:15:24.980Z\\\",\\\"resultPayload\\\":{\\\"note\\\":\\\"Started owner-create-resources\\\"},\\\"assertionSummary\\\":{\\\"status\\\":\\\"in_progress\\\"}},\\\"responseBody\\\":{\\\"success\\\":true,\\\"data\\\":{\\\"id\\\":\\\"saga_run_step_3AAPhaIvd8phKXgr2JJgGns9mU3\\\",\\\"sagaRunId\\\":\\\"saga_run_3AAPhaG76S9wWuKBgHtIlksagoz\\\",\\\"phaseKey\\\":\\\"supply-and-team-setup\\\",\\\"phaseOrder\\\":3,\\\"phaseTitle\\\":\\\"Supply And Team Setup\\\",\\\"stepKey\\\":\\\"owner-create-resources\\\",\\\"stepOrder\\\":6,\\\"actorKey\\\":\\\"biz_owner\\\",\\\"instruction\\\":\\\"Create at least one host resource and one non-host resource (asset or venue) suitable for the UC.\\\",\\\"expectedResult\\\":\\\"Resources are created with expected type, location, and buffers.\\\",\\\"delayMode\\\":\\\"none\\\",\\\"delayMs\\\":null,\\\"delayConditionKey\\\":null,\\\"delayTimeoutMs\\\":null,\\\"delayPollMs\\\":null,\\\"delayJitterMs\\\":0,\\\"status\\\":\\\"in_progress\\\",\\\"attemptCount\\\":1,\\\"startedAt\\\":\\\"2026-02-25T15:15:24.980Z\\\",\\\"endedAt\\\":null,\\\"failureCode\\\":null,\\\"failureMessage\\\":null,\\\"resultPayload\\\":{\\\"note\\\":\\\"Started owner-create-resources\\\"},\\\"assertionSummary\\\":{\\\"status\\\":\\\"in_progress\\\"},\\\"metadata\\\":{},\\\"createdAt\\\":\\\"2026-02-25T15:15:21.094Z\\\",\\\"updatedAt\\\":\\\"2026-02-25T15:15:21.094Z\\\",\\\"deletedAt\\\":null,\\\"createdBy\\\":null,\\\"updatedBy\\\":null,\\\"deletedBy\\\":null},\\\"meta\\\":{\\\"requestId\\\":\\\"8f27d922-ba16-461a-9928-944518a02b44\\\",\\\"timestamp\\\":\\\"2026-02-25T15:15:25.149Z\\\"}},\\\"at\\\":\\\"2026-02-25T15:15:25.150Z\\\"},{\\\"method\\\":\\\"POST\\\",\\\"path\\\":\\\"/api/v1/bizes/3AAPhd0MjnDE5kKBYk7BcGzfJHE/offers\\\",\\\"status\\\":201,\\\"requestBody\\\":{\\\"name\\\":\\\"Primary Service Offer\\\",\\\"slug\\\":\\\"offer-4iruagja\\\",\\\"executionMode\\\":\\\"slot\\\",\\\"status\\\":\\\"draft\\\",\\\"isPublished\\\":false,\\\"timezone\\\":\\\"UTC\\\"},\\\"responseBody\\\":{\\\"success\\\":true,\\\"data\\\":{\\\"id\\\":\\\"offer_3AAPi8bUsch37axOgXg1ayUbvXs\\\",\\\"bizId\\\":\\\"3AAPhd0MjnDE5kKBYk7BcGzfJHE\\\",\\\"name\\\":\\\"Primary Service Offer\\\",\\\"slug\\\":\\\"offer-4iruagja\\\",\\\"description\\\":null,\\\"executionMode\\\":\\\"slot\\\",\\\"executionModeConfigValueId\\\":null,\\\"status\\\":\\\"draft\\\",\\\"statusConfigValueId\\\":null,\\\"isPublished\\\":false,\\\"timezone\\\":\\\"UTC\\\",\\\"metadata\\\":{},\\\"createdAt\\\":\\\"2026-02-25T15:15:25.263Z\\\",\\\"updatedAt\\\":\\\"2026-02-25T15:15:25.263Z\\\",\\\"deletedAt\\\":null,\\\"createdBy\\\":null,\\\"updatedBy\\\":null,\\\"deletedBy\\\":null},\\\"meta\\\":{\\\"requestId\\\":\\\"15c19327-e47a-4ad6-8ebb-026b51415d6d\\\",\\\"timestamp\\\":\\\"2026-02-25T15:15:25.265Z\\\"}},\\\"at\\\":\\\"2026-02-25T15:15:25.266Z\\\"}]},\\\"metadata\\\":{\\\"source\\\":\\\"rerun-sagas.ts\\\"}},\\\"responseBody\\\":{\\\"success\\\":true,\\\"data\\\":{\\\"id\\\":\\\"saga_artifact_3AAPi7OKuuyxR1mjXLCh7iVrqEa\\\",\\\"sagaRunId\\\":\\\"saga_run_3AAPhNZDbuCFFoKtUYhG9jAHPuD\\\",\\\"sagaRunStepId\\\":\\\"saga_run_step_3AAPhLdjO4cmErPWwRtwnJbL0dx\\\",\\\"artifactType\\\":\\\"api_trace\\\",\\\"title\\\":\\\"Invite and provision business member API Trace\\\",\\\"storagePath\\\":\\\"testing/sagas/runs/saga_run_3AAPhNZDbuCFFoKtUYhG9jAHPuD/artifacts/1772032525378-Invite_and_provision_business_member_API_Trace.json\\\",\\\"contentType\\\":\\\"application/json\\\",\\\"bodyText\\\":\\\"{\\\\n  \\\\\\\"stepKey\\\\\\\": \\\\\\\"owner-invite-member\\\\\\\",\\\\n  \\\\\\\"callCount\\\\\\\": 2,\\\\n  \\\\\\\"calls\\\\\\\": [\\\\n    {\\\\n      \\\\\\\"method\\\\\\\": \\\\\\\"POST\\\\\\\",\\\\n      \\\\\\\"path\\\\\\\": \\\\\\\"/api/v1/sagas/runs/saga_run_3AAPhaG76S9wWuKBgHtIlksagoz/steps/owner-create-resources/result\\\\\\\",\\\\n      \\\\\\\"status\\\\\\\": 200,\\\\n      \\\\\\\"requestBody\\\\\\\": {\\\\n        \\\\\\\"status\\\\\\\": \\\\\\\"in_progress\\\\\\\",\\\\n        \\\\\\\"startedAt\\\\\\\": \\\\\\\"2026-02-25T15:15:24.980Z\\\\\\\",\\\\n        \\\\\\\"resultPayload\\\\\\\": {\\\\n          \\\\\\\"note\\\\\\\": \\\\\\\"Started owner-create-resources\\\\\\\"\\\\n        },\\\\n        \\\\\\\"assertionSummary\\\\\\\": {\\\\n          \\\\\\\"status\\\\\\\": \\\\\\\"in_progress\\\\\\\"\\\\n        }\\\\n      },\\\\n      \\\\\\\"responseBody\\\\\\\": {\\\\n        \\\\\\\"success\\\\\\\": true,\\\\n        \\\\\\\"data\\\\\\\": {\\\\n          \\\\\\\"id\\\\\\\": \\\\\\\"saga_run_step_3AAPhaIvd8phKXgr2JJgGns9mU3\\\\\\\",\\\\n          \\\\\\\"sagaRunId\\\\\\\": \\\\\\\"saga_run_3AAPhaG76S9wWuKBgHtIlksagoz\\\\\\\",\\\\n          \\\\\\\"phaseKey\\\\\\\": \\\\\\\"supply-and-team-setup\\\\\\\",\\\\n          \\\\\\\"phaseOrder\\\\\\\": 3,\\\\n          \\\\\\\"phaseTitle\\\\\\\": \\\\\\\"Supply And Team Setup\\\\\\\",\\\\n          \\\\\\\"stepKey\\\\\\\": \\\\\\\"owner-create-resources\\\\\\\",\\\\n          \\\\\\\"stepOrder\\\\\\\": 6,\\\\n          \\\\\\\"actorKey\\\\\\\": \\\\\\\"biz_owner\\\\\\\",\\\\n          \\\\\\\"instruction\\\\\\\": \\\\\\\"Create at least one host resource and one non-host resource (asset or venue) suitable for the UC.\\\\\\\",\\\\n          \\\\\\\"expectedResult\\\\\\\": \\\\\\\"Resources are created with expected type, location, and buffers.\\\\\\\",\\\\n          \\\\\\\"delayMode\\\\\\\": \\\\\\\"none\\\\\\\",\\\\n          \\\\\\\"delayMs\\\\\\\": null,\\\\n          \\\\\\\"delayConditionKey\\\\\\\": null,\\\\n          \\\\\\\"delayTimeoutMs\\\\\\\": null,\\\\n          \\\\\\\"delayPollMs\\\\\\\": null,\\\\n          \\\\\\\"delayJitterMs\\\\\\\": 0,\\\\n          \\\\\\\"status\\\\\\\": \\\\\\\"in_progress\\\\\\\",\\\\n          \\\\\\\"attemptCount\\\\\\\": 1,\\\\n          \\\\\\\"startedAt\\\\\\\": \\\\\\\"2026-02-25T15:15:24.980Z\\\\\\\",\\\\n          \\\\\\\"endedAt\\\\\\\": null,\\\\n          \\\\\\\"failureCode\\\\\\\": null,\\\\n          \\\\\\\"failureMessage\\\\\\\": null,\\\\n          \\\\\\\"resultPayload\\\\\\\": {\\\\n            \\\\\\\"note\\\\\\\": \\\\\\\"Started owner-create-resources\\\\\\\"\\\\n          },\\\\n          \\\\\\\"assertionSummary\\\\\\\": {\\\\n            \\\\\\\"status\\\\\\\": \\\\\\\"in_progress\\\\\\\"\\\\n          },\\\\n          \\\\\\\"metadata\\\\\\\": {},\\\\n          \\\\\\\"createdAt\\\\\\\": \\\\\\\"2026-02-25T15:15:21.094Z\\\\\\\",\\\\n          \\\\\\\"updatedAt\\\\\\\": \\\\\\\"2026-02-25T15:15:21.094Z\\\\\\\",\\\\n          \\\\\\\"deletedAt\\\\\\\": null,\\\\n          \\\\\\\"createdBy\\\\\\\": null,\\\\n          \\\\\\\"updatedBy\\\\\\\": null,\\\\n          \\\\\\\"deletedBy\\\\\\\": null\\\\n        },\\\\n        \\\\\\\"meta\\\\\\\": {\\\\n          \\\\\\\"requestId\\\\\\\": \\\\\\\"8f27d922-ba16-461a-9928-944518a02b44\\\\\\\",\\\\n          \\\\\\\"timestamp\\\\\\\": \\\\\\\"2026-02-25T15:15:25.149Z\\\\\\\"\\\\n        }\\\\n      },\\\\n      \\\\\\\"at\\\\\\\": \\\\\\\"2026-02-25T15:15:25.150Z\\\\\\\"\\\\n    },\\\\n    {\\\\n      \\\\\\\"method\\\\\\\": \\\\\\\"POST\\\\\\\",\\\\n      \\\\\\\"path\\\\\\\": \\\\\\\"/api/v1/bizes/3AAPhd0MjnDE5kKBYk7BcGzfJHE/offers\\\\\\\",\\\\n      \\\\\\\"status\\\\\\\": 201,\\\\n      \\\\\\\"requestBody\\\\\\\": {\\\\n        \\\\\\\"name\\\\\\\": \\\\\\\"Primary Service Offer\\\\\\\",\\\\n        \\\\\\\"slug\\\\\\\": \\\\\\\"offer-4iruagja\\\\\\\",\\\\n        \\\\\\\"executionMode\\\\\\\": \\\\\\\"slot\\\\\\\",\\\\n        \\\\\\\"status\\\\\\\": \\\\\\\"draft\\\\\\\",\\\\n        \\\\\\\"isPublished\\\\\\\": false,\\\\n        \\\\\\\"timezone\\\\\\\": \\\\\\\"UTC\\\\\\\"\\\\n      },\\\\n      \\\\\\\"responseBody\\\\\\\": {\\\\n        \\\\\\\"success\\\\\\\": true,\\\\n        \\\\\\\"data\\\\\\\": {\\\\n          \\\\\\\"id\\\\\\\": \\\\\\\"offer_3AAPi8bUsch37axOgXg1ayUbvXs\\\\\\\",\\\\n          \\\\\\\"bizId\\\\\\\": \\\\\\\"3AAPhd0MjnDE5kKBYk7BcGzfJHE\\\\\\\",\\\\n          \\\\\\\"name\\\\\\\": \\\\\\\"Primary Service Offer\\\\\\\",\\\\n          \\\\\\\"slug\\\\\\\": \\\\\\\"offer-4iruagja\\\\\\\",\\\\n          \\\\\\\"description\\\\\\\": null,\\\\n          \\\\\\\"executionMode\\\\\\\": \\\\\\\"slot\\\\\\\",\\\\n          \\\\\\\"executionModeConfigValueId\\\\\\\": null,\\\\n          \\\\\\\"status\\\\\\\": \\\\\\\"draft\\\\\\\",\\\\n          \\\\\\\"statusConfigValueId\\\\\\\": null,\\\\n          \\\\\\\"isPublished\\\\\\\": false,\\\\n          \\\\\\\"timezone\\\\\\\": \\\\\\\"UTC\\\\\\\",\\\\n          \\\\\\\"metadata\\\\\\\": {},\\\\n          \\\\\\\"createdAt\\\\\\\": \\\\\\\"2026-02-25T15:15:25.263Z\\\\\\\",\\\\n          \\\\\\\"updatedAt\\\\\\\": \\\\\\\"2026-02-25T15:15:25.263Z\\\\\\\",\\\\n          \\\\\\\"deletedAt\\\\\\\": null,\\\\n          \\\\\\\"createdBy\\\\\\\": null,\\\\n          \\\\\\\"updatedBy\\\\\\\": null,\\\\n          \\\\\\\"deletedBy\\\\\\\": null\\\\n        },\\\\n        \\\\\\\"meta\\\\\\\": {\\\\n          \\\\\\\"requestId\\\\\\\": \\\\\\\"15c19327-e47a-4ad6-8ebb-026b51415d6d\\\\\\\",\\\\n          \\\\\\\"timestamp\\\\\\\": \\\\\\\"2026-02-25T15:15:25.265Z\\\\\\\"\\\\n        }\\\\n      },\\\\n      \\\\\\\"at\\\\\\\": \\\\\\\"2026-02-25T15:15:25.266Z\\\\\\\"\\\\n    }\\\\n  ]\\\\n}\\\\n\\\",\\\"byteSize\\\":3458,\\\"checksum\\\":\\\"bf69b7bec499c59a1f3ea99d648f05f4572a904ebc426f7271b64506b0c41547\\\",\\\"capturedAt\\\":\\\"2026-02-25T15:15:25.407Z\\\",\\\"metadata\\\":{\\\"source\\\":\\\"rerun-sagas.ts\\\"},\\\"createdAt\\\":\\\"2026-02-25T15:15:25.407Z\\\",\\\"updatedAt\\\":\\\"2026-02-25T15:15:25.407Z\\\",\\\"deletedAt\\\":null,\\\"createdBy\\\":null,\\\"updatedBy\\\":null,\\\"deletedBy\\\":null},\\\"meta\\\":{\\\"requestId\\\":\\\"65848445-bf36-4a3e-85b5-f2e5f23dde29\\\",\\\"timestamp\\\":\\\"2026-02-25T15:15:25.542Z\\\"}},\\\"at\\\":\\\"2026-02-25T15:15:25.543Z\\\"},{\\\"method\\\":\\\"POST\\\",\\\"path\\\":\\\"/api/v1/sagas/runs/saga_run_3AAPgIM486UPSNRnKL9sCvesBL5/snapshots\\\",\\\"status\\\":201,\\\"requestBody\\\":{\\\"stepKey\\\":\\\"uc-need-validate-3\\\",\\\"screenKey\\\":\\\"uc-need-validate-3-1772032525315\\\",\\\"title\\\":\\\"Validate explicit UC need #3 Snapshot\\\",\\\"status\\\":\\\"skipped\\\",\\\"route\\\":\\\"/sagas/saga_run_3AAPgIM486UPSNRnKL9sCvesBL5/uc-need-validate-3\\\",\\\"format\\\":\\\"json\\\",\\\"view\\\":{\\\"title\\\":\\\"Validate explicit UC need #3\\\",\\\"subtitle\\\":\\\"Step skipped: Exploratory validation step skipped by deterministic runner (semantic/manual review step).\\\",\\\"blocks\\\":[{\\\"type\\\":\\\"alert\\\",\\\"title\\\":\\\"Uc Need Validate 3 skipped\\\",\\\"message\\\":\\\"Step skipped: Exploratory validation step skipped by deterministic runner (semantic/manual review step).\\\",\\\"tone\\\":\\\"warning\\\"},{\\\"type\\\":\\\"key_value\\\",\\\"title\\\":\\\"Screen details\\\",\\\"items\\\":[{\\\"label\\\":\\\"Error\\\",\\\"value\\\":\\\"Exploratory validation step skipped by deterministic runner (semantic/manual review step).\\\"},{\\\"label\\\":\\\"Failed\\\",\\\"value\\\":\\\"false\\\"},{\\\"label\\\":\\\"Blocked\\\",\\\"value\\\":\\\"false\\\"},{\\\"label\\\":\\\"Skipped\\\",\\\"value\\\":\\\"true\\\"},{\\\"label\\\":\\\"StepFamily\\\",\\\"value\\\":\\\"uc-need-validation\\\"},{\\\"lab",
+        "_size": 57240
+      },
+      "responseBody": {
+        "_truncated": true,
+        "_preview": "{\"success\":true,\"data\":{\"id\":\"saga_artifact_3AAPi8btM7f1VM4GyQ7JSxVp6yq\",\"sagaRunId\":\"saga_run_3AAPhJZHgbZqR02UuKo3AKi7jrY\",\"sagaRunStepId\":\"saga_run_step_3AAPhPJ73boqzOzR3bzWdZQeqk9\",\"artifactType\":\"api_trace\",\"title\":\"Create and publish offer version API Trace\",\"storagePath\":\"testing/sagas/runs/saga_run_3AAPhJZHgbZqR02UuKo3AKi7jrY/artifacts/1772032525894-Create_and_publish_offer_version_API_Trace.json\",\"contentType\":\"application/json\",\"bodyText\":\"{\\n  \\\"stepKey\\\": \\\"owner-create-offer-version\\\",\\n  \\\"callCount\\\": 3,\\n  \\\"calls\\\": [\\n    {\\n      \\\"method\\\": \\\"POST\\\",\\n      \\\"path\\\": \\\"/api/v1/sagas/runs/saga_run_3AAPhNZDbuCFFoKtUYhG9jAHPuD/steps/owner-invite-member/result\\\",\\n      \\\"status\\\": 200,\\n      \\\"requestBody\\\": {\\n        \\\"status\\\": \\\"passed\\\",\\n        \\\"startedAt\\\": \\\"2026-02-25T15:15:25.543Z\\\",\\n        \\\"endedAt\\\": \\\"2026-02-25T15:15:25.543Z\\\",\\n        \\\"failureMessage\\\": null,\\n        \\\"resultPayload\\\": {\\n          \\\"note\\\": \\\"Member invited and accepted invitation.\\\",\\n          \\\"evidence\\\": {\\n            \\\"memberEmail\\\": \\\"member-uc-74-the-multi-agent-orchestrator-conductor-c-1772032525054-p4zkq9@example.com\\\",\\n            \\\"invitationId\\\": \\\"AgWhrfLwAgBkTlUCtzgslTtEXVi19Aem\\\"\\n          }\\n        },\\n        \\\"assertionSummary\\\": {\\n          \\\"status\\\": \\\"passed\\\",\\n          \\\"hasFailure\\\": false,\\n          \\\"assertionsPassed\\\": 1\\n        }\\n      },\\n      \\\"responseBody\\\": {\\n        \\\"success\\\": true,\\n        \\\"data\\\": {\\n          \\\"id\\\": \\\"saga_run_step_3AAPhLdjO4cmErPWwRtwnJbL0dx\\\",\\n          \\\"sagaRunId\\\": \\\"saga_run_3AAPhNZDbuCFFoKtUYhG9jAHPuD\\\",\\n          \\\"phaseKey\\\": \\\"supply-and-team-setup\\\",\\n          \\\"phaseOrder\\\": 3,\\n          \\\"phaseTitle\\\": \\\"Supply And Team Setup\\\",\\n          \\\"stepKey\\\": \\\"owner-invite-member\\\",\\n          \\\"stepOrder\\\": 8,\\n          \\\"actorKey\\\": \\\"biz_owner\\\",\\n          \\\"instruction\\\": \\\"Invite a biz member, assign an operational role, and verify that member can authenticate into the same biz.\\\",\\n          \\\"expectedResult\\\": \\\"Biz member account/session exists with scoped role permissions.\\\",\\n          \\\"delayMode\\\": \\\"none\\\",\\n          \\\"delayMs\\\": null,\\n          \\\"delayConditionKey\\\": null,\\n          \\\"delayTimeoutMs\\\": null,\\n          \\\"delayPollMs\\\": null,\\n          \\\"delayJitterMs\\\": 0,\\n          \\\"status\\\": \\\"passed\\\",\\n          \\\"attemptCount\\\": 1,\\n          \\\"startedAt\\\": \\\"2026-02-25T15:15:25.543Z\\\",\\n          \\\"endedAt\\\": \\\"2026-02-25T15:15:25.543Z\\\",\\n          \\\"failureCode\\\": null,\\n          \\\"failureMessage\\\": null,\\n          \\\"resultPayload\\\": {\\n            \\\"note\\\": \\\"Member invited and accepted invitation.\\\",\\n            \\\"evidence\\\": {\\n              \\\"memberEmail\\\": \\\"member-uc-74-the-multi-agent-orchestrator-conductor-c-1772032525054-p4zkq9@example.com\\\",\\n              \\\"invitationId\\\": \\\"AgWhrfLwAgBkTlUCtzgslTtEXVi19Aem\\\"\\n            }\\n          },\\n          \\\"assertionSummary\\\": {\\n            \\\"status\\\": \\\"passed\\\",\\n            \\\"hasFailure\\\": false,\\n            \\\"assertionsPassed\\\": 1\\n          },\\n          \\\"metadata\\\": {},\\n          \\\"createdAt\\\": \\\"2026-02-25T15:15:19.566Z\\\",\\n          \\\"updatedAt\\\": \\\"2026-02-25T15:15:19.566Z\\\",\\n          \\\"deletedAt\\\": null,\\n          \\\"createdBy\\\": null,\\n          \\\"updatedBy\\\": null,\\n          \\\"deletedBy\\\": null\\n        },\\n        \\\"meta\\\": {\\n          \\\"requestId\\\": \\\"9a435304-24dc-4a94-a744-6f5746d4ae41\\\",\\n          \\\"timestamp\\\": \\\"2026-02-25T15:15:25.855Z\\\"\\n        }\\n      },\\n      \\\"at\\\": \\\"2026-02-25T15:15:25.855Z\\\"\\n    },\\n    {\\n      \\\"method\\\": \\\"POST\\\",\\n      \\\"path\\\": \\\"/api/v1/sagas/runs/saga_run_3AAPhaG76S9wWuKBgHtIlksagoz/traces\\\",\\n      \\\"status\\\": 201,\\n      \\\"requestBody\\\": {\\n        \\\"_truncated\\\": true,\\n        \\\"_preview\\\": \\\"{\\\\\\\"stepKey\\\\\\\":\\\\\\\"owner-invite-member\\\\\\\",\\\\\\\"title\\\\\\\":\\\\\\\"Invite and provision business member API Trace\\\\\\\",\\\\\\\"trace\\\\\\\":{\\\\\\\"stepKey\\\\\\\":\\\\\\\"owner-invite-member\\\\\\\",\\\\\\\"callCount\\\\\\\":2,\\\\\\\"calls\\\\\\\":[{\\\\\\\"method\\\\\\\":\\\\\\\"POST\\\\\\\",\\\\\\\"path\\\\\\\":\\\\\\\"/api/v1/sagas/runs/saga_run_3AAPhNZDbuCFFoKtUYhG9jAHPuD/traces\\\\\\\",\\\\\\\"status\\\\\\\":201,\\\\\\\"requestBody\\\\\\\":{\\\\\\\"stepKey\\\\\\\":\\\\\\\"owner-invite-member\\\\\\\",\\\\\\\"title\\\\\\\":\\\\\\\"Invite and provision business member API Trace\\\\\\\",\\\\\\\"trace\\\\\\\":{\\\\\\\"stepKey\\\\\\\":\\\\\\\"owner-invite-member\\\\\\\",\\\\\\\"callCount\\\\\\\":2,\\\\\\\"calls\\\\\\\":[{\\\\\\\"method\\\\\\\":\\\\\\\"POST\\\\\\\",\\\\\\\"path\\\\\\\":\\\\\\\"/api/v1/sagas/runs/saga_run_3AAPhaG76S9wWuKBgHtIlksagoz/steps/owner-create-resources/result\\\\\\\",\\\\\\\"status\\\\\\\":200,\\\\\\\"requestBody\\\\\\\":{\\\\\\\"status\\\\\\\":\\\\\\\"in_progress\\\\\\\",\\\\\\\"startedAt\\\\\\\":\\\\\\\"2026-02-25T15:15:24.980Z\\\\\\\",\\\\\\\"resultPayload\\\\\\\":{\\\\\\\"note\\\\\\\":\\\\\\\"Started owner-create-resources\\\\\\\"},\\\\\\\"assertionSummary\\\\\\\":{\\\\\\\"status\\\\\\\":\\\\\\\"in_progress\\\\\\\"}},\\\\\\\"responseBody\\\\\\\":{\\\\\\\"success\\\\\\\":true,\\\\\\\"data\\\\\\\":{\\\\\\\"id\\\\\\\":\\\\\\\"saga_run_step_3AAPhaIvd8phKXgr2JJgGns9mU3\\\\\\\",\\\\\\\"sagaRunId\\\\\\\":\\\\\\\"saga_run_3AAPhaG76S9wWuKBgHtIlksagoz\\\\\\\",\\\\\\\"phaseKey\\\\\\\":\\\\\\\"supply-and-team-setup\\\\\\\",\\\\\\\"phaseOrder\\\\\\\":3,\\\\\\\"phaseTitle\\\\\\\":\\\\\\\"Supply And Team Setup\\\\\\\",\\\\\\\"stepKey\\\\\\\":\\\\\\\"owner-create-resources\\\\\\\",\\\\\\\"stepOrder\\\\\\\":6,\\\\\\\"actorKey\\\\\\\":\\\\\\\"biz_owner\\\\\\\",\\\\\\\"instruction\\\\\\\":\\\\\\\"Create at least one host resource and one non-host resource (asset or venue) suitable for the UC.\\\\\\\",\\\\\\\"expectedResult\\\\\\\":\\\\\\\"Resources are created with expected type, location, and buffers.\\\\\\\",\\\\\\\"delayMode\\\\\\\":\\\\\\\"none\\\\\\\",\\\\\\\"delayMs\\\\\\\":null,\\\\\\\"delayConditionKey\\\\\\\":null,\\\\\\\"delayTimeoutMs\\\\\\\":null,\\\\\\\"delayPollMs\\\\\\\":null,\\\\\\\"delayJitterMs\\\\\\\":0,\\\\\\\"status\\\\\\\":\\\\\\\"in_progress\\\\\\\",\\\\\\\"attemptCount\\\\\\\":1,\\\\\\\"startedAt\\\\\\\":\\\\\\\"2026-02-25T15:15:24.980Z\\\\\\\",\\\\\\\"endedAt\\\\\\\":null,\\\\\\\"failureCode\\\\\\\":null,\\\\\\\"failureMessage\\\\\\\":null,\\\\\\\"resultPayload\\\\\\\":{\\\\\\\"note\\\\\\\":\\\\\\\"Started owner-create-resources\\\\\\\"},\\\\\\\"assertionSummary\\\\\\\":{\\\\\\\"status\\\\\\\":\\\\\\\"in_progress\\\\\\\"},\\\\\\\"metadata\\\\\\\":{},\\\\\\\"createdAt\\\\\\\":\\\\\\\"2026-02-25T15:15:21.094Z\\\\\\\",\\\\\\\"updatedAt\\\\\\\":\\\\\\\"2026-02-25T15:15:21.094Z\\\\\\\",\\\\\\\"deletedAt\\\\\\\":null,\\\\\\\"createdBy\\\\\\\":null,\\\\\\\"updatedBy\\\\\\\":null,\\\\\\\"deletedBy\\\\\\\":null},\\\\\\\"meta\\\\\\\":{\\\\\\\"requestId\\\\\\\":\\\\\\\"8f27d922-ba16-461a-9928-944518a02b44\\\\\\\",\\\\\\\"timestamp\\\\\\\":\\\\\\\"2026-02-25T15:15:25.149Z\\\\\\\"}},\\\\\\\"at\\\\\\\":\\\\\\\"2026-02-25T15:15:25.150Z\\\\\\\"},{\\\\\\\"method\\\\\\\":\\\\\\\"POST\\\\\\\",\\\\\\\"path\\\\\\\":\\\\\\\"/api/v1/bizes/3AAPhd0MjnDE5kKBYk7BcGzfJHE/offers\\\\\\\",\\\\\\\"status\\\\\\\":201,\\\\\\\"requestBody\\\\\\\":{\\\\\\\"name\\\\\\\":\\\\\\\"Primary Service Offer\\\\\\\",\\\\\\\"slug\\\\\\\":\\\\\\\"offer-4iruagja\\\\\\\",\\\\\\\"executionMode\\\\\\\":\\\\\\\"slot\\\\\\\",\\\\\\\"status\\\\\\\":\\\\\\\"draft\\\\\\\",\\\\\\\"isPublished\\\\\\\":false,\\\\\\\"timezone\\\\\\\":\\\\\\\"UTC\\\\\\\"},\\\\\\\"responseBody\\\\\\\":{\\\\\\\"success\\\\\\\":true,\\\\\\\"data\\\\\\\":{\\\\\\\"id\\\\\\\":\\\\\\\"offer_3AAPi8bUsch37axOgXg1ayUbvXs\\\\\\\",\\\\\\\"bizId\\\\\\\":\\\\\\\"3AAPhd0MjnDE5kKBYk7BcGzfJHE\\\\\\\",\\\\\\\"name\\\\\\\":\\\\\\\"Primary Service Offer\\\\\\\",\\\\\\\"slug\\\\\\\":\\\\\\\"offer-4iruagja\\\\\\\",\\\\\\\"description\\\\\\\":null,\\\\\\\"executionMode\\\\\\\":\\\\\\\"slot\\\\\\\",\\\\\\\"executionModeConfigValueId\\\\\\\":null,\\\\\\\"status\\\\\\\":\\\\\\\"draft\\\\\\\",\\\\\\\"statusConfigValueId\\\\\\\":null,\\\\\\\"isPublished\\\\\\\":false,\\\\\\\"timezone\\\\\\\":\\\\\\\"UTC\\\\\\\",\\\\\\\"metadata\\\\\\\":{},\\\\\\\"createdAt\\\\\\\":\\\\\\\"2026-02-25T15:15:25.263Z\\\\\\\",\\\\\\\"updatedAt\\\\\\\":\\\\\\\"2026-02-25T15:15:25.263Z\\\\\\\",\\\\\\\"deletedAt\\\\\\\":null,\\\\\\\"createdBy\\\\\\\":null,\\\\\\\"updatedBy\\\\\\\":null,\\\\\\\"deletedBy\\\\\\\":null},\\\\\\\"meta\\\\\\\":{\\\\\\\"requestId\\\\\\\":\\\\\\\"15c19327-e47a-4ad6-8ebb-026b51415d6d\\\\\\\",\\\\\\\"timestamp\\\\\\\":\\\\\\\"2026-02-25T15:15:25.265Z\\\\\\\"}},\\\\\\\"at\\\\\\\":\\\\\\\"2026-02-25T15:15:25.266Z\\\\\\\"}]},\\\\\\\"metadata\\\\\\\":{\\\\\\\"source\\\\\\\":\\\\\\\"rerun-sagas.ts\\\\\\\"}},\\\\\\\"responseBody\\\\\\\":{\\\\\\\"success\\\\\\\":true,\\\\\\\"data\\\\\\\":{\\\\\\\"id\\\\\\\":\\\\\\\"saga_artifact_3AAPi7OKuuyxR1mjXLCh7iVrqEa\\\\\\\",\\\\\\\"sagaRunId\\\\\\\":\\\\\\\"saga_run_3AAPhNZDbuCFFoKtUYhG9jAHPuD\\\\\\\",\\\\\\\"sagaRunStepId\\\\\\\":\\\\\\\"saga_run_step_3AAPhLdjO4cmErPWwRtwnJbL0dx\\\\\\\",\\\\\\\"artifactType\\\\\\\":\\\\\\\"api_trace\\\\\\\",\\\\\\\"title\\\\\\\":\\\\\\\"Invite and provision business member API Trace\\\\\\\",\\\\\\\"storagePath\\\\\\\":\\\\\\\"testing/sagas/runs/saga_run_3AAPhNZDbuCFFoKtUYhG9jAHPuD/artifacts/1772032525378-Invite_and_provision_business_member_API_Trace.json\\\\\\\",\\\\\\\"contentType\\\\\\\":\\\\\\\"application/json\\\\\\\",\\\\\\\"bodyText\\\\\\\":\\\\\\\"{\\\\\\\\n  \\\\\\\\\\\\\\\"stepKey\\\\\\\\\\\\\\\": \\\\\\\\\\\\\\\"owner-invite-member\\\\\\\\\\\\\\\",\\\\\\\\n  \\\\\\\\\\\\\\\"callCount\\\\\\\\\\\\\\\": 2,\\\\\\\\n  \\\\\\\\\\\\\\\"calls\\\\\\\\\\\\\\\": [\\\\\\\\n    {\\\\\\\\n      \\\\\\\\\\\\\\\"method\\\\\\\\\\\\\\\": \\\\\\\\\\\\\\\"POST\\\\\\\\\\\\\\\",\\\\\\\\n      \\\\\\\\\\\\\\\"path\\\\\\\\\\\\\\\": \\\\\\\\\\\\\\\"/api/v1/sagas/runs/saga_run_3AAPhaG76S9wWuKBgHtIlksagoz/steps/owner-create-resources/result\\\\\\\\\\\\\\\",\\\\\\\\n      \\\\\\\\\\\\\\\"status\\\\\\\\\\\\\\\": 200,\\\\\\\\n      \\\\\\\\\\\\\\\"requestBody\\\\\\\\\\\\\\\": {\\\\\\\\n        \\\\\\\\\\\\\\\"status\\\\\\\\\\\\\\\": \\\\\\\\\\\\\\\"in_progress\\\\\\\\\\\\\\\",\\\\\\\\n        \\\\\\\\\\\\\\\"startedAt\\\\\\\\\\\\\\\": \\\\\\\\\\\\\\\"2026-02-25T15:15:24.980Z\\\\\\\\\\\\\\\",\\\\\\\\n        \\\\\\\\\\\\\\\"resultPayload\\\\\\\\\\\\\\\": {\\\\\\\\n          \\\\\\\\\\\\\\\"note\\\\\\\\\\\\\\\": \\\\\\\\\\\\\\\"Started owner-create-resources\\\\\\\\\\\\\\\"\\\\\\\\n        },\\\\\\\\n        \\\\\\\\\\\\\\\"assertionSummary\\\\\\\\\\\\\\\": {\\\\\\\\n          \\\\\\\\\\\\\\\"status\\\\\\\\\\\\\\\": \\\\\\\\\\\\\\\"in_progress\\\\\\\\\\\\\\\"\\\\\\\\n        }\\\\\\\\n      },\\\\\\\\n      \\\\\\\\\\\\\\\"responseBody\\\\\\\\\\\\\\\": {\\\\\\\\n        \\\\\\\\\\\\\\\"success\\\\\\\\\\\\\\\": true,\\\\\\\\n        \\\\\\\\\\\\\\\"data\\\\\\\\\\\\\\\": {\\\\\\\\n          \\\\\\\\\\\\\\\"id\\\\\\\\\\\\\\\": \\\\\\\\\\\\\\\"saga_run_step_3AAPhaIvd8phKXgr2JJgGns9mU3\\\\\\\\\\\\\\\",\\\\\\\\n          \\\\\\\\\\\\\\\"sagaRunId\\\\\\\\\\\\\\\": \\\\\\\\\\\\\\\"saga_run_3AAPhaG76S9wWuKBgHtIlksagoz\\\\\\\\\\\\\\\",\\\\\\\\n          \\\\\\\\\\\\\\\"phaseKey\\\\\\\\\\\\\\\": \\\\\\\\\\\\\\\"supply-and-team-setup\\\\\\\\\\\\\\\",\\\\\\\\n          \\\\\\\\\\\\\\\"phaseOrder\\\\\\\\\\\\\\\": 3,\\\\\\\\n          \\\\\\\\\\\\\\\"phaseTitle\\\\\\\\\\\\\\\": \\\\\\\\\\\\\\\"Supply And Team Setup\\\\\\\\\\\\\\\",\\\\\\\\n          \\\\\\\\\\\\\\\"stepKey\\\\\\\\\\\\\\\": \\\\\\\\\\\\\\\"owner-create-resources\\\\\\\\\\\\\\\",\\\\\\\\n          \\\\\\\\\\\\\\\"stepOrder\\\\\\\\\\\\\\\": 6,\\\\\\\\n          \\\\\\\\\\\\\\\"actorKey\\\\\\\\\\\\\\\": \\\\\\\\\\\\\\\"biz_owner\\\\\\\\\\\\\\\",\\\\\\\\n          \\\\\\\\\\\\\\\"instruction\\\\\\\\\\\\\\\": \\\\\\\\\\\\\\\"Create at least one host resource and one non-host resource (asset or venue) suitable for the UC.\\\\\\\\\\\\\\\",\\\\\\\\n          \\\\\\\\\\\\\\\"expectedResult\\\\\\\\\\\\\\\": \\\\\\\\\\\\\\\"Resources are created with expected type, location, and buffers.\\\\\\\\\\\\\\\",\\\\\\\\n          \\\\\\\\\\\\\\\"delayMode\\\\\\\\\\\\\\\": \\\\\\\\\\\\\\\"none\\\\\\\\\\\\\\\",\\\\\\\\n          \\\\\\\\\\\\\\\"delayMs\\\\\\\\\\\\\\\": null,\\\\\\\\n          \\\\\\\\\\\\\\\"delayConditionKey\\\\\\\\\\\\\\\": null,\\\\\\\\n          \\\\\\\\\\\\\\\"delayTimeoutMs\\\\\\\\\\\\\\\": null,\\\\\\\\n          \\\\\\\\\\\\\\\"delayPollMs\\\\\\\\\\\\\\\": null,\\\\\\\\n          \\\\\\\\\\\\\\\"delayJitterMs\\\\\\\\\\\\\\\": 0,\\\\\\\\n          \\\\\\\\\\\\\\\"status\\\\\\\\\\\\\\\": \\\\\\\\\\\\\\\"in_progress\\\\\\\\\\\\\\\",\\\\\\\\n          \\\\\\\\\\\\\\\"attemptCount\\\\\\\\\\\\\\\": 1,\\\\\\\\n          \\\\\\\\\\\\\\\"startedAt\\\\\\\\\\\\\\\": \\\\\\\\\\\\\\\"2026-02-25T15:15:24.980Z\\\\\\\\\\\\\\\",\\\\\\\\n          \\\\\\\\\\\\\\\"endedAt\\\\\\\\\\\\\\\": null,\\\\\\\\n          \\\\\\\\\\\\\\\"failureCode\\\\\\\\\\\\\\\": null,\\\\\\\\n          \\\\\\\\\\\\\\\"failureMessage\\\\\\\\\\\\\\\": null,\\\\\\\\n          \\\\\\\\\\\\\\\"resultPayload\\\\\\\\\\\\\\\": {\\\\\\\\n            \\\\\\\\\\\\\\\"note\\\\\\\\\\\\\\\": \\\\\\\\\\\\\\\"Started owner-create-resources\\\\\\\\\\\\\\\"\\\\\\\\n          },\\\\\\\\n          \\\\\\\\\\\\\\\"assertionSummary\\\\\\\\\\\\\\\": {\\\\\\\\n            \\\\\\\\\\\\\\\"status\\\\\\\\\\\\\\\": \\\\\\\\\\\\\\\"in_progress\\\\\\\\\\\\\\\"\\\\\\\\n          },\\\\\\\\n          \\\\\\\\\\\\\\\"metadata\\\\\\\\\\\\\\\": {},\\\\\\\\n          \\\\\\\\\\\\\\\"createdAt\\\\\\\\\\\\\\\": \\\\\\\\\\\\\\\"2026-02-25T15:15:21.094Z\\\\\\\\\\\\\\\",\\\\\\\\n          \\\\\\\\\\\\\\\"updatedAt\\\\\\\\\\\\\\\": \\\\\\\\\\\\\\\"2026-02-25T15:15:21.094Z\\\\\\\\\\\\\\\",\\\\\\\\n          \\\\\\\\\\\\\\\"deletedAt\\\\\\\\\\\\\\\": null,\\\\\\\\n          \\\\\\\\\\\\\\\"createdBy\\\\\\\\\\\\\\\": null,\\\\\\\\n          \\\\\\\\\\\\\\\"updatedBy\\\\\\\\\\\\\\\": null,\\\\\\\\n          \\\\\\\\\\\\\\\"deletedBy\\\\\\\\\\\\\\\": null\\\\\\\\n        },\\\\\\\\n        \\\\\\\\\\\\\\\"meta\\\\\\\\\\\\\\\": {\\\\\\\\n          \\\\\\\\\\\\\\\"requestId\\\\\\\\\\\\\\\": \\\\\\\\\\\\\\\"8f27d922-ba16-461a-9928-944518a02b44\\\\\\\\\\\\\\\",\\\\\\\\n          \\\\\\\\\\\\\\\"timestamp\\\\\\\\\\\\\\\": \\\\\\\\\\\\\\\"2026-02-25T15:15:25.149Z\\\\\\\\\\\\\\\"\\\\\\\\n        }\\\\\\\\n      },\\\\\\\\n      \\\\\\\\\\\\\\\"at\\\\\\\\\\\\\\\": \\\\\\\\\\\\\\\"2026-02-25T15:15:25.150Z\\\\\\\\\\\\\\\"\\\\\\\\n    },\\\\\\\\n    {\\\\\\\\n      \\\\\\\\\\\\\\\"method\\\\\\\\\\\\\\\": \\\\\\\\\\\\\\\"POST\\\\\\\\\\\\\\\",\\\\\\\\n      \\\\\\\\\\\\\\\"path\\\\\\\\\\\\\\\": \\\\\\\\\\\\\\\"/api/v1/bizes/3AAPhd0MjnDE5kKBYk7BcGzfJHE/offers\\\\\\\\\\\\\\\",\\\\\\\\n      \\\\\\\\\\\\\\\"status\\\\\\\\\\\\\\\": 201,\\\\\\\\n      \\\\\\\\\\\\\\\"requestBody\\\\\\\\\\\\\\\": {\\\\\\\\n        \\\\\\\\\\\\\\\"name\\\\\\\\\\\\\\\": \\\\\\\\\\\\\\\"Primary Service Offer\\\\\\\\\\\\\\\",\\\\\\\\n        \\\\\\\\\\\\\\\"slug\\\\\\\\\\\\\\\": \\\\\\\\\\\\\\\"offer-4iruagja\\\\\\\\\\\\",
+        "_size": 72581
+      },
+      "at": "2026-02-25T15:15:26.075Z"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AAPggPjTgrkBGbowgFk6tXNjrh/traces",
+      "status": 201,
+      "requestBody": {
+        "stepKey": "adversary-hold-abuse",
+        "title": "Adversary attempts demand/hold abuse API Trace",
+        "trace": {
+          "stepKey": "adversary-hold-abuse",
+          "callCount": 2,
+          "calls": [
+            {
+              "method": "POST",
+              "path": "/api/v1/bizes/3AAPh26Hs2TncPkcRvyRABKEbSR/booking-orders",
+              "status": 403,
+              "requestBody": {
+                "offerId": "offer_3AAPhWkMidv7RGOexF5zcovo4fM",
+                "offerVersionId": "offer_version_3AAPha9FoeIAM8SpOxpXj1Jfhzo",
+                "status": "draft",
+                "subtotalMinor": 1000,
+                "taxMinor": 0,
+                "feeMinor": 0,
+                "discountMinor": 0,
+                "totalMinor": 1000,
+                "currency": "USD"
+              },
+              "responseBody": {
+                "success": false,
+                "error": {
+                  "code": "FORBIDDEN",
+                  "message": "You are not a member of this biz."
+                },
+                "meta": {
+                  "requestId": "9bd01609-39f2-4096-90a8-d5662c2b069d",
+                  "timestamp": "2026-02-25T15:15:25.810Z"
+                }
+              },
+              "at": "2026-02-25T15:15:25.810Z"
+            },
+            {
+              "method": "POST",
+              "path": "/api/v1/sagas/runs/saga_run_3AAPfs9xmXWq76Yv29AYIalPQI7/snapshots",
+              "status": 201,
+              "requestBody": {
+                "stepKey": "uc-need-validate-4",
+                "screenKey": "uc-need-validate-4-1772032525643",
+                "title": "Validate explicit UC need #4 Snapshot",
+                "status": "skipped",
+                "route": "/sagas/saga_run_3AAPfs9xmXWq76Yv29AYIalPQI7/uc-need-validate-4",
+                "format": "json",
+                "view": {
+                  "title": "Validate explicit UC need #4",
+                  "subtitle": "Step skipped: Exploratory validation step skipped by deterministic runner (semantic/manual review step).",
+                  "blocks": [
+                    {
+                      "type": "alert",
+                      "title": "Uc Need Validate 4 skipped",
+                      "message": "Step skipped: Exploratory validation step skipped by deterministic runner (semantic/manual review step).",
+                      "tone": "warning"
+                    },
+                    {
+                      "type": "key_value",
+                      "title": "Screen details",
+                      "items": [
+                        {
+                          "label": "Error",
+                          "value": "Exploratory validation step skipped by deterministic runner (semantic/manual review step)."
+                        },
+                        {
+                          "label": "Failed",
+                          "value": "false"
+                        },
+                        {
+                          "label": "Blocked",
+                          "value": "false"
+                        },
+                        {
+                          "label": "Skipped",
+                          "value": "true"
+                        },
+                        {
+                          "label": "StepFamily",
+                          "value": "uc-need-validation"
+                        },
+                        {
+                          "label": "ReasonCode",
+                          "value": "DETERMINISTIC_RUNNER_SKIPS_EXPLORATORY_STEP"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                "rawData": {
+                  "stepKey": "uc-need-validate-4",
+                  "error": "Exploratory validation step skipped by deterministic runner (semantic/manual review step).",
+                  "resultPayload": {
+                    "note": "Step skipped: Exploratory validation step skipped by deterministic runner (semantic/manual review step).",
+                    "evidence": {
+                      "error": "Exploratory validation step skipped by deterministic runner (semantic/manual review step).",
+                      "failed": false,
+                      "blocked": false,
+                      "skipped": true,
+                      "stepFamily": "uc-need-validation",
+                      "reasonCode": "DETERMINISTIC_RUNNER_SKIPS_EXPLORATORY_STEP"
+                    }
+                  },
+                  "apiCalls": []
+                }
+              },
+              "responseBody": {
+                "success": true,
+                "data": {
+                  "id": "saga_artifact_3AAPi9qb9WuBT63StVP6TDQt9o4",
+                  "sagaRunId": "saga_run_3AAPfs9xmXWq76Yv29AYIalPQI7",
+                  "sagaRunStepId": "saga_run_step_3AAPft3gXfTCx8hO7duPCwYjjMf",
+                  "artifactType": "snapshot",
+                  "title": "Validate explicit UC need #4 Snapshot",
+                  "storagePath": "testing/sagas/runs/saga_run_3AAPfs9xmXWq76Yv29AYIalPQI7/snapshots/2026-02-25T15-15-25-670Z-uc-need-validate-4-1772032525643.json",
+                  "contentType": "application/json",
+                  "bodyText": "{\n  \"schemaVersion\": \"snapshot.v1\",\n  \"screenKey\": \"uc-need-validate-4-1772032525643\",\n  \"title\": \"Validate explicit UC need #4 Snapshot\",\n  \"generatedAt\": \"2026-02-25T15:15:25.658Z\",\n  \"stepKey\": \"uc-need-validate-4\",\n  \"status\": \"skipped\",\n  \"view\": {\n    \"title\": \"Validate explicit UC need #4\",\n    \"subtitle\": \"Step skipped: Exploratory validation step skipped by deterministic runner (semantic/manual review step).\",\n    \"blocks\": [\n      {\n        \"type\": \"alert\",\n        \"title\": \"Uc Need Validate 4 skipped\",\n        \"message\": \"Step skipped: Exploratory validation step skipped by deterministic runner (semantic/manual review step).\",\n        \"tone\": \"warning\"\n      },\n      {\n        \"type\": \"key_value\",\n        \"title\": \"Screen details\",\n        \"items\": [\n          {\n            \"label\": \"Error\",\n            \"value\": \"Exploratory validation step skipped by deterministic runner (semantic/manual review step).\"\n          },\n          {\n            \"label\": \"Failed\",\n            \"value\": \"false\"\n          },\n          {\n            \"label\": \"Blocked\",\n            \"value\": \"false\"\n          },\n          {\n            \"label\": \"Skipped\",\n            \"value\": \"true\"\n          },\n          {\n            \"label\": \"StepFamily\",\n            \"value\": \"uc-need-validation\"\n          },\n          {\n            \"label\": \"ReasonCode\",\n            \"value\": \"DETERMINISTIC_RUNNER_SKIPS_EXPLORATORY_STEP\"\n          }\n        ]\n      }\n    ]\n  },\n  \"rawData\": {\n    \"stepKey\": \"uc-need-validate-4\",\n    \"error\": \"Exploratory validation step skipped by deterministic runner (semantic/manual review step).\",\n    \"resultPayload\": {\n      \"note\": \"Step skipped: Exploratory validation step skipped by deterministic runner (semantic/manual review step).\",\n      \"evidence\": {\n        \"error\": \"Exploratory validation step skipped by deterministic runner (semantic/manual review step).\",\n        \"failed\": false,\n        \"blocked\": false,\n        \"skipped\": true,\n        \"stepFamily\": \"uc-need-validation\",\n        \"reasonCode\": \"DETERMINISTIC_RUNNER_SKIPS_EXPLORATORY_STEP\"\n      }\n    },\n    \"apiCalls\": []\n  },\n  \"metadata\": {}\n}\n",
+                  "byteSize": 2135,
+                  "checksum": "f86e089a43128ee74a216e2e59908f974aae9e46e84455b91175fc7b6dd078ba",
+                  "capturedAt": "2026-02-25T15:15:25.703Z",
+                  "metadata": {
+                    "format": "json",
+                    "stepKey": "uc-need-validate-4",
+                    "screenKey": "uc-need-validate-4-1772032525643",
+                    "sourceFormat": "v1",
+                    "schemaVersion": "snapshot.v1"
+                  },
+                  "createdAt": "2026-02-25T15:15:25.703Z",
+                  "updatedAt": "2026-02-25T15:15:25.703Z",
+                  "deletedAt": null,
+                  "createdBy": null,
+                  "updatedBy": null,
+                  "deletedBy": null
+                },
+                "meta": {
+                  "requestId": "3940bcc4-24d9-40dc-860a-d5bf4817138e",
+                  "timestamp": "2026-02-25T15:15:25.811Z"
+                }
+              },
+              "at": "2026-02-25T15:15:25.811Z"
+            }
+          ]
+        },
+        "metadata": {
+          "source": "rerun-sagas.ts"
+        }
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "id": "saga_artifact_3AAPi4ijwjisRSOBdj1w7bFlxDk",
+          "sagaRunId": "saga_run_3AAPggPjTgrkBGbowgFk6tXNjrh",
+          "sagaRunStepId": "saga_run_step_3AAPgfJ1mOsONt98s4vfOMwRXhR",
+          "artifactType": "api_trace",
+          "title": "Adversary attempts demand/hold abuse API Trace",
+          "storagePath": "testing/sagas/runs/saga_run_3AAPggPjTgrkBGbowgFk6tXNjrh/artifacts/1772032525848-Adversary_attempts_demand_hold_abuse_API_Trace.json",
+          "contentType": "application/json",
+          "bodyText": "{\n  \"stepKey\": \"adversary-hold-abuse\",\n  \"callCount\": 2,\n  \"calls\": [\n    {\n      \"method\": \"POST\",\n      \"path\": \"/api/v1/bizes/3AAPh26Hs2TncPkcRvyRABKEbSR/booking-orders\",\n      \"status\": 403,\n      \"requestBody\": {\n        \"offerId\": \"offer_3AAPhWkMidv7RGOexF5zcovo4fM\",\n        \"offerVersionId\": \"offer_version_3AAPha9FoeIAM8SpOxpXj1Jfhzo\",\n        \"status\": \"draft\",\n        \"subtotalMinor\": 1000,\n        \"taxMinor\": 0,\n        \"feeMinor\": 0,\n        \"discountMinor\": 0,\n        \"totalMinor\": 1000,\n        \"currency\": \"USD\"\n      },\n      \"responseBody\": {\n        \"success\": false,\n        \"error\": {\n          \"code\": \"FORBIDDEN\",\n          \"message\": \"You are not a member of this biz.\"\n        },\n        \"meta\": {\n          \"requestId\": \"9bd01609-39f2-4096-90a8-d5662c2b069d\",\n          \"timestamp\": \"2026-02-25T15:15:25.810Z\"\n        }\n      },\n      \"at\": \"2026-02-25T15:15:25.810Z\"\n    },\n    {\n      \"method\": \"POST\",\n      \"path\": \"/api/v1/sagas/runs/saga_run_3AAPfs9xmXWq76Yv29AYIalPQI7/snapshots\",\n      \"status\": 201,\n      \"requestBody\": {\n        \"stepKey\": \"uc-need-validate-4\",\n        \"screenKey\": \"uc-need-validate-4-1772032525643\",\n        \"title\": \"Validate explicit UC need #4 Snapshot\",\n        \"status\": \"skipped\",\n        \"route\": \"/sagas/saga_run_3AAPfs9xmXWq76Yv29AYIalPQI7/uc-need-validate-4\",\n        \"format\": \"json\",\n        \"view\": {\n          \"title\": \"Validate explicit UC need #4\",\n          \"subtitle\": \"Step skipped: Exploratory validation step skipped by deterministic runner (semantic/manual review step).\",\n          \"blocks\": [\n            {\n              \"type\": \"alert\",\n              \"title\": \"Uc Need Validate 4 skipped\",\n              \"message\": \"Step skipped: Exploratory validation step skipped by deterministic runner (semantic/manual review step).\",\n              \"tone\": \"warning\"\n            },\n            {\n              \"type\": \"key_value\",\n              \"title\": \"Screen details\",\n              \"items\": [\n                {\n                  \"label\": \"Error\",\n                  \"value\": \"Exploratory validation step skipped by deterministic runner (semantic/manual review step).\"\n                },\n                {\n                  \"label\": \"Failed\",\n                  \"value\": \"false\"\n                },\n                {\n                  \"label\": \"Blocked\",\n                  \"value\": \"false\"\n                },\n                {\n                  \"label\": \"Skipped\",\n                  \"value\": \"true\"\n                },\n                {\n                  \"label\": \"StepFamily\",\n                  \"value\": \"uc-need-validation\"\n                },\n                {\n                  \"label\": \"ReasonCode\",\n                  \"value\": \"DETERMINISTIC_RUNNER_SKIPS_EXPLORATORY_STEP\"\n                }\n              ]\n            }\n          ]\n        },\n        \"rawData\": {\n          \"stepKey\": \"uc-need-validate-4\",\n          \"error\": \"Exploratory validation step skipped by deterministic runner (semantic/manual review step).\",\n          \"resultPayload\": {\n            \"note\": \"Step skipped: Exploratory validation step skipped by deterministic runner (semantic/manual review step).\",\n            \"evidence\": {\n              \"error\": \"Exploratory validation step skipped by deterministic runner (semantic/manual review step).\",\n              \"failed\": false,\n              \"blocked\": false,\n              \"skipped\": true,\n              \"stepFamily\": \"uc-need-validation\",\n              \"reasonCode\": \"DETERMINISTIC_RUNNER_SKIPS_EXPLORATORY_STEP\"\n            }\n          },\n          \"apiCalls\": []\n        }\n      },\n      \"responseBody\": {\n        \"success\": true,\n        \"data\": {\n          \"id\": \"saga_artifact_3AAPi9qb9WuBT63StVP6TDQt9o4\",\n          \"sagaRunId\": \"saga_run_3AAPfs9xmXWq76Yv29AYIalPQI7\",\n          \"sagaRunStepId\": \"saga_run_step_3AAPft3gXfTCx8hO7duPCwYjjMf\",\n          \"artifactType\": \"snapshot\",\n          \"title\": \"Validate explicit UC need #4 Snapshot\",\n          \"storagePath\": \"testing/sagas/runs/saga_run_3AAPfs9xmXWq76Yv29AYIalPQI7/snapshots/2026-02-25T15-15-25-670Z-uc-need-validate-4-1772032525643.json\",\n          \"contentType\": \"application/json\",\n          \"bodyText\": \"{\\n  \\\"schemaVersion\\\": \\\"snapshot.v1\\\",\\n  \\\"screenKey\\\": \\\"uc-need-validate-4-1772032525643\\\",\\n  \\\"title\\\": \\\"Validate explicit UC need #4 Snapshot\\\",\\n  \\\"generatedAt\\\": \\\"2026-02-25T15:15:25.658Z\\\",\\n  \\\"stepKey\\\": \\\"uc-need-validate-4\\\",\\n  \\\"status\\\": \\\"skipped\\\",\\n  \\\"view\\\": {\\n    \\\"title\\\": \\\"Validate explicit UC need #4\\\",\\n    \\\"subtitle\\\": \\\"Step skipped: Exploratory validation step skipped by deterministic runner (semantic/manual review step).\\\",\\n    \\\"blocks\\\": [\\n      {\\n        \\\"type\\\": \\\"alert\\\",\\n        \\\"title\\\": \\\"Uc Need Validate 4 skipped\\\",\\n        \\\"message\\\": \\\"Step skipped: Exploratory validation step skipped by deterministic runner (semantic/manual review step).\\\",\\n        \\\"tone\\\": \\\"warning\\\"\\n      },\\n      {\\n        \\\"type\\\": \\\"key_value\\\",\\n        \\\"title\\\": \\\"Screen details\\\",\\n        \\\"items\\\": [\\n          {\\n            \\\"label\\\": \\\"Error\\\",\\n            \\\"value\\\": \\\"Exploratory validation step skipped by deterministic runner (semantic/manual review step).\\\"\\n          },\\n          {\\n            \\\"label\\\": \\\"Failed\\\",\\n            \\\"value\\\": \\\"false\\\"\\n          },\\n          {\\n            \\\"label\\\": \\\"Blocked\\\",\\n            \\\"value\\\": \\\"false\\\"\\n          },\\n          {\\n            \\\"label\\\": \\\"Skipped\\\",\\n            \\\"value\\\": \\\"true\\\"\\n          },\\n          {\\n            \\\"label\\\": \\\"StepFamily\\\",\\n            \\\"value\\\": \\\"uc-need-validation\\\"\\n          },\\n          {\\n            \\\"label\\\": \\\"ReasonCode\\\",\\n            \\\"value\\\": \\\"DETERMINISTIC_RUNNER_SKIPS_EXPLORATORY_STEP\\\"\\n          }\\n        ]\\n      }\\n    ]\\n  },\\n  \\\"rawData\\\": {\\n    \\\"stepKey\\\": \\\"uc-need-validate-4\\\",\\n    \\\"error\\\": \\\"Exploratory validation step skipped by deterministic runner (semantic/manual review step).\\\",\\n    \\\"resultPayload\\\": {\\n      \\\"note\\\": \\\"Step skipped: Exploratory validation step skipped by deterministic runner (semantic/manual review step).\\\",\\n      \\\"evidence\\\": {\\n        \\\"error\\\": \\\"Exploratory validation step skipped by deterministic runner (semantic/manual review step).\\\",\\n        \\\"failed\\\": false,\\n        \\\"blocked\\\": false,\\n        \\\"skipped\\\": true,\\n        \\\"stepFamily\\\": \\\"uc-need-validation\\\",\\n        \\\"reasonCode\\\": \\\"DETERMINISTIC_RUNNER_SKIPS_EXPLORATORY_STEP\\\"\\n      }\\n    },\\n    \\\"apiCalls\\\": []\\n  },\\n  \\\"metadata\\\": {}\\n}\\n\",\n          \"byteSize\": 2135,\n          \"checksum\": \"f86e089a43128ee74a216e2e59908f974aae9e46e84455b91175fc7b6dd078ba\",\n          \"capturedAt\": \"2026-02-25T15:15:25.703Z\",\n          \"metadata\": {\n            \"format\": \"json\",\n            \"stepKey\": \"uc-need-validate-4\",\n            \"screenKey\": \"uc-need-validate-4-1772032525643\",\n            \"sourceFormat\": \"v1\",\n            \"schemaVersion\": \"snapshot.v1\"\n          },\n          \"createdAt\": \"2026-02-25T15:15:25.703Z\",\n          \"updatedAt\": \"2026-02-25T15:15:25.703Z\",\n          \"deletedAt\": null,\n          \"createdBy\": null,\n          \"updatedBy\": null,\n          \"deletedBy\": null\n        },\n        \"meta\": {\n          \"requestId\": \"3940bcc4-24d9-40dc-860a-d5bf4817138e\",\n          \"timestamp\": \"2026-02-25T15:15:25.811Z\"\n        }\n      },\n      \"at\": \"2026-02-25T15:15:25.811Z\"\n    }\n  ]\n}\n",
+          "byteSize": 7375,
+          "checksum": "fd796845872c47bf868257d1dc930311f29481ca448cdd1dd077264e83e38969",
+          "capturedAt": "2026-02-25T15:15:25.871Z",
+          "metadata": {
+            "source": "rerun-sagas.ts"
+          },
+          "createdAt": "2026-02-25T15:15:25.871Z",
+          "updatedAt": "2026-02-25T15:15:25.871Z",
+          "deletedAt": null,
+          "createdBy": null,
+          "updatedBy": null,
+          "deletedBy": null
+        },
+        "meta": {
+          "requestId": "11450a88-ee18-42c9-a89e-add7c83e600d",
+          "timestamp": "2026-02-25T15:15:26.069Z"
+        }
+      },
+      "at": "2026-02-25T15:15:26.075Z"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AAPgkutFkoi81lTFwviil49SgK/traces",
+      "status": 201,
+      "requestBody": {
+        "stepKey": "adversary-hold-abuse",
+        "title": "Adversary attempts demand/hold abuse API Trace",
+        "trace": {
+          "stepKey": "adversary-hold-abuse",
+          "callCount": 1,
+          "calls": [
+            {
+              "method": "POST",
+              "path": "/api/v1/bizes/3AAPhd0MjnDE5kKBYk7BcGzfJHE/offers/offer_3AAPi8bUsch37axOgXg1ayUbvXs/versions",
+              "status": 201,
+              "requestBody": {
+                "version": 1,
+                "status": "published",
+                "durationMode": "fixed",
+                "defaultDurationMin": 50,
+                "basePriceMinor": 15000,
+                "currency": "USD"
+              },
+              "responseBody": {
+                "success": true,
+                "data": {
+                  "id": "offer_version_3AAPi9B4HeE0cIpIB3b9dXt0DrR",
+                  "bizId": "3AAPhd0MjnDE5kKBYk7BcGzfJHE",
+                  "offerId": "offer_3AAPi8bUsch37axOgXg1ayUbvXs",
+                  "version": 1,
+                  "status": "published",
+                  "statusConfigValueId": null,
+                  "publishAt": null,
+                  "retireAt": null,
+                  "durationMode": "fixed",
+                  "durationModeConfigValueId": null,
+                  "defaultDurationMin": 50,
+                  "minDurationMin": null,
+                  "maxDurationMin": null,
+                  "durationStepMin": 15,
+                  "basePriceMinor": 15000,
+                  "currency": "USD",
+                  "pricingModel": {},
+                  "policyModel": {},
+                  "capacityModel": {},
+                  "revisionHash": null,
+                  "metadata": {},
+                  "createdAt": "2026-02-25T15:15:25.871Z",
+                  "updatedAt": "2026-02-25T15:15:25.871Z",
+                  "deletedAt": null,
+                  "createdBy": null,
+                  "updatedBy": null,
+                  "deletedBy": null
+                },
+                "meta": {
+                  "requestId": "a2cff672-aa0a-4260-8fae-695d8645396d",
+                  "timestamp": "2026-02-25T15:15:25.877Z"
+                }
+              },
+              "at": "2026-02-25T15:15:25.877Z"
+            }
+          ]
+        },
+        "metadata": {
+          "source": "rerun-sagas.ts"
+        }
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "id": "saga_artifact_3AAPi4A90FsoA8ZNEyvziKVjTEX",
+          "sagaRunId": "saga_run_3AAPgkutFkoi81lTFwviil49SgK",
+          "sagaRunStepId": "saga_run_step_3AAPgi7WdaSHXubmXtTvHMJjAiY",
+          "artifactType": "api_trace",
+          "title": "Adversary attempts demand/hold abuse API Trace",
+          "storagePath": "testing/sagas/runs/saga_run_3AAPgkutFkoi81lTFwviil49SgK/artifacts/1772032525931-Adversary_attempts_demand_hold_abuse_API_Trace.json",
+          "contentType": "application/json",
+          "bodyText": "{\n  \"stepKey\": \"adversary-hold-abuse\",\n  \"callCount\": 1,\n  \"calls\": [\n    {\n      \"method\": \"POST\",\n      \"path\": \"/api/v1/bizes/3AAPhd0MjnDE5kKBYk7BcGzfJHE/offers/offer_3AAPi8bUsch37axOgXg1ayUbvXs/versions\",\n      \"status\": 201,\n      \"requestBody\": {\n        \"version\": 1,\n        \"status\": \"published\",\n        \"durationMode\": \"fixed\",\n        \"defaultDurationMin\": 50,\n        \"basePriceMinor\": 15000,\n        \"currency\": \"USD\"\n      },\n      \"responseBody\": {\n        \"success\": true,\n        \"data\": {\n          \"id\": \"offer_version_3AAPi9B4HeE0cIpIB3b9dXt0DrR\",\n          \"bizId\": \"3AAPhd0MjnDE5kKBYk7BcGzfJHE\",\n          \"offerId\": \"offer_3AAPi8bUsch37axOgXg1ayUbvXs\",\n          \"version\": 1,\n          \"status\": \"published\",\n          \"statusConfigValueId\": null,\n          \"publishAt\": null,\n          \"retireAt\": null,\n          \"durationMode\": \"fixed\",\n          \"durationModeConfigValueId\": null,\n          \"defaultDurationMin\": 50,\n          \"minDurationMin\": null,\n          \"maxDurationMin\": null,\n          \"durationStepMin\": 15,\n          \"basePriceMinor\": 15000,\n          \"currency\": \"USD\",\n          \"pricingModel\": {},\n          \"policyModel\": {},\n          \"capacityModel\": {},\n          \"revisionHash\": null,\n          \"metadata\": {},\n          \"createdAt\": \"2026-02-25T15:15:25.871Z\",\n          \"updatedAt\": \"2026-02-25T15:15:25.871Z\",\n          \"deletedAt\": null,\n          \"createdBy\": null,\n          \"updatedBy\": null,\n          \"deletedBy\": null\n        },\n        \"meta\": {\n          \"requestId\": \"a2cff672-aa0a-4260-8fae-695d8645396d\",\n          \"timestamp\": \"2026-02-25T15:15:25.877Z\"\n        }\n      },\n      \"at\": \"2026-02-25T15:15:25.877Z\"\n    }\n  ]\n}\n",
+          "byteSize": 1688,
+          "checksum": "6a25e21353f9bad2da87463aa3db20f9b7b2ad64ddf5040c49d2f43a6660bfd4",
+          "capturedAt": "2026-02-25T15:15:25.940Z",
+          "metadata": {
+            "source": "rerun-sagas.ts"
+          },
+          "createdAt": "2026-02-25T15:15:25.940Z",
+          "updatedAt": "2026-02-25T15:15:25.940Z",
+          "deletedAt": null,
+          "createdBy": null,
+          "updatedBy": null,
+          "deletedBy": null
+        },
+        "meta": {
+          "requestId": "9b52f301-2042-473e-a0ba-97e1b60c400e",
+          "timestamp": "2026-02-25T15:15:26.082Z"
+        }
+      },
+      "at": "2026-02-25T15:15:26.083Z"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/bizes/3AAPhYrzZ4gF982XaaMtvST1wnv/offers",
+      "status": 201,
+      "requestBody": {
+        "name": "Primary Service Offer",
+        "slug": "offer-yd3m2jca",
+        "executionMode": "slot",
+        "status": "draft",
+        "isPublished": false,
+        "timezone": "UTC"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "id": "offer_3AAPiEh2GgjcBhTNCTFkIrDccTg",
+          "bizId": "3AAPhYrzZ4gF982XaaMtvST1wnv",
+          "name": "Primary Service Offer",
+          "slug": "offer-yd3m2jca",
+          "description": null,
+          "executionMode": "slot",
+          "executionModeConfigValueId": null,
+          "status": "draft",
+          "statusConfigValueId": null,
+          "isPublished": false,
+          "timezone": "UTC",
+          "metadata": {},
+          "createdAt": "2026-02-25T15:15:26.083Z",
+          "updatedAt": "2026-02-25T15:15:26.083Z",
+          "deletedAt": null,
+          "createdBy": null,
+          "updatedBy": null,
+          "deletedBy": null
+        },
+        "meta": {
+          "requestId": "fc2ec5b0-4077-48b2-a9cc-b764107e6cf4",
+          "timestamp": "2026-02-25T15:15:26.087Z"
+        }
+      },
+      "at": "2026-02-25T15:15:26.087Z"
+    }
+  ]
+}
