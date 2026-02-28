@@ -1,8 +1,8 @@
 import { readFileSync, existsSync, writeFileSync, mkdirSync } from 'fs'
 import { join, dirname } from 'path'
 import { getCachedMindMap } from './mind-map.js'
+import { MIND_DIR } from './mind-root.js'
 
-const MIND_DIR = join(process.cwd(), '..', '..', 'mind')
 const CACHE_DIR = join(process.cwd(), '..', '..', '.cache')
 
 /**

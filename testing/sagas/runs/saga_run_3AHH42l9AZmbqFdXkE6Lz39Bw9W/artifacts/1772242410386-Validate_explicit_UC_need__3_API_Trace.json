@@ -1,0 +1,45 @@
+{
+  "stepKey": "uc-need-validate-3",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AHH42l9AZmbqFdXkE6Lz39Bw9W/steps/uc-need-validate-3/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the requirement of 'Follow-up appointment scheduling' but did not provide any evidence confirming that such an appointment was scheduled or confirmed. The linked use case explicitly lists this need, yet the prior steps only detail the booking process without addressing follow-up appointments. This indicates a clear gap in the evidence regarding the specific requirement of follow-up appointment scheduling.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].needs"
+          ],
+          "gaps": [
+            "No evidence of a follow-up appointment being scheduled or confirmed."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add deterministic evidence for follow-up appointment",
+              "endpoint": "/api/v1/appointments/schedule",
+              "assertion": "Verify that a follow-up appointment can be scheduled and confirmed."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "00dabc7d-a6bf-4b0a-86f4-1bc79afea94c",
+          "timestamp": "2026-02-28T01:33:29.194Z"
+        }
+      },
+      "at": "2026-02-28T01:33:29.195Z"
+    }
+  ]
+}

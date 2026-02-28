@@ -1,0 +1,45 @@
+{
+  "stepKey": "uc-need-validate-3",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AGj0UQAA5MT7K9683iP1pS5rtF/steps/uc-need-validate-3/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the requirement of a favorability score impact, specifically how it is affected by cancellations. However, the evidence provided does not include any concrete checks or confirmations regarding the implementation of this requirement, leading to a clear gap. The linked use case mentions the favorability score drop from 85 to 78, but there are no API reads or persisted state checks that confirm this behavior, which is necessary to validate the requirement.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].bodyMarkdownPreview"
+          ],
+          "gaps": [
+            "No evidence of API reads or persisted state checks confirming the favorability score impact."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add API checks for favorability score impact",
+              "endpoint": "/api/v1/favorability-scores",
+              "assertion": "Verify that the favorability score is updated correctly after a cancellation."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "924558ae-dc67-4117-8386-eb16d3d7e830",
+          "timestamp": "2026-02-27T21:17:42.873Z"
+        }
+      },
+      "at": "2026-02-27T21:17:42.875Z"
+    }
+  ]
+}

@@ -1,0 +1,45 @@
+{
+  "stepKey": "uc-need-validate-5",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AGfHmC7GPSaGZtk99TtqK7Zmq1/steps/uc-need-validate-5/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate whether the waiting room feature is enabled by default, as specified in the requirement. However, the evidence only describes a scenario where the waiting room is utilized during a session but does not confirm that it is enabled by default for all meetings. This indicates a gap in the requirement coverage, as there is no explicit evidence that the waiting room setting is applied universally across the system.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].bodyMarkdownPreview"
+          ],
+          "gaps": [
+            "No evidence confirming that the waiting room is enabled by default for all meetings."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Verify default waiting room setting",
+              "endpoint": "/api/v1/meetings/settings",
+              "assertion": "Check if the waiting room feature is set to enabled by default."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "4d0dfba3-e034-4d5b-8101-e0a53e7418db",
+          "timestamp": "2026-02-27T20:23:29.268Z"
+        }
+      },
+      "at": "2026-02-27T20:23:29.279Z"
+    }
+  ]
+}

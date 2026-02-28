@@ -14,13 +14,13 @@
  */
 
 import { Hono } from "hono";
-import { and, asc, desc, eq, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
 import { z } from "zod";
 import dbPackage from "@bizing/db";
 import { requireAclPermission, requireAuth, requireBizAccess } from "../middleware/auth.js";
 import { fail, ok, parsePositiveInt } from "./_api.js";
 
-const { db, channelAccounts, channelSyncStates, channelEntityLinks } = dbPackage;
+const { db, channelAccounts, channelSyncStates, channelEntityLinks, bookingOrders, offerVersions } = dbPackage;
 
 const listAccountsQuerySchema = z.object({
   page: z.string().optional(),
@@ -190,6 +190,52 @@ const createEntityLinkBodySchema = z
       }
     }
   });
+
+const channelInsightsQuerySchema = z.object({
+  provider: z
+    .enum(["google_reserve", "classpass", "instagram", "facebook", "meta_messenger", "custom"])
+    .optional(),
+})
+
+const createExternalBookingBodySchema = z.object({
+  offerId: z.string(),
+  offerVersionId: z.string(),
+  externalBookingId: z.string().min(1).max(200),
+  externalMemberId: z.string().min(1).max(200),
+  memberDisplayName: z.string().min(1).max(160),
+  confirmedStartAt: z.string().datetime(),
+  confirmedEndAt: z.string().datetime(),
+  directPriceMinor: z.number().int().min(0),
+  channelPriceMinor: z.number().int().min(0),
+  currency: z.string().regex(/^[A-Z]{3}$/).default("USD"),
+  metadata: z.record(z.unknown()).optional(),
+})
+
+const markExternalAttendanceBodySchema = z.object({
+  attendanceStatus: z.enum(["attended", "no_show"]),
+  reason: z.string().max(240).optional(),
+  metadata: z.record(z.unknown()).optional(),
+})
+
+const capacityAllocationQuerySchema = z.object({
+  offerVersionId: z.string(),
+})
+
+const createSocialBookingLinkBodySchema = z.object({
+  offerId: z.string(),
+  offerVersionId: z.string(),
+  surface: z.enum(['instagram_bio', 'instagram_story', 'facebook_page', 'facebook_messenger']),
+  mobileOptimized: z.boolean().default(true),
+  miniBookingInterface: z.boolean().default(true),
+  serviceSelectionEnabled: z.boolean().default(true),
+  timePickerEnabled: z.boolean().default(true),
+  embedMode: z.enum(['in_app_browser', 'messenger', 'native_redirect']).default('in_app_browser'),
+  metadata: z.record(z.unknown()).optional(),
+})
+
+const listSocialBookingLinksQuerySchema = z.object({
+  provider: z.enum(['instagram', 'facebook', 'meta_messenger']).optional(),
+})
 
 export const channelRoutes = new Hono();
 
@@ -451,5 +497,400 @@ channelRoutes.post(
       .returning();
 
     return ok(c, created, 201);
+  },
+);
+
+/**
+ * Create one external-partner booking anchored to a channel account.
+ *
+ * ELI5:
+ * A partner app like ClassPass books "through" us, but the booking still
+ * belongs in our canonical booking table. This route records:
+ * - the local booking,
+ * - the external member/booking ids,
+ * - the partner-vs-direct pricing delta,
+ * - the local/external id mapping.
+ */
+channelRoutes.post(
+  "/bizes/:bizId/channel-accounts/:channelAccountId/external-bookings",
+  requireAuth,
+  requireBizAccess("bizId"),
+  requireAclPermission("booking_orders.update", { bizIdParam: "bizId" }),
+  async (c) => {
+    const { bizId, channelAccountId } = c.req.param();
+    const parsed = createExternalBookingBodySchema.safeParse(await c.req.json().catch(() => null));
+    if (!parsed.success) {
+      return fail(c, "VALIDATION_ERROR", "Invalid request body.", 400, parsed.error.flatten());
+    }
+
+    const [account, offerVersion] = await Promise.all([
+      db.query.channelAccounts.findFirst({
+        where: and(eq(channelAccounts.bizId, bizId), eq(channelAccounts.id, channelAccountId)),
+      }),
+      db.query.offerVersions.findFirst({
+        where: and(eq(offerVersions.bizId, bizId), eq(offerVersions.id, parsed.data.offerVersionId)),
+      }),
+    ]);
+    if (!account) return fail(c, "NOT_FOUND", "Channel account not found.", 404);
+    if (!offerVersion || offerVersion.offerId !== parsed.data.offerId) {
+      return fail(c, "NOT_FOUND", "Offer version not found.", 404);
+    }
+
+    const [booking] = await db
+      .insert(bookingOrders)
+      .values({
+        bizId,
+        offerId: parsed.data.offerId,
+        offerVersionId: parsed.data.offerVersionId,
+        status: "confirmed",
+        currency: parsed.data.currency,
+        subtotalMinor: parsed.data.channelPriceMinor,
+        taxMinor: 0,
+        feeMinor: 0,
+        discountMinor: 0,
+        totalMinor: parsed.data.channelPriceMinor,
+        confirmedStartAt: new Date(parsed.data.confirmedStartAt),
+        confirmedEndAt: new Date(parsed.data.confirmedEndAt),
+        pricingSnapshot: {
+          directPriceMinor: parsed.data.directPriceMinor,
+          channelPriceMinor: parsed.data.channelPriceMinor,
+          provider: account.provider,
+        },
+        metadata: {
+          sourceChannel: account.provider,
+          channelAccountId: account.id,
+          externalBookingId: parsed.data.externalBookingId,
+          externalMemberId: parsed.data.externalMemberId,
+          memberDisplayName: parsed.data.memberDisplayName,
+          channelBookingState: "validated",
+          channelAttendanceStatus: "pending",
+          ...parsed.data.metadata,
+        },
+      })
+      .returning();
+
+    await db.insert(channelEntityLinks).values({
+      bizId,
+      channelAccountId,
+      objectType: "booking_order",
+      bookingOrderId: booking.id,
+      externalObjectId: parsed.data.externalBookingId,
+      externalParentId: parsed.data.externalMemberId,
+      syncHash: `${parsed.data.externalBookingId}:${parsed.data.externalMemberId}`,
+      isActive: true,
+      metadata: {
+        memberDisplayName: parsed.data.memberDisplayName,
+      },
+    });
+
+    return ok(c, {
+      booking,
+      validated: true,
+      externalMemberId: parsed.data.externalMemberId,
+      payoutExpectedMinor: parsed.data.channelPriceMinor,
+    }, 201);
+  },
+);
+
+channelRoutes.post(
+  "/bizes/:bizId/channel-accounts/:channelAccountId/external-bookings/:bookingOrderId/attendance",
+  requireAuth,
+  requireBizAccess("bizId"),
+  requireAclPermission("booking_orders.update", { bizIdParam: "bizId" }),
+  async (c) => {
+    const { bizId, channelAccountId, bookingOrderId } = c.req.param();
+    const parsed = markExternalAttendanceBodySchema.safeParse(await c.req.json().catch(() => null));
+    if (!parsed.success) {
+      return fail(c, "VALIDATION_ERROR", "Invalid request body.", 400, parsed.error.flatten());
+    }
+
+    const booking = await db.query.bookingOrders.findFirst({
+      where: and(eq(bookingOrders.bizId, bizId), eq(bookingOrders.id, bookingOrderId)),
+    });
+    if (!booking) return fail(c, "NOT_FOUND", "Booking order not found.", 404);
+
+    const metadata =
+      booking.metadata && typeof booking.metadata === "object" && !Array.isArray(booking.metadata)
+        ? (booking.metadata as Record<string, unknown>)
+        : {};
+    if (metadata.channelAccountId !== channelAccountId) {
+      return fail(c, "CHANNEL_MISMATCH", "Booking is not linked to this channel account.", 409);
+    }
+
+    await db
+      .update(bookingOrders)
+      .set({
+        metadata: {
+          ...metadata,
+          channelAttendanceStatus: parsed.data.attendanceStatus,
+          channelAttendanceUpdatedAt: new Date().toISOString(),
+          channelNoShowPolicy: parsed.data.attendanceStatus === "no_show" ? "partner_defined" : undefined,
+          ...parsed.data.metadata,
+        },
+      })
+      .where(and(eq(bookingOrders.bizId, bizId), eq(bookingOrders.id, bookingOrderId)));
+
+    return ok(c, {
+      bookingOrderId,
+      attendanceStatus: parsed.data.attendanceStatus,
+      noShowPolicy: parsed.data.attendanceStatus === "no_show" ? "partner_defined" : null,
+      reason: parsed.data.reason ?? null,
+    });
+  },
+);
+
+channelRoutes.get(
+  "/bizes/:bizId/channel-accounts/:channelAccountId/reconciliation",
+  requireAuth,
+  requireBizAccess("bizId"),
+  requireAclPermission("payments.read", { bizIdParam: "bizId" }),
+  async (c) => {
+    const { bizId, channelAccountId } = c.req.param();
+    const links = await db.query.channelEntityLinks.findMany({
+      where: and(
+        eq(channelEntityLinks.bizId, bizId),
+        eq(channelEntityLinks.channelAccountId, channelAccountId),
+        eq(channelEntityLinks.objectType, "booking_order"),
+        eq(channelEntityLinks.isActive, true),
+      ),
+      orderBy: [desc(channelEntityLinks.id)],
+    });
+    const bookingIds = links.map((row) => row.bookingOrderId).filter(Boolean) as string[];
+    const bookings = bookingIds.length
+      ? await db.query.bookingOrders.findMany({
+          where: and(eq(bookingOrders.bizId, bizId), inArray(bookingOrders.id, bookingIds)),
+        })
+      : [];
+
+    const rows = bookings.map((booking) => {
+      const metadata =
+        booking.metadata && typeof booking.metadata === "object" && !Array.isArray(booking.metadata)
+          ? (booking.metadata as Record<string, unknown>)
+          : {};
+      const pricing =
+        booking.pricingSnapshot && typeof booking.pricingSnapshot === "object" && !Array.isArray(booking.pricingSnapshot)
+          ? (booking.pricingSnapshot as Record<string, unknown>)
+          : {};
+      return {
+        bookingOrderId: booking.id,
+        externalBookingId: metadata.externalBookingId ?? null,
+        externalMemberId: metadata.externalMemberId ?? null,
+        attendanceStatus: metadata.channelAttendanceStatus ?? "pending",
+        directPriceMinor: typeof pricing.directPriceMinor === "number" ? pricing.directPriceMinor : null,
+        channelPriceMinor: typeof pricing.channelPriceMinor === "number" ? pricing.channelPriceMinor : booking.totalMinor,
+      };
+    });
+
+    return ok(c, {
+      bookingCount: rows.length,
+      payoutTotalMinor: rows.reduce((sum, row) => sum + (row.channelPriceMinor ?? 0), 0),
+      rows,
+    });
+  },
+);
+
+channelRoutes.get(
+  "/bizes/:bizId/channel-accounts/:channelAccountId/capacity-allocation",
+  requireAuth,
+  requireBizAccess("bizId"),
+  requireAclPermission("offers.read", { bizIdParam: "bizId" }),
+  async (c) => {
+    const { bizId, channelAccountId } = c.req.param();
+    const parsed = capacityAllocationQuerySchema.safeParse(c.req.query());
+    if (!parsed.success) {
+      return fail(c, "VALIDATION_ERROR", "Invalid query parameters.", 400, parsed.error.flatten());
+    }
+
+    const [account, offerVersion] = await Promise.all([
+      db.query.channelAccounts.findFirst({
+        where: and(eq(channelAccounts.bizId, bizId), eq(channelAccounts.id, channelAccountId)),
+      }),
+      db.query.offerVersions.findFirst({
+        where: and(eq(offerVersions.bizId, bizId), eq(offerVersions.id, parsed.data.offerVersionId)),
+      }),
+    ]);
+    if (!account) return fail(c, "NOT_FOUND", "Channel account not found.", 404);
+    if (!offerVersion) return fail(c, "NOT_FOUND", "Offer version not found.", 404);
+
+    const capacityModel =
+      offerVersion.capacityModel && typeof offerVersion.capacityModel === "object" && !Array.isArray(offerVersion.capacityModel)
+        ? (offerVersion.capacityModel as Record<string, unknown>)
+        : {};
+    const channelAllocations =
+      capacityModel.channelAllocations && typeof capacityModel.channelAllocations === "object" && !Array.isArray(capacityModel.channelAllocations)
+        ? (capacityModel.channelAllocations as Record<string, unknown>)
+        : {};
+    const allocation =
+      channelAllocations[account.provider] && typeof channelAllocations[account.provider] === "object"
+        ? (channelAllocations[account.provider] as Record<string, unknown>)
+        : {};
+
+    return ok(c, {
+      provider: account.provider,
+      reservedCount: typeof allocation.reservedCount === "number" ? allocation.reservedCount : 0,
+      metadata: allocation,
+    });
+  },
+);
+
+channelRoutes.post(
+  '/bizes/:bizId/channel-accounts/:channelAccountId/social-booking-links',
+  requireAuth,
+  requireBizAccess('bizId'),
+  requireAclPermission('offers.update', { bizIdParam: 'bizId' }),
+  async (c) => {
+    const { bizId, channelAccountId } = c.req.param()
+    const parsed = createSocialBookingLinkBodySchema.safeParse(await c.req.json().catch(() => null))
+    if (!parsed.success) {
+      return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
+    }
+
+    const account = await db.query.channelAccounts.findFirst({
+      where: and(eq(channelAccounts.bizId, bizId), eq(channelAccounts.id, channelAccountId)),
+    })
+    if (!account) return fail(c, 'NOT_FOUND', 'Channel account not found.', 404)
+
+    const sourceTag = account.provider === 'meta_messenger' ? 'facebook' : account.provider
+    const externalObjectId = `${parsed.data.surface}-${parsed.data.offerVersionId}`
+    const [link] = await db
+      .insert(channelEntityLinks)
+      .values({
+        bizId,
+        channelAccountId,
+        objectType: 'custom',
+        offerVersionId: parsed.data.offerVersionId,
+        localReferenceKey: `social_booking:${parsed.data.surface}:${parsed.data.offerVersionId}`,
+        externalObjectId,
+        externalParentId: parsed.data.offerId,
+        syncHash: `${account.provider}:${externalObjectId}`,
+        isActive: true,
+        metadata: {
+          sourceTag,
+          provider: account.provider,
+          surface: parsed.data.surface,
+          mobileOptimized: parsed.data.mobileOptimized,
+          miniBookingInterface: parsed.data.miniBookingInterface,
+          serviceSelectionEnabled: parsed.data.serviceSelectionEnabled,
+          timePickerEnabled: parsed.data.timePickerEnabled,
+          embedMode: parsed.data.embedMode,
+          bookingUrl: `https://social.example.test/${sourceTag}/${externalObjectId}`,
+          storyStickerUrl: parsed.data.surface === 'instagram_story' ? `https://social.example.test/sticker/${externalObjectId}` : null,
+          messengerEntryPoint: parsed.data.surface === 'facebook_messenger' ? `messenger:${externalObjectId}` : null,
+          ...parsed.data.metadata,
+        },
+      })
+      .returning()
+
+    return ok(c, link, 201)
+  },
+)
+
+channelRoutes.get('/public/bizes/:bizId/social-booking-links', async (c) => {
+  const bizId = c.req.param('bizId')
+  const parsed = listSocialBookingLinksQuerySchema.safeParse(c.req.query())
+  if (!parsed.success) {
+    return fail(c, 'VALIDATION_ERROR', 'Invalid query parameters.', 400, parsed.error.flatten())
+  }
+
+  const accounts = await db.query.channelAccounts.findMany({
+    where: and(
+      eq(channelAccounts.bizId, bizId),
+      parsed.data.provider ? eq(channelAccounts.provider, parsed.data.provider) : undefined,
+    ),
+    limit: 200,
+  })
+  const accountIds = accounts.map((row) => row.id)
+  const links = accountIds.length === 0
+    ? []
+    : await db.query.channelEntityLinks.findMany({
+        where: and(
+          eq(channelEntityLinks.bizId, bizId),
+          inArray(channelEntityLinks.channelAccountId, accountIds),
+          eq(channelEntityLinks.objectType, 'custom'),
+          eq(channelEntityLinks.isActive, true),
+        ),
+        orderBy: [desc(channelEntityLinks.id)],
+        limit: 200,
+      })
+
+  const rows = links.filter((row) => String(row.localReferenceKey ?? '').startsWith('social_booking:')).map((row) => ({
+    id: row.id,
+    channelAccountId: row.channelAccountId,
+    offerVersionId: row.offerVersionId,
+    localReferenceKey: row.localReferenceKey,
+    metadata: row.metadata,
+  }))
+
+  return ok(c, rows)
+})
+
+channelRoutes.get(
+  "/bizes/:bizId/channel-insights",
+  requireAuth,
+  requireBizAccess("bizId"),
+  requireAclPermission("bizes.read", { bizIdParam: "bizId" }),
+  async (c) => {
+    const bizId = c.req.param("bizId");
+    const parsed = channelInsightsQuerySchema.safeParse(c.req.query());
+    if (!parsed.success) {
+      return fail(c, "VALIDATION_ERROR", "Invalid query parameters.", 400, parsed.error.flatten());
+    }
+
+    const accounts = await db.query.channelAccounts.findMany({
+      where: and(
+        eq(channelAccounts.bizId, bizId),
+        parsed.data.provider ? eq(channelAccounts.provider, parsed.data.provider) : undefined,
+      ),
+      orderBy: [asc(channelAccounts.provider), asc(channelAccounts.name)],
+    });
+    const accountIds = accounts.map((row) => row.id);
+    if (accountIds.length === 0) {
+      return ok(c, {
+        provider: parsed.data.provider ?? null,
+        accountCount: 0,
+        bookingLinkCount: 0,
+        offerLinkCount: 0,
+        customLinkCount: 0,
+        syncStates: [],
+        accounts: [],
+      });
+    }
+
+    const [syncStates, entityLinks] = await Promise.all([
+      db.query.channelSyncStates.findMany({
+        where: and(eq(channelSyncStates.bizId, bizId), inArray(channelSyncStates.channelAccountId, accountIds)),
+        orderBy: [desc(channelSyncStates.lastSuccessAt), desc(channelSyncStates.id)],
+      }),
+      db.query.channelEntityLinks.findMany({
+        where: and(eq(channelEntityLinks.bizId, bizId), inArray(channelEntityLinks.channelAccountId, accountIds)),
+        orderBy: [desc(channelEntityLinks.id)],
+        limit: 500,
+      }),
+    ]);
+
+    return ok(c, {
+      provider: parsed.data.provider ?? null,
+      accountCount: accounts.length,
+      bookingLinkCount: entityLinks.filter((row) => row.objectType === "booking_order" && row.isActive).length,
+      offerLinkCount: entityLinks.filter((row) => row.objectType === "offer_version" && row.isActive).length,
+      customLinkCount: entityLinks.filter((row) => row.objectType === "custom" && row.isActive).length,
+      syncStates: syncStates.map((row) => ({
+        id: row.id,
+        channelAccountId: row.channelAccountId,
+        objectType: row.objectType,
+        direction: row.direction,
+        lastSuccessAt: row.lastSuccessAt,
+        lastFailure: row.lastFailure,
+        metadata: row.metadata,
+      })),
+      accounts: accounts.map((row) => ({
+        id: row.id,
+        provider: row.provider,
+        status: row.status,
+        name: row.name,
+        providerAccountRef: row.providerAccountRef,
+        metadata: row.metadata,
+      })),
+    });
   },
 );

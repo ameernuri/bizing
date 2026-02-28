@@ -1,0 +1,47 @@
+{
+  "stepKey": "uc-need-validate-2",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AGgR6xBwAANtTa7tkR3fy0xsW4/steps/uc-need-validate-2/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the requirement for parallel signature routing (Party A and B simultaneously, then C). However, the provided evidence only describes a sequential routing process where signatures are obtained one after the other, without any indication of simultaneous actions. The linked use case explicitly states that the system routes sequentially, which directly contradicts the requirement for parallel routing, indicating a clear gap in the implementation.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].summary",
+            "priorStepEvidence[0].status",
+            "priorStepEvidence[1].status"
+          ],
+          "gaps": [
+            "Lack of evidence confirming the implementation of parallel signature routing as required."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add deterministic evidence contract",
+              "endpoint": null,
+              "assertion": "Define concrete endpoint calls and assertions that directly verify this requirement."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "4f425e5e-3f3c-4a2a-937a-163e373fe026",
+          "timestamp": "2026-02-27T20:32:16.514Z"
+        }
+      },
+      "at": "2026-02-27T20:32:16.515Z"
+    }
+  ]
+}

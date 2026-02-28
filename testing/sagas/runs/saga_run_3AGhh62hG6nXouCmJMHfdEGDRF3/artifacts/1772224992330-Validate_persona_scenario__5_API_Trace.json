@@ -1,0 +1,46 @@
+{
+  "stepKey": "persona-scenario-validate-5",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AGhh62hG6nXouCmJMHfdEGDRF3/steps/persona-scenario-validate-5/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "persona-scenario-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the scenario of 'Cancellation with access until period end', but the evidence provided does not include any checks or validations that confirm this requirement is met. The linked use case mentions the need for a cancellation lifecycle, yet the prior steps do not demonstrate any API reads or persisted state checks that would validate this aspect. Therefore, there is a clear gap in the evidence regarding this specific requirement.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].bodyMarkdownPreview",
+            "priorStepEvidence"
+          ],
+          "gaps": [
+            "No evidence of cancellation process validation."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add validation for cancellation process",
+              "endpoint": "/api/v1/membership/cancel",
+              "assertion": "Verify that cancellation allows access until the end of the billing period."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "d3f39209-b252-43db-9ce6-ad4f90a3851d",
+          "timestamp": "2026-02-27T20:43:12.050Z"
+        }
+      },
+      "at": "2026-02-27T20:43:12.052Z"
+    }
+  ]
+}

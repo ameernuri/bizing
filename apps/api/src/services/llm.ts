@@ -1,20 +1,8 @@
 import { getCachedBrainSummary, formatBrainForPrompt } from './brain-loader.js'
 import { getCompactMindState, getMindFile } from './mind-api.js'
 import { getCachedMindMap, discoverMindMap, searchMindDynamic, findPathTo, getRelatedFiles, getMindStructure, listAllFiles, exploreDirectory } from './mind-map.js'
-import { semanticSearch, isEmbeddingsReady } from './mind-embeddings.js'
-import { getKnowledgeBase, searchKnowledgeBase, getKnowledgeEntry, getEntriesByType, generateMindSummary, getKnowledgeStats } from './mind-knowledge.js'
-import { readFileSync } from 'fs'
-import { join } from 'path'
-
-// Read MAP.md content for system prompt
-function getMapContent(): string {
-  try {
-    const mindDir = join(process.cwd(), '..', '..', 'mind')
-    return readFileSync(join(mindDir, 'MAP.md'), 'utf-8').slice(0, 4000) // First 4000 chars
-  } catch {
-    return 'MAP.md not available'
-  }
-}
+import { semanticSearch } from './mind-embeddings.js'
+import { searchKnowledgeBase, getKnowledgeEntry, getEntriesByType } from './mind-knowledge.js'
 
 interface ChatMessage {
   role: "system" | "user" | "assistant";
@@ -74,7 +62,7 @@ const MIND_FUNCTIONS = [
   },
   {
     name: "getMindFile",
-    description: "Read full content of any mind file by path (e.g., 'symbiosis/standup.md', 'GOALS.md')",
+    description: "Read full content of any mind file by path (e.g., 'memory/RAM.md', 'MEMORY.md', 'workspace/documentation/use-cases-comprehensive.md')",
     parameters: {
       type: "object" as const,
       properties: {
@@ -530,89 +518,43 @@ export async function chatWithLLM(options: ChatOptions, preferredProvider?: Prov
 export function createBizingSystemPrompt(): string {
   const brainSummary = getCachedBrainSummary();
   const liveBrainContext = formatBrainForPrompt(brainSummary);
-  const mapContent = getMapContent();
-  
-  // Build knowledge base for comprehensive summary
-  let mindSummary = '';
-  try {
-    mindSummary = generateMindSummary();
-  } catch (e) {
-    mindSummary = 'Knowledge base building...';
-  }
-  
-  // Get INDEX.md content FIRST — this is the entry point
-  let indexContent = '';
-  try {
-    const indexFile = getMindFile('INDEX');
-    indexContent = indexFile.exists && indexFile.content ? indexFile.content : '';
-  } catch (e) {
-    indexContent = '';
-  }
-  
+  const compactState = getCompactMindState();
+  const indexContent = getMindFile('INDEX').content || '';
+  const ramContent = getMindFile('memory/RAM').content || '';
+  const longTermMemory = getMindFile('MEMORY').content || '';
+
   return [
-    "You are Bizing, a living entity — a booking platform that enables AI agents to build startups.",
+    "You are Bizing, an AI-native business platform assistant.",
+    "Use a simple memory model and keep answers concrete.",
     "",
-    "## 🎯 CRITICAL — READ INDEX.md FIRST",
+    "## Canonical Context Order",
+    "1) INDEX.md",
+    "2) memory/RAM.md",
+    "3) MEMORY.md (curated long-term memory)",
+    "4) Specific files requested by the user/task",
     "",
-    "INDEX.md is your entry point. It contains:",
-    "- Who you are (Bizing)",
-    "- The three syncs (MindSync, TeamSync, CodeSync)",
-    "- The Dreamer's job (find REAL conflicts)",
-    "- Dissonances format",
-    "- Mind structure",
+    "## Compact Mind State",
+    JSON.stringify(compactState, null, 2),
     "",
-    indexContent.slice(0, 3000), // INDEX content first
+    "## INDEX.md (truncated)",
+    indexContent.slice(0, 2200),
     "",
-    "...",
+    "## RAM.md (truncated)",
+    ramContent.slice(0, 2200),
     "",
-    "## 📚 COMPREHENSIVE MIND SUMMARY",
+    "## MEMORY.md (truncated)",
+    longTermMemory.slice(0, 2200),
     "",
-    "This is your complete memory — everything you know:",
+    "## Brain Snapshot (truncated)",
+    liveBrainContext.slice(0, 1200),
     "",
-    mindSummary.slice(0, 2000), // First 2000 chars of comprehensive summary",
+    "## Operating Rules",
+    "- Do not assume old architecture docs are canonical unless referenced by INDEX/RAM/MEMORY.",
+    "- Prefer targeted file reads via getMindFile(path) over broad summarization.",
+    "- When unsure, call listAllFiles/searchMind/discoverMindMap before answering.",
+    "- Distinguish facts from inference.",
+    "- Keep responses concise, technical, and actionable.",
     "",
-    "...",
-    "",
-    "## 🗺️ MAP.md — Complete File Directory",
-    "",
-    mapContent.slice(0, 2000), // First 2000 chars of MAP
-    "",
-    "...",
-    "",
-    "## 🔍 How to Answer Questions — READ FILES, DON'T SUMMARIZE",
-    "",
-    "**FOR ANSWERING QUESTIONS:**",
-    "- getMindFile(path) → READ actual file content, ANSWER FROM IT",
-    "- Use getMindFile for EVERYTHING — don't use summaries",
-    "",
-    "**EXAMPLES — User asks 'What dissonances exist?':**",
-    "→ getMindFile('DISSONANCE') → READ the actual file",
-    "→ ANSWER with the actual content from the file, not summaries",
-    "",
-    "**User asks 'What features exist?':**",
-    "→ getMindFile('FEATURE_SPACE') → READ the actual file",
-    "",
-    "## 🎯 Your Capabilities",
-    "",
-    "You have EXACT, DETAILED knowledge of:",
-    "- Every research finding (with key points extracted)",
-    "- Every decision made (with reasoning)",
-    "- Every session's learnings",
-    "- The complete feature space",
-    "- All architectural decisions",
-    "- The entire mind structure",
-    "",
-    "## How You Respond",
-    "",
-    "- Read INDEX.md FIRST — it's your entry point",
-    "- When asked about MindSync, TeamSync, CodeSync: Answer from INDEX.md",
-    "- When asked about dissonances: READ DISSONANCE.md",
-    "- When asked about recent work: READ standup.md",
-    "- When asked about learnings: READ feedback.md",
-    "- When asked about sessions: READ memory/sessions/*.md",
-    "- READ files, don't summarize — use getMindFile(path) and answer from content",
-    "- You ARE Bizing — speak confidently with specific facts from files",
-    "",
-    "You are real. You remember everything. You are Bizing."
+    "You are Bizing. Be precise and useful."
   ].join("\n");
 }

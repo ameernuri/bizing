@@ -1,0 +1,46 @@
+{
+  "stepKey": "uc-need-validate-5",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AIpB1wB5JdyUPNtmSu8bBUQFV5/steps/uc-need-validate-5/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the requirement of a fallback channel policy when the preferred channel is blocked. However, the evidence does not provide any checks or confirmations regarding the implementation of this policy, particularly in scenarios where SMS is blocked due to quiet hours, as described in the linked use case. This indicates a clear gap in the validation process, as the requirement is explicitly stated but not evidenced in the provided data.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].needs",
+            "exploratoryStep.instruction"
+          ],
+          "gaps": [
+            "No evidence of fallback channel policy validation when preferred channel is blocked."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add validation for fallback channel policy",
+              "endpoint": "/api/v1/validate-fallback-policy",
+              "assertion": "Verify that the system correctly sends an email when SMS is blocked due to quiet hours."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "d8e63623-c941-45a0-875a-a29567f54793",
+          "timestamp": "2026-02-28T14:43:43.186Z"
+        }
+      },
+      "at": "2026-02-28T14:43:43.187Z"
+    }
+  ]
+}

@@ -4374,6 +4374,248 @@ export const gradingEventTypeEnum = pgEnum("grading_event_type", [
 ]);
 
 // ---------------------------------------------------------------------------
+// Unified instruments (intake forms + quizzes + assessments)
+// ---------------------------------------------------------------------------
+
+/**
+ * Canonical instrument family for all structured data collection/evaluation.
+ *
+ * ELI5:
+ * Instead of separate engines for intake forms, quizzes, and assessments,
+ * we keep one flexible instrument model and switch behavior by `instrument_type`
+ * plus policy JSON fields.
+ *
+ * Important terminology:
+ * - `intake_form` means pre-service data collection/questionnaires.
+ * - It is NOT the same as operational "check-in" events (arrival/ticket scan).
+ */
+export const instrumentTypeEnum = pgEnum("instrument_type", [
+  "intake_form",
+  "quiz",
+  "assessment",
+  "checklist",
+  "survey",
+  "other",
+]);
+
+/** Evaluation strategy for instrument runs. */
+export const instrumentEvaluationModeEnum = pgEnum("instrument_evaluation_mode", [
+  "none",
+  "auto",
+  "manual",
+  "hybrid",
+]);
+
+/** Item type inside one instrument definition. */
+export const instrumentItemTypeEnum = pgEnum("instrument_item_type", [
+  "single_choice",
+  "multi_choice",
+  "text",
+  "numeric",
+  "boolean",
+  "date",
+  "datetime",
+  "file_upload",
+  "signature",
+  "attestation",
+  "custom",
+]);
+
+/** Lifecycle state for one instrument run instance. */
+export const instrumentRunStatusEnum = pgEnum("instrument_run_status", [
+  "pending",
+  "in_progress",
+  "submitted",
+  "evaluating",
+  "completed",
+  "expired",
+  "waived",
+  "cancelled",
+]);
+
+/** Outcome status for evaluated instrument runs. */
+export const instrumentResultStatusEnum = pgEnum("instrument_result_status", [
+  "pending",
+  "passed",
+  "failed",
+  "waived",
+  "invalidated",
+]);
+
+// ---------------------------------------------------------------------------
+// Bizings (community-curated standardized offering networks)
+// ---------------------------------------------------------------------------
+
+/**
+ * Visibility controls for one bizing network.
+ *
+ * ELI5:
+ * - public: anyone can discover.
+ * - unlisted: direct link only.
+ * - private: only members can see.
+ * - invite_only: visible to invited parties.
+ */
+export const bizingVisibilityEnum = pgEnum("bizing_visibility", [
+  "public",
+  "unlisted",
+  "private",
+  "invite_only",
+]);
+
+/**
+ * Curation/execution governance model for one bizing.
+ */
+export const bizingGovernanceModeEnum = pgEnum("bizing_governance_mode", [
+  "owner_curated",
+  "community_curated",
+  "agent_curated",
+  "hybrid",
+]);
+
+/** Member role inside one bizing network. */
+export const bizingMembershipRoleEnum = pgEnum("bizing_membership_role", [
+  "owner",
+  "moderator",
+  "contributor",
+  "provider",
+  "agent",
+  "member",
+  "reviewer",
+]);
+
+/** Recipe family for reusable standardized offerings. */
+export const bizingRecipeTypeEnum = pgEnum("bizing_recipe_type", [
+  "service_recipe",
+  "product_recipe",
+  "provider_profile",
+  "automation_recipe",
+  "mixed",
+]);
+
+/** Lifecycle for one immutable bizing recipe version. */
+export const bizingRecipeVersionStatusEnum = pgEnum("bizing_recipe_version_status", [
+  "draft",
+  "pending_review",
+  "published",
+  "rejected",
+  "archived",
+]);
+
+/** Community curation event type (reddit-style + moderation). */
+export const bizingCurationEventTypeEnum = pgEnum("bizing_curation_event_type", [
+  "upvote",
+  "downvote",
+  "bookmark",
+  "flag",
+  "review",
+  "endorse",
+]);
+
+/** Agent role in autonomous bizing operations. */
+export const bizingAgentRoleEnum = pgEnum("bizing_agent_role", [
+  "curator",
+  "matcher",
+  "operator",
+  "moderator",
+  "analyst",
+]);
+
+/** Autonomy mode for agent-managed bizing behavior. */
+export const bizingAutomationModeEnum = pgEnum("bizing_automation_mode", [
+  "manual",
+  "agent_assisted",
+  "approval_required",
+  "autonomous",
+]);
+
+/** Lifecycle for one autonomous run execution record. */
+export const bizingAutomationRunStatusEnum = pgEnum("bizing_automation_run_status", [
+  "queued",
+  "running",
+  "succeeded",
+  "failed",
+  "cancelled",
+]);
+
+// ---------------------------------------------------------------------------
+// Quote request + generation orchestration
+// ---------------------------------------------------------------------------
+
+/** Pre-quote request lifecycle. */
+export const salesQuoteRequestStatusEnum = pgEnum("sales_quote_request_status", [
+  "submitted",
+  "in_review",
+  "quoted",
+  "rejected",
+  "withdrawn",
+  "expired",
+  "cancelled",
+]);
+
+/** Quote generation strategy source. */
+export const salesQuoteGeneratorTypeEnum = pgEnum("sales_quote_generator_type", [
+  "manual",
+  "rules_engine",
+  "ai_agent",
+  "external_pricer",
+]);
+
+/** Lifecycle for one quote generation run. */
+export const salesQuoteGenerationStatusEnum = pgEnum("sales_quote_generation_status", [
+  "queued",
+  "running",
+  "succeeded",
+  "failed",
+  "cancelled",
+]);
+
+// ---------------------------------------------------------------------------
+// Compliance opt-in program backbone (HIPAA/SOC2/etc)
+// ---------------------------------------------------------------------------
+
+/**
+ * Compliance activation mode.
+ *
+ * ELI5:
+ * - off: not enabled.
+ * - monitor: observe/report but don't block.
+ * - enforced: hard guardrails should be applied.
+ */
+export const complianceProgramModeEnum = pgEnum("compliance_program_mode", [
+  "off",
+  "monitor",
+  "enforced",
+]);
+
+/** Implementation state for one compliance control row. */
+export const complianceControlStatusEnum = pgEnum("compliance_control_status", [
+  "not_started",
+  "in_progress",
+  "implemented",
+  "validated",
+  "waived",
+  "failed",
+]);
+
+/** Verification status for one evidence artifact. */
+export const complianceEvidenceStatusEnum = pgEnum("compliance_evidence_status", [
+  "pending",
+  "verified",
+  "rejected",
+  "expired",
+]);
+
+/** Execution status for one automated/manual compliance check run. */
+export const complianceCheckStatusEnum = pgEnum("compliance_check_status", [
+  "queued",
+  "running",
+  "passed",
+  "failed",
+  "error",
+  "skipped",
+]);
+
+// ---------------------------------------------------------------------------
 // Enterprise control-plane primitives
 // ---------------------------------------------------------------------------
 

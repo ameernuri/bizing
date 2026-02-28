@@ -1,0 +1,46 @@
+{
+  "stepKey": "uc-need-validate-4",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AGgzC4sjnJSjRDnXRpKKReLWBz/steps/uc-need-validate-4/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the requirement of 'Deterministic winner logic for simultaneous claim attempts', but the evidence provided does not confirm that this logic is implemented. While there are two concurrent booking attempts recorded, both resulted in confirmed bookings, which suggests a lack of deterministic handling of simultaneous claims. This indicates a gap in the implementation of the required logic, as the expected behavior of only one claim being accepted is not demonstrated.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "priorStepEvidence[5].evidence",
+            "priorStepEvidence[6].evidence"
+          ],
+          "gaps": [
+            "No evidence of deterministic winner logic for simultaneous claim attempts."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Implement deterministic winner logic",
+              "endpoint": "/api/v1/claims",
+              "assertion": "Ensure that only one claim is accepted when multiple claims are made simultaneously."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "2beb4402-6d75-4738-91be-97cae453a4df",
+          "timestamp": "2026-02-27T20:36:50.664Z"
+        }
+      },
+      "at": "2026-02-27T20:36:50.665Z"
+    }
+  ]
+}

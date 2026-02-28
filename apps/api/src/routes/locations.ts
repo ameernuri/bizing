@@ -12,6 +12,7 @@ import {
   requireAuth,
   requireBizAccess,
 } from '../middleware/auth.js'
+import { sanitizePlainText, sanitizeUnknown } from '../lib/sanitize.js'
 import { fail, ok, parsePositiveInt } from './_api.js'
 
 const { db, locations } = dbPackage
@@ -43,6 +44,15 @@ const createBodySchema = z.object({
 const updateBodySchema = createBodySchema.partial()
 
 export const locationRoutes = new Hono()
+
+locationRoutes.get('/public/bizes/:bizId/locations', async (c) => {
+  const bizId = c.req.param('bizId')
+  const rows = await db.query.locations.findMany({
+    where: and(eq(locations.bizId, bizId), eq(locations.status, 'active')),
+    orderBy: asc(locations.name),
+  })
+  return ok(c, rows)
+})
 
 locationRoutes.get(
   '/bizes/:bizId/locations',
@@ -114,17 +124,17 @@ locationRoutes.post(
       .insert(locations)
       .values({
         bizId,
-        name: parsed.data.name,
+        name: sanitizePlainText(parsed.data.name),
         slug: parsed.data.slug,
         type: parsed.data.type,
         timezone: parsed.data.timezone,
         status: parsed.data.status,
-        address: parsed.data.address ?? {},
-        operatingHours: parsed.data.operatingHours ?? {},
-        configOverride: parsed.data.configOverride ?? {},
-        serviceArea: parsed.data.serviceArea ?? {},
+        address: sanitizeUnknown(parsed.data.address ?? {}),
+        operatingHours: sanitizeUnknown(parsed.data.operatingHours ?? {}),
+        configOverride: sanitizeUnknown(parsed.data.configOverride ?? {}),
+        serviceArea: sanitizeUnknown(parsed.data.serviceArea ?? {}),
         isDefault: parsed.data.isDefault ?? false,
-        metadata: parsed.data.metadata ?? {},
+        metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
       })
       .returning()
 
@@ -172,6 +182,12 @@ locationRoutes.patch(
       .update(locations)
       .set({
         ...parsed.data,
+        name: parsed.data.name ? sanitizePlainText(parsed.data.name) : undefined,
+        address: parsed.data.address ? sanitizeUnknown(parsed.data.address) : undefined,
+        operatingHours: parsed.data.operatingHours ? sanitizeUnknown(parsed.data.operatingHours) : undefined,
+        configOverride: parsed.data.configOverride ? sanitizeUnknown(parsed.data.configOverride) : undefined,
+        serviceArea: parsed.data.serviceArea ? sanitizeUnknown(parsed.data.serviceArea) : undefined,
+        metadata: parsed.data.metadata ? sanitizeUnknown(parsed.data.metadata) : undefined,
         updatedAt: new Date(),
       })
       .where(and(eq(locations.bizId, bizId), eq(locations.id, locationId)))

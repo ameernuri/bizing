@@ -14,6 +14,7 @@ import {
   requireAuth,
   requireBizAccess,
 } from '../middleware/auth.js'
+import { sanitizePlainText, sanitizeUnknown } from '../lib/sanitize.js'
 import { fail, ok, parsePositiveInt } from './_api.js'
 
 const { db, resources } = dbPackage
@@ -135,9 +136,9 @@ resourceRoutes.post(
         bizId,
         locationId: parsed.data.locationId,
         type: parsed.data.type,
-        name: parsed.data.name,
+        name: sanitizePlainText(parsed.data.name),
         slug: parsed.data.slug,
-        description: parsed.data.description,
+        description: parsed.data.description ? sanitizePlainText(parsed.data.description) : undefined,
         timezone: parsed.data.timezone,
         statusDefinitionId: parsed.data.statusDefinitionId,
         hostUserId: parsed.data.hostUserId,
@@ -149,7 +150,7 @@ resourceRoutes.post(
         maxSimultaneousBookings: parsed.data.maxSimultaneousBookings,
         bufferBeforeMinutes: parsed.data.bufferBeforeMinutes,
         bufferAfterMinutes: parsed.data.bufferAfterMinutes,
-        metadata: parsed.data.metadata ?? {},
+        metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
       })
       .returning()
 
@@ -197,6 +198,9 @@ resourceRoutes.patch(
       .update(resources)
       .set({
         ...parsed.data,
+        name: parsed.data.name ? sanitizePlainText(parsed.data.name) : undefined,
+        description: parsed.data.description ? sanitizePlainText(parsed.data.description) : undefined,
+        metadata: parsed.data.metadata ? sanitizeUnknown(parsed.data.metadata) : undefined,
       })
       .where(and(eq(resources.bizId, bizId), eq(resources.id, resourceId)))
       .returning()

@@ -1,0 +1,46 @@
+{
+  "stepKey": "uc-need-validate-5",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AGinBqTsPMk6BGy2uQ3ZQRcHiG/steps/uc-need-validate-5/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step requires validation that a booking is created from a winning bid, as stated in the use case. However, the evidence provided does not include any explicit API reads or checks confirming that the booking was indeed created from the winning bid of $2500 from ABC Roofing. The prior step evidence shows bookings, but it does not link them to the winning bid process, indicating a gap in the validation of this requirement.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].bodyMarkdownPreview",
+            "priorStepEvidence[2].evidence"
+          ],
+          "gaps": [
+            "No evidence linking the booking to the winning bid process."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add evidence of booking creation from winning bid",
+              "endpoint": "/api/v1/bookings",
+              "assertion": "Verify that the booking is created specifically from the winning bid of $2500."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "f892a4d7-7e36-4e60-8432-fc705f02613b",
+          "timestamp": "2026-02-27T20:51:53.156Z"
+        }
+      },
+      "at": "2026-02-27T20:51:53.157Z"
+    }
+  ]
+}

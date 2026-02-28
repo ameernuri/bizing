@@ -1,0 +1,45 @@
+{
+  "stepKey": "uc-need-validate-4",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AHrTgdi6R3bnOtt7WctqLi4Hku/steps/uc-need-validate-4/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the requirement of auto-cancel/release rules for unpaid seats. However, the evidence does not demonstrate that the system correctly implements these rules, as it lacks specific details about the handling of unpaid seats and the conditions under which they are released. The linked use case describes a scenario where the system warns the organizer and releases unpaid seats, but there is no evidence confirming that this behavior is implemented in the current state of the system.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].bodyMarkdownPreview"
+          ],
+          "gaps": [
+            "No evidence confirming the implementation of auto-cancel/release rules for unpaid seats."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add evidence for auto-cancel/release rules",
+              "endpoint": "/api/v1/bookings/{bookingId}/unpaid-seats",
+              "assertion": "Verify that the system releases unpaid seats according to the defined rules."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "2e0f2929-3622-4817-bf65-3af14c66fe1f",
+          "timestamp": "2026-02-28T06:32:46.580Z"
+        }
+      },
+      "at": "2026-02-28T06:32:46.581Z"
+    }
+  ]
+}

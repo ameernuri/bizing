@@ -1,0 +1,45 @@
+{
+  "stepKey": "uc-need-validate-5",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AGhhgo90FOEktFIFhk7NePG05h/steps/uc-need-validate-5/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the requirement of pausing a subscription, which is explicitly mentioned in the linked use case. However, there is no evidence provided that demonstrates this functionality is implemented or operational. The absence of any API reads or persisted state checks confirming the ability to pause a subscription indicates a clear gap in the expected behavior.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].bodyMarkdownPreview"
+          ],
+          "gaps": [
+            "The functionality to pause the subscription while keeping the slot reserved is not implemented or evidenced."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add endpoint to validate pausing subscription",
+              "endpoint": "/api/v1/subscription/pause",
+              "assertion": "Verify that the API allows pausing the subscription while keeping the slot reserved."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "19c4d926-15e7-44d5-bdda-1f21f549c474",
+          "timestamp": "2026-02-27T20:42:46.802Z"
+        }
+      },
+      "at": "2026-02-27T20:42:46.803Z"
+    }
+  ]
+}

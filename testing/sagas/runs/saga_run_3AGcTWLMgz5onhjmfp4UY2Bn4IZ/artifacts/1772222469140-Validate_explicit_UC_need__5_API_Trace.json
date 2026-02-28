@@ -1,0 +1,45 @@
+{
+  "stepKey": "uc-need-validate-5",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AGcTWLMgz5onhjmfp4UY2Bn4IZ/steps/uc-need-validate-5/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the requirement for a parts deposit in the context of a special order. However, the evidence does not explicitly confirm that a parts deposit is being collected for special orders, nor does it provide any API reads or persisted state checks that would validate this requirement. The linked use case mentions a parts deposit, but it does not clarify if this is specifically for special orders, leading to a gap in the validation process.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].needs[4]"
+          ],
+          "gaps": [
+            "No evidence confirming that a parts deposit is specifically required for special orders."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add deterministic evidence for parts deposit requirement",
+              "endpoint": "/api/v1/parts/deposit",
+              "assertion": "Verify that the system requires a parts deposit for special orders."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "aa31d68e-a9f3-4ea2-9143-a9adae8e299a",
+          "timestamp": "2026-02-27T20:01:07.345Z"
+        }
+      },
+      "at": "2026-02-27T20:01:07.346Z"
+    }
+  ]
+}

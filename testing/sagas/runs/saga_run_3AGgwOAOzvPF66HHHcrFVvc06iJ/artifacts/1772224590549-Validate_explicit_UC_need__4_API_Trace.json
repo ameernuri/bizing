@@ -1,0 +1,45 @@
+{
+  "stepKey": "uc-need-validate-4",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AGgwOAOzvPF66HHHcrFVvc06iJ/steps/uc-need-validate-4/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step requires validation of the hold lifecycle states (active, released, consumed, expired, cancelled), but the provided evidence does not demonstrate that these states are being tracked or managed within the system. The linked use case specifies the need for a hold lifecycle, yet there are no prior steps that confirm the existence or functionality of these states, leading to a clear gap in the requirement. Specifically, the evidence does not include any API reads or state checks that confirm the lifecycle management of holds, which is essential for this validation.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].needs[3]"
+          ],
+          "gaps": [
+            "No evidence of hold lifecycle states being implemented or validated."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add evidence for hold lifecycle states",
+              "endpoint": "/api/v1/holds",
+              "assertion": "Define concrete endpoint calls and assertions that directly verify the lifecycle states of holds."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "e2c7d2f8-7168-43b0-98ef-340acb4659a9",
+          "timestamp": "2026-02-27T20:36:30.367Z"
+        }
+      },
+      "at": "2026-02-27T20:36:30.369Z"
+    }
+  ]
+}

@@ -1,0 +1,45 @@
+{
+  "stepKey": "uc-need-validate-3",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AGvijrIl5BBL2p9yv5g7kRvR10/steps/uc-need-validate-3/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the requirement that 'Some providers work multiple locations', which is explicitly mentioned in the linked use case. However, the evidence provided does not include any API reads or persisted state checks that confirm this functionality. The existing steps focus on booking confirmations and member interactions but do not demonstrate the ability of providers to work across multiple locations, indicating a clear gap in requirement coverage.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].needs[2]"
+          ],
+          "gaps": [
+            "No evidence of provider location assignments or functionality that allows providers to work at multiple locations."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add provider location assignment validation",
+              "endpoint": "/api/v1/providers/locations",
+              "assertion": "Verify that providers can be assigned to multiple locations and that this is reflected in the system."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "ff08d70e-2ec3-47b2-abda-68f7ba06c449",
+          "timestamp": "2026-02-27T22:38:12.975Z"
+        }
+      },
+      "at": "2026-02-27T22:38:12.977Z"
+    }
+  ]
+}

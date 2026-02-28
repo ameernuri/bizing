@@ -1,0 +1,45 @@
+{
+  "stepKey": "uc-need-validate-3",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AGfM6IFGxwyP4WCvwEay162RQ4/steps/uc-need-validate-3/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the requirement of 'Class credit pricing (lower than direct, but volume)', but the evidence does not confirm this requirement. The linked use case mentions the need for class credit pricing, indicating that ClassPass pays the studio $12 compared to a direct price of $25. However, there is no evidence provided that explicitly verifies the pricing structure or confirms that it is lower than the direct price for volume bookings. Therefore, there is a clear gap in the evidence regarding this specific requirement.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].needs[2]"
+          ],
+          "gaps": [
+            "No evidence confirming class credit pricing structure as required."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add pricing validation evidence",
+              "endpoint": "/api/v1/pricing/validate",
+              "assertion": "Verify that class credit pricing is lower than direct pricing for volume."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "5606b9ce-dbba-4998-a036-add599d1acf9",
+          "timestamp": "2026-02-27T20:25:38.326Z"
+        }
+      },
+      "at": "2026-02-27T20:25:38.332Z"
+    }
+  ]
+}

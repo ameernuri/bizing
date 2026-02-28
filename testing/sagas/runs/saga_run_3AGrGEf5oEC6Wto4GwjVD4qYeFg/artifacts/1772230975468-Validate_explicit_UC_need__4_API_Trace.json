@@ -1,0 +1,46 @@
+{
+  "stepKey": "uc-need-validate-4",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AGrGEf5oEC6Wto4GwjVD4qYeFg/steps/uc-need-validate-4/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the requirement of blocking entry when the usage allowance is exceeded. However, the evidence provided does not demonstrate that the system effectively enforces this rule, as there is no concrete evidence of the door denying entry after the 10-hour limit is reached. The linked use case describes the expected behavior but lacks any validation of the enforcement mechanism, leading to a clear gap in requirement coverage.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases",
+            "priorStepEvidence"
+          ],
+          "gaps": [
+            "No evidence of the system blocking entry after the 10-hour usage limit is reached."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add test for entry blocking functionality",
+              "endpoint": "/api/v1/entry/block",
+              "assertion": "Verify that entry is denied when the usage limit is exceeded."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "997fc19d-201d-4797-96cb-eec27e502cc9",
+          "timestamp": "2026-02-27T22:22:53.241Z"
+        }
+      },
+      "at": "2026-02-27T22:22:53.243Z"
+    }
+  ]
+}

@@ -1,0 +1,46 @@
+{
+  "stepKey": "uc-need-validate-4",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AIjNv0SIOKWERX9tiygBVZIRhC/steps/uc-need-validate-4/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the 'Freeze-on-dispute behavior' but failed to provide any concrete evidence or checks that demonstrate this behavior is implemented. While the use case describes that the release is paused until a dispute is resolved, there are no API reads or persisted state checks included in the evidence to confirm that this behavior is functioning as required. Therefore, there is a clear gap in the evidence provided regarding this specific requirement.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases",
+            "priorStepEvidence"
+          ],
+          "gaps": [
+            "No evidence of 'Freeze-on-dispute behavior' validation."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add validation for freeze-on-dispute behavior",
+              "endpoint": "/api/v1/escrow/validate-freeze-on-dispute",
+              "assertion": "Verify that the release of funds is paused when a dispute is raised."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "7115bfac-d8f9-4d91-b665-94924470b854",
+          "timestamp": "2026-02-28T13:56:09.961Z"
+        }
+      },
+      "at": "2026-02-28T13:56:09.962Z"
+    }
+  ]
+}

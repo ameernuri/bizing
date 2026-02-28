@@ -1,0 +1,45 @@
+{
+  "stepKey": "uc-need-validate-2",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AGiZbe2DegdnNCeJgof64micfD/steps/uc-need-validate-2/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the requirement of having contact roles per account, specifically decision maker, billing, and operator roles. However, the evidence provided does not include any concrete API reads or persisted state checks that confirm the existence of these roles within the system. The absence of this critical information indicates a clear gap in meeting the requirement, as there is no evidence to support that the necessary roles are defined or managed in the system.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "exploratoryStep.instruction"
+          ],
+          "gaps": [
+            "No evidence of contact roles per account (decision maker, billing, operator) as required."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add evidence for contact roles",
+              "endpoint": "/api/v1/accounts/{accountId}/roles",
+              "assertion": "Verify that the API returns the expected contact roles for the specified account."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "ef55da50-d42f-4782-93b6-28bc48313609",
+          "timestamp": "2026-02-27T20:49:37.642Z"
+        }
+      },
+      "at": "2026-02-27T20:49:37.643Z"
+    }
+  ]
+}

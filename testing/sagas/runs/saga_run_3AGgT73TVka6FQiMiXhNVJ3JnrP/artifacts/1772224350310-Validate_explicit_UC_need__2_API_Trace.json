@@ -1,0 +1,45 @@
+{
+  "stepKey": "uc-need-validate-2",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AGgT73TVka6FQiMiXhNVJ3JnrP/steps/uc-need-validate-2/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the requirement of checkpoint-by-checklist completion, specifically for tires, brakes, lights, and horn. While the evidence provided indicates that the lights checkpoint failed, it does not confirm the completion status for all required checkpoints (tires, brakes, lights, horn) as mandated by the requirement. This indicates a gap in the evidence as it does not fully cover the requirement of validating all checkpoints. The evidence pointers include the scenario of the forklift inspection, which only partially addresses the requirement.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "The Safety Inspection & Compliance Checklist scenario indicates a failed inspection for lights but does not provide evidence for tires and brakes."
+          ],
+          "gaps": [
+            "No evidence confirming the completion status for all required checkpoints (tires, brakes, lights, horn)."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Validate all checkpoints for compliance",
+              "endpoint": "/api/v1/checklist/validate",
+              "assertion": "Confirm completion status for tires, brakes, lights, and horn."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "b42b71fe-e6f1-43df-a957-76c0fb01752f",
+          "timestamp": "2026-02-27T20:32:30.116Z"
+        }
+      },
+      "at": "2026-02-27T20:32:30.117Z"
+    }
+  ]
+}

@@ -1,0 +1,46 @@
+{
+  "stepKey": "uc-need-validate-2",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AGfn4DaNvBJqVmS0i7CXuFxhH8/steps/uc-need-validate-2/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the requirement of 'Guardian approval requirements per service', but the evidence provided does not include any checks or confirmations that this requirement is satisfied. The linked use case mentions the need for guardian approval, yet there is no concrete evidence demonstrating that the system enforces this requirement, resulting in a clear gap. Specifically, the evidence does not show any API reads or persisted state checks that confirm the existence or enforcement of guardian approval requirements.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "exploratoryStep.instruction",
+            "linkedUseCases[0].bodyMarkdownPreview"
+          ],
+          "gaps": [
+            "No evidence confirming that guardian approval requirements are enforced per service."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add validation for guardian approval requirements",
+              "endpoint": "/api/v1/guardian-approval",
+              "assertion": "Verify that the system requires guardian approval for bookings made by minors."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "27a18d5e-53ea-470d-a95d-9f089af0fa0d",
+          "timestamp": "2026-02-27T20:26:45.048Z"
+        }
+      },
+      "at": "2026-02-27T20:26:45.049Z"
+    }
+  ]
+}

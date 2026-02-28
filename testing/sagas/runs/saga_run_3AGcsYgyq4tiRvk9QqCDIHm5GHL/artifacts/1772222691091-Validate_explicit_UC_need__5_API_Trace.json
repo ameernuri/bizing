@@ -1,0 +1,45 @@
+{
+  "stepKey": "uc-need-validate-5",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AGcsYgyq4tiRvk9QqCDIHm5GHL/steps/uc-need-validate-5/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the requirement for 'Substitution history tracking', which is explicitly mentioned in the linked use case. However, the evidence does not include any checks or reads that confirm the existence or functionality of a substitution history log. The absence of this critical tracking feature indicates a gap in requirement satisfaction, as the system's ability to log substitutions is essential for fairness tracking, as stated in the use case.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].needs"
+          ],
+          "gaps": [
+            "No evidence of substitution history tracking implementation."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add evidence for substitution history tracking",
+              "endpoint": "/api/v1/substitution-history",
+              "assertion": "Verify that the system logs all substitutions made and provides access to this log."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "0e41ca77-bc39-4425-9ce9-f1e7219fa1c2",
+          "timestamp": "2026-02-27T20:04:49.833Z"
+        }
+      },
+      "at": "2026-02-27T20:04:49.838Z"
+    }
+  ]
+}

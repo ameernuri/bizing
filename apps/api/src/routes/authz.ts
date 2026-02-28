@@ -10,7 +10,7 @@
  * The same admins usually manage all of these concerns together during setup.
  */
 
-import { Hono } from 'hono'
+import { Hono, type Context } from 'hono'
 import { and, asc, desc, eq, inArray, or, sql } from 'drizzle-orm'
 import dbPackage from '@bizing/db'
 import { z } from 'zod'
@@ -21,13 +21,19 @@ import {
   inferScopeType,
   listEffectivePermissionKeys,
 } from '../services/acl.js'
+import { recordRequestAuthEvent } from '../services/auth-observability.js'
 import {
+  getCurrentAuthCredentialId,
+  getCurrentAuthScopes,
+  getCurrentAuthSource,
   getCurrentUser,
   requireAclPermission,
   requireAuth,
   requireBizAccess,
   requirePlatformAdmin,
 } from '../middleware/auth.js'
+import { appendAuditEvent, createOperationalAlert } from '../lib/audit-log.js'
+import { sanitizePlainText, sanitizeUnknown } from '../lib/sanitize.js'
 import { fail, ok } from './_api.js'
 
 const {
@@ -58,6 +64,26 @@ const createMemberBodySchema = z.object({
 
 const updateMemberBodySchema = z.object({
   role: z.string().min(1).max(60),
+})
+
+const bulkDeleteMembersBodySchema = z.object({
+  memberIds: z.array(z.string().min(1)).min(1),
+  confirmationText: z.string().min(1).max(120),
+  reason: z.string().min(1).max(500),
+})
+
+const offboardMemberBodySchema = z.object({
+  reason: z.string().min(1).max(500),
+  checklist: z
+    .array(
+      z.object({
+        key: z.string().min(1).max(120),
+        label: z.string().min(1).max(220).optional(),
+        completed: z.boolean(),
+      }),
+    )
+    .min(1),
+  metadata: z.record(z.unknown()).optional(),
 })
 
 const createInvitationBodySchema = z.object({
@@ -127,6 +153,79 @@ const createPlatformAclAssignmentBodySchema = z.object({
   metadata: z.record(z.unknown()).optional(),
 })
 
+function auditActorTypeFromSource(source: string | null | undefined) {
+  if (source === 'api_key') return 'api_key' as const
+  if (source === 'integration') return 'integration' as const
+  if (source === 'system') return 'system' as const
+  return 'user' as const
+}
+
+async function emitAdminActionTrace(c: Context, input: {
+  bizId: string
+  streamKey: string
+  streamType: string
+  entityType: string
+  entityId: string
+  eventType: 'create' | 'update' | 'delete' | 'state_transition' | 'custom'
+  reasonCode: string
+  note: string
+  beforeState?: Record<string, unknown> | null
+  afterState?: Record<string, unknown> | null
+  diff?: Record<string, unknown> | null
+  metadata?: Record<string, unknown> | null
+}) {
+  const actor = getCurrentUser(c)
+  const auditEvent = await appendAuditEvent({
+    bizId: input.bizId,
+    streamKey: input.streamKey,
+    streamType: input.streamType,
+    entityType: input.entityType,
+    entityId: input.entityId,
+    eventType: input.eventType,
+    actorType: auditActorTypeFromSource(getCurrentAuthSource(c)),
+    actorUserId: actor?.id ?? null,
+    actorRef: getCurrentAuthCredentialId(c) ?? null,
+    reasonCode: input.reasonCode,
+    note: input.note,
+    requestRef: c.get('requestId') ?? null,
+    sourceIp: c.req.header('x-forwarded-for') ?? null,
+    userAgent: c.req.header('user-agent') ?? null,
+    beforeState: input.beforeState ?? null,
+    afterState: input.afterState ?? null,
+    diff: input.diff ?? null,
+    metadata: input.metadata ?? {},
+  })
+
+  await createOperationalAlert({
+    bizId: input.bizId,
+    recipientUserId: actor?.id ?? null,
+    recipientRef: actor?.email ?? 'ops@bizing.local',
+    subject: 'Admin action logged',
+    body: input.note,
+    metadata: {
+      source: 'admin_action',
+      auditEventId: auditEvent.id,
+      entityType: input.entityType,
+      entityId: input.entityId,
+      reasonCode: input.reasonCode,
+    },
+  })
+
+  return auditEvent
+}
+
+function emitAuthzEvent(
+  c: Context,
+  input: Parameters<typeof recordRequestAuthEvent>[1],
+) {
+  void recordRequestAuthEvent(c.req.raw.headers, {
+    ...input,
+    httpMethod: input.httpMethod ?? c.req.method,
+    httpPath: input.httpPath ?? c.req.path,
+    requestId: input.requestId ?? c.get('requestId'),
+  }).catch(() => undefined)
+}
+
 const replaceMembershipMappingsBodySchema = z.object({
   mappings: z.array(
     z.object({
@@ -182,6 +281,9 @@ authzRoutes.post('/acl/bootstrap', requireAuth, requirePlatformAdmin, async (c) 
 authzRoutes.get('/auth/me', requireAuth, async (c) => {
   const user = getCurrentUser(c)
   const session = c.get('session')
+  const authSource = getCurrentAuthSource(c) ?? 'session'
+  const authScopes = getCurrentAuthScopes(c) ?? ['*']
+  const authCredentialId = getCurrentAuthCredentialId(c) ?? null
   if (!user || !session) return fail(c, 'UNAUTHORIZED', 'Authentication required.', 401)
 
   await ensureAclBootstrap()
@@ -210,6 +312,11 @@ authzRoutes.get('/auth/me', requireAuth, async (c) => {
   return ok(c, {
     user,
     session,
+    auth: {
+      source: authSource,
+      scopes: authScopes,
+      credentialId: authCredentialId,
+    },
     memberships: membershipRows,
     activeBizId,
     permissionKeys,
@@ -262,6 +369,20 @@ authzRoutes.patch('/auth/active-biz', requireAuth, async (c) => {
   if (!updated) {
     return fail(c, 'NOT_FOUND', 'Session not found.', 404)
   }
+
+  emitAuthzEvent(c, {
+    authSource: 'session',
+    eventType: 'active_biz_switched',
+    decision: 'issued',
+    ownerUserId: user.id,
+    bizId: parsed.data.bizId,
+    sessionId: session.id,
+    actorUserId: user.id,
+    eventData: {
+      previousActiveBizId: session.activeOrganizationId ?? null,
+      nextActiveBizId: parsed.data.bizId,
+    },
+  })
 
   return ok(c, updated)
 })
@@ -340,7 +461,166 @@ authzRoutes.post(
       })
       .returning()
 
+    await emitAdminActionTrace(c, {
+      bizId,
+      streamKey: `member:${created.id}`,
+      streamType: 'member',
+      entityType: 'member',
+      entityId: created.id,
+      eventType: 'create',
+      reasonCode: 'member_added',
+      note: `Member ${created.id} was added to biz ${bizId}.`,
+      afterState: {
+        memberId: created.id,
+        userId: created.userId,
+        role: created.role,
+      },
+    })
+
     return ok(c, created, 201)
+  },
+)
+
+/**
+ * Bulk delete must be declared before the generic `:memberId` routes so the
+ * static `bulk-delete` path is not mistaken for a member id by the router.
+ */
+authzRoutes.post(
+  '/bizes/:bizId/members/bulk-delete',
+  requireAuth,
+  requireBizAccess('bizId'),
+  requireAclPermission('members.manage', { bizIdParam: 'bizId' }),
+  async (c) => {
+    const bizId = c.req.param('bizId')
+    const parsed = bulkDeleteMembersBodySchema.safeParse(await c.req.json().catch(() => null))
+    if (!parsed.success) {
+      return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
+    }
+
+    const expectedConfirmation = `DELETE ${parsed.data.memberIds.length} MEMBERS`
+    if (parsed.data.confirmationText !== expectedConfirmation) {
+      return fail(c, 'CONFIRMATION_REQUIRED', 'Bulk delete requires exact confirmation text.', 400, {
+        expectedConfirmation,
+      })
+    }
+
+    const existingRows = await db
+      .select({
+        id: members.id,
+        userId: members.userId,
+        role: members.role,
+      })
+      .from(members)
+      .where(and(eq(members.organizationId, bizId), inArray(members.id, parsed.data.memberIds)))
+
+    if (existingRows.length !== parsed.data.memberIds.length) {
+      return fail(c, 'NOT_FOUND', 'One or more members were not found for bulk delete.', 404, {
+        expectedCount: parsed.data.memberIds.length,
+        foundCount: existingRows.length,
+      })
+    }
+
+    const removedRows = await db
+      .delete(members)
+      .where(and(eq(members.organizationId, bizId), inArray(members.id, parsed.data.memberIds)))
+      .returning({ id: members.id })
+
+    const batchId = `bulk_member_delete_${crypto.randomUUID().replace(/-/g, '')}`
+    await emitAdminActionTrace(c, {
+      bizId,
+      streamKey: `tenant:${bizId}`,
+      streamType: 'tenant',
+      entityType: 'bulk_member_delete',
+      entityId: batchId,
+      eventType: 'delete',
+      reasonCode: 'bulk_member_delete',
+      note: sanitizePlainText(parsed.data.reason),
+      beforeState: {
+        members: existingRows,
+      },
+      afterState: {
+        removedMemberIds: removedRows.map((row) => row.id),
+      },
+      metadata: {
+        memberIds: parsed.data.memberIds,
+        deletedCount: removedRows.length,
+        confirmationText: parsed.data.confirmationText,
+      },
+    })
+
+    return ok(c, {
+      batchId,
+      deletedCount: removedRows.length,
+      memberIds: removedRows.map((row) => row.id),
+      reason: parsed.data.reason,
+    })
+  },
+)
+
+/**
+ * Offboarding also comes before generic `:memberId` handlers to keep the
+ * lifecycle endpoint unambiguous and easy to reason about.
+ */
+authzRoutes.post(
+  '/bizes/:bizId/members/:memberId/offboard',
+  requireAuth,
+  requireBizAccess('bizId'),
+  requireAclPermission('members.manage', { bizIdParam: 'bizId' }),
+  async (c) => {
+    const { bizId, memberId } = c.req.param()
+    const parsed = offboardMemberBodySchema.safeParse(await c.req.json().catch(() => null))
+    if (!parsed.success) {
+      return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
+    }
+
+    if (parsed.data.checklist.some((item) => !item.completed)) {
+      return fail(c, 'CHECKLIST_INCOMPLETE', 'All offboarding checklist items must be completed.', 409, {
+        checklist: parsed.data.checklist,
+      })
+    }
+
+    const existing = await db.query.members.findFirst({
+      where: and(eq(members.organizationId, bizId), eq(members.id, memberId)),
+    })
+    if (!existing) return fail(c, 'NOT_FOUND', 'Member not found.', 404)
+
+    const [removed] = await db
+      .delete(members)
+      .where(and(eq(members.organizationId, bizId), eq(members.id, memberId)))
+      .returning({ id: members.id })
+
+    if (!removed) return fail(c, 'NOT_FOUND', 'Member not found.', 404)
+
+    await emitAdminActionTrace(c, {
+      bizId,
+      streamKey: `member:${memberId}`,
+      streamType: 'member',
+      entityType: 'member_offboarding',
+      entityId: memberId,
+      eventType: 'state_transition',
+      reasonCode: 'member_offboarded',
+      note: sanitizePlainText(parsed.data.reason),
+      beforeState: {
+        memberId: existing.id,
+        userId: existing.userId,
+        role: existing.role,
+      },
+      afterState: {
+        revoked: true,
+        checklistCompleted: true,
+      },
+      metadata: {
+        checklist: parsed.data.checklist,
+        ...(sanitizeUnknown(parsed.data.metadata ?? {}) as Record<string, unknown>),
+      },
+    })
+
+    return ok(c, {
+      memberId,
+      revoked: true,
+      checklistCompleted: true,
+      reason: parsed.data.reason,
+    })
   },
 )
 
@@ -357,6 +637,11 @@ authzRoutes.patch(
       return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
     }
 
+    const existing = await db.query.members.findFirst({
+      where: and(eq(members.organizationId, bizId), eq(members.id, memberId)),
+    })
+    if (!existing) return fail(c, 'NOT_FOUND', 'Member not found.', 404)
+
     const [updated] = await db
       .update(members)
       .set({ role: parsed.data.role })
@@ -364,6 +649,34 @@ authzRoutes.patch(
       .returning()
 
     if (!updated) return fail(c, 'NOT_FOUND', 'Member not found.', 404)
+
+    await emitAdminActionTrace(c, {
+      bizId,
+      streamKey: `member:${updated.id}`,
+      streamType: 'member',
+      entityType: 'member',
+      entityId: updated.id,
+      eventType: 'update',
+      reasonCode: 'member_role_updated',
+      note: `Member ${updated.id} role was updated from ${existing.role} to ${updated.role}.`,
+      beforeState: {
+        memberId: existing.id,
+        userId: existing.userId,
+        role: existing.role,
+      },
+      afterState: {
+        memberId: updated.id,
+        userId: updated.userId,
+        role: updated.role,
+      },
+      diff: {
+        role: {
+          before: existing.role,
+          after: updated.role,
+        },
+      },
+    })
+
     return ok(c, updated)
   },
 )
@@ -376,13 +689,173 @@ authzRoutes.delete(
   async (c) => {
     const { bizId, memberId } = c.req.param()
 
+    const existing = await db.query.members.findFirst({
+      where: and(eq(members.organizationId, bizId), eq(members.id, memberId)),
+    })
+    if (!existing) return fail(c, 'NOT_FOUND', 'Member not found.', 404)
+
     const [removed] = await db
       .delete(members)
       .where(and(eq(members.organizationId, bizId), eq(members.id, memberId)))
       .returning({ id: members.id })
 
     if (!removed) return fail(c, 'NOT_FOUND', 'Member not found.', 404)
+
+    await emitAdminActionTrace(c, {
+      bizId,
+      streamKey: `member:${memberId}`,
+      streamType: 'member',
+      entityType: 'member',
+      entityId: memberId,
+      eventType: 'delete',
+      reasonCode: 'member_removed',
+      note: `Member ${memberId} was removed from biz ${bizId}.`,
+      beforeState: {
+        memberId: existing.id,
+        userId: existing.userId,
+        role: existing.role,
+      },
+      afterState: {
+        removed: true,
+      },
+    })
+
     return ok(c, removed)
+  },
+)
+
+authzRoutes.post(
+  '/bizes/:bizId/members/bulk-delete',
+  requireAuth,
+  requireBizAccess('bizId'),
+  requireAclPermission('members.manage', { bizIdParam: 'bizId' }),
+  async (c) => {
+    const bizId = c.req.param('bizId')
+    const parsed = bulkDeleteMembersBodySchema.safeParse(await c.req.json().catch(() => null))
+    if (!parsed.success) {
+      return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
+    }
+
+    const expectedConfirmation = `DELETE ${parsed.data.memberIds.length} MEMBERS`
+    if (parsed.data.confirmationText !== expectedConfirmation) {
+      return fail(c, 'CONFIRMATION_REQUIRED', 'Bulk delete requires exact confirmation text.', 400, {
+        expectedConfirmation,
+      })
+    }
+
+    const existingRows = await db
+      .select({
+        id: members.id,
+        userId: members.userId,
+        role: members.role,
+      })
+      .from(members)
+      .where(and(eq(members.organizationId, bizId), inArray(members.id, parsed.data.memberIds)))
+
+    if (existingRows.length !== parsed.data.memberIds.length) {
+      return fail(c, 'NOT_FOUND', 'One or more members were not found for bulk delete.', 404, {
+        expectedCount: parsed.data.memberIds.length,
+        foundCount: existingRows.length,
+      })
+    }
+
+    const removedRows = await db
+      .delete(members)
+      .where(and(eq(members.organizationId, bizId), inArray(members.id, parsed.data.memberIds)))
+      .returning({ id: members.id })
+
+    const batchId = `bulk_member_delete_${crypto.randomUUID().replace(/-/g, '')}`
+    await emitAdminActionTrace(c, {
+      bizId,
+      streamKey: `tenant:${bizId}`,
+      streamType: 'tenant',
+      entityType: 'bulk_member_delete',
+      entityId: batchId,
+      eventType: 'delete',
+      reasonCode: 'bulk_member_delete',
+      note: sanitizePlainText(parsed.data.reason),
+      beforeState: {
+        members: existingRows,
+      },
+      afterState: {
+        removedMemberIds: removedRows.map((row) => row.id),
+      },
+      metadata: {
+        memberIds: parsed.data.memberIds,
+        deletedCount: removedRows.length,
+        confirmationText: parsed.data.confirmationText,
+      },
+    })
+
+    return ok(c, {
+      batchId,
+      deletedCount: removedRows.length,
+      memberIds: removedRows.map((row) => row.id),
+      reason: parsed.data.reason,
+    })
+  },
+)
+
+authzRoutes.post(
+  '/bizes/:bizId/members/:memberId/offboard',
+  requireAuth,
+  requireBizAccess('bizId'),
+  requireAclPermission('members.manage', { bizIdParam: 'bizId' }),
+  async (c) => {
+    const { bizId, memberId } = c.req.param()
+    const parsed = offboardMemberBodySchema.safeParse(await c.req.json().catch(() => null))
+    if (!parsed.success) {
+      return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
+    }
+
+    if (parsed.data.checklist.some((item) => !item.completed)) {
+      return fail(c, 'CHECKLIST_INCOMPLETE', 'All offboarding checklist items must be completed.', 409, {
+        checklist: parsed.data.checklist,
+      })
+    }
+
+    const existing = await db.query.members.findFirst({
+      where: and(eq(members.organizationId, bizId), eq(members.id, memberId)),
+    })
+    if (!existing) return fail(c, 'NOT_FOUND', 'Member not found.', 404)
+
+    const [removed] = await db
+      .delete(members)
+      .where(and(eq(members.organizationId, bizId), eq(members.id, memberId)))
+      .returning({ id: members.id })
+
+    if (!removed) return fail(c, 'NOT_FOUND', 'Member not found.', 404)
+
+    await emitAdminActionTrace(c, {
+      bizId,
+      streamKey: `member:${memberId}`,
+      streamType: 'member',
+      entityType: 'member_offboarding',
+      entityId: memberId,
+      eventType: 'state_transition',
+      reasonCode: 'member_offboarded',
+      note: sanitizePlainText(parsed.data.reason),
+      beforeState: {
+        memberId: existing.id,
+        userId: existing.userId,
+        role: existing.role,
+      },
+      afterState: {
+        revoked: true,
+        checklistCompleted: true,
+      },
+      metadata: {
+        checklist: parsed.data.checklist,
+        ...(sanitizeUnknown(parsed.data.metadata ?? {}) as Record<string, unknown>),
+      },
+    })
+
+    return ok(c, {
+      memberId,
+      revoked: true,
+      checklistCompleted: true,
+      reason: parsed.data.reason,
+    })
   },
 )
 

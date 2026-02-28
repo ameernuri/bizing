@@ -1,127 +1,78 @@
 #!/bin/bash
 # Bizing Gateway Manager
+#
+# Canonical behavior:
+# - Delegate lifecycle to the `openclaw` CLI only.
+# - Never hardcode gateway port/token in this wrapper.
+# - Resolve values from OPENCLAW_HOME/openclaw.json (or ~/.openclaw by default).
 
-BIZING_PID_FILE="/tmp/bizing-gateway.pid"
-BIZING_CONFIG="/Users/ameer/projects/bizing/.openclaw/openclaw.json"
-BIZING_HOME="/Users/ameer/projects/bizing"
-BIZING_REPO="/Users/ameer/projects/bizing/openclaw"
+set -euo pipefail
 
-check_running() {
-  if [ -f "$BIZING_PID_FILE" ]; then
-    PID=$(cat "$BIZING_PID_FILE")
-    if ps -p "$PID" > /dev/null 2>&1; then
-      return 0
-    fi
-  fi
-  return 1
+BIZING_OPENCLAW_HOME="${BIZING_OPENCLAW_HOME:-${OPENCLAW_HOME:-$HOME/.openclaw}}"
+BIZING_OPENCLAW_CONFIG="$BIZING_OPENCLAW_HOME/openclaw.json"
+
+openclaw_home() {
+  env -u OPENCLAW_GATEWAY_URL \
+    -u OPENCLAW_GATEWAY_TOKEN \
+    OPENCLAW_HOME="$BIZING_OPENCLAW_HOME" \
+    openclaw "$@"
 }
 
-stop_all() {
-  echo "Stopping all gateways..."
-  pkill -9 -f "openclaw-gateway" 2>/dev/null
-  rm -f /tmp/openclaw/gateway.lock
-  rm -f "$BIZING_PID_FILE"
-  sleep 2
-  echo "✓ Stopped"
+gateway_port() {
+  if [ -f "$BIZING_OPENCLAW_CONFIG" ]; then
+    node -e "const fs=require('fs');const p=process.argv[1];const j=JSON.parse(fs.readFileSync(p,'utf8'));process.stdout.write(String(j?.gateway?.port ?? 'unknown'))" "$BIZING_OPENCLAW_CONFIG"
+  else
+    printf "unknown"
+  fi
 }
 
 start() {
-  if check_running; then
-    PID=$(cat "$BIZING_PID_FILE")
-    echo "Bizing gateway already running (PID: $PID)"
-    return 0
-  fi
-  
-  # First stop any conflicting gateways
-  pkill -9 -f "openclaw-gateway" 2>/dev/null
-  sleep 2
-  rm -f /tmp/openclaw/gateway.lock
-  sleep 1
-  
-  echo "🌀 Starting Bizing Gateway (@bizing_ai_bot)..."
-  
-  cd "$BIZING_REPO" || exit 1
-  
-  # Run with explicit environment
-  (
-    export OPENCLAW_HOME="$BIZING_HOME"
-    nohup node openclaw.mjs gateway --port 6130 > /tmp/bizing-gateway.log 2>&1 &
-    echo $! > "$BIZING_PID_FILE"
-  )
-  
-  sleep 5
-  
-  if check_running; then
-    PID=$(cat "$BIZING_PID_FILE")
-    echo "✓ Bizing gateway started (PID: $PID)"
-    echo "  Port: 6130"
-    echo "  Bot: @bizing_ai_bot"
-  else
-    echo "✗ Failed to start"
-    return 1
-  fi
+  echo "Starting OpenClaw gateway (home: $BIZING_OPENCLAW_HOME)..."
+  openclaw_home gateway start
+  echo "✓ Started (port: $(gateway_port))"
 }
 
 stop() {
-  if check_running; then
-    PID=$(cat "$BIZING_PID_FILE")
-    echo "Stopping Bizing gateway (PID: $PID)..."
-    kill "$PID" 2>/dev/null
-    sleep 2
-    if ps -p "$PID" > /dev/null 2>&1; then
-      kill -9 "$PID" 2>/dev/null
-    fi
-  fi
-  rm -f "$BIZING_PID_FILE"
+  echo "Stopping OpenClaw gateway (home: $BIZING_OPENCLAW_HOME)..."
+  openclaw_home gateway stop
   echo "✓ Stopped"
 }
 
 status() {
-  if check_running; then
-    PID=$(cat "$BIZING_PID_FILE")
-    echo "Bizing Gateway: Running (PID: $PID)"
-    echo "  Port: 6130"
-    echo "  Config: $BIZING_CONFIG"
-    echo ""
-    echo "Recent log:"
-    tail -5 /tmp/bizing-gateway.log 2>/dev/null || echo "  (no log yet)"
-  else
-    echo "Bizing Gateway: Not running"
-  fi
+  echo "OpenClaw home: $BIZING_OPENCLAW_HOME"
+  echo "Config: $BIZING_OPENCLAW_CONFIG"
+  echo "Port: $(gateway_port)"
+  echo ""
+  openclaw_home gateway status || true
+  echo ""
+  openclaw_home gateway probe || true
 }
 
 restart() {
-  stop
-  sleep 2
-  start
+  openclaw_home gateway restart
+  echo "✓ Restarted (port: $(gateway_port))"
 }
 
 log() {
-  echo "=== Bizing Gateway Log ==="
-  tail -50 /tmp/bizing-gateway.log 2>/dev/null || echo "No log file"
+  # Uses OpenClaw's native logger to avoid stale, custom nohup log paths.
+  openclaw_home logs --tail 80
+}
+
+stop_all() {
+  # Emergency cleanup only for local dev. This intentionally does not kill -9
+  # unknown processes; it asks OpenClaw to stop cleanly for this OPENCLAW_HOME.
+  stop
 }
 
 case "${1:-start}" in
-  start)
-    start
-    ;;
-  stop)
-    stop
-    ;;
-  restart)
-    restart
-    ;;
-  status)
-    status
-    ;;
-  log)
-    log
-    ;;
-  stop-all)
-    stop_all
-    ;;
-  *)
-    echo "Usage: $0 {start|stop|restart|status|log|stop-all}"
-    exit 1
-    ;;
+start) start ;;
+stop) stop ;;
+restart) restart ;;
+status) status ;;
+log) log ;;
+stop-all) stop_all ;;
+*)
+  echo "Usage: $0 {start|stop|restart|status|log|stop-all}"
+  exit 1
+  ;;
 esac

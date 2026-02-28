@@ -1,0 +1,45 @@
+{
+  "stepKey": "uc-need-validate-8",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AGbWvhFd7w7tvObz0Rtg7kuoYH/steps/uc-need-validate-8/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the requirement of 'Temporary equipment loan during repair', which is mentioned in the linked use case. However, the evidence does not provide concrete API reads or persisted state checks that confirm this requirement is satisfied. While the use case states that a loaner mini-fridge is offered during repair, there is no explicit evidence confirming the execution or availability of this loan, leading to a clear gap in the validation process.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].summary"
+          ],
+          "gaps": [
+            "No evidence confirming the execution or availability of the temporary equipment loan."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Verify loaner equipment availability",
+              "endpoint": "/api/v1/loaner-equipment/status",
+              "assertion": "Check that the API confirms the availability of loaner equipment during repairs."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "370d9982-dc2b-4fc7-8c37-96e21bac9430",
+          "timestamp": "2026-02-27T19:53:44.929Z"
+        }
+      },
+      "at": "2026-02-27T19:53:44.930Z"
+    }
+  ]
+}

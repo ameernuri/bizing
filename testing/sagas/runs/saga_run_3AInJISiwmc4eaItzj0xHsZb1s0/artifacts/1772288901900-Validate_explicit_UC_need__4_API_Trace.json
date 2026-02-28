@@ -1,0 +1,45 @@
+{
+  "stepKey": "uc-need-validate-4",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AInJISiwmc4eaItzj0xHsZb1s0/steps/uc-need-validate-4/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step requires validation of the 'Damage deposit hold' requirement, which is explicitly mentioned in the linked use case. However, there is no concrete evidence provided from API reads or persisted state checks that confirms the enforcement or handling of the damage deposit hold. The absence of such evidence indicates a gap in the requirement coverage, as the expected result of capturing a precise, reproducible gap is not met.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].bodyMarkdownPreview"
+          ],
+          "gaps": [
+            "No evidence confirming the enforcement or handling of the damage deposit hold."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add evidence for damage deposit handling",
+              "endpoint": "/api/v1/damage-deposit",
+              "assertion": "Verify that the system correctly holds and releases the damage deposit as per the defined policy."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "f2236bc6-8f3a-4070-9ca8-86a6015322fe",
+          "timestamp": "2026-02-28T14:28:21.805Z"
+        }
+      },
+      "at": "2026-02-28T14:28:21.808Z"
+    }
+  ]
+}

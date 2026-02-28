@@ -1,0 +1,515 @@
+{
+  "schemaVersion": "snapshot.v1",
+  "screenKey": "persona-scenario-validate-1-1772246389059",
+  "title": "Validate persona scenario #1 Snapshot",
+  "generatedAt": "2026-02-28T02:39:49.079Z",
+  "stepKey": "persona-scenario-validate-1",
+  "status": "passed",
+  "view": {
+    "title": "Validate persona scenario #1",
+    "subtitle": "Validated agent traffic can be throttled independently through agent-governance policy.",
+    "blocks": [
+      {
+        "type": "alert",
+        "title": "Persona Scenario Validate 1 completed",
+        "message": "Validated agent traffic can be throttled independently through agent-governance policy.",
+        "tone": "success"
+      },
+      {
+        "type": "key_value",
+        "title": "Screen details",
+        "items": [
+          {
+            "label": "FirstStatus",
+            "value": "200"
+          },
+          {
+            "label": "SecondStatus",
+            "value": "429"
+          },
+          {
+            "label": "CredentialId",
+            "value": "api_credential_3AHPBJhQk89722h69bpEG5Fd1uY"
+          }
+        ]
+      }
+    ]
+  },
+  "rawData": {
+    "stepKey": "persona-scenario-validate-1",
+    "resultPayload": {
+      "note": "Validated agent traffic can be throttled independently through agent-governance policy.",
+      "evidence": {
+        "firstStatus": 200,
+        "secondStatus": 429,
+        "credentialId": "api_credential_3AHPBJhQk89722h69bpEG5Fd1uY"
+      }
+    },
+    "apiCalls": [
+      {
+        "method": "POST",
+        "path": "/api/v1/auth/api-keys",
+        "status": 201,
+        "requestBody": {
+          "label": "agent-uc-101-the-ai-agent-builder-agent-avery-34ks",
+          "bizId": "3AHP8uUcvpKeXIeUjXO4XAEKVRL",
+          "scopes": [
+            "bizes.read",
+            "booking_orders.read",
+            "booking_orders.create",
+            "booking_orders.update"
+          ],
+          "allowDirectApiKeyAuth": true,
+          "issueAccessToken": {
+            "ttlSeconds": 900,
+            "scopes": [
+              "bizes.read",
+              "booking_orders.read",
+              "booking_orders.create",
+              "booking_orders.update"
+            ],
+            "reason": "saga-agent-governance"
+          }
+        },
+        "responseBody": {
+          "success": true,
+          "data": {
+            "apiKey": "bizing_sk_m6sSXfpnuYFQucABQ_TDqGdVaRJ0CQpL8Jd9pha4sgo",
+            "credential": {
+              "id": "api_credential_3AHPBJhQk89722h69bpEG5Fd1uY",
+              "ownerUserId": "VBpADXValqUzuNWQzyUyc0qISqGwAzsF",
+              "bizId": "3AHP8uUcvpKeXIeUjXO4XAEKVRL",
+              "label": "agent-uc-101-the-ai-agent-builder-agent-avery-34ks",
+              "keyPreview": "bizing_s...4sgo",
+              "status": "active",
+              "scopes": [
+                "bizes.read",
+                "booking_orders.read",
+                "booking_orders.create",
+                "booking_orders.update"
+              ],
+              "allowDirectApiKeyAuth": true,
+              "expiresAt": null
+            },
+            "warning": "Store apiKey now. It will never be returned again, only hash/preview is stored.",
+            "bootstrapAccessToken": {
+              "tokenType": "Bearer",
+              "accessToken": "bizing_at_taJYGs-G7DCvivXhU6682LTCSYyTD3oy6OWvgysx1OA",
+              "expiresAt": "2026-02-28T02:54:45.815Z",
+              "expiresInSeconds": 900,
+              "scopes": [
+                "bizes.read",
+                "booking_orders.read",
+                "booking_orders.create",
+                "booking_orders.update"
+              ]
+            }
+          },
+          "meta": {
+            "requestId": "a71ba877-2800-4017-91eb-ae131f026355",
+            "timestamp": "2026-02-28T02:39:45.822Z"
+          }
+        },
+        "at": "2026-02-28T02:39:45.823Z"
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/bizes/3AHP8uUcvpKeXIeUjXO4XAEKVRL/policies/templates?domainKey=agent_governance&status=active",
+        "status": 200,
+        "responseBody": {
+          "success": true,
+          "data": [],
+          "meta": {
+            "requestId": "bcd035f0-d58b-42d9-bcb9-d2ead222ada7",
+            "timestamp": "2026-02-28T02:39:45.883Z"
+          }
+        },
+        "at": "2026-02-28T02:39:45.885Z"
+      },
+      {
+        "method": "POST",
+        "path": "/api/v1/bizes/3AHP8uUcvpKeXIeUjXO4XAEKVRL/policies/templates",
+        "status": 201,
+        "requestBody": {
+          "name": "Agent Governance",
+          "slug": "agent-governance-tmi7v3",
+          "status": "active",
+          "domainKey": "agent_governance",
+          "isDefault": false,
+          "policySnapshot": {
+            "maxRequestsPerMinute": 1
+          },
+          "evaluationPolicy": {}
+        },
+        "responseBody": {
+          "success": true,
+          "data": {
+            "id": "policy_template_3AHPBGtTV99dYHZxfezIfsA7Rw0",
+            "bizId": "3AHP8uUcvpKeXIeUjXO4XAEKVRL",
+            "name": "Agent Governance",
+            "slug": "agent-governance-tmi7v3",
+            "status": "active",
+            "domainKey": "agent_governance",
+            "description": null,
+            "version": 1,
+            "aggregationMode": "all",
+            "minPassingRuleCount": null,
+            "effectiveFromAt": null,
+            "effectiveToAt": null,
+            "isDefault": false,
+            "policySnapshot": {
+              "maxRequestsPerMinute": 1
+            },
+            "evaluationPolicy": {},
+            "consequencePolicy": {},
+            "metadata": {},
+            "createdAt": "2026-02-28T02:39:45.903Z",
+            "updatedAt": "2026-02-28T02:39:45.903Z",
+            "deletedAt": null,
+            "createdBy": null,
+            "updatedBy": null,
+            "deletedBy": null
+          },
+          "meta": {
+            "requestId": "4d8e5120-bdcd-46cb-83c6-48997277fe93",
+            "timestamp": "2026-02-28T02:39:45.906Z"
+          }
+        },
+        "at": "2026-02-28T02:39:45.910Z"
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/bizes/3AHP8uUcvpKeXIeUjXO4XAEKVRL/policies/bindings",
+        "status": 200,
+        "responseBody": {
+          "success": true,
+          "data": [
+            {
+              "id": "policy_binding_3AHPAjSLbV1KkRTZ6d8Q9zdkSST",
+              "bizId": "3AHP8uUcvpKeXIeUjXO4XAEKVRL",
+              "policyTemplateId": "policy_template_3AHPAgjWi2H77FLSptwiF5u5E9V",
+              "targetType": "offer_version",
+              "locationId": null,
+              "resourceId": null,
+              "serviceId": null,
+              "serviceProductId": null,
+              "offerId": null,
+              "offerVersionId": "offer_version_3AHP9VERg8JB9tbudUh0yXB0qbI",
+              "queueId": null,
+              "targetSubjectType": null,
+              "targetSubjectId": null,
+              "priority": 100,
+              "isActive": true,
+              "enforcementPolicy": {},
+              "metadata": {},
+              "createdAt": "2026-02-28T02:39:40.292Z",
+              "updatedAt": "2026-02-28T02:39:40.292Z",
+              "deletedAt": null,
+              "createdBy": null,
+              "updatedBy": null,
+              "deletedBy": null
+            }
+          ],
+          "meta": {
+            "requestId": "e88b89f2-e465-4513-979c-8ce02d1939ae",
+            "timestamp": "2026-02-28T02:39:45.938Z"
+          }
+        },
+        "at": "2026-02-28T02:39:45.940Z"
+      },
+      {
+        "method": "POST",
+        "path": "/api/v1/bizes/3AHP8uUcvpKeXIeUjXO4XAEKVRL/policies/bindings",
+        "status": 201,
+        "requestBody": {
+          "policyTemplateId": "policy_template_3AHPBGtTV99dYHZxfezIfsA7Rw0",
+          "targetType": "biz",
+          "enforcementPolicy": {}
+        },
+        "responseBody": {
+          "success": true,
+          "data": {
+            "id": "policy_binding_3AHPBM51Hp672FWhC6HO4DgnfwG",
+            "bizId": "3AHP8uUcvpKeXIeUjXO4XAEKVRL",
+            "policyTemplateId": "policy_template_3AHPBGtTV99dYHZxfezIfsA7Rw0",
+            "targetType": "biz",
+            "locationId": null,
+            "resourceId": null,
+            "serviceId": null,
+            "serviceProductId": null,
+            "offerId": null,
+            "offerVersionId": null,
+            "queueId": null,
+            "targetSubjectType": null,
+            "targetSubjectId": null,
+            "priority": 100,
+            "isActive": true,
+            "enforcementPolicy": {},
+            "metadata": {},
+            "createdAt": "2026-02-28T02:39:45.966Z",
+            "updatedAt": "2026-02-28T02:39:45.966Z",
+            "deletedAt": null,
+            "createdBy": null,
+            "updatedBy": null,
+            "deletedBy": null
+          },
+          "meta": {
+            "requestId": "d63cf3f4-0510-49bc-bb14-95908340dc0c",
+            "timestamp": "2026-02-28T02:39:45.970Z"
+          }
+        },
+        "at": "2026-02-28T02:39:45.972Z"
+      },
+      {
+        "method": "POST",
+        "path": "/api/v1/agents/execute",
+        "status": 200,
+        "requestBody": {
+          "tool": "bizing.auth.me",
+          "params": {}
+        },
+        "responseBody": {
+          "success": true,
+          "data": {
+            "tool": "bizing.auth.me",
+            "method": "GET",
+            "path": "/api/v1/auth/me",
+            "requestUrl": "http://localhost:6129/api/v1/auth/me",
+            "status": 200,
+            "success": true,
+            "response": {
+              "success": true,
+              "data": {
+                "user": {
+                  "id": "VBpADXValqUzuNWQzyUyc0qISqGwAzsF",
+                  "email": "owner-runner-1772246095692-6tp7oc@example.com",
+                  "role": "user"
+                },
+                "session": {
+                  "id": "machine-token:api_access_token_3AHPBMth9MrS7GKsOY2xGYCFQhg",
+                  "activeOrganizationId": "3AHP8uUcvpKeXIeUjXO4XAEKVRL"
+                },
+                "auth": {
+                  "source": "access_token",
+                  "scopes": [
+                    "bizes.read",
+                    "booking_orders.read",
+                    "booking_orders.create",
+                    "booking_orders.update"
+                  ],
+                  "credentialId": "api_credential_3AHPBJhQk89722h69bpEG5Fd1uY"
+                },
+                "memberships": [
+                  {
+                    "id": "3AHP4CG4tiVDH7DCjiMe8usSjmh",
+                    "name": "Clean Clinic",
+                    "slug": "sanitize-2rjf4kzf",
+                    "membershipId": "member_c9745d92e3ff41b1be7ab30a3ab67d89",
+                    "membershipRole": "owner",
+                    "membershipCreatedAt": "2026-02-28T02:38:48.146Z"
+                  },
+                  {
+                    "id": "3AHP4fHkyIZgIomrRjql1yGMavK",
+                    "name": "Robert'); DROP TABLE bizes;-- 3gi2",
+                    "slug": "sql-safe-86d6b0l8",
+                    "membershipId": "member_714f666a45024ac5a790d1d0df90029d",
+                    "membershipRole": "owner",
+                    "membershipCreatedAt": "2026-02-28T02:38:52.889Z"
+                  },
+                  {
+                    "id": "3AHOc2DFwcANbzH7pDu9BNlNVdx",
+                    "name": "Saga uc-1-the-appointment-heavy-professional-dr-ch",
+                    "slug": "uc-1-the-appointment-heavy-professional-dr-ch-8hz69rmx",
+                    "membershipId": "member_6ccb88a724cc4550858aa4945b3fd809",
+                    "membershipRole": "owner",
+                    "membershipCreatedAt": "2026-02-28T02:35:04.008Z"
+                  },
+                  {
+                    "id": "3AHOfEuhewLOpJNCZn4zsUm1Ked",
+                    "name": "Saga uc-1-the-group-event-organizer-gathering-gwen",
+                    "slug": "uc-1-the-group-event-organizer-gathering-gwen-r7j0h3yz",
+                    "membershipId": "member_bf28e0447b9f4b0ea8df0ef3558c6d3c",
+                    "membershipRole": "owner",
+                    "membershipCreatedAt": "2026-02-28T02:35:30.813Z"
+                  },
+                  {
+                    "id": "3AHOj3t8cU7CPPlTsDlcZqcoj43",
+                    "name": "Saga uc-1-the-solo-entrepreneur-sarah",
+                    "slug": "uc-1-the-solo-entrepreneur-sarah-n4leoeuj",
+                    "membershipId": "member_e67e2e5503494ded899aed9c684e748a",
+                    "membershipRole": "owner",
+                    "membershipCreatedAt": "2026-02-28T02:36:00.698Z"
+                  },
+                  {
+                    "id": "3AHOmmfA0ygozS5dWb8s6rlhlZB",
+                    "name": "Saga uc-10-the-ai-agent-builder-agent-avery",
+                    "slug": "uc-10-the-ai-agent-builder-agent-avery-jznd2376",
+                    "membershipId": "member_a13f87d7ba0c4e2ea555201590640241",
+                    "membershipRole": "owner",
+                    "membershipCreatedAt": "2026-02-28T02:36:30.670Z"
+                  },
+                  {
+                    "id": "3AHOqnN7SunPrwXLy7Xl9RZjYP9",
+                    "name": "Saga uc-10-the-confused-multi-biz-user-sam",
+                    "slug": "uc-10-the-confused-multi-biz-user-sam-oxhrhnru",
+                    "membershipId": "member_ab9f4c1a0d514afc8441b86bdcfa4419",
+                    "membershipRole": "owner",
+                    "membershipCreatedAt": "2026-02-28T02:37:02.580Z"
+                  },
+                  {
+                    "id": "3AHOtGWiseZoPiXtZoSLx1xEUd0",
+                    "name": "Saga uc-10-the-confused-multi-biz-user-sam-payment-shadow",
+                    "slug": "uc-10-the-confused-multi-biz-user-sam-payment-shadow-tmhmm3sf",
+                    "membershipId": "member_91a585b6d4b64e03ba6945701ce3e7dc",
+                    "membershipRole": "owner",
+                    "membershipCreatedAt": "2026-02-28T02:37:21.500Z"
+                  },
+                  {
+                    "id": "3AHOto0kPxLoNSN2pFCJMxsoz6K",
+                    "name": "Saga uc-10-the-multi-location-owner-marcus",
+                    "slug": "uc-10-the-multi-location-owner-marcus-6ghknza4",
+                    "membershipId": "member_81e7070d62624b1183910db4766bbc27",
+                    "membershipRole": "owner",
+                    "membershipCreatedAt": "2026-02-28T02:37:26.180Z"
+                  },
+                  {
+                    "id": "3AHOwrBQWJk1s1SwiPaBE5YOwZE",
+                    "name": "Saga uc-100-the-appointment-heavy-professional-dr-ch",
+                    "slug": "uc-100-the-appointment-heavy-professional-dr-ch-nzjyhins",
+                    "membershipId": "member_926dddb296ca474293cb2f307eed99fe",
+                    "membershipRole": "owner",
+                    "membershipCreatedAt": "2026-02-28T02:37:50.732Z"
+                  },
+                  {
+                    "id": "3AHP1ax4TRgKCMkQ5nIdvuL49lG",
+                    "name": "Saga uc-100-the-black-hat-hacker-spectre",
+                    "slug": "uc-100-the-black-hat-hacker-spectre-pafuw7u9",
+                    "membershipId": "member_ef3a51d6551a4929bba553c417d285a1",
+                    "membershipRole": "owner",
+                    "membershipCreatedAt": "2026-02-28T02:38:28.509Z"
+                  },
+                  {
+                    "id": "3AHP5UqQYlEFk7Mce9RQvrmWqQV",
+                    "name": "Saga uc-100-the-solo-entrepreneur-sarah",
+                    "slug": "uc-100-the-solo-entrepreneur-sarah-hyjkulox",
+                    "membershipId": "member_7d10b42bbda04344bcb4590a2313eb63",
+                    "membershipRole": "owner",
+                    "membershipCreatedAt": "2026-02-28T02:38:59.083Z"
+                  },
+                  {
+                    "id": "3AHP8uUcvpKeXIeUjXO4XAEKVRL",
+                    "name": "Saga uc-101-the-ai-agent-builder-agent-avery",
+                    "slug": "uc-101-the-ai-agent-builder-agent-avery-9w3640qx",
+                    "membershipId": "member_2277e1e7a3b54cbeba08f4e75f026bf0",
+                    "membershipRole": "owner",
+                    "membershipCreatedAt": "2026-02-28T02:39:26.495Z"
+                  }
+                ],
+                "activeBizId": "3AHP8uUcvpKeXIeUjXO4XAEKVRL",
+                "permissionKeys": [
+                  "acl.read",
+                  "acl.write",
+                  "auth.switch_active_biz",
+                  "availability_rules.read",
+                  "availability_rules.write",
+                  "bizes.archive",
+                  "bizes.create",
+                  "bizes.read",
+                  "bizes.update",
+                  "booking_orders.cancel",
+                  "booking_orders.create",
+                  "booking_orders.read",
+                  "booking_orders.status.update",
+                  "booking_orders.update",
+                  "calendars.read",
+                  "calendars.write",
+                  "communications.read",
+                  "communications.write",
+                  "compliance.read",
+                  "entitlements.read",
+                  "entitlements.write",
+                  "invitations.manage",
+                  "invitations.read",
+                  "locations.archive",
+                  "locations.create",
+                  "locations.read",
+                  "locations.update",
+                  "members.manage",
+                  "members.read",
+                  "offers.archive",
+                  "offers.create",
+                  "offers.read",
+                  "offers.update",
+                  "pricing.read",
+                  "pricing.write",
+                  "queue_entries.create",
+                  "queue_entries.read",
+                  "queue_entries.update",
+                  "queues.archive",
+                  "queues.create",
+                  "queues.read",
+                  "queues.update",
+                  "resources.archive",
+                  "resources.create",
+                  "resources.read",
+                  "resources.update",
+                  "sagas.manage",
+                  "sagas.read",
+                  "sagas.run",
+                  "service_products.archive",
+                  "service_products.create",
+                  "service_products.read",
+                  "service_products.update",
+                  "services.archive",
+                  "services.create",
+                  "services.read",
+                  "services.update"
+                ]
+              },
+              "meta": {
+                "requestId": "38783bd4-0e26-497f-9e4e-c0730dc40ba9",
+                "timestamp": "2026-02-28T02:39:48.795Z"
+              }
+            }
+          },
+          "meta": {
+            "requestId": "38783bd4-0e26-497f-9e4e-c0730dc40ba9",
+            "timestamp": "2026-02-28T02:39:48.796Z"
+          }
+        },
+        "at": "2026-02-28T02:39:48.797Z"
+      },
+      {
+        "method": "POST",
+        "path": "/api/v1/agents/execute",
+        "status": 429,
+        "requestBody": {
+          "tool": "bizing.auth.me",
+          "params": {}
+        },
+        "responseBody": {
+          "success": false,
+          "error": {
+            "code": "RATE_LIMITED",
+            "message": "Agent execution exceeded biz policy rate limit.",
+            "details": {
+              "bizId": "3AHP8uUcvpKeXIeUjXO4XAEKVRL",
+              "authSource": "access_token",
+              "authCredentialId": "api_credential_3AHPBJhQk89722h69bpEG5Fd1uY",
+              "maxRequestsPerMinute": 1,
+              "observedRequestsLastMinute": 2,
+              "enforcementSource": "in_memory_window"
+            }
+          },
+          "meta": {
+            "requestId": "57dcb55b-8510-4529-a5ea-0bf911ed57e1",
+            "timestamp": "2026-02-28T02:39:48.832Z"
+          }
+        },
+        "at": "2026-02-28T02:39:48.834Z"
+      }
+    ],
+    "contract": null
+  },
+  "metadata": {}
+}

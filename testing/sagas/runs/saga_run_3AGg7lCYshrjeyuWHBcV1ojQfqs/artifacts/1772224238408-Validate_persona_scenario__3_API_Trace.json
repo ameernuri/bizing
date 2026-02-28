@@ -1,0 +1,46 @@
+{
+  "stepKey": "persona-scenario-validate-3",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AGg7lCYshrjeyuWHBcV1ojQfqs/steps/persona-scenario-validate-3/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "persona-scenario-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aims to validate the scenario where a payment goes to the wrong business, but the evidence does not provide any information on how the system handles such errors or what the expected behavior is in this case. The linked use cases and prior steps do not address the specific scenario of misdirected payments, leading to a clear gap in the evidence required to confirm the expected result of the exploratory step. Therefore, the requirement is not satisfied.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "exploratoryStep.instruction",
+            "linkedUseCases[0].summary"
+          ],
+          "gaps": [
+            "No evidence of how the system handles payments going to the wrong business."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Verify payment error handling",
+              "endpoint": "/api/v1/payment/error-handling",
+              "assertion": "Check the system's response when a payment is incorrectly directed."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "85d1925d-42f8-4f3a-a91b-3bdfaef4bd9b",
+          "timestamp": "2026-02-27T20:30:38.055Z"
+        }
+      },
+      "at": "2026-02-27T20:30:38.056Z"
+    }
+  ]
+}

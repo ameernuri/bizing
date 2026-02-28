@@ -1,0 +1,45 @@
+{
+  "stepKey": "uc-need-validate-7",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AGgT73TVka6FQiMiXhNVJ3JnrP/steps/uc-need-validate-7/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the visibility of the date of the last inspection on the equipment tag/QR code. However, the evidence provided does not include any information confirming that the date of the last inspection is displayed on the QR code for the forklift. The linked use case mentions the QR code shows 'FAILED INSPECTION - DO NOT USE', but it does not address the specific requirement of displaying the last inspection date, indicating a clear gap in the evidence.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].needs"
+          ],
+          "gaps": [
+            "No evidence confirming that the date of the last inspection is visible on the equipment tag/QR code."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add validation for last inspection date visibility",
+              "endpoint": "/api/v1/equipment/{equipmentId}/inspection",
+              "assertion": "Verify that the date of the last inspection is included in the response for the equipment's QR code."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "a25f1fc8-f93a-4356-88f7-d3d6c5c9d6b5",
+          "timestamp": "2026-02-27T20:33:04.475Z"
+        }
+      },
+      "at": "2026-02-27T20:33:04.476Z"
+    }
+  ]
+}

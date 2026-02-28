@@ -1,0 +1,45 @@
+{
+  "stepKey": "uc-need-validate-12",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AGg3obHWT9lLVZjNdPq5G9ewLc/steps/uc-need-validate-12/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Insufficient evidence to validate the requirement for the custom CRM integration.",
+          "assessment": "The exploratory step aimed to validate the requirement that upon a `customer.created` event, a POST should be made to the company CRM, resulting in a new lead visible in Salesforce. However, the evidence provided does not include any concrete API reads or checks confirming that this integration is functioning as required. The prior steps do not demonstrate any successful execution of the `customer.created` event leading to a POST to the CRM, indicating a lack of necessary evidence to confirm or deny the requirement's satisfaction.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases"
+          ],
+          "gaps": [
+            "No evidence of the `customer.created` event triggering a POST to the company CRM."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add evidence for CRM integration",
+              "endpoint": "/api/v1/crm-integration",
+              "assertion": "Verify that the `customer.created` event results in a POST to the company CRM."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "4c35b7a8-da76-4773-9e6d-3049cfa2ebb8",
+          "timestamp": "2026-02-27T20:29:55.535Z"
+        }
+      },
+      "at": "2026-02-27T20:29:55.539Z"
+    }
+  ]
+}

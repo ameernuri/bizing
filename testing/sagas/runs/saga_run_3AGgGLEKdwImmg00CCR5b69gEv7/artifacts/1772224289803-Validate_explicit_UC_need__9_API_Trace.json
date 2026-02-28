@@ -1,0 +1,45 @@
+{
+  "stepKey": "uc-need-validate-9",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AGgGLEKdwImmg00CCR5b69gEv7/steps/uc-need-validate-9/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the requirement for payment terms (Net-15, Net-30, upon completion). However, while the linked use case mentions that payment is scheduled as Net-15, there is no concrete evidence provided that confirms the implementation of this requirement across the necessary entities or endpoints. The lack of specific API reads or checks to validate the payment terms leads to a clear gap in meeting the requirement.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].needs"
+          ],
+          "gaps": [
+            "Payment terms (Net-15, Net-30, upon completion) are not validated or evidenced as implemented."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add deterministic evidence for payment terms",
+              "endpoint": "/api/v1/payment_terms",
+              "assertion": "Define concrete endpoint calls and assertions that directly verify the payment terms requirement."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "936f6a12-2700-4501-bbdc-b6d38acab6d2",
+          "timestamp": "2026-02-27T20:31:29.364Z"
+        }
+      },
+      "at": "2026-02-27T20:31:29.365Z"
+    }
+  ]
+}

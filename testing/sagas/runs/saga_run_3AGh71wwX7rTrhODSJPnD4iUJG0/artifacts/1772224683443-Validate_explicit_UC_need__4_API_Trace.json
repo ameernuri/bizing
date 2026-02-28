@@ -1,0 +1,46 @@
+{
+  "stepKey": "uc-need-validate-4",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AGh71wwX7rTrhODSJPnD4iUJG0/steps/uc-need-validate-4/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate that the winner/loser response outcomes are reflected in the staffing assignment lifecycle. However, the evidence provided does not include any concrete API reads or persisted state checks that confirm this requirement is met. The linked use case explicitly states the need for this reflection in the staffing assignment lifecycle, but without supporting evidence, there is a clear gap in validation.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].needs[3]",
+            "exploratoryStep.instruction"
+          ],
+          "gaps": [
+            "No evidence confirming that winner/loser response outcomes are reflected in staffing assignment lifecycle."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add validation for winner/loser outcomes",
+              "endpoint": "/api/v1/staffing_assignments",
+              "assertion": "Verify that staffing assignments reflect winner/loser outcomes from the auction."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "765d8dba-8db6-4ea9-a562-d9f078732e29",
+          "timestamp": "2026-02-27T20:38:03.191Z"
+        }
+      },
+      "at": "2026-02-27T20:38:03.193Z"
+    }
+  ]
+}

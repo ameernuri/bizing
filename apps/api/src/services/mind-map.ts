@@ -1,7 +1,6 @@
 import { readFileSync, readdirSync, statSync } from 'fs'
 import { join, dirname, relative } from 'path'
-
-const MIND_DIR = join(process.cwd(), '..', '..', 'mind')
+import { MIND_DIR } from './mind-root.js'
 
 interface MindNode {
   path: string

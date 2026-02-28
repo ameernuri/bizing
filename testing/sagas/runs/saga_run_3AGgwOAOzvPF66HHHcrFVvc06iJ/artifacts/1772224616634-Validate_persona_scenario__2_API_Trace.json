@@ -1,0 +1,46 @@
+{
+  "stepKey": "persona-scenario-validate-2",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AGgwOAOzvPF66HHHcrFVvc06iJ/steps/persona-scenario-validate-2/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "persona-scenario-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the effectiveness of rate limiting in the context of a DDoS attack scenario. However, the evidence provided does not demonstrate that rate limiting has been implemented or tested, leading to a clear gap in the requirement. Specifically, the linked use case outlines the need for a runtime availability gate and queue ETA signal support, but there are no API reads or state checks confirming their functionality, which are critical for validating the expected outcome of the scenario.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].needs[0]",
+            "linkedUseCases[0].needs[1]"
+          ],
+          "gaps": [
+            "No evidence of rate limiting effectiveness being validated."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add deterministic evidence contract for rate limiting",
+              "endpoint": "/api/v1/rate-limiting/validate",
+              "assertion": "Define concrete endpoint calls and assertions that directly verify the effectiveness of rate limiting under DDoS attack conditions."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "12dfa241-330f-449b-ba73-2231c65d6796",
+          "timestamp": "2026-02-27T20:36:56.203Z"
+        }
+      },
+      "at": "2026-02-27T20:36:56.204Z"
+    }
+  ]
+}

@@ -1,0 +1,45 @@
+{
+  "stepKey": "uc-need-validate-3",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AGg7lCYshrjeyuWHBcV1ojQfqs/steps/uc-need-validate-3/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the requirement of dual-sided rewards, where both the referrer and referee receive rewards. However, the evidence only confirms that the referrer (Sarah) receives a reward ($25 account credit) but does not provide any information about the referee receiving a reward. The linked use case mentions a 20% discount for the friend who booked, but it does not explicitly confirm that this is a reward given as part of the referral program, leading to a gap in evidence for the requirement of dual-sided rewards being satisfied.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].summary"
+          ],
+          "gaps": [
+            "No evidence that the referee receives a reward as part of the dual-sided rewards requirement."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Verify referee reward assignment",
+              "endpoint": "/api/v1/referral/rewards",
+              "assertion": "Check if the referee receives a reward upon booking completion."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "0d06cb08-5bec-4bc2-9d60-5c6a9d4d6bfb",
+          "timestamp": "2026-02-27T20:29:39.948Z"
+        }
+      },
+      "at": "2026-02-27T20:29:39.949Z"
+    }
+  ]
+}

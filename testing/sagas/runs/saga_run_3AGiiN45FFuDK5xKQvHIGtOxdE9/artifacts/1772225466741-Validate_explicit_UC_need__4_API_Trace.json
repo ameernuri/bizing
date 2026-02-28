@@ -1,0 +1,46 @@
+{
+  "stepKey": "uc-need-validate-4",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AGiiN45FFuDK5xKQvHIGtOxdE9/steps/uc-need-validate-4/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the requirement for 'Medical clearances', but the evidence indicates a gap. The linked use case specifies that a medical clearance is required and mentions that the diver's medical clearance has expired, which directly implies that the requirement is not met. However, there is no evidence provided that confirms the current state of medical clearances or any checks performed to validate this requirement, leading to a clear gap in the validation process.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].Needs",
+            "exploratoryStep.instruction"
+          ],
+          "gaps": [
+            "No evidence of current medical clearance validation for customers."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add medical clearance validation endpoint",
+              "endpoint": "/api/v1/validate-medical-clearance",
+              "assertion": "Define a concrete endpoint that checks the validity of medical clearances for customers."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "d7aa5122-172e-4d4c-8c78-34195aacb138",
+          "timestamp": "2026-02-27T20:51:06.059Z"
+        }
+      },
+      "at": "2026-02-27T20:51:06.059Z"
+    }
+  ]
+}

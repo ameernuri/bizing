@@ -85,14 +85,21 @@ const advancedPaymentBodySchema = z.object({
   tenders: z.array(advancedTenderSchema).min(1),
   metadata: z.record(z.unknown()).optional(),
 })
+const refundPaymentBodySchema = z.object({
+  amountMinor: z.number().int().positive(),
+  reason: z.string().max(240).optional(),
+  fallbackMode: z.string().max(120).optional(),
+  metadata: z.record(z.unknown()).optional(),
+})
 
 /**
- * Guarantees a deterministic routing account for simulated gateway writes.
+ * Guarantees a deterministic routing account for platform-managed Stripe-like writes.
  *
  * Why this helper matters:
  * - payment_intents/transactions can reference one processor account,
- * - this avoids null-routing in test flows while keeping real integrations
- *   free to replace routing later.
+ * - this avoids null-routing in test flows while staying aligned with Bizing's
+ *   default merchant-of-record model: platform-managed Stripe accounts first,
+ *   custom processors optional later.
  */
 async function getOrCreateDefaultProcessorAccount(bizId: string) {
   const existing = await db.query.paymentProcessorAccounts.findFirst({
@@ -109,8 +116,8 @@ async function getOrCreateDefaultProcessorAccount(bizId: string) {
     .insert(paymentProcessorAccounts)
     .values({
       bizId,
-      providerKey: 'bizing_platform',
-      processorAccountRef: `platform-${bizId}`,
+      providerKey: 'stripe',
+      processorAccountRef: `stripe-platform-${bizId}`,
       status: 'active',
       ownershipModel: 'platform_managed',
       commerceModel: 'merchant_of_record',
@@ -120,9 +127,9 @@ async function getOrCreateDefaultProcessorAccount(bizId: string) {
       supportsSplitTender: true,
       supportsDisputes: true,
       supportsRefunds: true,
-      configuration: { mode: 'simulated' },
-      capabilities: { simulated: true },
-      metadata: { source: 'payments-route' },
+      configuration: { mode: 'simulated', merchantOfRecord: 'bizing_platform' },
+      capabilities: { simulated: true, stripeCompatible: true },
+      metadata: { source: 'payments-route', defaultProvider: 'stripe' },
     })
     .returning()
 
@@ -273,6 +280,111 @@ paymentRoutes.post(
     const currency = parsed.data.currency ?? booking.currency
     const tenderTotalMinor = parsed.data.tenders.reduce((sum, row) => sum + row.allocatedMinor, 0)
     const expectedTotalMinor = booking.totalMinor + tipMinor
+    const simulatedDeclineTender = parsed.data.tenders.find((row) => row.metadata?.simulateDecline === true)
+    const processor = await getOrCreateDefaultProcessorAccount(bizId)
+
+    if (simulatedDeclineTender) {
+      const [intent] = await db
+        .insert(paymentIntents)
+        .values({
+          bizId,
+          bookingOrderId,
+          paymentProcessorAccountId: processor.id,
+          status: 'failed',
+          currency,
+          amountTargetMinor: expectedTotalMinor,
+          amountCapturedMinor: 0,
+          amountRefundedMinor: 0,
+          requiresCapture: false,
+          source: 'public_checkout',
+          amountSnapshot: {
+            bookingTotalMinor: booking.totalMinor,
+            tipMinor,
+            expectedTotalMinor,
+            simulatedDecline: true,
+          },
+          metadata: parsed.data.metadata ?? {},
+        })
+        .returning()
+
+      const [method] = await db
+        .insert(paymentMethods)
+        .values({
+          bizId,
+          paymentProcessorAccountId: processor.id,
+          type: simulatedDeclineTender.methodType,
+          provider: simulatedDeclineTender.provider ?? autoProviderForMethod(simulatedDeclineTender.methodType),
+          providerMethodRef: simulatedDeclineTender.providerMethodRef ?? `declined-${Date.now()}-${crypto.randomUUID()}`,
+          label: simulatedDeclineTender.label ?? 'Declined Tender',
+          isDefault: false,
+          isActive: true,
+          metadata: {
+            ...(simulatedDeclineTender.metadata ?? {}),
+            checkoutUserId: user.id,
+          },
+        })
+        .returning()
+
+      const [intentTender] = await db
+        .insert(paymentIntentTenders)
+        .values({
+          bizId,
+          paymentIntentId: intent.id,
+          paymentMethodId: method.id,
+          methodType: simulatedDeclineTender.methodType,
+          allocatedMinor: expectedTotalMinor,
+          capturedMinor: 0,
+          refundedMinor: 0,
+          sortOrder: 1,
+          metadata: simulatedDeclineTender.metadata ?? {},
+        })
+        .returning()
+
+      const [transaction] = await db
+        .insert(paymentTransactions)
+        .values({
+          bizId,
+          paymentIntentId: intent.id,
+          bookingOrderId,
+          paymentIntentTenderId: intentTender.id,
+          paymentMethodId: method.id,
+          paymentProcessorAccountId: processor.id,
+          type: 'charge',
+          status: 'failed',
+          amountMinor: expectedTotalMinor,
+          currency,
+          occurredAt: new Date(),
+          providerPayload: { source: 'simulated_decline' },
+          metadata: {
+            simulateDecline: true,
+          },
+        })
+        .returning()
+
+      await db.insert(paymentIntentEvents).values([
+        {
+          bizId,
+          paymentIntentId: intent.id,
+          eventType: 'created',
+          actorUserId: user.id,
+          details: { source: 'public_checkout' },
+        },
+        {
+          bizId,
+          paymentIntentId: intent.id,
+          eventType: 'failed',
+          previousStatus: 'requires_confirmation',
+          nextStatus: 'failed',
+          actorUserId: user.id,
+          details: { reason: 'simulated_decline', paymentTransactionId: transaction.id },
+        },
+      ])
+
+      return fail(c, 'PAYMENT_DECLINED', 'Primary payment method was declined.', 402, {
+        paymentIntentId: intent.id,
+      })
+    }
+
     if (tenderTotalMinor !== expectedTotalMinor) {
       return fail(
         c,
@@ -282,7 +394,6 @@ paymentRoutes.post(
       )
     }
 
-    const processor = await getOrCreateDefaultProcessorAccount(bizId)
     const existingLines = await ensureBaseBookingLine({
       bizId,
       bookingOrderId,
@@ -537,6 +648,114 @@ paymentRoutes.post(
   },
 )
 
+paymentRoutes.post(
+  '/bizes/:bizId/payment-intents/:paymentIntentId/refunds',
+  requireAuth,
+  requireBizAccess('bizId'),
+  requireAclPermission('booking_orders.update', { bizIdParam: 'bizId' }),
+  async (c) => {
+    const { bizId, paymentIntentId } = c.req.param()
+    const parsed = refundPaymentBodySchema.safeParse(await c.req.json().catch(() => null))
+    if (!parsed.success) {
+      return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
+    }
+
+    const intent = await db.query.paymentIntents.findFirst({
+      where: and(eq(paymentIntents.bizId, bizId), eq(paymentIntents.id, paymentIntentId)),
+    })
+    if (!intent) return fail(c, 'NOT_FOUND', 'Payment intent not found.', 404)
+
+    const refundableMinor = Math.max(0, Number(intent.amountCapturedMinor ?? 0) - Number(intent.amountRefundedMinor ?? 0))
+    if (parsed.data.amountMinor > refundableMinor) {
+      return fail(c, 'REFUND_EXCEEDS_AVAILABLE', 'Refund amount exceeds captured balance.', 409, {
+        refundableMinor,
+      })
+    }
+
+    const chargeTransactions = await db.query.paymentTransactions.findMany({
+      where: and(eq(paymentTransactions.bizId, bizId), eq(paymentTransactions.paymentIntentId, paymentIntentId)),
+      orderBy: [asc(paymentTransactions.occurredAt)],
+    })
+    const successfulCharges = chargeTransactions.filter((row) => row.type === 'charge' && row.status === 'succeeded')
+    if (successfulCharges.length === 0) {
+      return fail(c, 'NO_REFUNDABLE_CHARGE', 'No succeeded charge exists for this payment intent.', 409)
+    }
+
+    let remainingMinor = parsed.data.amountMinor
+    const refundRows: Array<{ paymentTransactionId: string; amountMinor: number }> = []
+    for (const charge of successfulCharges) {
+      if (remainingMinor <= 0) break
+      const alreadyRefunded = chargeTransactions
+        .filter((row) => row.type === 'refund' && row.paymentIntentTenderId === charge.paymentIntentTenderId)
+        .reduce((sum, row) => sum + Number(row.amountMinor ?? 0), 0)
+      const availableForCharge = Math.max(0, Number(charge.amountMinor ?? 0) - alreadyRefunded)
+      if (availableForCharge <= 0) continue
+      const amountMinor = Math.min(remainingMinor, availableForCharge)
+      const [refundTx] = await db
+        .insert(paymentTransactions)
+        .values({
+          bizId,
+          paymentIntentId,
+          bookingOrderId: intent.bookingOrderId,
+          paymentIntentTenderId: charge.paymentIntentTenderId,
+          paymentMethodId: charge.paymentMethodId,
+          paymentProcessorAccountId: charge.paymentProcessorAccountId,
+          type: 'refund',
+          status: 'succeeded',
+          amountMinor,
+          currency: intent.currency,
+          occurredAt: new Date(),
+          providerPayload: { source: 'manual_refund' },
+          metadata: {
+            ...(parsed.data.metadata ?? {}),
+            reason: parsed.data.reason ?? null,
+            fallbackMode: parsed.data.fallbackMode ?? null,
+            sourceChargeTransactionId: charge.id,
+          },
+        })
+        .returning()
+      refundRows.push({ paymentTransactionId: refundTx.id, amountMinor })
+      remainingMinor -= amountMinor
+    }
+
+    const nextRefundedMinor = Number(intent.amountRefundedMinor ?? 0) + parsed.data.amountMinor
+    const nextStatus =
+      nextRefundedMinor >= Number(intent.amountCapturedMinor ?? 0) ? 'refunded' : intent.status
+
+    const [updatedIntent] = await db
+      .update(paymentIntents)
+      .set({
+        amountRefundedMinor: nextRefundedMinor,
+        status: nextStatus,
+      })
+      .where(and(eq(paymentIntents.bizId, bizId), eq(paymentIntents.id, paymentIntentId)))
+      .returning()
+
+    await db.insert(paymentIntentEvents).values({
+      bizId,
+      paymentIntentId,
+      eventType: 'refunded',
+      previousStatus: intent.status,
+      nextStatus,
+      previousAmountRefundedMinor: intent.amountRefundedMinor,
+      nextAmountRefundedMinor: nextRefundedMinor,
+      actorUserId: getCurrentUser(c)?.id ?? null,
+      details: {
+        amountMinor: parsed.data.amountMinor,
+        reason: parsed.data.reason ?? null,
+        fallbackMode: parsed.data.fallbackMode ?? null,
+      },
+    })
+
+    return ok(c, {
+      paymentIntentId,
+      refundedMinor: parsed.data.amountMinor,
+      refundTransactionCount: refundRows.length,
+      paymentIntent: updatedIntent,
+    }, 201)
+  },
+)
+
 paymentRoutes.get(
   '/bizes/:bizId/payment-intents',
   requireAuth,
@@ -620,7 +839,15 @@ paymentRoutes.get(
     })
     if (!intent) return fail(c, 'NOT_FOUND', 'Payment intent not found.', 404)
 
-    const [tenders, lineAllocations, transactions, transactionLineAllocations] = await Promise.all([
+    const [processorAccount, tenders, lineAllocations, transactions, transactionLineAllocations] = await Promise.all([
+      intent.paymentProcessorAccountId
+        ? db.query.paymentProcessorAccounts.findFirst({
+            where: and(
+              eq(paymentProcessorAccounts.bizId, bizId),
+              eq(paymentProcessorAccounts.id, intent.paymentProcessorAccountId),
+            ),
+          })
+        : Promise.resolve(null),
       db.query.paymentIntentTenders.findMany({
         where: and(
           eq(paymentIntentTenders.bizId, bizId),
@@ -653,6 +880,7 @@ paymentRoutes.get(
 
     return ok(c, {
       intent,
+      processorAccount,
       tenders,
       lineAllocations,
       transactions,

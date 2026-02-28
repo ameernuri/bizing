@@ -1,0 +1,46 @@
+{
+  "stepKey": "uc-need-validate-5",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AGfr30ADlFK8fcbq0X67szxCRt/steps/uc-need-validate-5/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the requirement for 'Auto-reminders for incomplete items', but the evidence does not provide sufficient API reads or state checks to confirm this functionality. While the linked use case mentions an automated reminder sent to the patient, there is no concrete evidence of how this reminder is triggered or managed through the API. This indicates a clear gap in the evidence needed to satisfy the requirement.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "exploratoryStep.instruction",
+            "linkedUseCases[0].needs[5]"
+          ],
+          "gaps": [
+            "No evidence of API endpoints or state checks for the implementation of auto-reminders for incomplete items."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add deterministic evidence contract for auto-reminders",
+              "endpoint": "/api/v1/reminders",
+              "assertion": "Define concrete endpoint calls and assertions that directly verify the functionality of auto-reminders for incomplete items."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "2d259131-bf4c-4823-a99a-a96a2f18401b",
+          "timestamp": "2026-02-27T20:27:33.646Z"
+        }
+      },
+      "at": "2026-02-27T20:27:33.652Z"
+    }
+  ]
+}

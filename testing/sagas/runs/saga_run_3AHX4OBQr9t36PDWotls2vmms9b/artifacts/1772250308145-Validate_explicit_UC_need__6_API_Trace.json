@@ -1,0 +1,45 @@
+{
+  "stepKey": "uc-need-validate-6",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AHX4OBQr9t36PDWotls2vmms9b/steps/uc-need-validate-6/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the requirement of a fair distribution algorithm, which states that the system should not always ask the same person for coverage. However, the evidence provided does not demonstrate that the algorithm is functioning as intended. The linked use case mentions the need for a fair distribution algorithm, but there are no concrete API reads or persisted state checks that confirm its implementation or effectiveness, leading to a clear gap in meeting the requirement.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].needs[6]"
+          ],
+          "gaps": [
+            "No evidence of the fair distribution algorithm being implemented or functioning."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Verify fair distribution algorithm implementation",
+              "endpoint": "/api/v1/fair-distribution",
+              "assertion": "Check if the algorithm is applied when sending notifications to substitutes."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "0f3e845c-c7bc-4e61-9c1e-6d2afcec5a73",
+          "timestamp": "2026-02-28T03:45:08.088Z"
+        }
+      },
+      "at": "2026-02-28T03:45:08.089Z"
+    }
+  ]
+}

@@ -1,0 +1,46 @@
+{
+  "stepKey": "uc-need-validate-2",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AGiJDneawQ0jpDVQOhQ1xETMCi/steps/uc-need-validate-2/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the requirement for the expiration and status lifecycle (draft/sent/accepted/expired/rejected). However, the evidence provided does not include any checks or confirmations regarding the lifecycle statuses of quotes or bookings, which are critical to fulfilling this requirement. The existing evidence primarily focuses on booking orders and their statuses but fails to address the specific lifecycle states required for validation.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].bodyMarkdownPreview",
+            "priorStepEvidence[6].evidence"
+          ],
+          "gaps": [
+            "Lack of evidence confirming the implementation of expiration and status lifecycle for quotes and bookings."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add lifecycle status checks",
+              "endpoint": "/api/v1/quotes/{quoteId}/status",
+              "assertion": "Verify that the quote status reflects the expected lifecycle states (draft/sent/accepted/expired/rejected)."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "1681dc85-29c7-48da-9dc3-bbb4090227c9",
+          "timestamp": "2026-02-27T20:47:38.480Z"
+        }
+      },
+      "at": "2026-02-27T20:47:38.483Z"
+    }
+  ]
+}

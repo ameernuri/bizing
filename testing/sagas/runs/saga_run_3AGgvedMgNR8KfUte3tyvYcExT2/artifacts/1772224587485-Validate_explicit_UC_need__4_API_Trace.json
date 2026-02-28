@@ -1,0 +1,46 @@
+{
+  "stepKey": "uc-need-validate-4",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AGgvedMgNR8KfUte3tyvYcExT2/steps/uc-need-validate-4/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the requirement of a waitlist with priority bidding. However, the evidence provided only confirms that customers can enter a waitlist/queue flow, but does not demonstrate any mechanism for priority bidding among waitlisted customers. This indicates a clear gap in the requirement as the necessary functionality is not evidenced in the current implementation.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "exploratoryStep.expectedResult",
+            "priorStepEvidence[5].evidence"
+          ],
+          "gaps": [
+            "No evidence of priority bidding mechanism for waitlisted customers."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Implement priority bidding for waitlisted customers",
+              "endpoint": "/api/v1/waitlist/priority-bid",
+              "assertion": "Define the API behavior for priority bidding on the waitlist."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "de5b6c61-d835-4377-978d-20debbfeedbc",
+          "timestamp": "2026-02-27T20:36:27.205Z"
+        }
+      },
+      "at": "2026-02-27T20:36:27.206Z"
+    }
+  ]
+}

@@ -1,0 +1,46 @@
+{
+  "stepKey": "uc-need-validate-5",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AIlcj9yM4l1QpOS2IfkmVVIhp6/steps/uc-need-validate-5/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the requirement for a fallback channel policy when the preferred channel is blocked. However, the evidence provided does not confirm that the system correctly implements this policy, as it only describes a scenario where SMS is blocked due to quiet hours, but does not explicitly state that an email is sent as a fallback. This indicates a gap in the requirement coverage, as the evidence does not demonstrate that the fallback mechanism is functioning as intended.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].bodyMarkdownPreview",
+            "exploratoryStep.instruction"
+          ],
+          "gaps": [
+            "Lack of evidence confirming the fallback channel policy when SMS is blocked."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add deterministic evidence for fallback channel policy",
+              "endpoint": null,
+              "assertion": "Define concrete endpoint calls and assertions that directly verify the fallback channel policy when the preferred channel is blocked."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "43cf09c7-44cb-4fdd-a664-1f2ae42452f6",
+          "timestamp": "2026-02-28T14:14:29.679Z"
+        }
+      },
+      "at": "2026-02-28T14:14:29.680Z"
+    }
+  ]
+}

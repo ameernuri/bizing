@@ -1,0 +1,52 @@
+{
+  "stepKey": "persona-scenario-validate-3",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AGfGmPuNEi3SYhL7wd0xq8KQWQ/steps/persona-scenario-validate-3/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "persona-scenario-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "The exploratory step cannot be validated due to insufficient evidence.",
+          "assessment": "The evidence provided does not confirm the implementation or functionality of the algorithm required to validate the persona scenario. Specifically, there is no concrete evidence demonstrating that the algorithm can hide 20-40% of slots, nor is there any indication that it randomizes which slots are hidden. As a result, the validation of the expected outcome remains inconclusive.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].bodyMarkdownPreview",
+            "priorStepEvidence[0].evidence"
+          ],
+          "gaps": [
+            "No evidence of the algorithm's implementation or its ability to hide 20-40% of slots.",
+            "No evidence confirming the implementation of the randomization of hidden slots."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Validate algorithm implementation",
+              "endpoint": "/api/v1/algorithm/validate",
+              "assertion": "Confirm that the algorithm hides 20-40% of actual open slots as required."
+            },
+            {
+              "title": "Validate randomization of hidden slots",
+              "endpoint": "/api/v1/algorithm/randomization",
+              "assertion": "Confirm that the algorithm randomizes which slots are hidden to avoid patterns."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "353dab99-61c6-4161-8026-366efaa90e8e",
+          "timestamp": "2026-02-27T20:24:39.931Z"
+        }
+      },
+      "at": "2026-02-27T20:24:39.953Z"
+    }
+  ]
+}

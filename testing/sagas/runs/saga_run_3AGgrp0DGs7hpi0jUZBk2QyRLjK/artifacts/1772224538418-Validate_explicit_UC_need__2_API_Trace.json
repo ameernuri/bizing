@@ -1,0 +1,46 @@
+{
+  "stepKey": "uc-need-validate-2",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AGgrp0DGs7hpi0jUZBk2QyRLjK/steps/uc-need-validate-2/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The evidence provided does not include any concrete API reads or persisted state checks that confirm the requirement for aggregation by canonical code for enterprise dashboards is satisfied. The linked use case mentions the need for this aggregation, but the exploratory step instruction specifically calls for validation through API reads, which are absent. Therefore, there is a clear gap in the evidence needed to validate this requirement.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "exploratoryStep.instruction",
+            "linkedUseCases[0].bodyMarkdownPreview"
+          ],
+          "gaps": [
+            "No concrete API reads or persisted state checks provided to validate aggregation by canonical code."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add API evidence for aggregation validation",
+              "endpoint": "/api/v1/aggregation/validate",
+              "assertion": "Verify that the aggregation by canonical code is correctly implemented and returns expected results."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "6ddc8a43-9ecb-4b45-9fd1-135866aece63",
+          "timestamp": "2026-02-27T20:35:38.283Z"
+        }
+      },
+      "at": "2026-02-27T20:35:38.284Z"
+    }
+  ]
+}

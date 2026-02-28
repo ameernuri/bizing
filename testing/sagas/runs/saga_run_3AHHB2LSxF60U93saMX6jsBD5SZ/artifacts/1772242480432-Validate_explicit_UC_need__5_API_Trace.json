@@ -1,0 +1,46 @@
+{
+  "stepKey": "uc-need-validate-5",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AHHB2LSxF60U93saMX6jsBD5SZ/steps/uc-need-validate-5/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the requirement of group coordination for split payments. However, the evidence does not demonstrate that the system supports this functionality effectively. While there are multiple bookings confirmed, there is no explicit evidence showing that the payments were split among multiple customers, which is a critical aspect of the requirement.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].summary",
+            "priorStepEvidence[1].evidence"
+          ],
+          "gaps": [
+            "No evidence of split payment functionality being executed or validated."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Validate split payment functionality",
+              "endpoint": "/api/v1/payments/split",
+              "assertion": "Check if the system allows multiple users to pay for a single booking."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "72ae47a8-b6bb-4c37-8b54-2f5c27163866",
+          "timestamp": "2026-02-28T01:34:39.795Z"
+        }
+      },
+      "at": "2026-02-28T01:34:39.798Z"
+    }
+  ]
+}

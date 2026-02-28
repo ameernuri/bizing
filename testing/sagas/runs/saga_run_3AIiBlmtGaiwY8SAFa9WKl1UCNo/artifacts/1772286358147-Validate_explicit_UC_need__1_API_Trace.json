@@ -1,0 +1,100 @@
+{
+  "stepKey": "uc-need-validate-1",
+  "callCount": 2,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/bizes/3AIiBo2T5CkoJ4fPWJHJUDO2Pqw/subject-subscriptions",
+      "status": 201,
+      "requestBody": {
+        "targetSubjectType": "offer_watch",
+        "targetSubjectId": "offer-watch-offer_3AIiBtH9DmNjmKRXiWqSqb7ul1G",
+        "targetDisplayName": "Saga Validation Subject",
+        "subscriptionType": "watch",
+        "status": "active",
+        "deliveryMode": "instant",
+        "preferredChannel": "in_app",
+        "minDeliveryIntervalMinutes": 0,
+        "autoRegisterTargetSubject": true,
+        "metadata": {
+          "source": "rerun-sagas",
+          "sagaKey": "uc-120-the-solo-entrepreneur-sarah"
+        }
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "id": "graph_subject_sub_3AIiBzACG6SROtOIen4n1oV6kHa",
+          "subscriberIdentityId": "graph_identity_3AIi56gyKyH8wDfrAFpP6toprXc",
+          "targetSubjectBizId": "3AIiBo2T5CkoJ4fPWJHJUDO2Pqw",
+          "targetSubjectType": "offer_watch",
+          "targetSubjectId": "offer-watch-offer_3AIiBtH9DmNjmKRXiWqSqb7ul1G",
+          "subscriptionType": "watch",
+          "status": "active",
+          "filterPolicy": {},
+          "deliveryMode": "instant",
+          "preferredChannel": "in_app",
+          "minDeliveryIntervalMinutes": 0,
+          "nextEligibleDeliveryAt": null,
+          "mutedAt": null,
+          "unsubscribedAt": null,
+          "metadata": {
+            "source": "rerun-sagas",
+            "sagaKey": "uc-120-the-solo-entrepreneur-sarah"
+          },
+          "createdAt": "2026-02-28T13:45:53.267Z",
+          "updatedAt": "2026-02-28T13:45:53.267Z",
+          "deletedAt": null,
+          "createdBy": null,
+          "updatedBy": null,
+          "deletedBy": null
+        },
+        "meta": {
+          "requestId": "08337f80-7ceb-4858-b57e-c963c93bc419",
+          "timestamp": "2026-02-28T13:45:53.268Z"
+        }
+      },
+      "at": "2026-02-28T13:45:53.269Z"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AIiBlmtGaiwY8SAFa9WKl1UCNo/steps/uc-need-validate-1/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step requires validation of currency conversion at quote/checkout with a rate snapshot. However, the evidence provided only shows transactions in USD without any indication of currency conversion or a rate snapshot being applied. The booking details confirm transactions in USD, but there is no evidence of a conversion process or a snapshot of the exchange rate at the time of the transaction, which is a critical gap in meeting the requirement.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "priorStepEvidence[customer-book-primary].currency",
+            "priorStepEvidence[customer-two-concurrent].currency"
+          ],
+          "gaps": [
+            "No evidence of currency conversion or rate snapshot during checkout."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add deterministic evidence contract",
+              "endpoint": null,
+              "assertion": "Define concrete endpoint calls and assertions that directly verify this requirement."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "3a645bfe-2665-4289-94a5-f925c4bc1ae2",
+          "timestamp": "2026-02-28T13:45:58.124Z"
+        }
+      },
+      "at": "2026-02-28T13:45:58.125Z"
+    }
+  ]
+}

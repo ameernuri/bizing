@@ -1,0 +1,46 @@
+{
+  "stepKey": "uc-need-validate-2",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AIlZGb3N30m0as5KNPIrUZqQKp/steps/uc-need-validate-2/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the requirement of separating transactional messages from marketing messages. However, the evidence provided does not explicitly confirm that the system enforces this separation, particularly in the context of the linked use case which discusses SMS reminders and email notifications without detailing how marketing messages are handled. This indicates a gap in the requirement coverage as the necessary evidence to confirm compliance with the requirement is missing.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].bodyMarkdownPreview",
+            "exploratoryStep.instruction"
+          ],
+          "gaps": [
+            "Lack of evidence confirming the separation of transactional and marketing messages."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add evidence for message type separation",
+              "endpoint": "/api/v1/messages/separation",
+              "assertion": "Verify that transactional messages are sent separately from marketing messages."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "53e39a9d-1ba0-4670-99e3-ce60495fb1e3",
+          "timestamp": "2026-02-28T14:13:50.724Z"
+        }
+      },
+      "at": "2026-02-28T14:13:50.725Z"
+    }
+  ]
+}

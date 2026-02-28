@@ -1,0 +1,45 @@
+{
+  "stepKey": "uc-need-validate-3",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AInTDk9qpXLpewTwHh8wnFx4KX/steps/uc-need-validate-3/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the requirement of having different daily and weekly rates. However, the evidence does not explicitly confirm the implementation of this requirement. While the linked use case mentions a 20% discount for weekly rates, there is no concrete evidence showing how the system differentiates between daily and weekly rates in practice, indicating a gap in meeting the requirement.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].bodyMarkdownPreview"
+          ],
+          "gaps": [
+            "No evidence demonstrating the enforcement or calculation of different daily vs weekly rates."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add evidence for rate differentiation",
+              "endpoint": "/api/v1/rates",
+              "assertion": "Verify that the API returns different rates for daily and weekly bookings."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "2d30a721-aa69-48f5-bc1c-175da9049e0b",
+          "timestamp": "2026-02-28T14:29:29.740Z"
+        }
+      },
+      "at": "2026-02-28T14:29:29.740Z"
+    }
+  ]
+}

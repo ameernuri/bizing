@@ -1,0 +1,45 @@
+{
+  "stepKey": "uc-need-validate-6",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AIpYMAthXFOCipCQenA7Vc7Tgd/steps/uc-need-validate-6/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the presence of a photo/video release within the same form as part of the liability waiver. However, the evidence from the linked use case does mention the need for a photo/video release but does not provide any concrete evidence that this requirement is implemented or satisfied in the system. The absence of specific API reads or persisted state checks confirming the inclusion of the photo/video release leads to a conclusion that there is a gap in meeting this requirement.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].needs[5]"
+          ],
+          "gaps": [
+            "No evidence confirming the implementation of a photo/video release within the same form."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Verify photo/video release inclusion",
+              "endpoint": "/api/v1/waiver-forms",
+              "assertion": "Check if the waiver form includes a section for photo/video release."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "b5ad0318-8a2b-4615-bc4d-9a136105d45a",
+          "timestamp": "2026-02-28T14:46:54.918Z"
+        }
+      },
+      "at": "2026-02-28T14:46:54.919Z"
+    }
+  ]
+}

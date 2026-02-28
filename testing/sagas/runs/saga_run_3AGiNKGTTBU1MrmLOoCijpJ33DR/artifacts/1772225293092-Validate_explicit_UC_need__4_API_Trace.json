@@ -1,0 +1,46 @@
+{
+  "stepKey": "uc-need-validate-4",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AGiNKGTTBU1MrmLOoCijpJ33DR/steps/uc-need-validate-4/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the requirement of promoting customers from the waitlist when capacity opens. However, the evidence does not include any confirmation that the promotion process was executed successfully or that the system correctly handled the additional capacity. While there are successful steps related to bookings and waitlists, none of them directly address the promotion from the waitlist, indicating a gap in the evidence needed to satisfy this requirement.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases",
+            "priorStepEvidence"
+          ],
+          "gaps": [
+            "No evidence confirming the successful promotion of waitlisted customers when additional capacity became available."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add evidence for waitlist promotion process",
+              "endpoint": "/api/v1/waitlist/promote",
+              "assertion": "Verify that the system promotes customers from the waitlist when capacity opens."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "e24f94c6-307b-4af9-91c4-312801b06b1d",
+          "timestamp": "2026-02-27T20:48:12.865Z"
+        }
+      },
+      "at": "2026-02-27T20:48:12.866Z"
+    }
+  ]
+}

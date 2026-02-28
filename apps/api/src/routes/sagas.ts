@@ -47,6 +47,7 @@ import {
   listSagaCoverageReports,
   listSagaDefinitionRevisions,
   getSagaCoverageReportDetail,
+  createSchemaCoverageBaselineReport,
   importSchemaCoverageReportFromMarkdown,
   listSagaRunActorProfiles,
   listSagaRunActorMessages,
@@ -183,6 +184,30 @@ const importSchemaCoverageBodySchema = z.object({
   replaceExisting: z.boolean().default(true),
 })
 
+const createSchemaCoverageItemBodySchema = z.object({
+  itemType: z.string().min(1).max(80).default('use_case'),
+  itemRefKey: z.string().min(1).max(220),
+  itemTitle: z.string().max(255).optional().nullable(),
+  verdictTag: z.string().min(1).max(40),
+  nativeToHackyTag: z.string().max(80).optional().nullable(),
+  coreToExtensionTag: z.string().max(80).optional().nullable(),
+  explanation: z.string().optional().nullable(),
+  evidence: z.record(z.unknown()).optional(),
+  metadata: z.record(z.unknown()).optional(),
+  tags: z.array(z.string().min(1).max(80)).optional(),
+})
+
+const createSchemaCoverageReportBodySchema = z.object({
+  title: z.string().min(1).max(255),
+  summary: z.string().optional().nullable(),
+  reportMarkdown: z.string().optional().nullable(),
+  reportData: z.record(z.unknown()).optional(),
+  metadata: z.record(z.unknown()).optional(),
+  replaceExisting: z.boolean().default(false),
+  bizId: z.string().optional().nullable(),
+  items: z.array(createSchemaCoverageItemBodySchema).min(1),
+})
+
 const resetLoopBodySchema = z.object({
   useCaseFile: z.string().optional(),
   personaFile: z.string().optional(),
@@ -232,6 +257,12 @@ const listRunsQuerySchema = z.object({
   limit: z.string().optional(),
   mineOnly: z.enum(['true', 'false']).optional(),
   includeArchived: z.enum(['true', 'false']).optional(),
+})
+
+const refreshRunBodySchema = z.object({
+  recomputeIntegrity: z.boolean().optional(),
+  persistCoverage: z.boolean().optional(),
+  emitEvent: z.boolean().optional(),
 })
 
 const archiveRunBodySchema = z.object({
@@ -410,9 +441,6 @@ sagaRoutes.post('/sagas/library/reset-reseed', requireAuth, async (c) => {
 sagaRoutes.post('/sagas/schema-coverage/import', requireAuth, async (c) => {
   const user = getCurrentUser(c)
   if (!user) return fail(c, 'UNAUTHORIZED', 'Authentication required.', 401)
-  if (!isPlatformAdmin(user)) {
-    return fail(c, 'FORBIDDEN', 'Only platform admins can import schema coverage.', 403)
-  }
 
   const body = await c.req.json().catch(() => null)
   const parsed = importSchemaCoverageBodySchema.safeParse(body)
@@ -426,6 +454,37 @@ sagaRoutes.post('/sagas/schema-coverage/import', requireAuth, async (c) => {
     actorUserId: user.id,
   })
   return ok(c, imported, 201)
+})
+
+/**
+ * Create one DB-native schema baseline coverage report.
+ *
+ * ELI5:
+ * This endpoint lets you write coverage directly into DB (no markdown parsing).
+ * Dashboard reads this data immediately from `/sagas/schema-coverage/reports*`.
+ */
+sagaRoutes.post('/sagas/schema-coverage/reports', requireAuth, async (c) => {
+  const user = getCurrentUser(c)
+  if (!user) return fail(c, 'UNAUTHORIZED', 'Authentication required.', 401)
+
+  const body = await c.req.json().catch(() => null)
+  const parsed = createSchemaCoverageReportBodySchema.safeParse(body)
+  if (!parsed.success) {
+    return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
+  }
+
+  const created = await createSchemaCoverageBaselineReport({
+    title: parsed.data.title,
+    summary: parsed.data.summary,
+    reportMarkdown: parsed.data.reportMarkdown,
+    reportData: parsed.data.reportData,
+    metadata: parsed.data.metadata,
+    replaceExisting: parsed.data.replaceExisting,
+    bizId: parsed.data.bizId,
+    actorUserId: user.id,
+    items: parsed.data.items,
+  })
+  return ok(c, created, 201)
 })
 
 sagaRoutes.get('/sagas/library/overview', requireAuth, async (c) => {
@@ -1167,6 +1226,47 @@ sagaRoutes.get('/sagas/runs/:runId', requireAuth, async (c) => {
   const refreshedDetail = await getSagaRunDetail(runId)
   if (!refreshedDetail) return fail(c, 'NOT_FOUND', 'Run not found.', 404)
   return ok(c, refreshedDetail)
+})
+
+/**
+ * Explicitly recompute one run's derived status/integrity/coverage.
+ *
+ * ELI5:
+ * The runner can keep hot-path step writes cheap, then call this endpoint once
+ * at the end to say "now that all the evidence files are attached, judge the
+ * whole run properly."
+ */
+sagaRoutes.post('/sagas/runs/:runId/refresh', requireAuth, async (c) => {
+  const user = getCurrentUser(c)
+  if (!user) return fail(c, 'UNAUTHORIZED', 'Authentication required.', 401)
+
+  const runId = c.req.param('runId')
+  const access = await canAccessRun(user, runId)
+  if (!access.allowed) {
+    return fail(
+      c,
+      access.code ?? 'FORBIDDEN',
+      access.reason ?? 'Forbidden',
+      access.code === 'NOT_FOUND' ? 404 : 403,
+    )
+  }
+
+  const body = await c.req.json().catch(() => null)
+  const parsed = refreshRunBodySchema.safeParse(body ?? {})
+  if (!parsed.success) {
+    return fail(c, 'VALIDATION_ERROR', 'Invalid refresh payload.', 400, parsed.error.flatten())
+  }
+
+  await refreshSagaRunStatus(runId, user.id, {
+    touchHeartbeat: false,
+    emitEvent: parsed.data.emitEvent ?? true,
+    recomputeIntegrity: parsed.data.recomputeIntegrity ?? true,
+    persistCoverage: parsed.data.persistCoverage ?? true,
+  })
+
+  const detail = await getSagaRunDetail(runId)
+  if (!detail) return fail(c, 'NOT_FOUND', 'Run not found.', 404)
+  return ok(c, detail)
 })
 
 /**

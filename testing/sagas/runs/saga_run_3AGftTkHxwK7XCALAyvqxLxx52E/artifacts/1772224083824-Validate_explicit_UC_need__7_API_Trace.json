@@ -1,0 +1,46 @@
+{
+  "stepKey": "uc-need-validate-7",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AGftTkHxwK7XCALAyvqxLxx52E/steps/uc-need-validate-7/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the enforcement of a 5-hour gap between bookings, as specified in the linked use case. However, the evidence provided does not include any checks or confirmations that this gap is being enforced, leading to a clear gap in requirement coverage. Specifically, the prior steps do not demonstrate any validation for the gap days/hours for cleaning/service, which is critical for the use case's functionality.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].bodyMarkdownPreview",
+            "priorStepEvidence"
+          ],
+          "gaps": [
+            "No evidence of validation for gap days/hours for cleaning/service."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add validation for cleaning/service gap enforcement",
+              "endpoint": "/api/v1/validate-gap",
+              "assertion": "Ensure that the system enforces a 5-hour gap between bookings."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "44a458dc-b5c9-4a5a-af03-3c40c1283b09",
+          "timestamp": "2026-02-27T20:28:03.711Z"
+        }
+      },
+      "at": "2026-02-27T20:28:03.712Z"
+    }
+  ]
+}

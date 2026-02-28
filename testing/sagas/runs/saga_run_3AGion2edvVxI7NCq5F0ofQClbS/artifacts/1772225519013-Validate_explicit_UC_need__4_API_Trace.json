@@ -1,0 +1,46 @@
+{
+  "stepKey": "uc-need-validate-4",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AGion2edvVxI7NCq5F0ofQClbS/steps/uc-need-validate-4/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Insufficient evidence to validate the requirement regarding DST handling with stored timezone snapshots.",
+          "assessment": "The exploratory step aims to confirm that the system handles daylight saving time (DST) correctly with stored timezone snapshots. However, the evidence provided does not explicitly demonstrate that the system accurately reflects timezone changes due to DST in its outputs. While the linked use case mentions the storage of each participant's timezone, there is no direct evidence showing that the displayed times adjust according to these timezones, leading to an inconclusive result.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].bodyMarkdownPreview",
+            "priorStepEvidence[8].evidence.timezone"
+          ],
+          "gaps": [
+            "No evidence confirming that the system handles DST changes accurately with stored timezone snapshots."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Validate DST handling for stored timezones",
+              "endpoint": "/api/v1/timezone/dst-handling",
+              "assertion": "Ensure that the system correctly adjusts meeting times for daylight saving time based on stored timezone snapshots."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "05cdf175-2bae-4439-958c-71b11d0c61d7",
+          "timestamp": "2026-02-27T20:51:58.476Z"
+        }
+      },
+      "at": "2026-02-27T20:51:58.477Z"
+    }
+  ]
+}

@@ -12,9 +12,10 @@ import {
   requireAuth,
   requireBizAccess,
 } from '../middleware/auth.js'
+import { sanitizeUnknown } from '../lib/sanitize.js'
 import { fail, ok, parsePositiveInt } from './_api.js'
 
-const { db, bookingOrders, offers, offerVersions } = dbPackage
+const { db, bookingOrders, offers, offerVersions, outboundMessages, outboundMessageEvents, users } = dbPackage
 
 const bookingStatusSchema = z.enum([
   'draft',
@@ -35,6 +36,7 @@ const listQuerySchema = z.object({
   status: bookingStatusSchema.optional(),
   customerUserId: z.string().optional(),
   offerId: z.string().optional(),
+  locationId: z.string().optional(),
   sortBy: z.enum(['requestedStartAt', 'confirmedStartAt']).optional(),
   sortOrder: z.enum(['asc', 'desc']).optional(),
 })
@@ -44,6 +46,7 @@ const createBodySchema = z.object({
   offerVersionId: z.string().min(1),
   customerUserId: z.string().optional(),
   customerGroupAccountId: z.string().optional(),
+  locationId: z.string().optional(),
   status: bookingStatusSchema.default('draft'),
   currency: z.string().regex(/^[A-Z]{3}$/).default('USD'),
   subtotalMinor: z.number().int().min(0).default(0),
@@ -62,6 +65,7 @@ const createBodySchema = z.object({
 
 const updateBodySchema = z.object({
   status: bookingStatusSchema.optional(),
+  locationId: z.string().optional().nullable(),
   subtotalMinor: z.number().int().min(0).optional(),
   taxMinor: z.number().int().min(0).optional(),
   feeMinor: z.number().int().min(0).optional(),
@@ -85,6 +89,7 @@ const publicBookingStatusSchema = z.enum(['draft', 'quoted', 'awaiting_payment',
 const publicCreateBodySchema = z.object({
   offerId: z.string().min(1),
   offerVersionId: z.string().min(1),
+  locationId: z.string().optional(),
   status: publicBookingStatusSchema.default('draft'),
   currency: z.string().regex(/^[A-Z]{3}$/).default('USD'),
   subtotalMinor: z.number().int().min(0).default(0),
@@ -105,7 +110,94 @@ function computeTotal(subtotalMinor: number, taxMinor: number, feeMinor: number,
   return subtotalMinor + taxMinor + feeMinor - discountMinor
 }
 
+function withLocationMetadata(
+  existing: Record<string, unknown> | null | undefined,
+  locationId: string | null | undefined,
+) {
+  const base = sanitizeUnknown(existing ?? {}) as Record<string, unknown>
+  if (locationId === undefined) return base
+  if (locationId === null) {
+    delete base.locationId
+    return base
+  }
+  base.locationId = locationId
+  return base
+}
+
+function locationMetadataFilter(locationId?: string) {
+  if (!locationId) return undefined
+  return sql`${bookingOrders.metadata} ->> 'locationId' = ${locationId}`
+}
+
 export const bookingRoutes = new Hono()
+
+/**
+ * Persist one simulated transactional message as part of booking lifecycle.
+ *
+ * ELI5:
+ * We are not sending a real email here. We are recording the exact message the
+ * system would have sent so the API can prove booking confirmations and
+ * cancellations exist as first-class lifecycle outputs.
+ */
+async function createBookingLifecycleMessage(input: {
+  bizId: string
+  recipientUserId?: string | null
+  recipientRef: string
+  bookingOrderId: string
+  subject: string
+  body: string
+  templateSlug: string
+  eventType: 'booking.confirmed' | 'booking.cancelled'
+}) {
+  const [message] = await db
+    .insert(outboundMessages)
+    .values({
+      bizId: input.bizId,
+      channel: 'email',
+      purpose: 'transactional',
+      recipientUserId: input.recipientUserId ?? null,
+      recipientRef: input.recipientRef,
+      status: 'delivered',
+      scheduledFor: new Date(),
+      sentAt: new Date(),
+      deliveredAt: new Date(),
+      providerKey: 'simulated_email',
+      providerMessageRef: `${input.templateSlug}-${input.bookingOrderId}`,
+      payload: {
+        subject: input.subject,
+        body: input.body,
+      },
+      metadata: {
+        bookingOrderId: input.bookingOrderId,
+        eventType: input.eventType,
+        templateSlug: input.templateSlug,
+      },
+    })
+    .returning()
+
+  await db.insert(outboundMessageEvents).values([
+    {
+      bizId: input.bizId,
+      outboundMessageId: message.id,
+      eventType: 'queued',
+      payload: { templateSlug: input.templateSlug },
+    },
+    {
+      bizId: input.bizId,
+      outboundMessageId: message.id,
+      eventType: 'sent',
+      payload: { providerKey: 'simulated_email' },
+    },
+    {
+      bizId: input.bizId,
+      outboundMessageId: message.id,
+      eventType: 'delivered',
+      payload: { recipientRef: input.recipientRef },
+    },
+  ])
+
+  return message
+}
 
 /**
  * Public booking surface for authenticated customers.
@@ -135,6 +227,7 @@ bookingRoutes.get('/public/bizes/:bizId/booking-orders', requireAuth, async (c) 
     eq(bookingOrders.customerUserId, user.id),
     parsed.data.status ? eq(bookingOrders.status, parsed.data.status) : undefined,
     parsed.data.offerId ? eq(bookingOrders.offerId, parsed.data.offerId) : undefined,
+    locationMetadataFilter(parsed.data.locationId),
   )
 
   const [rows, countRows] = await Promise.all([
@@ -196,6 +289,15 @@ bookingRoutes.post('/public/bizes/:bizId/booking-orders', requireAuth, async (c)
       parsed.data.discountMinor,
     )
 
+  const derivedPricingSnapshot =
+    parsed.data.pricingSnapshot ?? {
+      basePriceMinor: offerVersion.basePriceMinor,
+      currency: offerVersion.currency,
+      durationMode: offerVersion.durationMode,
+      defaultDurationMin: offerVersion.defaultDurationMin,
+    }
+  const derivedPolicySnapshot = parsed.data.policySnapshot ?? ((offerVersion.policyModel as Record<string, unknown> | null) ?? {})
+
   const [created] = await db
     .insert(bookingOrders)
     .values({
@@ -214,11 +316,22 @@ bookingRoutes.post('/public/bizes/:bizId/booking-orders', requireAuth, async (c)
       requestedEndAt: parsed.data.requestedEndAt ? new Date(parsed.data.requestedEndAt) : undefined,
       confirmedStartAt: parsed.data.confirmedStartAt ? new Date(parsed.data.confirmedStartAt) : undefined,
       confirmedEndAt: parsed.data.confirmedEndAt ? new Date(parsed.data.confirmedEndAt) : undefined,
-      pricingSnapshot: parsed.data.pricingSnapshot ?? {},
-      policySnapshot: parsed.data.policySnapshot ?? {},
-      metadata: parsed.data.metadata ?? {},
+      pricingSnapshot: derivedPricingSnapshot,
+      policySnapshot: derivedPolicySnapshot,
+      metadata: withLocationMetadata(parsed.data.metadata ?? {}, parsed.data.locationId),
     })
     .returning()
+
+  await createBookingLifecycleMessage({
+    bizId,
+    recipientUserId: user.id,
+    recipientRef: user.email ?? `user-${user.id}@unknown.local`,
+    bookingOrderId: created.id,
+    subject: 'Booking confirmed',
+    body: `Your booking ${created.id} is confirmed.`,
+    templateSlug: 'booking-confirmed',
+    eventType: 'booking.confirmed',
+  })
 
   return ok(c, created, 201)
 })
@@ -242,6 +355,7 @@ bookingRoutes.get(
     status,
     customerUserId,
     offerId,
+    locationId,
     sortBy = 'requestedStartAt',
     sortOrder = 'desc',
   } = parsed.data
@@ -254,6 +368,7 @@ bookingRoutes.get(
     status ? eq(bookingOrders.status, status) : undefined,
     customerUserId ? eq(bookingOrders.customerUserId, customerUserId) : undefined,
     offerId ? eq(bookingOrders.offerId, offerId) : undefined,
+    locationMetadataFilter(locationId),
   )
 
   const sortColumn =
@@ -291,7 +406,7 @@ bookingRoutes.post(
   requireAclPermission('booking_orders.create', { bizIdParam: 'bizId' }),
   async (c) => {
     const bizId = c.req.param('bizId')
-    const _user = getCurrentUser(c)
+    const actor = getCurrentUser(c)
 
     const body = await c.req.json().catch(() => null)
     const parsed = createBodySchema.safeParse(body)
@@ -307,6 +422,25 @@ bookingRoutes.post(
         parsed.data.feeMinor,
         parsed.data.discountMinor,
       )
+    const offerVersion = await db.query.offerVersions.findFirst({
+      where: and(
+        eq(offerVersions.id, parsed.data.offerVersionId),
+        eq(offerVersions.offerId, parsed.data.offerId),
+        eq(offerVersions.bizId, bizId),
+      ),
+    })
+    if (!offerVersion) {
+      return fail(c, 'NOT_FOUND', 'Offer version not found.', 404)
+    }
+    const derivedPricingSnapshot =
+      parsed.data.pricingSnapshot ?? {
+        basePriceMinor: offerVersion.basePriceMinor,
+        currency: offerVersion.currency,
+        durationMode: offerVersion.durationMode,
+        defaultDurationMin: offerVersion.defaultDurationMin,
+      }
+    const derivedPolicySnapshot =
+      parsed.data.policySnapshot ?? ((offerVersion.policyModel as Record<string, unknown> | null) ?? {})
 
     const [created] = await db
       .insert(bookingOrders)
@@ -331,11 +465,33 @@ bookingRoutes.post(
           ? new Date(parsed.data.confirmedStartAt)
           : undefined,
         confirmedEndAt: parsed.data.confirmedEndAt ? new Date(parsed.data.confirmedEndAt) : undefined,
-        pricingSnapshot: parsed.data.pricingSnapshot ?? {},
-        policySnapshot: parsed.data.policySnapshot ?? {},
-        metadata: parsed.data.metadata ?? {},
+        pricingSnapshot: derivedPricingSnapshot,
+        policySnapshot: derivedPolicySnapshot,
+        metadata: withLocationMetadata(parsed.data.metadata ?? {}, parsed.data.locationId),
       })
       .returning()
+
+    if (parsed.data.customerUserId) {
+      const recipientUser = await db.query.users.findFirst({
+        where: eq(users.id, parsed.data.customerUserId),
+        columns: {
+          id: true,
+          email: true,
+        },
+      })
+      if (recipientUser?.email) {
+        await createBookingLifecycleMessage({
+          bizId,
+          recipientUserId: recipientUser.id,
+          recipientRef: recipientUser.email,
+          bookingOrderId: created.id,
+          subject: 'Booking confirmed',
+          body: `Your booking ${created.id} is confirmed.`,
+          templateSlug: 'booking-confirmed',
+          eventType: 'booking.confirmed',
+        })
+      }
+    }
 
     return ok(c, created, 201)
   },
@@ -417,6 +573,10 @@ bookingRoutes.patch(
         feeMinor,
         discountMinor,
         totalMinor,
+        metadata: withLocationMetadata(
+          (parsed.data.metadata ?? existing.metadata) as Record<string, unknown>,
+          parsed.data.locationId,
+        ),
       })
       .where(and(eq(bookingOrders.bizId, bizId), eq(bookingOrders.id, bookingOrderId)))
       .returning()
@@ -462,6 +622,11 @@ bookingRoutes.delete(
     const { bizId, bookingOrderId } = c.req.param()
     const _user = getCurrentUser(c)
 
+    const existing = await db.query.bookingOrders.findFirst({
+      where: and(eq(bookingOrders.bizId, bizId), eq(bookingOrders.id, bookingOrderId)),
+    })
+    if (!existing) return fail(c, 'NOT_FOUND', 'Booking order not found.', 404)
+
     const [updated] = await db
       .update(bookingOrders)
       .set({
@@ -470,7 +635,29 @@ bookingRoutes.delete(
       .where(and(eq(bookingOrders.bizId, bizId), eq(bookingOrders.id, bookingOrderId)))
       .returning()
 
-    if (!updated) return fail(c, 'NOT_FOUND', 'Booking order not found.', 404)
+    const recipientUser = existing.customerUserId
+      ? await db.query.users.findFirst({
+          where: eq(users.id, existing.customerUserId),
+          columns: {
+            id: true,
+            email: true,
+          },
+        })
+      : null
+
+    if (recipientUser?.email) {
+      await createBookingLifecycleMessage({
+        bizId,
+        recipientUserId: recipientUser.id,
+        recipientRef: recipientUser.email,
+        bookingOrderId,
+        subject: 'Booking cancelled',
+        body: `Your booking ${bookingOrderId} has been cancelled.`,
+        templateSlug: 'booking-cancelled',
+        eventType: 'booking.cancelled',
+      })
+    }
+
     return ok(c, { id: bookingOrderId, status: 'cancelled' })
   },
 )

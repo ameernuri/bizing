@@ -1,0 +1,46 @@
+{
+  "stepKey": "uc-need-validate-2",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AGglACRijNeCsK1OMR08P8gpQp/steps/uc-need-validate-2/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the requirement 'Track remaining sessions', but the evidence does not include any API reads or persisted state checks that confirm this functionality. The linked use case specifies the need to track remaining sessions, yet there are no concrete checks or confirmations provided in the prior step evidence that demonstrate this requirement is being met. Therefore, there is a clear gap in the evidence regarding this requirement.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].needs[1]",
+            "exploratoryStep.instruction"
+          ],
+          "gaps": [
+            "No evidence confirming the implementation of tracking remaining sessions."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add API endpoint for tracking remaining sessions",
+              "endpoint": "/api/v1/sessions/remaining",
+              "assertion": "Verify that the API returns the correct count of remaining sessions for a user."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "b9b3d07c-8028-424e-9c60-9823f7074373",
+          "timestamp": "2026-02-27T20:34:50.585Z"
+        }
+      },
+      "at": "2026-02-27T20:34:50.586Z"
+    }
+  ]
+}

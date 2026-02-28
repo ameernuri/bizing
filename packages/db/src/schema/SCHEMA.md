@@ -15,11 +15,15 @@ Active modules in `packages/db/src/schema`:
 
 - Core identity/tenant: `bizes.ts`, `users.ts`, `auth.ts`, `memberships.ts`, `group_accounts.ts`, `locations.ts`, `subjects.ts`
 - Core catalog/supply: `services.ts`, `service_products.ts`, `products.ts`, `product_commerce.ts`, `assets.ts`, `venues.ts`, `resources.ts`
-- Canonical booking domains: `offers.ts`, `supply.ts`, `time_availability.ts`, `calendar_sync.ts`, `credential_exchange.ts`, `fulfillment.ts`, `payments.ts`, `compensation.ts`, `product_commerce.ts`, `sellable_variants.ts`, `demand_pricing.ts`, `entitlements.ts`, `channels.ts`, `intelligence.ts`, `education.ts`, `progression.ts`, `audit.ts`, `extensions.ts`, `access_rights.ts`, `checkout.ts`, `session_interactions.ts`, `interaction_forms.ts`, `communications.ts`, `surveys.ts`, `promotions.ts`, `work_management.ts`, `notes.ts`, `queue.ts`, `transportation.ts`, `marketplace.ts`, `operations_backbone.ts`, `enterprise.ts`, `governance.ts`, `hipaa.ts`, `workflows.ts`, `ar.ts`, `commitments.ts`, `sla.ts`, `tax_fx.ts`, `leave.ts`, `offline.ts`, `reporting.ts`
+- Canonical booking domains: `offers.ts`, `supply.ts`, `time_availability.ts`, `calendar_sync.ts`, `credential_exchange.ts`, `fulfillment.ts`, `payments.ts`, `compensation.ts`, `product_commerce.ts`, `sellable_variants.ts`, `demand_pricing.ts`, `entitlements.ts`, `channels.ts`, `intelligence.ts`, `education.ts`, `progression.ts`, `audit.ts`, `extensions.ts`, `access_rights.ts`, `checkout.ts`, `session_interactions.ts`, `instruments.ts`, `communications.ts`, `promotions.ts`, `work_management.ts`, `notes.ts`, `queue.ts`, `transportation.ts`, `marketplace.ts`, `operations_backbone.ts`, `enterprise.ts`, `governance.ts`, `hipaa.ts`, `compliance_programs.ts`, `bizings.ts`, `workflows.ts`, `ar.ts`, `commitments.ts`, `sla.ts`, `tax_fx.ts`, `leave.ts`, `offline.ts`, `reporting.ts`, `auth_observability.ts`
 - Integration: `stripe.ts`
 - Shared primitives: `_common.ts`, `enums.ts`, `canonical.ts`
 
 ## Key Architecture Rules
+- Terminology guardrail:
+  - `intake form` = pre-service data capture instrument.
+  - `check-in` = operational arrival/attendance/ticket state.
+  - Do not use `check-in form` to describe intake workflows.
 - Tenant-safe modeling: business tables carry `biz_id` and use tenant-safe FK patterns where needed.
 - Resource abstraction: `resources` is the schedulable supply pivot (host/company_host/asset/venue).
   - Strict one-wrapper invariant: one active `resources` row per underlying
@@ -58,6 +62,11 @@ Active modules in `packages/db/src/schema`:
     who shared/viewed/downloaded what credential context and when.
 - Payments as ledger/event model:
   - intents, tenders, transactions, disputes, settlement, payouts
+- Auth observability backbone:
+  - `auth_principals` normalizes actor identities across sessions, API keys,
+    access tokens, and system actors.
+  - `auth_access_events` records auth decisions and lifecycle actions
+    (allow/deny/issue/revoke) with request context for incident response.
 - Commitments + secured settlements:
   - generic assurance contracts, obligations, release milestones, secured-balance
     accounts, immutable secured ledgers, allocation lineage, and dispute/claim
@@ -136,7 +145,7 @@ Active modules in `packages/db/src/schema`:
   - optional deep links into finance and workflow artifacts preserve
     traceability without hardcoding industry-specific penalty tables.
 - Customer experience + growth backbone:
-  - reusable interaction templates/assignments/submissions/signatures,
+  - reusable instruments (intake forms/quizzes/assessments/checklists/surveys) and run/response lifecycles,
   - checklist templates/instances with item-level status,
   - communication consent + quiet-hour policies + template/send telemetry,
   - campaign journey primitives, survey templates/responses, and discount ledgers.

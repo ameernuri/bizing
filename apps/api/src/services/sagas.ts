@@ -106,6 +106,31 @@ type SchemaCoverageUseCaseEntry = {
     | "#extension-driven"
 }
 
+type CreateSchemaCoverageBaselineItemInput = {
+  itemType?: string
+  itemRefKey: string
+  itemTitle?: string | null
+  verdictTag: string
+  nativeToHackyTag?: string | null
+  coreToExtensionTag?: string | null
+  explanation?: string | null
+  evidence?: Record<string, unknown>
+  metadata?: Record<string, unknown>
+  tags?: string[]
+}
+
+type CreateSchemaCoverageBaselineReportInput = {
+  title: string
+  summary?: string | null
+  reportMarkdown?: string | null
+  reportData?: Record<string, unknown>
+  metadata?: Record<string, unknown>
+  replaceExisting?: boolean
+  bizId?: string | null
+  actorUserId?: string
+  items: CreateSchemaCoverageBaselineItemInput[]
+}
+
 type ParsedSchemaCoverageReport = {
   title: string
   markdown: string
@@ -236,6 +261,28 @@ type RefreshSagaRunStatusOptions = {
    * react by reloading again, and we get an infinite refresh loop.
    */
   emitEvent?: boolean
+  /**
+   * When true, do the expensive full integrity pass.
+   *
+   * ELI5:
+   * Full integrity means "re-open the whole saga, read all artifacts, compare
+   * them to the spec, and decide whether the run truly has enough evidence."
+   * That is correct, but it is also expensive.
+   *
+   * We keep this OFF for ordinary step-by-step heartbeat updates so the runner
+   * stays fast, then turn it ON at the end of the run when all traces and
+   * snapshots have already been written.
+   */
+  recomputeIntegrity?: boolean
+  /**
+   * When true, write saga coverage rollups to the coverage tables.
+   *
+   * Why this is separate from `recomputeIntegrity`:
+   * - many step transitions only need a lightweight run-status update
+   * - coverage/reporting rows should only be refreshed when we have a stable,
+   *   final integrity picture
+   */
+  persistCoverage?: boolean
 }
 
 function slugify(value: string): string {
@@ -437,6 +484,49 @@ function toCoverageVerdictTag(
   if (normalized === "#strong") return "#strong"
   if (normalized === "#partial") return "#partial"
   if (normalized === "#gap") return "#gap"
+  return null
+}
+
+function normalizeCoverageVerdict(value: string): "full" | "strong" | "partial" | "gap" | null {
+  const normalized = value.trim().toLowerCase().replace(/^#/, "")
+  if (normalized === "full") return "full"
+  if (normalized === "strong") return "strong"
+  if (normalized === "partial") return "partial"
+  if (normalized === "gap") return "gap"
+  return null
+}
+
+function normalizeNativeToHacky(
+  value?: string | null,
+): "native" | "mostly-native" | "mixed-model" | "workaround-heavy" | "hacky" | null {
+  if (!value) return null
+  const normalized = value.trim().toLowerCase().replace(/^#/, "")
+  if (
+    normalized === "native" ||
+    normalized === "mostly-native" ||
+    normalized === "mixed-model" ||
+    normalized === "workaround-heavy" ||
+    normalized === "hacky"
+  ) {
+    return normalized
+  }
+  return null
+}
+
+function normalizeCoreToExtension(
+  value?: string | null,
+): "core-centric" | "core-first" | "balanced-core-extension" | "extension-heavy" | "extension-driven" | null {
+  if (!value) return null
+  const normalized = value.trim().toLowerCase().replace(/^#/, "")
+  if (
+    normalized === "core-centric" ||
+    normalized === "core-first" ||
+    normalized === "balanced-core-extension" ||
+    normalized === "extension-heavy" ||
+    normalized === "extension-driven"
+  ) {
+    return normalized
+  }
   return null
 }
 
@@ -2862,6 +2952,239 @@ export async function resetSagaLoopData() {
 }
 
 /**
+ * Remove all schema-baseline coverage rows (reports + items + tag bindings).
+ *
+ * Why this exists:
+ * - baseline imports/overwrites should be idempotent;
+ * - we keep `run` scope coverage intact while replacing only `schema_baseline`.
+ */
+async function clearSchemaBaselineCoverage() {
+  const existingReports = await db.query.sagaCoverageReports.findMany({
+    where: eq(sagaCoverageReports.scopeType, "schema_baseline"),
+    columns: { id: true },
+    limit: 10000,
+  })
+  const reportIds = existingReports.map((row) => row.id)
+  if (reportIds.length === 0) return
+
+  const existingItems = await db.query.sagaCoverageItems.findMany({
+    where: inArray(sagaCoverageItems.sagaCoverageReportId, reportIds),
+    columns: { id: true },
+    limit: 50000,
+  })
+  const itemIds = existingItems.map((row) => row.id)
+  if (itemIds.length > 0) {
+    await db
+      .delete(sagaTagBindings)
+      .where(
+        and(
+          eq(sagaTagBindings.targetType, "coverage_item"),
+          inArray(sagaTagBindings.targetId, itemIds),
+        ),
+      )
+  }
+
+  await db
+    .delete(sagaTagBindings)
+    .where(
+      and(
+        eq(sagaTagBindings.targetType, "coverage_report"),
+        inArray(sagaTagBindings.targetId, reportIds),
+      ),
+    )
+
+  await db.delete(sagaCoverageItems).where(inArray(sagaCoverageItems.sagaCoverageReportId, reportIds))
+  await db.delete(sagaCoverageReports).where(inArray(sagaCoverageReports.id, reportIds))
+}
+
+/**
+ * Canonical DB-native writer for schema baseline coverage reports.
+ *
+ * ELI5:
+ * This is the one "truthy" write path for schema coverage in DB.
+ * Any source (markdown import, UI editor, API automation) should call this so:
+ * - verdict/n2h/c2e normalization is consistent,
+ * - percentages are computed the same way,
+ * - tags are bound uniformly for dashboard filtering.
+ */
+export async function createSchemaCoverageBaselineReport(
+  input: CreateSchemaCoverageBaselineReportInput,
+) {
+  if (!input.items.length) {
+    throw new Error("Schema baseline report requires at least one coverage item.")
+  }
+
+  if (input.replaceExisting) {
+    await clearSchemaBaselineCoverage()
+  }
+
+  const normalizedItems = input.items.map((item) => {
+    const verdict = normalizeCoverageVerdict(item.verdictTag)
+    if (!verdict) {
+      throw new Error(`Invalid verdict tag for item '${item.itemRefKey}': ${item.verdictTag}`)
+    }
+    const nativeToHacky = normalizeNativeToHacky(item.nativeToHackyTag)
+    const coreToExtension = normalizeCoreToExtension(item.coreToExtensionTag)
+    return {
+      itemType: item.itemType?.trim() || "use_case",
+      itemRefKey: item.itemRefKey.trim().toUpperCase(),
+      itemTitle: item.itemTitle?.trim() || null,
+      verdict,
+      nativeToHacky,
+      coreToExtension,
+      explanation: item.explanation?.trim() || null,
+      evidence: item.evidence ?? {},
+      metadata: item.metadata ?? {},
+      tags: (item.tags ?? []).map((tag) => ensureTagHashPrefix(tag)),
+    }
+  })
+
+  const totalUseCases = normalizedItems.filter((item) => item.itemType === "use_case").length
+  const fullCount = normalizedItems.filter((item) => item.verdict === "full").length
+  const strongCount = normalizedItems.filter((item) => item.verdict === "strong").length
+  const partialCount = normalizedItems.filter((item) => item.verdict === "partial").length
+  const gapCount = normalizedItems.filter((item) => item.verdict === "gap").length
+  const denominator = normalizedItems.length || 1
+  const fullPct = Math.round((fullCount / denominator) * 100)
+  const strongOrBetterPct = Math.round(((fullCount + strongCount) / denominator) * 100)
+
+  const n2hScored = normalizedItems.filter((item) => item.nativeToHacky)
+  const c2eScored = normalizedItems.filter((item) => item.coreToExtension)
+  const avgN2h =
+    n2hScored.length > 0
+      ? Number(
+          (
+            n2hScored.reduce((sum, item) => {
+              const key = `#${item.nativeToHacky!}` as keyof typeof N2H_SCORE_BY_TAG
+              return sum + (N2H_SCORE_BY_TAG[key] ?? 0)
+            }, 0) / n2hScored.length
+          ).toFixed(2),
+        )
+      : 0
+  const avgC2e =
+    c2eScored.length > 0
+      ? Number(
+          (
+            c2eScored.reduce((sum, item) => {
+              const key = `#${item.coreToExtension!}` as keyof typeof C2E_SCORE_BY_TAG
+              return sum + (C2E_SCORE_BY_TAG[key] ?? 0)
+            }, 0) / c2eScored.length
+          ).toFixed(2),
+        )
+      : 0
+
+  const [report] = await db
+    .insert(sagaCoverageReports)
+    .values({
+      bizId: input.bizId ?? null,
+      sagaRunId: null,
+      sagaDefinitionId: null,
+      scopeType: "schema_baseline",
+      status: "published",
+      title: input.title,
+      summary:
+        input.summary ??
+        `Schema baseline coverage (${totalUseCases} use-case items).`,
+      reportMarkdown: input.reportMarkdown ?? null,
+      coveragePct: strongOrBetterPct,
+      strongPct: strongOrBetterPct,
+      fullPct,
+      reportData: {
+        ...(input.reportData ?? {}),
+        totals: {
+          totalUseCases,
+          full: fullCount,
+          strong: strongCount,
+          partial: partialCount,
+          gap: gapCount,
+        },
+        scales: {
+          avgN2h,
+          avgC2e,
+        },
+      },
+      metadata: input.metadata ?? {},
+    })
+    .returning()
+
+  const insertedItems =
+    normalizedItems.length > 0
+      ? await db
+          .insert(sagaCoverageItems)
+          .values(
+            normalizedItems.map((item) => ({
+              sagaCoverageReportId: report.id,
+              sagaRunStepId: null,
+              itemType: item.itemType,
+              itemRefKey: item.itemRefKey,
+              itemTitle: item.itemTitle,
+              verdict: item.verdict,
+              nativeToHacky: item.nativeToHacky,
+              coreToExtension: item.coreToExtension,
+              explanation: item.explanation,
+              evidence: item.evidence,
+              metadata: item.metadata,
+            })),
+          )
+          .returning()
+      : []
+
+  const reportTagKeys = new Set<string>(["#schema-coverage", "#schema-baseline"])
+  for (const item of normalizedItems) {
+    reportTagKeys.add(`#${item.verdict}`)
+    if (item.nativeToHacky) reportTagKeys.add(`#${item.nativeToHacky}`)
+    if (item.coreToExtension) reportTagKeys.add(`#${item.coreToExtension}`)
+    for (const tag of item.tags) reportTagKeys.add(tag)
+  }
+
+  const itemByKey = new Map<string, (typeof normalizedItems)[number]>(
+    normalizedItems.map((item) => [`${item.itemType}:${item.itemRefKey}`, item]),
+  )
+
+  for (const reportTagKey of reportTagKeys) {
+    const tag = await ensureSagaTag(reportTagKey, input.actorUserId)
+    await bindSagaTag({
+      tagId: tag.id,
+      targetType: "coverage_report",
+      targetId: report.id,
+      actorUserId: input.actorUserId,
+    })
+  }
+
+  for (const item of insertedItems) {
+    const source = itemByKey.get(`${item.itemType}:${item.itemRefKey}`)
+    if (!source) continue
+    const itemTagKeys = new Set<string>(source.tags)
+    itemTagKeys.add(`#${item.verdict}`)
+    if (item.nativeToHacky) itemTagKeys.add(`#${item.nativeToHacky}`)
+    if (item.coreToExtension) itemTagKeys.add(`#${item.coreToExtension}`)
+    for (const tagKey of itemTagKeys) {
+      const tag = await ensureSagaTag(tagKey, input.actorUserId)
+      await bindSagaTag({
+        tagId: tag.id,
+        targetType: "coverage_item",
+        targetId: item.id,
+        actorUserId: input.actorUserId,
+      })
+    }
+  }
+
+  return {
+    reportId: report.id,
+    scopeType: report.scopeType,
+    totalUseCases,
+    summaryCounts: {
+      full: fullCount,
+      strong: strongCount,
+      partial: partialCount,
+      gap: gapCount,
+    },
+    avgN2h,
+    avgC2e,
+  }
+}
+
+/**
  * Import one schema coverage markdown into normalized coverage tables.
  *
  * Important:
@@ -2874,163 +3197,42 @@ export async function importSchemaCoverageReportFromMarkdown(input?: {
   actorUserId?: string
 }) {
   const coverageFile = input?.coverageFile || DEFAULT_SCHEMA_COVERAGE_FILE
-  const replaceExisting = input?.replaceExisting ?? true
   const parsed = await parseSchemaCoverageReportFromMarkdown(coverageFile)
-
-  if (replaceExisting) {
-    const existingReports = await db.query.sagaCoverageReports.findMany({
-      where: eq(sagaCoverageReports.scopeType, "schema_baseline"),
-      columns: { id: true },
-      limit: 1000,
-    })
-    const reportIds = existingReports.map((row) => row.id)
-    if (reportIds.length > 0) {
-      const existingItems = await db.query.sagaCoverageItems.findMany({
-        where: inArray(sagaCoverageItems.sagaCoverageReportId, reportIds),
-        columns: { id: true },
-        limit: 20000,
-      })
-      const itemIds = existingItems.map((row) => row.id)
-      if (itemIds.length > 0) {
-        await db
-          .delete(sagaTagBindings)
-          .where(
-            and(
-              eq(sagaTagBindings.targetType, "coverage_item"),
-              inArray(sagaTagBindings.targetId, itemIds),
-            ),
-          )
-      }
-      await db
-        .delete(sagaTagBindings)
-        .where(
-          and(
-            eq(sagaTagBindings.targetType, "coverage_report"),
-            inArray(sagaTagBindings.targetId, reportIds),
-          ),
-        )
-      await db
-        .delete(sagaCoverageItems)
-        .where(inArray(sagaCoverageItems.sagaCoverageReportId, reportIds))
-      await db
-        .delete(sagaCoverageReports)
-        .where(inArray(sagaCoverageReports.id, reportIds))
-    }
-  }
-
-  const fullPct =
-    parsed.totalUseCases > 0
-      ? Math.round((parsed.summaryCounts.full / parsed.totalUseCases) * 100)
-      : 0
-  const strongOrBetterPct =
-    parsed.totalUseCases > 0
-      ? Math.round(
-          ((parsed.summaryCounts.full + parsed.summaryCounts.strong) / parsed.totalUseCases) * 100,
-        )
-      : 0
-
-  const [report] = await db
-    .insert(sagaCoverageReports)
-    .values({
-      sagaRunId: null,
-      sagaDefinitionId: null,
-      scopeType: "schema_baseline",
-      status: "published",
-      title: parsed.title,
-      summary: `Schema baseline coverage imported from markdown (${parsed.totalUseCases} UCs).`,
-      reportMarkdown: parsed.markdown,
-      coveragePct: strongOrBetterPct,
-      strongPct: strongOrBetterPct,
-      fullPct,
-      reportData: {
-        sourceFilePath: parsed.sourceFilePath,
-        sourceChecksum: parsed.sourceChecksum,
-        totals: {
-          totalUseCases: parsed.totalUseCases,
-          full: parsed.summaryCounts.full,
-          strong: parsed.summaryCounts.strong,
-          partial: parsed.summaryCounts.partial,
-          gap: parsed.summaryCounts.gap,
-        },
-        scaleSummary: parsed.scaleSummary,
+  return createSchemaCoverageBaselineReport({
+    title: parsed.title,
+    summary: `Schema baseline coverage imported from markdown (${parsed.totalUseCases} UCs).`,
+    reportMarkdown: parsed.markdown,
+    reportData: {
+      sourceFilePath: parsed.sourceFilePath,
+      sourceChecksum: parsed.sourceChecksum,
+      totals: {
+        totalUseCases: parsed.totalUseCases,
+        full: parsed.summaryCounts.full,
+        strong: parsed.summaryCounts.strong,
+        partial: parsed.summaryCounts.partial,
+        gap: parsed.summaryCounts.gap,
       },
-      metadata: {
-        source: "schema_coverage_markdown_import",
-      },
-    })
-    .returning()
-
-  const itemRows = parsed.useCases.map((row) => ({
-    sagaCoverageReportId: report.id,
-    sagaRunStepId: null,
-    itemType: "use_case",
-    itemRefKey: row.ucRef,
-    itemTitle: row.ucTitle,
-    verdict: row.verdictTag.replace(/^#/, ""),
-    nativeToHacky: row.nativeToHackyTag.replace(/^#/, ""),
-    coreToExtension: row.coreToExtensionTag.replace(/^#/, ""),
-    explanation: row.explanation,
-    evidence: {
-      sourceLink: row.sourceLink,
+      scaleSummary: parsed.scaleSummary,
     },
-    metadata: {},
-  }))
-
-  const insertedItems =
-    itemRows.length > 0
-      ? await db.insert(sagaCoverageItems).values(itemRows).returning()
-      : []
-
-  const reportTags = new Set<string>([
-    "#schema-coverage",
-    "#schema-baseline",
-    "#full",
-    "#strong",
-    "#partial",
-    "#gap",
-  ])
-  for (const row of parsed.useCases) {
-    reportTags.add(row.verdictTag)
-    reportTags.add(row.nativeToHackyTag)
-    reportTags.add(row.coreToExtensionTag)
-  }
-
-  const tagsByKey = new Map<string, string>()
-  for (const tagKey of reportTags) {
-    const tag = await ensureSagaTag(tagKey, input?.actorUserId)
-    tagsByKey.set(tag.tagKey, tag.id)
-    await bindSagaTag({
-      tagId: tag.id,
-      targetType: "coverage_report",
-      targetId: report.id,
-      actorUserId: input?.actorUserId,
-    })
-  }
-
-  const rowByUc = new Map(parsed.useCases.map((row) => [row.ucRef, row]))
-  for (const item of insertedItems) {
-    const source = rowByUc.get(item.itemRefKey)
-    if (!source) continue
-    const itemTagKeys = [source.verdictTag, source.nativeToHackyTag, source.coreToExtensionTag]
-    for (const key of itemTagKeys) {
-      const tag = await ensureSagaTag(key, input?.actorUserId)
-      await bindSagaTag({
-        tagId: tag.id,
-        targetType: "coverage_item",
-        targetId: item.id,
-        actorUserId: input?.actorUserId,
-      })
-    }
-  }
-
-  return {
-    reportId: report.id,
-    scopeType: report.scopeType,
-    totalUseCases: parsed.totalUseCases,
-    summaryCounts: parsed.summaryCounts,
-    avgN2h: parsed.scaleSummary.avgN2h,
-    avgC2e: parsed.scaleSummary.avgC2e,
-  }
+    metadata: {
+      source: "schema_coverage_markdown_import",
+    },
+    replaceExisting: input?.replaceExisting ?? true,
+    actorUserId: input?.actorUserId,
+    items: parsed.useCases.map((row) => ({
+      itemType: "use_case",
+      itemRefKey: row.ucRef,
+      itemTitle: row.ucTitle,
+      verdictTag: row.verdictTag,
+      nativeToHackyTag: row.nativeToHackyTag,
+      coreToExtensionTag: row.coreToExtensionTag,
+      explanation: row.explanation,
+      evidence: {
+        sourceLink: row.sourceLink,
+      },
+      metadata: {},
+    })),
+  })
 }
 
 /**
@@ -3669,7 +3871,7 @@ export async function refreshSagaRunStatus(
   }
 
   const now = new Date()
-  const integrity = await computeRunIntegrity(runId)
+  const shouldRecomputeIntegrity = options.recomputeIntegrity ?? false
   const staleMinutes = Number(process.env.SAGA_RUN_STALE_MINUTES ?? '45')
   const staleMs = Number.isFinite(staleMinutes) && staleMinutes > 0 ? staleMinutes * 60_000 : 0
   const lastTouch = run.lastHeartbeatAt ?? run.startedAt ?? now
@@ -3684,11 +3886,7 @@ export async function refreshSagaRunStatus(
   if (run.status !== 'cancelled') {
     if (isStaleOpenRun) {
       nextStatus = 'failed'
-    } else if (
-      (stats?.failed ?? 0) > 0 ||
-      (stats?.blocked ?? 0) > 0 ||
-      integrity.missingEvidence.length > 0
-    ) {
+    } else if ((stats?.failed ?? 0) > 0 || (stats?.blocked ?? 0) > 0) {
       nextStatus = 'failed'
     } else if ((stats?.pending ?? 0) === (stats?.total ?? 0)) {
       nextStatus = 'pending'
@@ -3697,6 +3895,36 @@ export async function refreshSagaRunStatus(
     } else {
       nextStatus = 'running'
     }
+  }
+
+  /**
+   * Only do the expensive evidence/integrity pass when explicitly requested.
+   *
+   * This keeps the hot path cheap:
+   * every step update no longer reloads the full run detail, all artifacts,
+   * actor messages, and file-backed spec just to bump a heartbeat.
+   */
+  const provisionalClassification: SagaRunCoverageClassification =
+    nextStatus === 'passed' ? 'full' : (stats?.passed ?? 0) > 0 ? 'partial' : 'gap'
+
+  const integrity: SagaRunIntegrity =
+    shouldRecomputeIntegrity
+      ? await computeRunIntegrity(runId)
+      : {
+          classification: provisionalClassification,
+          stepFailures: [] as Array<{ stepKey: string; reason: string }>,
+          missingEvidence: [] as Array<{ stepKey: string; missingKinds: string[] }>,
+          notImplementedStepCount: 0,
+          apiFailureStepCount: 0,
+        }
+
+  if (
+    shouldRecomputeIntegrity &&
+    run.status !== 'cancelled' &&
+    nextStatus === 'passed' &&
+    integrity.missingEvidence.length > 0
+  ) {
+    nextStatus = 'failed'
   }
 
   const shouldSetStartedAt = nextStatus === 'running' && !run.startedAt
@@ -3710,10 +3938,26 @@ export async function refreshSagaRunStatus(
   const failedSteps = (stats?.failed ?? 0) + (stats?.blocked ?? 0)
   const skippedSteps = stats?.skipped ?? 0
   const completionPct = totalSteps > 0 ? Math.round((passedSteps / totalSteps) * 100) : 0
+  const previousRunSummary =
+    typeof run.runSummary === 'object' && run.runSummary ? run.runSummary : {}
+  const previousFailures = Array.isArray((previousRunSummary as Record<string, unknown>).failures)
+    ? ((previousRunSummary as Record<string, unknown>).failures as unknown[])
+    : []
+  const previousMissingEvidence = Array.isArray(
+    (previousRunSummary as Record<string, unknown>).missingEvidence,
+  )
+    ? ((previousRunSummary as Record<string, unknown>).missingEvidence as unknown[])
+    : []
+  const failureSummary = shouldRecomputeIntegrity
+    ? integrity.stepFailures.slice(0, 100)
+    : previousFailures
+  const missingEvidenceSummary = shouldRecomputeIntegrity
+    ? integrity.missingEvidence.slice(0, 100)
+    : previousMissingEvidence
 
   const mergedRunSummary = isStaleOpenRun
     ? {
-        ...(typeof run.runSummary === 'object' && run.runSummary ? run.runSummary : {}),
+        ...previousRunSummary,
         autoClosed: {
           reason: 'stale_timeout',
           staleMinutes,
@@ -3732,11 +3976,11 @@ export async function refreshSagaRunStatus(
           apiFailureStepCount: integrity.apiFailureStepCount,
           missingEvidenceStepCount: integrity.missingEvidence.length,
         },
-        failures: integrity.stepFailures.slice(0, 100),
-        missingEvidence: integrity.missingEvidence.slice(0, 100),
+        failures: failureSummary,
+        missingEvidence: missingEvidenceSummary,
       }
     : {
-        ...(typeof run.runSummary === 'object' && run.runSummary ? run.runSummary : {}),
+        ...previousRunSummary,
         coverage: {
           classification: integrity.classification,
           completionPct,
@@ -3750,8 +3994,8 @@ export async function refreshSagaRunStatus(
           apiFailureStepCount: integrity.apiFailureStepCount,
           missingEvidenceStepCount: integrity.missingEvidence.length,
         },
-        failures: integrity.stepFailures.slice(0, 100),
-        missingEvidence: integrity.missingEvidence.slice(0, 100),
+        failures: failureSummary,
+        missingEvidence: missingEvidenceSummary,
       }
 
   await db
@@ -3769,21 +4013,23 @@ export async function refreshSagaRunStatus(
     })
     .where(eq(sagaRuns.id, runId))
 
-  try {
-    await upsertCoverageForRun({
-      run,
-      integrity,
-      completionPct,
-      totalSteps,
-      passedSteps,
-      failedSteps,
-      skippedSteps,
-      pendingSteps: stats?.pending ?? 0,
-      inProgressSteps: stats?.inProgress ?? 0,
-      actorUserId,
-    })
-  } catch (error) {
-    if (!isMissingRelationError(error)) throw error
+  if (options.persistCoverage ?? shouldRecomputeIntegrity) {
+    try {
+      await upsertCoverageForRun({
+        run,
+        integrity,
+        completionPct,
+        totalSteps,
+        passedSteps,
+        failedSteps,
+        skippedSteps,
+        pendingSteps: stats?.pending ?? 0,
+        inProgressSteps: stats?.inProgress ?? 0,
+        actorUserId,
+      })
+    } catch (error) {
+      if (!isMissingRelationError(error)) throw error
+    }
   }
 
   if (shouldEmitEvent) {
@@ -3880,7 +4126,18 @@ export async function updateSagaRunStep(runId: string, stepKey: string, input: U
     .where(and(eq(sagaRunSteps.sagaRunId, runId), eq(sagaRunSteps.stepKey, stepKey)))
     .returning()
 
-  await refreshSagaRunStatus(runId, input.actorUserId, { touchHeartbeat: true })
+  /**
+   * Step writes stay cheap on purpose.
+   *
+   * We do not run a full integrity/coverage recompute here because that would
+   * reload the entire run on every transition. Final recompute is triggered by
+   * the runner once all artifacts for the step/run have been attached.
+   */
+  await refreshSagaRunStatus(runId, input.actorUserId, {
+    touchHeartbeat: true,
+    recomputeIntegrity: false,
+    persistCoverage: false,
+  })
   const run = await db.query.sagaRuns.findFirst({
     where: eq(sagaRuns.id, runId),
     columns: {

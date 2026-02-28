@@ -1,0 +1,45 @@
+{
+  "stepKey": "uc-need-validate-5",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AHb5mGzMOBu24GDC4zEwATGlye/steps/uc-need-validate-5/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the requirement for a backup if the primary is unavailable. However, the evidence provided does not include any information or mechanisms that confirm a backup lead is activated when the primary is unavailable. The linked use case mentions the activation of a backup lead, but there is no concrete evidence demonstrating that this functionality is implemented or tested in the current saga run.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases"
+          ],
+          "gaps": [
+            "No evidence of a backup mechanism for the primary role when unavailable."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Implement backup lead activation check",
+              "endpoint": "/api/v1/backup-lead-activation",
+              "assertion": "Verify that a backup lead is activated when the primary is unavailable."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "13ccaa7b-2c2f-450a-99af-7ca22cfa98b0",
+          "timestamp": "2026-02-28T04:18:19.771Z"
+        }
+      },
+      "at": "2026-02-28T04:18:19.781Z"
+    }
+  ]
+}

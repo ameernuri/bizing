@@ -1,0 +1,46 @@
+{
+  "stepKey": "uc-need-validate-2",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AGhh62hG6nXouCmJMHfdEGDRF3/steps/uc-need-validate-2/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The evidence provided does not include any checks or validations related to the upgrade/downgrade and prorated transition behavior, which is a critical requirement. The linked use case mentions this behavior, but the prior steps do not demonstrate any API reads or persisted state checks that confirm this requirement is satisfied. Therefore, there is a clear gap in the evidence regarding this specific requirement.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].bodyMarkdownPreview",
+            "priorStepEvidence"
+          ],
+          "gaps": [
+            "No evidence of upgrade/downgrade and prorated transition behavior validation."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add validation for upgrade/downgrade behavior",
+              "endpoint": "/api/v1/membership/upgrade",
+              "assertion": "Verify that the upgrade/downgrade process correctly applies prorated charges."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "8cfbbeb3-8acf-4627-92cc-75251cbe4083",
+          "timestamp": "2026-02-27T20:42:27.251Z"
+        }
+      },
+      "at": "2026-02-27T20:42:27.253Z"
+    }
+  ]
+}

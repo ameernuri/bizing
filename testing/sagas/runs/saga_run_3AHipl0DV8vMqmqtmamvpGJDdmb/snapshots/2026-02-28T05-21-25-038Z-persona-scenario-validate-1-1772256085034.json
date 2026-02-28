@@ -1,0 +1,473 @@
+{
+  "schemaVersion": "snapshot.v1",
+  "screenKey": "persona-scenario-validate-1-1772256085034",
+  "title": "Validate persona scenario #1 Snapshot",
+  "generatedAt": "2026-02-28T05:21:25.038Z",
+  "stepKey": "persona-scenario-validate-1",
+  "status": "passed",
+  "view": {
+    "title": "Validate persona scenario #1",
+    "subtitle": "Validated agent traffic can be throttled independently through agent-governance policy.",
+    "blocks": [
+      {
+        "type": "alert",
+        "title": "Persona Scenario Validate 1 completed",
+        "message": "Validated agent traffic can be throttled independently through agent-governance policy.",
+        "tone": "success"
+      },
+      {
+        "type": "key_value",
+        "title": "Screen details",
+        "items": [
+          {
+            "label": "FirstStatus",
+            "value": "200"
+          },
+          {
+            "label": "SecondStatus",
+            "value": "429"
+          },
+          {
+            "label": "CredentialId",
+            "value": "api_credential_3AHiq7vjMRC1gRDDyjhVIqLamk1"
+          }
+        ]
+      }
+    ]
+  },
+  "rawData": {
+    "stepKey": "persona-scenario-validate-1",
+    "resultPayload": {
+      "note": "Validated agent traffic can be throttled independently through agent-governance policy.",
+      "evidence": {
+        "firstStatus": 200,
+        "secondStatus": 429,
+        "credentialId": "api_credential_3AHiq7vjMRC1gRDDyjhVIqLamk1"
+      }
+    },
+    "apiCalls": [
+      {
+        "method": "POST",
+        "path": "/api/v1/auth/api-keys",
+        "status": 201,
+        "requestBody": {
+          "label": "agent-uc-110-the-ai-agent-builder-agent-avery-nqtw",
+          "bizId": "3AHiptaVhf05khDoSn4vLZXiasZ",
+          "scopes": [
+            "bizes.read",
+            "booking_orders.read",
+            "booking_orders.create",
+            "booking_orders.update"
+          ],
+          "allowDirectApiKeyAuth": true,
+          "issueAccessToken": {
+            "ttlSeconds": 900,
+            "scopes": [
+              "bizes.read",
+              "booking_orders.read",
+              "booking_orders.create",
+              "booking_orders.update"
+            ],
+            "reason": "saga-agent-governance"
+          }
+        },
+        "responseBody": {
+          "success": true,
+          "data": {
+            "apiKey": "bizing_sk_QeaREi9F8qmkDmx6Ej0BPc59A53sVDFhYHbKZsMXxW8",
+            "credential": {
+              "id": "api_credential_3AHiq7vjMRC1gRDDyjhVIqLamk1",
+              "ownerUserId": "QJsamV4MZP6LUNhYeeFLOvEMAnxV0NJm",
+              "bizId": "3AHiptaVhf05khDoSn4vLZXiasZ",
+              "label": "agent-uc-110-the-ai-agent-builder-agent-avery-nqtw",
+              "keyPreview": "bizing_s...XxW8",
+              "status": "active",
+              "scopes": [
+                "bizes.read",
+                "booking_orders.read",
+                "booking_orders.create",
+                "booking_orders.update"
+              ],
+              "allowDirectApiKeyAuth": true,
+              "expiresAt": null
+            },
+            "warning": "Store apiKey now. It will never be returned again, only hash/preview is stored.",
+            "bootstrapAccessToken": {
+              "tokenType": "Bearer",
+              "accessToken": "bizing_at_18ncswN7KkSFskj_rCI312-jXyc9g1ZjMZRMwEuc3x0",
+              "expiresAt": "2026-02-28T05:36:24.702Z",
+              "expiresInSeconds": 900,
+              "scopes": [
+                "bizes.read",
+                "booking_orders.read",
+                "booking_orders.create",
+                "booking_orders.update"
+              ]
+            }
+          },
+          "meta": {
+            "requestId": "4b7cc3a3-1f79-4ba4-8123-800182b4811a",
+            "timestamp": "2026-02-28T05:21:24.707Z"
+          }
+        },
+        "at": "2026-02-28T05:21:24.707Z"
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/bizes/3AHiptaVhf05khDoSn4vLZXiasZ/policies/templates?domainKey=agent_governance&status=active",
+        "status": 200,
+        "responseBody": {
+          "success": true,
+          "data": [],
+          "meta": {
+            "requestId": "64c57b4b-643b-4e02-920e-fefdb99fb562",
+            "timestamp": "2026-02-28T05:21:24.717Z"
+          }
+        },
+        "at": "2026-02-28T05:21:24.718Z"
+      },
+      {
+        "method": "POST",
+        "path": "/api/v1/bizes/3AHiptaVhf05khDoSn4vLZXiasZ/policies/templates",
+        "status": 201,
+        "requestBody": {
+          "name": "Agent Governance",
+          "slug": "agent-governance-yolt6d",
+          "status": "active",
+          "domainKey": "agent_governance",
+          "isDefault": false,
+          "policySnapshot": {
+            "maxRequestsPerMinute": 1
+          },
+          "evaluationPolicy": {}
+        },
+        "responseBody": {
+          "success": true,
+          "data": {
+            "id": "policy_template_3AHiqDAmyionu4VwwCoirQcyo4J",
+            "bizId": "3AHiptaVhf05khDoSn4vLZXiasZ",
+            "name": "Agent Governance",
+            "slug": "agent-governance-yolt6d",
+            "status": "active",
+            "domainKey": "agent_governance",
+            "description": null,
+            "version": 1,
+            "aggregationMode": "all",
+            "minPassingRuleCount": null,
+            "effectiveFromAt": null,
+            "effectiveToAt": null,
+            "isDefault": false,
+            "policySnapshot": {
+              "maxRequestsPerMinute": 1
+            },
+            "evaluationPolicy": {},
+            "consequencePolicy": {},
+            "metadata": {},
+            "createdAt": "2026-02-28T05:21:24.723Z",
+            "updatedAt": "2026-02-28T05:21:24.723Z",
+            "deletedAt": null,
+            "createdBy": null,
+            "updatedBy": null,
+            "deletedBy": null
+          },
+          "meta": {
+            "requestId": "fe266609-95fa-464d-9fa1-05729b6a1dcd",
+            "timestamp": "2026-02-28T05:21:24.725Z"
+          }
+        },
+        "at": "2026-02-28T05:21:24.725Z"
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/bizes/3AHiptaVhf05khDoSn4vLZXiasZ/policies/bindings",
+        "status": 200,
+        "responseBody": {
+          "success": true,
+          "data": [],
+          "meta": {
+            "requestId": "b501c700-9d8e-40e0-a133-560a8707f9e5",
+            "timestamp": "2026-02-28T05:21:24.734Z"
+          }
+        },
+        "at": "2026-02-28T05:21:24.735Z"
+      },
+      {
+        "method": "POST",
+        "path": "/api/v1/bizes/3AHiptaVhf05khDoSn4vLZXiasZ/policies/bindings",
+        "status": 201,
+        "requestBody": {
+          "policyTemplateId": "policy_template_3AHiqDAmyionu4VwwCoirQcyo4J",
+          "targetType": "biz",
+          "enforcementPolicy": {}
+        },
+        "responseBody": {
+          "success": true,
+          "data": {
+            "id": "policy_binding_3AHiqA6gRXBzj4jkqAA35z0noTN",
+            "bizId": "3AHiptaVhf05khDoSn4vLZXiasZ",
+            "policyTemplateId": "policy_template_3AHiqDAmyionu4VwwCoirQcyo4J",
+            "targetType": "biz",
+            "locationId": null,
+            "resourceId": null,
+            "serviceId": null,
+            "serviceProductId": null,
+            "offerId": null,
+            "offerVersionId": null,
+            "queueId": null,
+            "targetSubjectType": null,
+            "targetSubjectId": null,
+            "priority": 100,
+            "isActive": true,
+            "enforcementPolicy": {},
+            "metadata": {},
+            "createdAt": "2026-02-28T05:21:24.740Z",
+            "updatedAt": "2026-02-28T05:21:24.740Z",
+            "deletedAt": null,
+            "createdBy": null,
+            "updatedBy": null,
+            "deletedBy": null
+          },
+          "meta": {
+            "requestId": "a31805d7-a53a-46d0-84f5-7b6f7ec58709",
+            "timestamp": "2026-02-28T05:21:24.742Z"
+          }
+        },
+        "at": "2026-02-28T05:21:24.742Z"
+      },
+      {
+        "method": "POST",
+        "path": "/api/v1/agents/execute",
+        "status": 200,
+        "requestBody": {
+          "tool": "bizing.auth.me",
+          "params": {}
+        },
+        "responseBody": {
+          "success": true,
+          "data": {
+            "tool": "bizing.auth.me",
+            "method": "GET",
+            "path": "/api/v1/auth/me",
+            "requestUrl": "http://localhost:6129/api/v1/auth/me",
+            "status": 200,
+            "success": true,
+            "response": {
+              "success": true,
+              "data": {
+                "user": {
+                  "id": "QJsamV4MZP6LUNhYeeFLOvEMAnxV0NJm",
+                  "email": "owner-runner-1772256044540-kzz6bo@example.com",
+                  "role": "user"
+                },
+                "session": {
+                  "id": "machine-token:api_access_token_3AHiq7oS1GQu7fqSBUSsdnTzBCx",
+                  "activeOrganizationId": "3AHiptaVhf05khDoSn4vLZXiasZ"
+                },
+                "auth": {
+                  "source": "access_token",
+                  "scopes": [
+                    "bizes.read",
+                    "booking_orders.read",
+                    "booking_orders.create",
+                    "booking_orders.update"
+                  ],
+                  "credentialId": "api_credential_3AHiq7vjMRC1gRDDyjhVIqLamk1"
+                },
+                "memberships": [
+                  {
+                    "id": "3AHilDgC3hrwEhbHLxaD82DGxZ3",
+                    "name": "Saga uc-108-the-group-event-organizer-gathering-gwen",
+                    "slug": "uc-108-the-group-event-organizer-gathering-gwen-3qqelapk",
+                    "membershipId": "member_0eb51b0584c348829c1d6213510406e3",
+                    "membershipRole": "owner",
+                    "membershipCreatedAt": "2026-02-28T05:20:45.984Z"
+                  },
+                  {
+                    "id": "3AHiljNN31x65SYwJkATUnUrz05",
+                    "name": "Saga uc-108-the-solo-entrepreneur-sarah",
+                    "slug": "uc-108-the-solo-entrepreneur-sarah-cuggmp1d",
+                    "membershipId": "member_67a7707283aa4265badf5479dd1d0ff5",
+                    "membershipRole": "owner",
+                    "membershipCreatedAt": "2026-02-28T05:20:49.710Z"
+                  },
+                  {
+                    "id": "3AHimDLrdHRkg0L6kkjj2Ongqcd",
+                    "name": "Saga uc-108-the-waitlist-warrior-waiting-walter",
+                    "slug": "uc-108-the-waitlist-warrior-waiting-walter-a2ebonel",
+                    "membershipId": "member_1f79c671ad544c6e9ceb9dd9a450dede",
+                    "membershipRole": "owner",
+                    "membershipCreatedAt": "2026-02-28T05:20:53.310Z"
+                  },
+                  {
+                    "id": "3AHimp8QXFjeuvRqedwrxHISL91",
+                    "name": "Saga uc-109-the-front-desk-manager-lisa",
+                    "slug": "uc-109-the-front-desk-manager-lisa-kt3mikm5",
+                    "membershipId": "member_1195a9b3f7c043aa823621fb2356d5b8",
+                    "membershipRole": "owner",
+                    "membershipCreatedAt": "2026-02-28T05:20:57.144Z"
+                  },
+                  {
+                    "id": "3AHin0nAZQ3EaFjKfe1GcaCbz5W",
+                    "name": "Saga uc-109-the-group-event-organizer-gathering-gwen",
+                    "slug": "uc-109-the-group-event-organizer-gathering-gwen-ctoizdwc",
+                    "membershipId": "member_534b062f981a4ddea683981873e6f0b7",
+                    "membershipRole": "owner",
+                    "membershipCreatedAt": "2026-02-28T05:20:59.966Z"
+                  },
+                  {
+                    "id": "3AHinV9FpallvhwINjz7O4e8Sxr",
+                    "name": "Saga uc-109-the-solo-entrepreneur-sarah",
+                    "slug": "uc-109-the-solo-entrepreneur-sarah-yyp7del7",
+                    "membershipId": "member_2291a50f93844c0d9860c85a5fd4f0a0",
+                    "membershipRole": "owner",
+                    "membershipCreatedAt": "2026-02-28T05:21:03.088Z"
+                  },
+                  {
+                    "id": "3AHinl0BRusCqMgnqglHEem9UEk",
+                    "name": "Saga uc-11-the-ai-agent-builder-agent-avery",
+                    "slug": "uc-11-the-ai-agent-builder-agent-avery-pw2knere",
+                    "membershipId": "member_bfaae835a5fa49389d0dd45a950b142f",
+                    "membershipRole": "owner",
+                    "membershipCreatedAt": "2026-02-28T05:21:05.821Z"
+                  },
+                  {
+                    "id": "3AHioYBRzsBhNldtX0jAdO9KNFy",
+                    "name": "Saga uc-11-the-confused-multi-biz-user-sam",
+                    "slug": "uc-11-the-confused-multi-biz-user-sam-vvn5jpnj",
+                    "membershipId": "member_e91ed622685e4e87bb976f01ec16a48e",
+                    "membershipRole": "owner",
+                    "membershipCreatedAt": "2026-02-28T05:21:11.725Z"
+                  },
+                  {
+                    "id": "3AHip8fQud79lqXSO6cxI7Ifvhq",
+                    "name": "Saga uc-11-the-confused-multi-biz-user-sam-payment-shadow",
+                    "slug": "uc-11-the-confused-multi-biz-user-sam-payment-shadow-j9h1b3zy",
+                    "membershipId": "member_56bbfdd96b1a47e88f9c6a6a32c5f51e",
+                    "membershipRole": "owner",
+                    "membershipCreatedAt": "2026-02-28T05:21:16.311Z"
+                  },
+                  {
+                    "id": "3AHipKwmYQS7OnqRYyzzQliAi2e",
+                    "name": "Saga uc-11-the-solo-entrepreneur-sarah",
+                    "slug": "uc-11-the-solo-entrepreneur-sarah-qdrvffp6",
+                    "membershipId": "member_28f8bf200a704514aceb12104199d717",
+                    "membershipRole": "owner",
+                    "membershipCreatedAt": "2026-02-28T05:21:17.012Z"
+                  },
+                  {
+                    "id": "3AHiptaVhf05khDoSn4vLZXiasZ",
+                    "name": "Saga uc-110-the-ai-agent-builder-agent-avery",
+                    "slug": "uc-110-the-ai-agent-builder-agent-avery-gnlbdffm",
+                    "membershipId": "member_35145904e84848839d5fab16d10ec830",
+                    "membershipRole": "owner",
+                    "membershipCreatedAt": "2026-02-28T05:21:22.238Z"
+                  }
+                ],
+                "activeBizId": "3AHiptaVhf05khDoSn4vLZXiasZ",
+                "permissionKeys": [
+                  "acl.read",
+                  "acl.write",
+                  "auth.switch_active_biz",
+                  "availability_rules.read",
+                  "availability_rules.write",
+                  "bizes.archive",
+                  "bizes.create",
+                  "bizes.read",
+                  "bizes.update",
+                  "booking_orders.cancel",
+                  "booking_orders.create",
+                  "booking_orders.read",
+                  "booking_orders.status.update",
+                  "booking_orders.update",
+                  "calendars.read",
+                  "calendars.write",
+                  "communications.read",
+                  "communications.write",
+                  "compliance.read",
+                  "entitlements.read",
+                  "entitlements.write",
+                  "invitations.manage",
+                  "invitations.read",
+                  "locations.archive",
+                  "locations.create",
+                  "locations.read",
+                  "locations.update",
+                  "members.manage",
+                  "members.read",
+                  "offers.archive",
+                  "offers.create",
+                  "offers.read",
+                  "offers.update",
+                  "pricing.read",
+                  "pricing.write",
+                  "queue_entries.create",
+                  "queue_entries.read",
+                  "queue_entries.update",
+                  "queues.archive",
+                  "queues.create",
+                  "queues.read",
+                  "queues.update",
+                  "resources.archive",
+                  "resources.create",
+                  "resources.read",
+                  "resources.update",
+                  "sagas.manage",
+                  "sagas.read",
+                  "sagas.run",
+                  "service_products.archive",
+                  "service_products.create",
+                  "service_products.read",
+                  "service_products.update",
+                  "services.archive",
+                  "services.create",
+                  "services.read",
+                  "services.update"
+                ]
+              },
+              "meta": {
+                "requestId": "67294287-be22-4d6a-baec-5214f8ac2fd1",
+                "timestamp": "2026-02-28T05:21:24.992Z"
+              }
+            }
+          },
+          "meta": {
+            "requestId": "67294287-be22-4d6a-baec-5214f8ac2fd1",
+            "timestamp": "2026-02-28T05:21:24.993Z"
+          }
+        },
+        "at": "2026-02-28T05:21:24.994Z"
+      },
+      {
+        "method": "POST",
+        "path": "/api/v1/agents/execute",
+        "status": 429,
+        "requestBody": {
+          "tool": "bizing.auth.me",
+          "params": {}
+        },
+        "responseBody": {
+          "success": false,
+          "error": {
+            "code": "RATE_LIMITED",
+            "message": "Agent execution exceeded biz policy rate limit.",
+            "details": {
+              "bizId": "3AHiptaVhf05khDoSn4vLZXiasZ",
+              "authSource": "access_token",
+              "authCredentialId": "api_credential_3AHiq7vjMRC1gRDDyjhVIqLamk1",
+              "maxRequestsPerMinute": 1,
+              "observedRequestsLastMinute": 2,
+              "enforcementSource": "in_memory_window"
+            }
+          },
+          "meta": {
+            "requestId": "82a11cd2-c730-4983-b0ac-1fe5ae0a0c13",
+            "timestamp": "2026-02-28T05:21:25.003Z"
+          }
+        },
+        "at": "2026-02-28T05:21:25.003Z"
+      }
+    ],
+    "contract": null
+  },
+  "metadata": {}
+}

@@ -1,0 +1,45 @@
+{
+  "stepKey": "uc-need-validate-6",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AHWw1PlhqlQPhQGPMxs9SJd2n9/steps/uc-need-validate-6/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the requirement of a fair distribution algorithm, which states that the system should not always ask the same person for coverage. However, the evidence provided does not demonstrate that the algorithm is functioning as intended. The linked use case mentions the need for a fair distribution algorithm, but there are no concrete API reads or persisted state checks that confirm its implementation or effectiveness, leading to a clear gap in meeting the requirement.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].needs[5]"
+          ],
+          "gaps": [
+            "No evidence of a fair distribution algorithm being implemented or verified."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add evidence for fair distribution algorithm",
+              "endpoint": "/api/v1/fair-distribution",
+              "assertion": "Verify that the system does not always select the same instructor for coverage."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "2947e6ff-9000-4bb2-b3c6-055f7548e2e6",
+          "timestamp": "2026-02-28T03:44:14.536Z"
+        }
+      },
+      "at": "2026-02-28T03:44:14.541Z"
+    }
+  ]
+}

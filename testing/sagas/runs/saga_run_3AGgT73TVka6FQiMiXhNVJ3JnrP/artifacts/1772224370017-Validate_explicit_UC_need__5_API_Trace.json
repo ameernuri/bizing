@@ -1,0 +1,45 @@
+{
+  "stepKey": "uc-need-validate-5",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AGgT73TVka6FQiMiXhNVJ3JnrP/steps/uc-need-validate-5/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate whether a failed item triggers a work order or equipment lockout. While the linked use case describes a scenario where a forklift fails inspection and is locked out, it does not provide concrete evidence of the system's behavior in response to a failed item beyond this specific instance. There is no evidence of the underlying mechanisms or endpoints that confirm the requirement is consistently met across different scenarios or equipment types, indicating a gap in the validation.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].needs"
+          ],
+          "gaps": [
+            "No evidence of consistent triggering of work orders or equipment lockouts for failed items across various equipment types."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Define API behavior for failed inspections",
+              "endpoint": "/api/v1/inspections/failures",
+              "assertion": "Verify that a failed inspection consistently triggers a work order and equipment lockout."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "c2f68811-b9e0-4452-a666-76367e2aa443",
+          "timestamp": "2026-02-27T20:32:49.880Z"
+        }
+      },
+      "at": "2026-02-27T20:32:49.881Z"
+    }
+  ]
+}

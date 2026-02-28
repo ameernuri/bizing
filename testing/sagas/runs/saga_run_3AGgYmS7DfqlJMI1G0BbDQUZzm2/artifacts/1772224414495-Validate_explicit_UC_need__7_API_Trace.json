@@ -1,0 +1,45 @@
+{
+  "stepKey": "uc-need-validate-7",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AGgYmS7DfqlJMI1G0BbDQUZzm2/steps/uc-need-validate-7/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the requirement of safely re-driving dead-letter events. However, the evidence does not provide any concrete details or endpoints that demonstrate how dead-letter events are handled or re-driven. The linked use case mentions the ops team replaying events after fixing credentials, but it lacks specific information on the safety mechanisms or processes involved in this re-driving, indicating a clear gap in the requirement coverage.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].bodyMarkdownPreview"
+          ],
+          "gaps": [
+            "No evidence of the mechanisms or processes for safely re-driving dead-letter events."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Define dead-letter event re-drive process",
+              "endpoint": "/api/v1/dead-letter/replay",
+              "assertion": "Verify the existence and safety measures for re-driving dead-letter events."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "7a9f5b8c-4498-4621-b667-00bf69f2473e",
+          "timestamp": "2026-02-27T20:33:34.292Z"
+        }
+      },
+      "at": "2026-02-27T20:33:34.293Z"
+    }
+  ]
+}

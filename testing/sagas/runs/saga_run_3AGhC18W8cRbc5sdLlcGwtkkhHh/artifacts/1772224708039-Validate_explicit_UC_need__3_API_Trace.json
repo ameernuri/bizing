@@ -1,0 +1,43 @@
+{
+  "stepKey": "uc-need-validate-3",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AGhC18W8cRbc5sdLlcGwtkkhHh/steps/uc-need-validate-3/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the requirement of status transitions during recovery from 'degraded' to 'healthy'. However, the evidence provided does not include any concrete API reads or checks that confirm these status transitions. The linked use case specifies the need for such transitions, but there is no supporting evidence to demonstrate that this requirement is met, indicating a clear gap.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [],
+          "gaps": [
+            "Missing evidence for status transitions during recovery (degraded -> healthy)."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add evidence for status transitions",
+              "endpoint": "/api/v1/status-transitions",
+              "assertion": "Verify the status transitions from 'degraded' to 'healthy' during recovery."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "806d3f84-f3a1-493d-b297-f958aef62d8f",
+          "timestamp": "2026-02-27T20:38:27.782Z"
+        }
+      },
+      "at": "2026-02-27T20:38:27.783Z"
+    }
+  ]
+}

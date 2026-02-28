@@ -1,0 +1,45 @@
+{
+  "stepKey": "uc-need-validate-3",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AGhJUlHKIR759ifWELaYSLxWjL/steps/uc-need-validate-3/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the requirement for an automatic offer when a slot opens, but the evidence does not confirm that this functionality is implemented. While the linked use case describes the scenario of an automatic offer, there is no evidence of the system's behavior when a slot becomes available, nor is there any indication of an automatic offer being generated or sent to the waitlisted customers. This indicates a gap in the evidence regarding the specific requirement of automatic offers upon slot availability.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases"
+          ],
+          "gaps": [
+            "No evidence of automatic offer generation when a slot opens."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Verify automatic offer generation",
+              "endpoint": "/api/v1/offer/automatic",
+              "assertion": "Check if an automatic offer is created and sent to the first customer in the waitlist when a slot opens."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "15e525e9-2f34-4935-a73a-2c68dd646670",
+          "timestamp": "2026-02-27T20:39:32.013Z"
+        }
+      },
+      "at": "2026-02-27T20:39:32.014Z"
+    }
+  ]
+}

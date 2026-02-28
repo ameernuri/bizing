@@ -1,0 +1,45 @@
+{
+  "stepKey": "uc-need-validate-3",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AGiZBS1KkiIi3xttt46muUPur9/steps/uc-need-validate-3/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the presence of an acceptance event with an actor and timestamp, which is a critical requirement. However, the evidence provided does not include any records or details of such an event occurring, indicating a clear gap in the validation process. The prior steps focus on creating offers and bookings but do not capture the necessary acceptance event, which is essential for confirming this requirement.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].bodyMarkdownPreview"
+          ],
+          "gaps": [
+            "No evidence of acceptance event with actor and timestamp."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Capture acceptance event details",
+              "endpoint": "/api/v1/acceptance-events",
+              "assertion": "Verify that acceptance events are logged with actor and timestamp."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "20a3c75d-ffd3-4050-a272-e6ec84db1a86",
+          "timestamp": "2026-02-27T20:49:41.566Z"
+        }
+      },
+      "at": "2026-02-27T20:49:41.568Z"
+    }
+  ]
+}

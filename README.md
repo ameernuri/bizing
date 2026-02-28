@@ -64,32 +64,28 @@ bizing/
 
 ## 📚 Documentation
 
-- [VISION.md](VISION.md) - Project vision and scope
-- [FEATURE_SPACE.md](FEATURE_SPACE.md) - Feature catalog
-- [SCHEMA_DESIGN.md](SCHEMA_DESIGN.md) - Database schema
-- [MONOREPO_SETUP.md](MONOREPO_SETUP.md) - Development setup
-- [memory/](memory/) - Design exploration and decisions
+Canonical engineering docs now live under [`docs/`](docs/):
 
-### Memory Folder
+- [`docs/INDEX.md`](docs/INDEX.md) - documentation entry point
+- [`docs/API.md`](docs/API.md) - API architecture and route surfaces
+- [`docs/SCHEMA_BIBLE.md`](docs/SCHEMA_BIBLE.md) - schema map + source locations
+- [`docs/DOC_SYNC.md`](docs/DOC_SYNC.md) - required doc + memory sync protocol
+- [`docs/CHANGE_NOTES.md`](docs/CHANGE_NOTES.md) - concise architecture change log
 
-The `memory/` folder is an **Obsidian vault** for design exploration and decisions:
+Documentation workflow commands:
+- `bun run docs:check` - fail if code-like changes exist without `docs/*.md` updates
+- `bun run docs:sync:mind` - mirror canonical code docs into mind vault (`/Users/ameer/bizing/mind/workspace/body`)
 
-| File/Folder              | Purpose                          |
-| ------------------------ | -------------------------------- |
-| `memory/`                | Design exploration and decisions |
-| `memory/WORKFLOW.md`     | How work happens                 |
-| `memory/RULES.md`        | Coding standards                 |
-| `memory/DISTILLATION.md` | Lessons learned with links       |
-| `memory/daily/`          | Daily notes (YYYY-MM-DD)         |
+Deep schema sources:
+- [`packages/db/SCHEMA_BIBLE.md`](packages/db/SCHEMA_BIBLE.md)
+- [`packages/db/src/schema/SCHEMA.md`](packages/db/src/schema/SCHEMA.md)
 
-**Key Rules:**
+Saga testing docs:
+- [`testing/sagas/README.md`](testing/sagas/README.md)
+- [`testing/sagas/docs/API_CONTRACT.md`](testing/sagas/docs/API_CONTRACT.md)
 
-- Work on a branch, never touch main directly
-- Never commit without asking for confirmation
-- Never push to main without approval
-- Ask for clarification when ambiguous
-
-See [memory/WORKFLOW.md](memory/WORKFLOW.md) for full guidelines.
+Mind workspace (outside repo, Obsidian vault):
+- `/Users/ameer/bizing/mind`
 
 ## 🧪 Testing
 

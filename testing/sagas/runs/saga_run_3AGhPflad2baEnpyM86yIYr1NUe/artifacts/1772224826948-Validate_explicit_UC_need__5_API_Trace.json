@@ -1,0 +1,46 @@
+{
+  "stepKey": "uc-need-validate-5",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AGhPflad2baEnpyM86yIYr1NUe/steps/uc-need-validate-5/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the support for signed amounts and currencies in monetary actions. However, while there is evidence of transactions with a currency (USD) and amounts, there is no explicit confirmation that the system supports signed amounts or that this requirement is fully implemented. The evidence provided does not demonstrate that the signed amount/currency support is functioning as required, indicating a gap in the validation process.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "priorStepEvidence[0].evidence.currency",
+            "priorStepEvidence[0].evidence.totalMinor"
+          ],
+          "gaps": [
+            "No evidence confirming support for signed amounts in monetary actions."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add evidence for signed amount support",
+              "endpoint": "/api/v1/monetary-actions",
+              "assertion": "Verify that the API supports signed amounts for transactions."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "0594853a-acdd-43f9-9740-3aa42c45565f",
+          "timestamp": "2026-02-27T20:40:26.756Z"
+        }
+      },
+      "at": "2026-02-27T20:40:26.758Z"
+    }
+  ]
+}

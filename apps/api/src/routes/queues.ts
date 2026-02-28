@@ -123,6 +123,7 @@ const createQueueEntryBodySchema = z
 const updateQueueEntryBodySchema = z.object({
   status: queueEntryStatusSchema.optional(),
   statusConfigValueId: z.string().nullable().optional(),
+  bookingOrderId: z.string().nullable().optional(),
   priorityScore: z.number().int().optional(),
   displayCode: z.string().max(60).nullable().optional(),
   estimatedStartAt: z.string().datetime().nullable().optional(),
@@ -131,6 +132,17 @@ const updateQueueEntryBodySchema = z.object({
   offerExpiresAt: z.string().datetime().nullable().optional(),
   servedAt: z.string().datetime().nullable().optional(),
   decisionState: z.record(z.unknown()).optional(),
+  metadata: z.record(z.unknown()).optional(),
+})
+
+const offerNextQueueEntryBodySchema = z.object({
+  offerTtlMinutes: z.number().int().min(1).max(60 * 24 * 14).default(60),
+  sourceBookingOrderId: z.string().optional(),
+  metadata: z.record(z.unknown()).optional(),
+})
+
+const publicRespondQueueEntryBodySchema = z.object({
+  action: z.enum(['accept', 'decline']),
   metadata: z.record(z.unknown()).optional(),
 })
 
@@ -450,6 +462,7 @@ queueRoutes.patch(
         status: parsed.data.status,
         statusConfigValueId:
           parsed.data.statusConfigValueId === undefined ? undefined : parsed.data.statusConfigValueId,
+        bookingOrderId: parsed.data.bookingOrderId === undefined ? undefined : parsed.data.bookingOrderId,
         priorityScore: parsed.data.priorityScore,
         displayCode: parsed.data.displayCode === undefined ? undefined : parsed.data.displayCode,
         estimatedStartAt:
@@ -491,6 +504,89 @@ queueRoutes.patch(
       .returning()
 
     return ok(c, updated)
+  },
+)
+
+/**
+ * Offer the next waiting queue entry.
+ *
+ * ELI5:
+ * - a waitlist is only useful if the business can promote the next person,
+ * - this endpoint picks the next eligible waiting entry using queue strategy,
+ * - then marks that entry as "offered" with an expiration window.
+ *
+ * Why this exists:
+ * - deterministic saga validation for waitlist promotion,
+ * - real operational need for cancellations/no-shows,
+ * - keeps queue promotion logic in one canonical place instead of scattered
+ *   client-side patches.
+ */
+queueRoutes.post(
+  '/bizes/:bizId/queues/:queueId/offer-next',
+  requireAuth,
+  requireBizAccess('bizId'),
+  requireAclPermission('queue_entries.update', { bizIdParam: 'bizId' }),
+  async (c) => {
+    const { bizId, queueId } = c.req.param()
+    const user = getCurrentUser(c)
+    if (!user) return fail(c, 'UNAUTHORIZED', 'Authentication required.', 401)
+    const body = await c.req.json().catch(() => ({}))
+    const parsed = offerNextQueueEntryBodySchema.safeParse(body)
+    if (!parsed.success) {
+      return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
+    }
+
+    const queue = await db.query.queues.findFirst({
+      where: and(eq(queues.bizId, bizId), eq(queues.id, queueId)),
+    })
+    if (!queue) return fail(c, 'NOT_FOUND', 'Queue not found.', 404)
+
+    const waitingEntries = await db.query.queueEntries.findMany({
+      where: and(eq(queueEntries.bizId, bizId), eq(queueEntries.queueId, queueId), eq(queueEntries.status, 'waiting')),
+    })
+    if (waitingEntries.length === 0) {
+      return fail(c, 'NO_WAITING_ENTRIES', 'No waiting queue entries are available to offer.', 409)
+    }
+
+    const sortedEntries = [...waitingEntries].sort((a, b) => {
+      if (queue.strategy === 'priority') {
+        if (b.priorityScore !== a.priorityScore) return b.priorityScore - a.priorityScore
+        return a.joinedAt.getTime() - b.joinedAt.getTime()
+      }
+      return a.joinedAt.getTime() - b.joinedAt.getTime()
+    })
+
+    const selected = sortedEntries[0]
+    const offeredAt = new Date()
+    const offerExpiresAt = new Date(offeredAt.getTime() + parsed.data.offerTtlMinutes * 60 * 1000)
+    const nextDecisionState = {
+      ...((selected.decisionState ?? {}) as Record<string, unknown>),
+      offer: {
+        action: 'offered',
+        offeredAt: offeredAt.toISOString(),
+        offerExpiresAt: offerExpiresAt.toISOString(),
+        sourceBookingOrderId: parsed.data.sourceBookingOrderId ?? null,
+        promotedByUserId: user.id,
+      },
+    }
+    const nextMetadata = {
+      ...((selected.metadata ?? {}) as Record<string, unknown>),
+      ...(parsed.data.metadata ?? {}),
+    }
+
+    const [updated] = await db
+      .update(queueEntries)
+      .set({
+        status: 'offered',
+        offeredAt,
+        offerExpiresAt,
+        decisionState: nextDecisionState,
+        metadata: nextMetadata,
+      })
+      .where(and(eq(queueEntries.bizId, bizId), eq(queueEntries.queueId, queueId), eq(queueEntries.id, selected.id)))
+      .returning()
+
+    return ok(c, updated, 201)
   },
 )
 
@@ -626,4 +722,72 @@ queueRoutes.get('/public/bizes/:bizId/queues/:queueId/entries', requireAuth, asy
       hasMore: pageNum * perPageNum < total,
     },
   })
+})
+
+/**
+ * Public customer response to an offered waitlist entry.
+ *
+ * ELI5:
+ * - once the business offers a spot, the customer needs to answer,
+ * - "accept" means they are taking the offered chance,
+ * - "decline" means give it to someone else.
+ *
+ * The route enforces:
+ * - customer can only respond to their own entry,
+ * - only offered entries can be answered,
+ * - expired offers cannot be accepted.
+ */
+queueRoutes.post('/public/bizes/:bizId/queues/:queueId/entries/:queueEntryId/respond', requireAuth, async (c) => {
+  const { bizId, queueId, queueEntryId } = c.req.param()
+  const user = getCurrentUser(c)
+  if (!user) return fail(c, 'UNAUTHORIZED', 'Authentication required.', 401)
+  const body = await c.req.json().catch(() => null)
+  const parsed = publicRespondQueueEntryBodySchema.safeParse(body)
+  if (!parsed.success) {
+    return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
+  }
+
+  const existing = await db.query.queueEntries.findFirst({
+    where: and(
+      eq(queueEntries.bizId, bizId),
+      eq(queueEntries.queueId, queueId),
+      eq(queueEntries.id, queueEntryId),
+      eq(queueEntries.customerUserId, user.id),
+    ),
+  })
+  if (!existing) return fail(c, 'NOT_FOUND', 'Queue entry not found.', 404)
+  if (existing.status !== 'offered') {
+    return fail(c, 'INVALID_STATE', 'Only offered queue entries can be answered.', 409)
+  }
+
+  const now = new Date()
+  if (parsed.data.action === 'accept' && existing.offerExpiresAt && existing.offerExpiresAt.getTime() < now.getTime()) {
+    return fail(c, 'OFFER_EXPIRED', 'The offered waitlist slot has already expired.', 409)
+  }
+
+  const nextStatus = parsed.data.action === 'accept' ? 'claimed' : 'cancelled'
+  const nextDecisionState = {
+    ...((existing.decisionState ?? {}) as Record<string, unknown>),
+    response: {
+      action: parsed.data.action,
+      respondedAt: now.toISOString(),
+      customerUserId: user.id,
+    },
+  }
+  const nextMetadata = {
+    ...((existing.metadata ?? {}) as Record<string, unknown>),
+    ...(parsed.data.metadata ?? {}),
+  }
+
+  const [updated] = await db
+    .update(queueEntries)
+    .set({
+      status: nextStatus,
+      decisionState: nextDecisionState,
+      metadata: nextMetadata,
+    })
+    .where(and(eq(queueEntries.bizId, bizId), eq(queueEntries.queueId, queueId), eq(queueEntries.id, queueEntryId)))
+    .returning()
+
+  return ok(c, updated)
 })

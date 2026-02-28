@@ -22,6 +22,26 @@ import { codeModeRoutes } from './mcp.js'
 import { sagaRoutes } from './sagas.js'
 import { authzRoutes } from './authz.js'
 import { authMachineRoutes } from './auth-machine.js'
+import { serviceRoutes } from './services.js'
+import { serviceProductRoutes } from './service-products.js'
+import { serviceProductRequirementRoutes } from './service-product-requirements.js'
+import { calendarRoutes } from './calendars.js'
+import { communicationRoutes } from './communications.js'
+import { entitlementRoutes } from './entitlements.js'
+import { policyRoutes } from './policies.js'
+import { bookingParticipantRoutes } from './booking-participants.js'
+import { operationsRoutes } from './operations.js'
+import { staffingRoutes } from './staffing.js'
+import { fulfillmentRoutes } from './fulfillment.js'
+import { compensationRoutes } from './compensation.js'
+import { accessRoutes } from './access.js'
+import { virtualMeetingRoutes } from './virtual-meetings.js'
+import { extensionRoutes } from './extensions.js'
+import { receivableRoutes } from './receivables.js'
+import { supplyRoutes } from './supply.js'
+import { slaRoutes } from './sla.js'
+import { taxFxRoutes } from './tax-fx.js'
+import { commitmentRoutes } from './commitments.js'
 import testRoutes from './test-failures.js'
 
 export const coreApiRoutes = new Hono()
@@ -38,11 +58,41 @@ coreApiRoutes.route('/', channelRoutes)
 coreApiRoutes.route('/', dispatchRoutes)
 coreApiRoutes.route('/', paymentRoutes)
 coreApiRoutes.route('/', subjectSubscriptionRoutes)
+coreApiRoutes.route('/', serviceRoutes)
+coreApiRoutes.route('/', serviceProductRoutes)
+coreApiRoutes.route('/', serviceProductRequirementRoutes)
+coreApiRoutes.route('/', calendarRoutes)
+coreApiRoutes.route('/', communicationRoutes)
+coreApiRoutes.route('/', entitlementRoutes)
+coreApiRoutes.route('/', policyRoutes)
+coreApiRoutes.route('/', bookingParticipantRoutes)
+coreApiRoutes.route('/', operationsRoutes)
+coreApiRoutes.route('/', staffingRoutes)
+coreApiRoutes.route('/', fulfillmentRoutes)
+coreApiRoutes.route('/', compensationRoutes)
+coreApiRoutes.route('/', accessRoutes)
+coreApiRoutes.route('/', virtualMeetingRoutes)
+coreApiRoutes.route('/', extensionRoutes)
+coreApiRoutes.route('/', receivableRoutes)
+coreApiRoutes.route('/', supplyRoutes)
+coreApiRoutes.route('/', slaRoutes)
+coreApiRoutes.route('/', taxFxRoutes)
+coreApiRoutes.route('/', commitmentRoutes)
 coreApiRoutes.route('/', sagaRoutes)
 coreApiRoutes.route('/', authzRoutes)
 coreApiRoutes.route('/', authMachineRoutes)
 coreApiRoutes.route('/agents', codeModeRoutes)
-coreApiRoutes.route('/test', testRoutes)
+
+/**
+ * Test-failure routes are explicitly opt-in for local runner diagnostics.
+ *
+ * Security posture:
+ * - disabled by default to avoid exposing intentionally-broken handlers
+ *   in normal environments.
+ */
+if (process.env.ENABLE_TEST_FAILURE_ROUTES === 'true') {
+  coreApiRoutes.route('/test', testRoutes)
+}
 
 coreApiRoutes.get('/health', (c) => {
   return c.json({

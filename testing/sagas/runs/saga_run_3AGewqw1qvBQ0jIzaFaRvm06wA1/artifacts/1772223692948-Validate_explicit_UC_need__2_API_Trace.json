@@ -1,0 +1,46 @@
+{
+  "stepKey": "uc-need-validate-2",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AGewqw1qvBQ0jIzaFaRvm06wA1/steps/uc-need-validate-2/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step requires validation of the 'Parts ordering with ETA' feature, which is a critical need outlined in the linked use case. However, the prior steps do not provide any concrete API reads or persisted state checks that confirm this requirement is met. The evidence only discusses the booking process and does not address the parts ordering aspect, indicating a gap in the requirement coverage.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].needs[1]",
+            "priorStepEvidence"
+          ],
+          "gaps": [
+            "No evidence confirming the execution of parts ordering with ETA."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add deterministic evidence for parts ordering",
+              "endpoint": "/api/v1/parts/order",
+              "assertion": "Verify that parts ordering includes an estimated time of arrival (ETA)."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "5ede91b9-c68a-4237-aaf0-ce389a7b41a2",
+          "timestamp": "2026-02-27T20:21:32.755Z"
+        }
+      },
+      "at": "2026-02-27T20:21:32.756Z"
+    }
+  ]
+}

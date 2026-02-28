@@ -1,0 +1,45 @@
+{
+  "stepKey": "uc-need-validate-5",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AGhYNQFJzSeg7KAAWWlJ5Tbuv0/steps/uc-need-validate-5/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the requirement for guardrails against duplicate recovery spam, but the evidence provided does not include any checks or mechanisms that demonstrate this requirement is being enforced. The linked use case explicitly mentions the need for these guardrails, yet there is no evidence of their implementation or validation in the prior steps. This indicates a clear gap in coverage regarding the requirement for preventing duplicate recovery communications.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].bodyMarkdownPreview"
+          ],
+          "gaps": [
+            "No evidence of mechanisms to prevent duplicate recovery spam."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Implement duplicate recovery spam guardrails",
+              "endpoint": "/api/v1/recovery/guardrails",
+              "assertion": "Verify that duplicate recovery messages are not sent to customers who have already received a recovery message."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "09d350ff-dad1-4a94-925e-83ebe074d557",
+          "timestamp": "2026-02-27T20:41:44.065Z"
+        }
+      },
+      "at": "2026-02-27T20:41:44.066Z"
+    }
+  ]
+}

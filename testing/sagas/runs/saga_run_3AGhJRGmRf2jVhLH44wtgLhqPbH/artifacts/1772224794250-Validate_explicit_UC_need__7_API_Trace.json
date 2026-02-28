@@ -1,0 +1,45 @@
+{
+  "stepKey": "uc-need-validate-7",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AGhJRGmRf2jVhLH44wtgLhqPbH/steps/uc-need-validate-7/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the requirement of prioritizing members in the waitlist, but the evidence does not confirm that members are prioritized over non-members. The evidence only shows that customers have entered the waitlist without any indication of their membership status or how the system handles prioritization. This indicates a clear gap in the evidence regarding the implementation of priority tiers.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "customer-join-waitlist-flow"
+          ],
+          "gaps": [
+            "No evidence of prioritization of members over non-members in the waitlist."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Verify member prioritization in waitlist",
+              "endpoint": "/api/v1/waitlist/prioritization",
+              "assertion": "Check if members are prioritized in the waitlist queue."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "f1ac1ebd-769a-4d70-8cbc-aa3b4126114c",
+          "timestamp": "2026-02-27T20:39:54.062Z"
+        }
+      },
+      "at": "2026-02-27T20:39:54.063Z"
+    }
+  ]
+}

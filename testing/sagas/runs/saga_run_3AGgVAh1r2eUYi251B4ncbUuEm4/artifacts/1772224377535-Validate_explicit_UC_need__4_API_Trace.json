@@ -1,0 +1,45 @@
+{
+  "stepKey": "uc-need-validate-4",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AGgVAh1r2eUYi251B4ncbUuEm4/steps/uc-need-validate-4/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to confirm that the customer location is saved, but there is no evidence provided that explicitly verifies this requirement. The prior steps do not include any API reads or persisted state checks that confirm the saving of customer location data. This leads to a clear gap in the requirement coverage, as the necessary evidence to validate the requirement is missing.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "exploratoryStep.instruction"
+          ],
+          "gaps": [
+            "No evidence of API reads or persisted state checks confirming that customer location is saved."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add API read for customer location",
+              "endpoint": "/api/v1/customers/{customerId}/location",
+              "assertion": "Verify that the customer location is saved correctly in the system."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "0ea5b975-cd43-4ef2-b8ad-ddb88bf738c5",
+          "timestamp": "2026-02-27T20:32:57.335Z"
+        }
+      },
+      "at": "2026-02-27T20:32:57.336Z"
+    }
+  ]
+}

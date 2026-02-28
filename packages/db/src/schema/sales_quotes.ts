@@ -15,8 +15,13 @@ import { bizConfigValues } from "./biz_configs";
 import { checkoutSessions } from "./checkout";
 import { crmContacts } from "./crm";
 import { bookingOrders } from "./fulfillment";
-import { interactionSubmissions } from "./interaction_forms";
-import { lifecycleStatusEnum } from "./enums";
+import { instrumentRuns } from "./instruments";
+import {
+  lifecycleStatusEnum,
+  salesQuoteGenerationStatusEnum,
+  salesQuoteGeneratorTypeEnum,
+  salesQuoteRequestStatusEnum,
+} from "./enums";
 import { sellables } from "./product_commerce";
 import { subjects } from "./subjects";
 import { users } from "./users";
@@ -570,10 +575,11 @@ export const salesQuoteAcceptances = pgTable(
     /** Guest/manual signer email when no authenticated principal exists. */
     signerEmail: varchar("signer_email", { length: 320 }),
 
-    /** Optional pointer to captured form/signature submission. */
-    interactionSubmissionId: idRef("interaction_submission_id").references(
-      () => interactionSubmissions.id,
-    ),
+    /**
+     * Optional pointer to the unified instrument run that captured
+     * intake/quiz/assessment evidence used during acceptance.
+     */
+    instrumentRunId: idRef("instrument_run_id").references(() => instrumentRuns.id),
 
     /** Optional booking order produced by this acceptance decision. */
     bookingOrderId: idRef("booking_order_id").references(() => bookingOrders.id),
@@ -631,11 +637,11 @@ export const salesQuoteAcceptances = pgTable(
       name: "sales_quote_acceptances_biz_version_fk",
     }),
 
-    /** Tenant-safe FK to optional interaction submission. */
-    salesQuoteAcceptancesBizSubmissionFk: foreignKey({
-      columns: [table.bizId, table.interactionSubmissionId],
-      foreignColumns: [interactionSubmissions.bizId, interactionSubmissions.id],
-      name: "sales_quote_acceptances_biz_submission_fk",
+    /** Tenant-safe FK to optional instrument run evidence row. */
+    salesQuoteAcceptancesBizInstrumentRunFk: foreignKey({
+      columns: [table.bizId, table.instrumentRunId],
+      foreignColumns: [instrumentRuns.bizId, instrumentRuns.id],
+      name: "sales_quote_acceptances_biz_instrument_run_fk",
     }),
 
     /** Tenant-safe FK to optional converted booking order. */
@@ -700,6 +706,294 @@ export const salesQuoteAcceptances = pgTable(
   }),
 );
 
+/**
+ * sales_quote_requests
+ *
+ * ELI5:
+ * A quote request is the pre-quote intake thread.
+ *
+ * It captures "what the buyer wants" before any quote version exists.
+ * This supports:
+ * - services, packages, products (through generic target pointers),
+ * - intake-form driven requirements,
+ * - repeatable quote generation pipelines.
+ */
+export const salesQuoteRequests = pgTable(
+  "sales_quote_requests",
+  {
+    /** Stable primary key for one quote request thread. */
+    id: idWithTag("sales_quote_request"),
+
+    /** Tenant boundary. */
+    bizId: idRef("biz_id")
+      .references(() => bizes.id)
+      .notNull(),
+
+    /** Human/business request number for support and operations. */
+    requestNumber: varchar("request_number", { length: 120 }).notNull(),
+
+    /** Request lifecycle status. */
+    status: salesQuoteRequestStatusEnum("status").default("submitted").notNull(),
+
+    /** Shared contact identity for requestor. */
+    crmContactId: idRef("crm_contact_id")
+      .references(() => crmContacts.id)
+      .notNull(),
+
+    /**
+     * Optional target context class.
+     * Example: service_product, offer, product, custom_subject.
+     */
+    targetType: varchar("target_type", { length: 80 }),
+
+    /** Optional target context id. */
+    targetRefId: varchar("target_ref_id", { length: 140 }),
+
+    /** Optional requested service window start. */
+    requestedStartAt: timestamp("requested_start_at", { withTimezone: true }),
+
+    /** Optional requested service window end. */
+    requestedEndAt: timestamp("requested_end_at", { withTimezone: true }),
+
+    /** Requested settlement/display currency. */
+    currency: varchar("currency", { length: 3 }).default("USD").notNull(),
+
+    /**
+     * Optional pointer to intake/assessment run that produced request data.
+     *
+     * This is the canonical way to connect quote requests to structured forms.
+     */
+    intakeInstrumentRunId: idRef("intake_instrument_run_id").references(
+      () => instrumentRuns.id,
+    ),
+
+    /** Structured requested line/items payload (pre-normalization). */
+    requestPayload: jsonb("request_payload").default({}).notNull(),
+
+    /** Optional request summary for fast list UIs. */
+    summary: text("summary"),
+
+    /** Optional link to final generated quote thread. */
+    salesQuoteId: idRef("sales_quote_id").references(() => salesQuotes.id),
+
+    /** Conversion timestamp once quote thread created. */
+    convertedAt: timestamp("converted_at", { withTimezone: true }),
+
+    /** Extension payload. */
+    metadata: jsonb("metadata").default({}),
+
+    /** Full audit metadata. */
+    ...withAuditRefs(() => users.id),
+  },
+  (table) => ({
+    salesQuoteRequestsBizIdIdUnique: uniqueIndex("sales_quote_requests_biz_id_id_unique").on(
+      table.bizId,
+      table.id,
+    ),
+
+    /** Unique request number per tenant. */
+    salesQuoteRequestsBizNumberUnique: uniqueIndex("sales_quote_requests_biz_number_unique").on(
+      table.bizId,
+      table.requestNumber,
+    ),
+
+    /** Main quote-request queue path. */
+    salesQuoteRequestsBizStatusIdx: index("sales_quote_requests_biz_status_idx").on(
+      table.bizId,
+      table.status,
+      table.requestedStartAt,
+    ),
+
+    /** Contact-centric request history path. */
+    salesQuoteRequestsBizContactIdx: index("sales_quote_requests_biz_contact_idx").on(
+      table.bizId,
+      table.crmContactId,
+      table.status,
+    ),
+
+    /** Tenant-safe FK to requestor contact. */
+    salesQuoteRequestsBizContactFk: foreignKey({
+      columns: [table.bizId, table.crmContactId],
+      foreignColumns: [crmContacts.bizId, crmContacts.id],
+      name: "sales_quote_requests_biz_contact_fk",
+    }),
+
+    /** Tenant-safe FK to optional intake instrument run. */
+    salesQuoteRequestsBizIntakeRunFk: foreignKey({
+      columns: [table.bizId, table.intakeInstrumentRunId],
+      foreignColumns: [instrumentRuns.bizId, instrumentRuns.id],
+      name: "sales_quote_requests_biz_intake_run_fk",
+    }),
+
+    /** Tenant-safe FK to optional created quote thread. */
+    salesQuoteRequestsBizQuoteFk: foreignKey({
+      columns: [table.bizId, table.salesQuoteId],
+      foreignColumns: [salesQuotes.bizId, salesQuotes.id],
+      name: "sales_quote_requests_biz_quote_fk",
+    }),
+
+    /** Timeline and status consistency checks. */
+    salesQuoteRequestsTimelineCheck: check(
+      "sales_quote_requests_timeline_check",
+      sql`
+      ("requested_start_at" IS NULL OR "requested_end_at" IS NULL OR "requested_end_at" >= "requested_start_at")
+      AND ("converted_at" IS NULL OR "sales_quote_id" IS NOT NULL)
+      `,
+    ),
+
+    /** Currency shape should stay uppercase ISO-like. */
+    salesQuoteRequestsCurrencyFormatCheck: check(
+      "sales_quote_requests_currency_format_check",
+      sql`"currency" ~ '^[A-Z]{3}$'`,
+    ),
+  }),
+);
+
+/**
+ * sales_quote_generation_runs
+ *
+ * ELI5:
+ * One row = one quote generation execution.
+ *
+ * This supports:
+ * - manual quote assembly,
+ * - rules-engine quote assembly,
+ * - AI/agent-assisted quote assembly,
+ * - external pricer integrations.
+ *
+ * Why separate from quote tables:
+ * - generation pipelines can retry/fail independently,
+ * - observability/debugging needs run-level inputs/outputs,
+ * - keeps quote commercial tables clean and deterministic.
+ */
+export const salesQuoteGenerationRuns = pgTable(
+  "sales_quote_generation_runs",
+  {
+    /** Stable primary key. */
+    id: idWithTag("sales_quote_gen"),
+
+    /** Tenant boundary. */
+    bizId: idRef("biz_id")
+      .references(() => bizes.id)
+      .notNull(),
+
+    /** Optional parent request thread. */
+    salesQuoteRequestId: idRef("sales_quote_request_id").references(
+      () => salesQuoteRequests.id,
+    ),
+
+    /** Optional target quote thread. */
+    salesQuoteId: idRef("sales_quote_id").references(() => salesQuotes.id),
+
+    /** Optional generated quote version row. */
+    salesQuoteVersionId: idRef("sales_quote_version_id").references(
+      () => salesQuoteVersions.id,
+    ),
+
+    /** Generator strategy used for this run. */
+    generatorType: salesQuoteGeneratorTypeEnum("generator_type")
+      .default("manual")
+      .notNull(),
+
+    /** Run lifecycle status. */
+    status: salesQuoteGenerationStatusEnum("status").default("queued").notNull(),
+
+    /** Optional actor subject pointer for the generator/executor. */
+    generatorSubjectBizId: idRef("generator_subject_biz_id").references(
+      () => bizes.id,
+    ),
+    generatorSubjectType: varchar("generator_subject_type", { length: 80 }),
+    generatorSubjectId: idRef("generator_subject_id"),
+
+    /** Run start/end timestamps. */
+    startedAt: timestamp("started_at", { withTimezone: true }),
+    completedAt: timestamp("completed_at", { withTimezone: true }),
+
+    /** Deterministic generation input snapshot. */
+    inputSnapshot: jsonb("input_snapshot").default({}).notNull(),
+
+    /** Deterministic generation output snapshot. */
+    outputSnapshot: jsonb("output_snapshot").default({}).notNull(),
+
+    /** Pricing trace used for explainability/debugging. */
+    pricingTrace: jsonb("pricing_trace").default({}).notNull(),
+
+    /** Optional error summary when failed/cancelled. */
+    errorSummary: text("error_summary"),
+
+    /** Extensible payload. */
+    metadata: jsonb("metadata").default({}),
+
+    /** Full audit metadata. */
+    ...withAuditRefs(() => users.id),
+  },
+  (table) => ({
+    salesQuoteGenerationRunsBizIdIdUnique: uniqueIndex(
+      "sales_quote_generation_runs_biz_id_id_unique",
+    ).on(table.bizId, table.id),
+
+    /** Main generator operations queue path. */
+    salesQuoteGenerationRunsBizStatusStartedIdx: index(
+      "sales_quote_generation_runs_biz_status_started_idx",
+    ).on(table.bizId, table.status, table.startedAt),
+
+    /** Parent request timeline path. */
+    salesQuoteGenerationRunsBizRequestIdx: index(
+      "sales_quote_generation_runs_biz_request_idx",
+    ).on(table.bizId, table.salesQuoteRequestId, table.startedAt),
+
+    /** Tenant-safe FK to request thread. */
+    salesQuoteGenerationRunsBizRequestFk: foreignKey({
+      columns: [table.bizId, table.salesQuoteRequestId],
+      foreignColumns: [salesQuoteRequests.bizId, salesQuoteRequests.id],
+      name: "sales_quote_generation_runs_biz_request_fk",
+    }),
+
+    /** Tenant-safe FK to quote thread. */
+    salesQuoteGenerationRunsBizQuoteFk: foreignKey({
+      columns: [table.bizId, table.salesQuoteId],
+      foreignColumns: [salesQuotes.bizId, salesQuotes.id],
+      name: "sales_quote_generation_runs_biz_quote_fk",
+    }),
+
+    /** Tenant-safe FK to quote version. */
+    salesQuoteGenerationRunsBizQuoteVersionFk: foreignKey({
+      columns: [table.bizId, table.salesQuoteVersionId],
+      foreignColumns: [salesQuoteVersions.bizId, salesQuoteVersions.id],
+      name: "sales_quote_generation_runs_biz_quote_version_fk",
+    }),
+
+    /** Tenant-safe FK to generator subject. */
+    salesQuoteGenerationRunsGeneratorSubjectFk: foreignKey({
+      columns: [table.generatorSubjectBizId, table.generatorSubjectType, table.generatorSubjectId],
+      foreignColumns: [subjects.bizId, subjects.subjectType, subjects.subjectId],
+      name: "sales_quote_generation_runs_generator_subject_fk",
+    }),
+
+    /** Generator subject pointer should be all-null or all-populated. */
+    salesQuoteGenerationRunsGeneratorSubjectPairCheck: check(
+      "sales_quote_generation_runs_generator_subject_pair_check",
+      sql`
+      (
+        "generator_subject_biz_id" IS NULL
+        AND "generator_subject_type" IS NULL
+        AND "generator_subject_id" IS NULL
+      ) OR (
+        "generator_subject_biz_id" IS NOT NULL
+        AND "generator_subject_type" IS NOT NULL
+        AND "generator_subject_id" IS NOT NULL
+      )
+      `,
+    ),
+
+    /** Timeline sanity. */
+    salesQuoteGenerationRunsTimelineCheck: check(
+      "sales_quote_generation_runs_timeline_check",
+      sql`"started_at" IS NULL OR "completed_at" IS NULL OR "completed_at" >= "started_at"`,
+    ),
+  }),
+);
+
 export type SalesQuote = typeof salesQuotes.$inferSelect;
 export type NewSalesQuote = typeof salesQuotes.$inferInsert;
 
@@ -711,3 +1005,9 @@ export type NewSalesQuoteLine = typeof salesQuoteLines.$inferInsert;
 
 export type SalesQuoteAcceptance = typeof salesQuoteAcceptances.$inferSelect;
 export type NewSalesQuoteAcceptance = typeof salesQuoteAcceptances.$inferInsert;
+
+export type SalesQuoteRequest = typeof salesQuoteRequests.$inferSelect;
+export type NewSalesQuoteRequest = typeof salesQuoteRequests.$inferInsert;
+
+export type SalesQuoteGenerationRun = typeof salesQuoteGenerationRuns.$inferSelect;
+export type NewSalesQuoteGenerationRun = typeof salesQuoteGenerationRuns.$inferInsert;

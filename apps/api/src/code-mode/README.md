@@ -4,7 +4,7 @@ This API exposes an agent-friendly, API-first tool layer.
 
 ## Endpoints
 
-- `GET /api/v1/agents/manifest`
+- `GET /api/v1/agents/manifest` (auth required)
 - `GET /api/v1/agents/tools` (auth required)
 - `GET /api/v1/agents/search?q=<query>` (auth required)
 - `POST /api/v1/agents/execute` (auth required)
@@ -27,6 +27,27 @@ This API exposes an agent-friendly, API-first tool layer.
   "stepKey": "customer-book-primary"
 }
 ```
+
+Raw future-proof execution (when a dedicated tool is not yet registered):
+
+```json
+{
+  "tool": "bizing.api.raw",
+  "params": {
+    "method": "GET",
+    "path": "/api/v1/bizes",
+    "query": {
+      "page": "1",
+      "perPage": "20"
+    }
+  }
+}
+```
+
+Safety rules for `bizing.api.raw`:
+- path must start with `/api/v1/`
+- recursive calls to `/api/v1/agents/*` are blocked
+- request still runs through normal auth/ACL checks of destination route
 
 `runId` + `stepKey` are optional.  
 When provided, the server automatically stores an `api_trace` artifact for that
@@ -104,7 +125,11 @@ Machine credential endpoints:
 
 - `GET /api/v1/auth/api-keys`
 - `POST /api/v1/auth/api-keys`
+- `POST /api/v1/auth/api-keys/{apiCredentialId}/rotate`
 - `POST /api/v1/auth/api-keys/{apiCredentialId}/revoke`
+- `GET /api/v1/auth/events`
+- `GET /api/v1/auth/principals`
+- `GET /api/v1/auth/tokens`
 - `POST /api/v1/auth/tokens/exchange`
 - `POST /api/v1/auth/tokens/{tokenId}/revoke`
 
@@ -112,4 +137,5 @@ Agent routes accept:
 
 - Cookie session.
 - `Authorization: Bearer <access-token>` (short-lived token from exchange).
-- `Authorization: ApiKey <api-key>` or `x-api-key` only when key policy allows direct use.
+- `Authorization: ApiKey <api-key>` or `x-api-key` when key policy allows direct use.
+- `Authorization: Bearer <api-key>` is interpreted as API key for compatibility.

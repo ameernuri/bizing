@@ -22,8 +22,13 @@ export * from './schema/resources'
 export * from './schema/stripe'
 export * from './schema/social_graph'
 export * from './schema/api_credentials'
+export * from './schema/auth_observability'
 export * from './schema/ref_keys'
 export * from './schema/sagas'
+export * from './schema/ar'
+export * from './schema/sla'
+export * from './schema/supply'
+export * from './schema/extensions'
 /**
  * Canonical booking architecture.
  *
@@ -52,7 +57,12 @@ import * as resourcesSchema from './schema/resources'
 import * as stripeSchema from './schema/stripe'
 import * as socialGraphSchema from './schema/social_graph'
 import * as apiCredentialsSchema from './schema/api_credentials'
+import * as authObservabilitySchema from './schema/auth_observability'
 import * as sagasSchema from './schema/sagas'
+import * as arSchema from './schema/ar'
+import * as slaSchema from './schema/sla'
+import * as supplySchema from './schema/supply'
+import * as extensionsSchema from './schema/extensions'
 import * as canonicalSchemaModules from './schema/canonical'
 
 /**
@@ -76,7 +86,12 @@ const schemaCore = {
   ...stripeSchema,
   ...socialGraphSchema,
   ...apiCredentialsSchema,
+  ...authObservabilitySchema,
   ...sagasSchema,
+  ...arSchema,
+  ...slaSchema,
+  ...supplySchema,
+  ...extensionsSchema,
 }
 
 /**
@@ -122,7 +137,18 @@ const dbPackage = {
   accounts: authSchema.accounts,
   verifications: authSchema.verifications,
   locations: locationsSchema.locations,
+  serviceGroups: servicesSchema.serviceGroups,
+  services: servicesSchema.services,
+  serviceProducts: serviceProductsSchema.serviceProducts,
+  serviceProductServices: serviceProductsSchema.serviceProductServices,
+  serviceProductRequirementGroups: serviceProductsSchema.serviceProductRequirementGroups,
+  serviceProductRequirementSelectors: serviceProductsSchema.serviceProductRequirementSelectors,
+  calendars: canonicalSchemaModules.calendars,
+  calendarBindings: canonicalSchemaModules.calendarBindings,
+  availabilityRules: canonicalSchemaModules.availabilityRules,
   resources: resourcesSchema.resources,
+  resourceCapabilityTemplates: canonicalSchemaModules.resourceCapabilityTemplates,
+  resourceCapabilityAssignments: canonicalSchemaModules.resourceCapabilityAssignments,
   bookingOrders: canonicalSchemaModules.bookingOrders,
   bookingOrderLines: canonicalSchemaModules.bookingOrderLines,
   offers: canonicalSchemaModules.offers,
@@ -135,6 +161,24 @@ const dbPackage = {
   paymentIntentLineAllocations: canonicalSchemaModules.paymentIntentLineAllocations,
   paymentTransactions: canonicalSchemaModules.paymentTransactions,
   paymentTransactionLineAllocations: canonicalSchemaModules.paymentTransactionLineAllocations,
+  groupAccounts: groupAccountsSchema.groupAccounts,
+  groupAccountMembers: groupAccountsSchema.groupAccountMembers,
+  bookingParticipantObligations: canonicalSchemaModules.bookingParticipantObligations,
+  participantObligationEvents: canonicalSchemaModules.participantObligationEvents,
+  outboundMessages: canonicalSchemaModules.outboundMessages,
+  outboundMessageEvents: canonicalSchemaModules.outboundMessageEvents,
+  communicationConsents: canonicalSchemaModules.communicationConsents,
+  quietHourPolicies: canonicalSchemaModules.quietHourPolicies,
+  fxRateSnapshots: canonicalSchemaModules.fxRateSnapshots,
+  taxProfiles: canonicalSchemaModules.taxProfiles,
+  taxRuleRefs: canonicalSchemaModules.taxRuleRefs,
+  taxCalculations: canonicalSchemaModules.taxCalculations,
+  auditStreams: canonicalSchemaModules.auditStreams,
+  auditEvents: canonicalSchemaModules.auditEvents,
+  auditIntegrityRuns: canonicalSchemaModules.auditIntegrityRuns,
+  extensionDefinitions: extensionsSchema.extensionDefinitions,
+  bizExtensionInstalls: extensionsSchema.bizExtensionInstalls,
+  extensionStateDocuments: extensionsSchema.extensionStateDocuments,
   queues: canonicalSchemaModules.queues,
   queueEntries: canonicalSchemaModules.queueEntries,
   channelAccounts: canonicalSchemaModules.channelAccounts,
@@ -142,6 +186,9 @@ const dbPackage = {
   channelEntityLinks: canonicalSchemaModules.channelEntityLinks,
   channelSyncJobs: canonicalSchemaModules.channelSyncJobs,
   channelSyncItems: canonicalSchemaModules.channelSyncItems,
+  calendarSyncConnections: canonicalSchemaModules.calendarSyncConnections,
+  externalCalendars: canonicalSchemaModules.externalCalendars,
+  calendarAccessGrants: canonicalSchemaModules.calendarAccessGrants,
   graphIdentities: socialGraphSchema.graphIdentities,
   graphSubjectSubscriptions: socialGraphSchema.graphSubjectSubscriptions,
   graphIdentityNotificationEndpoints: socialGraphSchema.graphIdentityNotificationEndpoints,
@@ -157,8 +204,20 @@ const dbPackage = {
   demandPricingEvaluations: canonicalSchemaModules.demandPricingEvaluations,
   demandPricingApplications: canonicalSchemaModules.demandPricingApplications,
   users: usersSchema.users,
+  membershipPlans: canonicalSchemaModules.membershipPlans,
+  entitlementMemberships: canonicalSchemaModules.memberships,
+  entitlementWallets: canonicalSchemaModules.entitlementWallets,
+  entitlementGrants: canonicalSchemaModules.entitlementGrants,
+  entitlementLedgerEntries: canonicalSchemaModules.entitlementLedgerEntries,
+  rolloverRuns: canonicalSchemaModules.rolloverRuns,
   apiCredentials: apiCredentialsSchema.apiCredentials,
   apiAccessTokens: apiCredentialsSchema.apiAccessTokens,
+  billingAccounts: arSchema.billingAccounts,
+  purchaseOrders: arSchema.purchaseOrders,
+  arInvoices: arSchema.arInvoices,
+  invoiceEvents: arSchema.invoiceEvents,
+  authPrincipals: authObservabilitySchema.authPrincipals,
+  authAccessEvents: authObservabilitySchema.authAccessEvents,
   sagaDefinitions: sagasSchema.sagaDefinitions,
   sagaDefinitionRevisions: sagasSchema.sagaDefinitionRevisions,
   sagaRuns: sagasSchema.sagaRuns,
@@ -175,11 +234,47 @@ const dbPackage = {
   sagaCoverageItems: sagasSchema.sagaCoverageItems,
   sagaTags: sagasSchema.sagaTags,
   sagaTagBindings: sagasSchema.sagaTagBindings,
+  policyTemplates: canonicalSchemaModules.policyTemplates,
+  policyRules: canonicalSchemaModules.policyRules,
+  policyBindings: canonicalSchemaModules.policyBindings,
+  staffingDemands: canonicalSchemaModules.staffingDemands,
+  staffingDemandRequirements: canonicalSchemaModules.staffingDemandRequirements,
+  staffingDemandSelectors: canonicalSchemaModules.staffingDemandSelectors,
+  staffingResponses: canonicalSchemaModules.staffingResponses,
+  staffingAssignments: canonicalSchemaModules.staffingAssignments,
+  commitmentContracts: canonicalSchemaModules.commitmentContracts,
+  commitmentObligations: canonicalSchemaModules.commitmentObligations,
+  commitmentMilestones: canonicalSchemaModules.commitmentMilestones,
+  commitmentMilestoneObligations: canonicalSchemaModules.commitmentMilestoneObligations,
+  securedBalanceAccounts: canonicalSchemaModules.securedBalanceAccounts,
+  securedBalanceLedgerEntries: canonicalSchemaModules.securedBalanceLedgerEntries,
+  securedBalanceAllocations: canonicalSchemaModules.securedBalanceAllocations,
+  commitmentClaims: canonicalSchemaModules.commitmentClaims,
+  commitmentClaimEvents: canonicalSchemaModules.commitmentClaimEvents,
+  fulfillmentUnits: canonicalSchemaModules.fulfillmentUnits,
+  fulfillmentAssignments: canonicalSchemaModules.fulfillmentAssignments,
+  resourceUsageCounters: supplySchema.resourceUsageCounters,
+  resourceMaintenancePolicies: supplySchema.resourceMaintenancePolicies,
+  resourceMaintenanceWorkOrders: supplySchema.resourceMaintenanceWorkOrders,
+  resourceConditionReports: supplySchema.resourceConditionReports,
+  compensationRoleTemplates: canonicalSchemaModules.compensationRoleTemplates,
+  compensationPlans: canonicalSchemaModules.compensationPlans,
+  compensationPlanVersions: canonicalSchemaModules.compensationPlanVersions,
+  compensationPlanRules: canonicalSchemaModules.compensationPlanRules,
+  compensationAssignmentRoles: canonicalSchemaModules.compensationAssignmentRoles,
+  compensationLedgerEntries: canonicalSchemaModules.compensationLedgerEntries,
+  accessArtifacts: canonicalSchemaModules.accessArtifacts,
+  accessArtifactLinks: canonicalSchemaModules.accessArtifactLinks,
+  accessArtifactEvents: canonicalSchemaModules.accessArtifactEvents,
+  accessActionTokens: canonicalSchemaModules.accessActionTokens,
   authzPermissionDefinitions: canonicalSchemaModules.authzPermissionDefinitions,
   authzRoleDefinitions: canonicalSchemaModules.authzRoleDefinitions,
   authzRolePermissions: canonicalSchemaModules.authzRolePermissions,
   authzMembershipRoleMappings: canonicalSchemaModules.authzMembershipRoleMappings,
   authzRoleAssignments: canonicalSchemaModules.authzRoleAssignments,
+  slaPolicies: slaSchema.slaPolicies,
+  slaBreachEvents: slaSchema.slaBreachEvents,
+  slaCompensationEvents: slaSchema.slaCompensationEvents,
 }
 
 export default dbPackage

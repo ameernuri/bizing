@@ -1,0 +1,45 @@
+{
+  "stepKey": "uc-need-validate-4",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AGhUBVAPhtnhGqGxmOr8y9dPl4/steps/uc-need-validate-4/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the requirement of 'automatic buffer calculation based on selected duration'. However, the evidence provided does not confirm that the system automatically calculates a buffer based on the selected duration of 2.5 hours. While the scenario mentions a 15-minute buffer, there is no explicit evidence showing that this buffer is calculated based on the duration selected, indicating a gap in the requirement coverage.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].bodyMarkdownPreview"
+          ],
+          "gaps": [
+            "No evidence confirming that the buffer is automatically calculated based on the selected duration."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Validate buffer calculation logic",
+              "endpoint": "/api/v1/appointments/buffer-calculation",
+              "assertion": "Check if the API returns the correct buffer time based on the selected duration."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "b0e01b29-2629-41e2-81bd-957a4cb91c3c",
+          "timestamp": "2026-02-27T20:40:54.850Z"
+        }
+      },
+      "at": "2026-02-27T20:40:54.851Z"
+    }
+  ]
+}

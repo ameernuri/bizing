@@ -1,0 +1,46 @@
+{
+  "stepKey": "uc-need-validate-2",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AGgjP5UY1DHKp7ctMlXJ2wkQkL/steps/uc-need-validate-2/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the requirement of safe editing of labels, but there is no evidence provided that confirms this functionality. The linked use case mentions the need for safe editing of labels, but the evidence does not include any checks or confirmations regarding the impact of renaming labels on active workflows. Therefore, there is a clear gap in the evidence needed to support the requirement.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].needs[1]",
+            "exploratoryStep.instruction"
+          ],
+          "gaps": [
+            "No evidence confirming that renaming labels does not disrupt active workflows."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add tests for label editing impact",
+              "endpoint": "/api/v1/labels/edit",
+              "assertion": "Verify that editing a label does not affect active workflows."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "710f7a30-9c05-499a-b666-620c537d2703",
+          "timestamp": "2026-02-27T20:34:35.546Z"
+        }
+      },
+      "at": "2026-02-27T20:34:35.547Z"
+    }
+  ]
+}

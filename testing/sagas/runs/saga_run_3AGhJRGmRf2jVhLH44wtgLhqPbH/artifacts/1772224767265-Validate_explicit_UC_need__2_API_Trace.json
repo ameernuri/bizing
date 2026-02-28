@@ -1,0 +1,45 @@
+{
+  "stepKey": "uc-need-validate-2",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AGhJRGmRf2jVhLH44wtgLhqPbH/steps/uc-need-validate-2/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to confirm the requirement 'Pay to join waitlist ($5 fee)', but there is no evidence provided that explicitly shows a payment transaction or confirmation of the $5 fee being charged. The evidence only indicates that customers have entered the waitlist, but does not address the payment aspect, which is a critical part of the requirement. Therefore, there is a clear gap in the evidence regarding the payment process for joining the waitlist.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "customer-join-waitlist-flow"
+          ],
+          "gaps": [
+            "No evidence of payment transaction for joining the waitlist."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Verify payment transaction for waitlist fee",
+              "endpoint": "/api/v1/payments",
+              "assertion": "Check if a payment of $5 was processed for the waitlist entry."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "e46c6048-a252-4d02-8678-34adcf4d62fc",
+          "timestamp": "2026-02-27T20:39:26.709Z"
+        }
+      },
+      "at": "2026-02-27T20:39:26.710Z"
+    }
+  ]
+}

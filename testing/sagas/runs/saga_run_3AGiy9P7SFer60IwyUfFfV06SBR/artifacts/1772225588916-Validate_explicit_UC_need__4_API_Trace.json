@@ -1,0 +1,45 @@
+{
+  "stepKey": "uc-need-validate-4",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AGiy9P7SFer60IwyUfFfV06SBR/steps/uc-need-validate-4/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the requirement of sending an SMS/email blast with the message '50% off tomorrow 2pm - first to book!'. However, the evidence does not include any confirmation that such a message was sent or that the system is capable of sending it as required. The linked use case explicitly states the need for this functionality, but without concrete evidence of its implementation, it is clear that there is a gap in satisfying this requirement.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].needs[3]"
+          ],
+          "gaps": [
+            "No evidence of the system sending the SMS/email blast with the required message."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Verify SMS/email blast functionality",
+              "endpoint": "/api/v1/send-blast",
+              "assertion": "Check if the system sends the correct SMS/email message as specified in the requirement."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "fb8dd62b-1f86-448e-9d23-1b19b7386ca2",
+          "timestamp": "2026-02-27T20:53:08.820Z"
+        }
+      },
+      "at": "2026-02-27T20:53:08.821Z"
+    }
+  ]
+}

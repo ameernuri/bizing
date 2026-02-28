@@ -1,0 +1,45 @@
+{
+  "stepKey": "uc-need-validate-2",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AGcmR5A8kVTie9hknRvTz1ts9m/steps/uc-need-validate-2/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the requirement of avoiding permanent event type clutter. However, the evidence provided does not confirm that the system effectively prevents the creation of permanent event types, as it only describes the functionality of generating temporary links for one-off meetings without explicitly demonstrating that no permanent event types are created. The linked use case suggests the intention to avoid clutter, but lacks concrete evidence to confirm this behavior in practice.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].bodyMarkdownPreview"
+          ],
+          "gaps": [
+            "No evidence confirming that permanent event types are not created during the booking process."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Verify event type creation",
+              "endpoint": "/api/v1/event-types",
+              "assertion": "Ensure that no permanent event types are created when a one-off meeting is scheduled."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "c21b702c-42ae-4aa5-a21a-7bd85739d713",
+          "timestamp": "2026-02-27T20:03:20.075Z"
+        }
+      },
+      "at": "2026-02-27T20:03:20.076Z"
+    }
+  ]
+}

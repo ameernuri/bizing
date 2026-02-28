@@ -1,0 +1,93 @@
+{
+  "schemaVersion": "snapshot.v1",
+  "screenKey": "adversary-cross-biz-read-1772286179577",
+  "title": "Adversary attempts unauthorized cross-biz read Snapshot",
+  "generatedAt": "2026-02-28T13:42:59.579Z",
+  "stepKey": "adversary-cross-biz-read",
+  "status": "passed",
+  "view": {
+    "title": "Adversary attempts unauthorized cross-biz read",
+    "subtitle": "Cross-biz read blocked for non-member account.",
+    "blocks": [
+      {
+        "type": "alert",
+        "title": "Adversary Cross Biz Read completed",
+        "message": "Cross-biz read blocked for non-member account.",
+        "tone": "success"
+      },
+      {
+        "type": "key_value",
+        "title": "Screen details",
+        "items": [
+          {
+            "label": "AdversaryUserId",
+            "value": "9YP8HfXmwX6zOZRj16uWPLzAV9WRQnlU"
+          }
+        ]
+      }
+    ]
+  },
+  "rawData": {
+    "stepKey": "adversary-cross-biz-read",
+    "resultPayload": {
+      "note": "Cross-biz read blocked for non-member account.",
+      "evidence": {
+        "adversaryUserId": "9YP8HfXmwX6zOZRj16uWPLzAV9WRQnlU"
+      }
+    },
+    "apiCalls": [
+      {
+        "method": "GET",
+        "path": "/api/auth/get-session",
+        "status": 200,
+        "responseBody": {
+          "session": {
+            "expiresAt": "2026-03-07T13:42:59.544Z",
+            "token": "gYk2qayziWsDeL78We4PmRiJvkUwKt7f",
+            "createdAt": "2026-02-28T13:42:59.544Z",
+            "updatedAt": "2026-02-28T13:42:59.544Z",
+            "ipAddress": "",
+            "userAgent": "node",
+            "userId": "9YP8HfXmwX6zOZRj16uWPLzAV9WRQnlU",
+            "activeOrganizationId": null,
+            "impersonatedBy": null,
+            "id": "kcWlSguoIRR9MpETklOJVkVVNYg9xdep"
+          },
+          "user": {
+            "name": "adversary-uc-110-the-front-desk-manager-lisa",
+            "email": "adversary-uc-110-the-front-desk-manager-lisa-1772286179445-gs8q1y@example.com",
+            "emailVerified": false,
+            "image": null,
+            "createdAt": "2026-02-28T13:42:59.539Z",
+            "updatedAt": "2026-02-28T13:42:59.539Z",
+            "role": "user",
+            "banned": false,
+            "banReason": null,
+            "banExpires": null,
+            "id": "9YP8HfXmwX6zOZRj16uWPLzAV9WRQnlU"
+          }
+        },
+        "at": "2026-02-28T13:42:59.552Z"
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/bizes/3AIhq02mh9Q1DkKcL5pzCIWf51I/booking-orders",
+        "status": 403,
+        "responseBody": {
+          "success": false,
+          "error": {
+            "code": "FORBIDDEN",
+            "message": "You are not a member of this biz."
+          },
+          "meta": {
+            "requestId": "84d31adf-149a-4efd-a40e-0255ba363e9f",
+            "timestamp": "2026-02-28T13:42:59.555Z"
+          }
+        },
+        "at": "2026-02-28T13:42:59.556Z"
+      }
+    ],
+    "contract": null
+  },
+  "metadata": {}
+}

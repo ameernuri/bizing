@@ -1,0 +1,45 @@
+{
+  "stepKey": "uc-need-validate-3",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AGu4EsUUKC2aTUgacBrkneOSH4/steps/uc-need-validate-3/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step requires validation of the distinction between different appointment types (annual physical vs sick visit). However, the evidence provided does not explicitly confirm that the system differentiates between these appointment types, as it only mentions the duration of each type without demonstrating how they are treated differently in the system. This indicates a gap in the requirement coverage, as the necessary evidence to confirm the requirement is missing.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].bodyMarkdownPreview"
+          ],
+          "gaps": [
+            "No evidence provided to confirm the system's handling of different appointment types."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add endpoint to verify appointment type handling",
+              "endpoint": "/api/v1/appointments/types",
+              "assertion": "Ensure the API returns distinct handling for annual physical and sick visit appointments."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "ea127f2a-7611-4e6c-8d8b-e20bfd5a8e70",
+          "timestamp": "2026-02-27T22:24:43.873Z"
+        }
+      },
+      "at": "2026-02-27T22:24:43.878Z"
+    }
+  ]
+}

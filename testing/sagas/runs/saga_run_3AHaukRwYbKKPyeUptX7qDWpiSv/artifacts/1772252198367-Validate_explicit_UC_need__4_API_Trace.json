@@ -1,0 +1,46 @@
+{
+  "stepKey": "uc-need-validate-4",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AHaukRwYbKKPyeUptX7qDWpiSv/steps/uc-need-validate-4/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the requirement of 'Automatic commission calculation per person', but the evidence does not demonstrate that the system performs this calculation as required. While the linked use case describes a scenario where commissions are split among different roles, there is no concrete evidence or API reads confirming that the system automatically calculates and assigns these commissions during the booking process. The absence of specific evidence regarding the commission calculation leads to a clear gap in meeting the requirement.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases",
+            "priorStepEvidence"
+          ],
+          "gaps": [
+            "No evidence of automatic commission calculation per person in the booking process."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add deterministic evidence contract for commission calculation",
+              "endpoint": "/api/v1/commission/calculate",
+              "assertion": "Verify that the system automatically calculates and assigns commissions based on roles during the booking."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "d8cf869a-592b-4df6-98ab-97a05711f847",
+          "timestamp": "2026-02-28T04:16:38.322Z"
+        }
+      },
+      "at": "2026-02-28T04:16:38.323Z"
+    }
+  ]
+}

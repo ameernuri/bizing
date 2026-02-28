@@ -1,0 +1,45 @@
+{
+  "stepKey": "uc-need-validate-5",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AGhYIwOF8bCpn48Qoj4PMvg2o9/steps/uc-need-validate-5/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the requirement for guardrails against duplicate recovery spam, but the evidence provided does not include any checks or validations related to this specific requirement. The linked use case mentions the need for such guardrails, yet there is no concrete evidence or API reads that demonstrate their implementation or validation. This indicates a clear gap in the requirement coverage, as the necessary checks to confirm the absence of duplicate recovery notifications are missing.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].summary"
+          ],
+          "gaps": [
+            "No evidence of guardrails against duplicate recovery spam validation."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add validation for duplicate recovery notifications",
+              "endpoint": "/api/v1/notifications/validate-duplicates",
+              "assertion": "Ensure that duplicate recovery notifications are not sent to the same customer within a specified timeframe."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "5d964d59-f45d-4ac6-86ad-bc17ed85ad0e",
+          "timestamp": "2026-02-27T20:41:39.290Z"
+        }
+      },
+      "at": "2026-02-27T20:41:39.291Z"
+    }
+  ]
+}

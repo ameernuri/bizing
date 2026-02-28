@@ -1,0 +1,45 @@
+{
+  "stepKey": "uc-need-validate-5",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AGgpGxzCPxXFe33iotWpuEXtLz/steps/uc-need-validate-5/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the requirement of no workflow breakage when labels change, but the evidence provided does not confirm this requirement. While the linked use case discusses the need for configurable labels without affecting core scheduling and queue logic, there is no concrete evidence or API reads that demonstrate this functionality or validate that changing labels does not cause workflow issues. This indicates a clear gap in the evidence needed to satisfy the requirement.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].bodyMarkdownPreview"
+          ],
+          "gaps": [
+            "No evidence confirming that changing labels does not break workflows."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add tests for label change impact",
+              "endpoint": "/api/v1/label-change-test",
+              "assertion": "Verify that changing labels does not affect workflow execution."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "d9f19276-638e-4260-a8b8-488a9ff85b2a",
+          "timestamp": "2026-02-27T20:35:39.585Z"
+        }
+      },
+      "at": "2026-02-27T20:35:39.586Z"
+    }
+  ]
+}

@@ -1,0 +1,46 @@
+{
+  "stepKey": "uc-need-validate-5",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AGdCwDwpDSr0wmg7RBbdH85OW4/steps/uc-need-validate-5/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the requirement 'Backup if primary unavailable', but there is no evidence provided that confirms this requirement has been satisfied. The linked use case describes the scenario where a backup lead is activated if the primary lead is unavailable, yet no concrete API reads or persisted state checks are presented to demonstrate that this functionality works as intended. Therefore, there is a clear gap in the evidence provided regarding the backup activation process.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].bodyMarkdownPreview",
+            "exploratoryStep.expectedResult"
+          ],
+          "gaps": [
+            "No evidence confirming the activation of a backup lead when the primary is unavailable."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add validation for backup lead activation",
+              "endpoint": "/api/v1/validate-backup-activation",
+              "assertion": "Ensure that the system activates a backup lead when the primary lead is unavailable."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "5db0a5fe-b2e6-4e7a-9600-2d5e20047efb",
+          "timestamp": "2026-02-27T20:07:00.830Z"
+        }
+      },
+      "at": "2026-02-27T20:07:00.836Z"
+    }
+  ]
+}

@@ -1,0 +1,46 @@
+{
+  "stepKey": "persona-scenario-validate-1",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AGglACRijNeCsK1OMR08P8gpQp/steps/persona-scenario-validate-1/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "persona-scenario-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the scenario of 'Cancellation within free window (no fee)', but the evidence does not provide any confirmation or checks related to the cancellation policy. The linked use case outlines the need for a cancellation policy, yet there are no API responses or state checks that demonstrate this functionality is implemented or functioning as expected. Therefore, there is a clear gap in the evidence regarding this requirement.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "exploratoryStep.expectedResult",
+            "linkedUseCases[0].summary"
+          ],
+          "gaps": [
+            "No evidence confirming the implementation of the cancellation policy for free cancellations."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add API endpoint for cancellation policy validation",
+              "endpoint": "/api/v1/cancellation/policy",
+              "assertion": "Verify that the API confirms the cancellation policy allows for free cancellations within the specified window."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "8d140abe-8ac8-4236-94e0-d4c6d49b30c3",
+          "timestamp": "2026-02-27T20:35:22.120Z"
+        }
+      },
+      "at": "2026-02-27T20:35:22.121Z"
+    }
+  ]
+}
