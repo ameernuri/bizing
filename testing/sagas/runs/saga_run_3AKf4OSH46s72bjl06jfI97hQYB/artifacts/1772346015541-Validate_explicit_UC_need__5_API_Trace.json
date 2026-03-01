@@ -1,0 +1,45 @@
+{
+  "stepKey": "uc-need-validate-5",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AKf4OSH46s72bjl06jfI97hQYB/steps/uc-need-validate-5/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step requires validation of a fast query path for determining which projections are stale or broken. However, the evidence provided only mentions a `sellable`-scoped projection marked as `lagging`, without any details on the query path or mechanisms to identify stale projections across all required scopes. This indicates a clear gap in the evidence, as it does not cover the full requirement for a fast query path, which is essential for the validation of this use case.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].bodyMarkdownPreview"
+          ],
+          "gaps": [
+            "No evidence of a fast query path for identifying stale or broken projections."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Implement fast query path for projection health",
+              "endpoint": "/api/v1/projection_health",
+              "assertion": "Verify the implementation of a fast query path for identifying stale or broken projections."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "824a9939-8b79-4c0e-a4d0-651f3ddb2f87",
+          "timestamp": "2026-03-01T06:20:15.486Z"
+        }
+      },
+      "at": "2026-03-01T06:20:15.487Z"
+    }
+  ]
+}

@@ -1,0 +1,46 @@
+{
+  "stepKey": "uc-need-validate-3",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AL5aNdvsG5i6tU00pDPjsNmUjr/steps/uc-need-validate-3/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the requirement of 'time-boxed seat holds while checkout is in progress.' However, the evidence provided does not include any checks or confirmations regarding the actual implementation of this feature. The linked use case describes the expected behavior, but there is no evidence of API reads or persisted state checks that confirm this requirement is satisfied, indicating a clear gap in the validation process.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].bodyMarkdownPreview",
+            "priorStepEvidence"
+          ],
+          "gaps": [
+            "No evidence of time-boxed seat holds during checkout."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add validation for seat hold functionality",
+              "endpoint": "/api/v1/seat-hold",
+              "assertion": "Verify that seats are held for a specified duration during the checkout process."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "f39aec4b-499e-4873-b48a-d37e98860cd4",
+          "timestamp": "2026-03-01T09:58:04.252Z"
+        }
+      },
+      "at": "2026-03-01T09:58:04.252Z"
+    }
+  ]
+}

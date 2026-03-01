@@ -1,0 +1,100 @@
+{
+  "stepKey": "uc-need-validate-6",
+  "callCount": 2,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/bizes/3AKRTuAH6zaHxPeV8g7UGEfNGMI/subject-subscriptions",
+      "status": 201,
+      "requestBody": {
+        "targetSubjectType": "offer_watch",
+        "targetSubjectId": "offer-watch-offer_3AKRU16t2S8wbpCQ7lazDhDVagm",
+        "targetDisplayName": "Saga Validation Subject",
+        "subscriptionType": "watch",
+        "status": "active",
+        "deliveryMode": "instant",
+        "preferredChannel": "in_app",
+        "minDeliveryIntervalMinutes": 0,
+        "autoRegisterTargetSubject": true,
+        "metadata": {
+          "source": "rerun-sagas",
+          "sagaKey": "uc-151-the-solo-entrepreneur-sarah"
+        }
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "id": "graph_subject_sub_3AKRUn8ioMM5m6vxbEHBgk1OCrS",
+          "subscriberIdentityId": "graph_identity_3AKRUmr37RU8LNHK2A6u6wfHbk4",
+          "targetSubjectBizId": "3AKRTuAH6zaHxPeV8g7UGEfNGMI",
+          "targetSubjectType": "offer_watch",
+          "targetSubjectId": "offer-watch-offer_3AKRU16t2S8wbpCQ7lazDhDVagm",
+          "subscriptionType": "watch",
+          "status": "active",
+          "filterPolicy": {},
+          "deliveryMode": "instant",
+          "preferredChannel": "in_app",
+          "minDeliveryIntervalMinutes": 0,
+          "nextEligibleDeliveryAt": null,
+          "mutedAt": null,
+          "unsubscribedAt": null,
+          "metadata": {
+            "source": "rerun-sagas",
+            "sagaKey": "uc-151-the-solo-entrepreneur-sarah"
+          },
+          "createdAt": "2026-03-01T04:28:13.435Z",
+          "updatedAt": "2026-03-01T04:28:13.435Z",
+          "deletedAt": null,
+          "createdBy": null,
+          "updatedBy": null,
+          "deletedBy": null
+        },
+        "meta": {
+          "requestId": "776e701a-3bd6-4b27-9dce-902b19488151",
+          "timestamp": "2026-03-01T04:28:13.438Z"
+        }
+      },
+      "at": "2026-03-01T04:28:13.442Z"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AKRTpBlceNc3vonhXByVzwA4VC/steps/uc-need-validate-6/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the presence of correlation IDs for cross-system tracing, which is a critical requirement. However, the evidence provided does not include any correlation IDs in the event or delivery data, indicating a gap in the implementation. Specifically, the evidence from the 'uc-need-validate-2' step shows that the 'correlationId' field is null, which directly contradicts the requirement for correlation IDs.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "priorStepEvidence[8].evidence.test.event.correlationId",
+            "priorStepEvidence[8].evidence.delivery.correlationId"
+          ],
+          "gaps": [
+            "Correlation IDs are missing from event and delivery data."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add deterministic evidence contract",
+              "endpoint": null,
+              "assertion": "Define concrete endpoint calls and assertions that directly verify this requirement."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "28b17602-fc8c-4173-b1c4-a35ffee310ef",
+          "timestamp": "2026-03-01T04:28:19.164Z"
+        }
+      },
+      "at": "2026-03-01T04:28:19.196Z"
+    }
+  ]
+}

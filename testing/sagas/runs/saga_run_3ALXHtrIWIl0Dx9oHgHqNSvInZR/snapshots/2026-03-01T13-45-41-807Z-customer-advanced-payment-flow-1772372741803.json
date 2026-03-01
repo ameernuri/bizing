@@ -1,0 +1,559 @@
+{
+  "schemaVersion": "snapshot.v1",
+  "screenKey": "customer-advanced-payment-flow-1772372741803",
+  "title": "Customer uses advanced payment instruments Snapshot",
+  "generatedAt": "2026-03-01T13:45:41.807Z",
+  "stepKey": "customer-advanced-payment-flow",
+  "status": "passed",
+  "view": {
+    "title": "Customer uses advanced payment instruments",
+    "subtitle": "Advanced split-tender flow executed and traceable through intent/tender/line allocations.",
+    "blocks": [
+      {
+        "type": "alert",
+        "title": "Customer Advanced Payment Flow completed",
+        "message": "Advanced split-tender flow executed and traceable through intent/tender/line allocations.",
+        "tone": "success"
+      },
+      {
+        "type": "stats",
+        "title": "What user sees at a glance",
+        "items": [
+          {
+            "label": "AmountTargetMinor",
+            "value": "15500"
+          },
+          {
+            "label": "AmountCapturedMinor",
+            "value": "15500"
+          },
+          {
+            "label": "TenderCount",
+            "value": "2"
+          },
+          {
+            "label": "LineAllocationCount",
+            "value": "3"
+          },
+          {
+            "label": "TransactionCount",
+            "value": "2"
+          },
+          {
+            "label": "TransactionLineAllocationCount",
+            "value": "3"
+          }
+        ]
+      },
+      {
+        "type": "key_value",
+        "title": "Screen details",
+        "items": [
+          {
+            "label": "PaymentIntentId",
+            "value": "payment_intent_3ALXI8T2As8n2TTgVRBto1kkseU"
+          },
+          {
+            "label": "AmountTargetMinor",
+            "value": "15500"
+          },
+          {
+            "label": "AmountCapturedMinor",
+            "value": "15500"
+          },
+          {
+            "label": "IntentStatus",
+            "value": "succeeded"
+          },
+          {
+            "label": "TenderCount",
+            "value": "2"
+          },
+          {
+            "label": "LineAllocationCount",
+            "value": "3"
+          },
+          {
+            "label": "TransactionCount",
+            "value": "2"
+          },
+          {
+            "label": "TransactionLineAllocationCount",
+            "value": "3"
+          },
+          {
+            "label": "HasIntentInList",
+            "value": "true"
+          }
+        ]
+      }
+    ]
+  },
+  "rawData": {
+    "stepKey": "customer-advanced-payment-flow",
+    "resultPayload": {
+      "note": "Advanced split-tender flow executed and traceable through intent/tender/line allocations.",
+      "evidence": {
+        "paymentIntentId": "payment_intent_3ALXI8T2As8n2TTgVRBto1kkseU",
+        "amountTargetMinor": 15500,
+        "amountCapturedMinor": 15500,
+        "intentStatus": "succeeded",
+        "tenderCount": 2,
+        "lineAllocationCount": 3,
+        "transactionCount": 2,
+        "transactionLineAllocationCount": 3,
+        "hasIntentInList": true
+      }
+    },
+    "apiCalls": [
+      {
+        "method": "POST",
+        "path": "/api/v1/public/bizes/3ALXHqrYWNogfrEqHc3gH7a0BQC/booking-orders/booking_order_3ALXI9WNRFlCpvTElWzBA5svomR/payments/advanced",
+        "status": 201,
+        "requestBody": {
+          "tipMinor": 500,
+          "tenders": [
+            {
+              "methodType": "card",
+              "allocatedMinor": 10000,
+              "label": "Primary card"
+            },
+            {
+              "methodType": "cash",
+              "allocatedMinor": 5500,
+              "label": "Cash supplement"
+            }
+          ],
+          "metadata": {
+            "source": "rerun-sagas"
+          }
+        },
+        "responseBody": {
+          "success": true,
+          "data": {
+            "paymentIntentId": "payment_intent_3ALXI8T2As8n2TTgVRBto1kkseU",
+            "bookingOrderId": "booking_order_3ALXI9WNRFlCpvTElWzBA5svomR",
+            "status": "succeeded",
+            "currency": "USD",
+            "amountTargetMinor": 15500,
+            "amountCapturedMinor": 15500,
+            "tenderCount": 2,
+            "lineAllocationCount": 3,
+            "transactionCount": 2
+          },
+          "meta": {
+            "requestId": "92e2a6af-5c94-41f4-9913-8e6c01d87813",
+            "timestamp": "2026-03-01T13:45:41.737Z"
+          }
+        },
+        "at": "2026-03-01T13:45:41.737Z"
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/bizes/3ALXHqrYWNogfrEqHc3gH7a0BQC/payment-intents?bookingOrderId=booking_order_3ALXI9WNRFlCpvTElWzBA5svomR",
+        "status": 200,
+        "responseBody": {
+          "success": true,
+          "data": [
+            {
+              "id": "payment_intent_3ALXI8T2As8n2TTgVRBto1kkseU",
+              "bizId": "3ALXHqrYWNogfrEqHc3gH7a0BQC",
+              "bookingOrderId": "booking_order_3ALXI9WNRFlCpvTElWzBA5svomR",
+              "crossBizOrderId": null,
+              "paymentProcessorAccountId": "pay_proc_account_3ALXIAEMaB0gum8TCUM1cwwPMhr",
+              "status": "succeeded",
+              "currency": "USD",
+              "amountTargetMinor": 15500,
+              "amountCapturedMinor": 15500,
+              "amountRefundedMinor": 0,
+              "requiresCapture": false,
+              "providerIntentRef": null,
+              "source": "public_checkout",
+              "actionRequestId": null,
+              "latestDomainEventId": null,
+              "debugSnapshotId": null,
+              "authorizedAt": null,
+              "capturedAt": "2026-03-01T13:45:41.718Z",
+              "failedAt": null,
+              "amountSnapshot": {
+                "tipMinor": 500,
+                "bookingTotalMinor": 15000,
+                "expectedTotalMinor": 15500
+              },
+              "metadata": {
+                "source": "rerun-sagas"
+              },
+              "createdAt": "2026-03-01T13:45:41.718Z",
+              "updatedAt": "2026-03-01T13:45:41.718Z",
+              "deletedAt": null,
+              "createdBy": null,
+              "updatedBy": null,
+              "deletedBy": null
+            }
+          ],
+          "meta": {
+            "requestId": "4ddf5158-1332-479c-be78-4b1e5f139d4b",
+            "timestamp": "2026-03-01T13:45:41.746Z"
+          },
+          "pagination": {
+            "page": 1,
+            "perPage": 20,
+            "total": 1,
+            "hasMore": false
+          }
+        },
+        "at": "2026-03-01T13:45:41.746Z"
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/bizes/3ALXHqrYWNogfrEqHc3gH7a0BQC/payment-intents/payment_intent_3ALXI8T2As8n2TTgVRBto1kkseU",
+        "status": 200,
+        "responseBody": {
+          "success": true,
+          "data": {
+            "intent": {
+              "id": "payment_intent_3ALXI8T2As8n2TTgVRBto1kkseU",
+              "bizId": "3ALXHqrYWNogfrEqHc3gH7a0BQC",
+              "bookingOrderId": "booking_order_3ALXI9WNRFlCpvTElWzBA5svomR",
+              "crossBizOrderId": null,
+              "paymentProcessorAccountId": "pay_proc_account_3ALXIAEMaB0gum8TCUM1cwwPMhr",
+              "status": "succeeded",
+              "currency": "USD",
+              "amountTargetMinor": 15500,
+              "amountCapturedMinor": 15500,
+              "amountRefundedMinor": 0,
+              "requiresCapture": false,
+              "providerIntentRef": null,
+              "source": "public_checkout",
+              "actionRequestId": null,
+              "latestDomainEventId": null,
+              "debugSnapshotId": null,
+              "authorizedAt": null,
+              "capturedAt": "2026-03-01T13:45:41.718Z",
+              "failedAt": null,
+              "amountSnapshot": {
+                "tipMinor": 500,
+                "bookingTotalMinor": 15000,
+                "expectedTotalMinor": 15500
+              },
+              "metadata": {
+                "source": "rerun-sagas"
+              },
+              "createdAt": "2026-03-01T13:45:41.718Z",
+              "updatedAt": "2026-03-01T13:45:41.718Z",
+              "deletedAt": null,
+              "createdBy": null,
+              "updatedBy": null,
+              "deletedBy": null
+            },
+            "processorAccount": {
+              "id": "pay_proc_account_3ALXIAEMaB0gum8TCUM1cwwPMhr",
+              "bizId": "3ALXHqrYWNogfrEqHc3gH7a0BQC",
+              "providerKey": "stripe",
+              "processorAccountRef": "stripe-platform-3ALXHqrYWNogfrEqHc3gH7a0BQC",
+              "status": "active",
+              "ownershipModel": "platform_managed",
+              "commerceModel": "merchant_of_record",
+              "isDefault": true,
+              "chargesEnabled": true,
+              "payoutsEnabled": true,
+              "supportsSplitTender": true,
+              "supportsDisputes": true,
+              "supportsRefunds": true,
+              "secretRef": null,
+              "configuration": {
+                "mode": "simulated",
+                "merchantOfRecord": "bizing_platform"
+              },
+              "capabilities": {
+                "simulated": true,
+                "stripeCompatible": true
+              },
+              "metadata": {
+                "source": "payments-route",
+                "defaultProvider": "stripe"
+              },
+              "createdAt": "2026-03-01T13:45:41.711Z",
+              "updatedAt": "2026-03-01T13:45:41.711Z",
+              "deletedAt": null,
+              "createdBy": null,
+              "updatedBy": null,
+              "deletedBy": null
+            },
+            "tenders": [
+              {
+                "id": "intent_tender_3ALXI5bEC3O7uBn6edLeYJmYU1l",
+                "bizId": "3ALXHqrYWNogfrEqHc3gH7a0BQC",
+                "paymentIntentId": "payment_intent_3ALXI8T2As8n2TTgVRBto1kkseU",
+                "paymentMethodId": "payment_method_3ALXI63ftA9NhnEoVUJroFQ7Yg7",
+                "giftInstrumentId": null,
+                "methodType": "card",
+                "allocatedMinor": 10000,
+                "capturedMinor": 10000,
+                "refundedMinor": 0,
+                "sortOrder": 1,
+                "externalTenderRef": null,
+                "metadata": {},
+                "createdAt": "2026-03-01T13:45:41.723Z",
+                "updatedAt": "2026-03-01T13:45:41.723Z",
+                "deletedAt": null,
+                "createdBy": null,
+                "updatedBy": null,
+                "deletedBy": null
+              },
+              {
+                "id": "intent_tender_3ALXI4vpapIXIdmNJyuw4fbj9yl",
+                "bizId": "3ALXHqrYWNogfrEqHc3gH7a0BQC",
+                "paymentIntentId": "payment_intent_3ALXI8T2As8n2TTgVRBto1kkseU",
+                "paymentMethodId": "payment_method_3ALXIBYcliLWmGRlhZ6RVyyR8Z7",
+                "giftInstrumentId": null,
+                "methodType": "cash",
+                "allocatedMinor": 5500,
+                "capturedMinor": 5500,
+                "refundedMinor": 0,
+                "sortOrder": 2,
+                "externalTenderRef": null,
+                "metadata": {},
+                "createdAt": "2026-03-01T13:45:41.726Z",
+                "updatedAt": "2026-03-01T13:45:41.726Z",
+                "deletedAt": null,
+                "createdBy": null,
+                "updatedBy": null,
+                "deletedBy": null
+              }
+            ],
+            "lineAllocations": [
+              {
+                "id": "intent_line_alloc_3ALXI7F7Rx5hMc47My0in0y8g1K",
+                "bizId": "3ALXHqrYWNogfrEqHc3gH7a0BQC",
+                "paymentIntentId": "payment_intent_3ALXI8T2As8n2TTgVRBto1kkseU",
+                "paymentIntentTenderId": "intent_tender_3ALXI5bEC3O7uBn6edLeYJmYU1l",
+                "bookingOrderId": "booking_order_3ALXI9WNRFlCpvTElWzBA5svomR",
+                "bookingOrderLineId": "booking_line_3ALXI4bgZGs7veQqNyXNKILb8qG",
+                "allocatedMinor": 10000,
+                "capturedMinor": 10000,
+                "refundedMinor": 0,
+                "sortOrder": 1,
+                "metadata": {},
+                "createdAt": "2026-03-01T13:45:41.728Z",
+                "updatedAt": "2026-03-01T13:45:41.728Z",
+                "deletedAt": null,
+                "createdBy": null,
+                "updatedBy": null,
+                "deletedBy": null
+              },
+              {
+                "id": "intent_line_alloc_3ALXIBaDDab01ockENIlSvaux3N",
+                "bizId": "3ALXHqrYWNogfrEqHc3gH7a0BQC",
+                "paymentIntentId": "payment_intent_3ALXI8T2As8n2TTgVRBto1kkseU",
+                "paymentIntentTenderId": "intent_tender_3ALXI4vpapIXIdmNJyuw4fbj9yl",
+                "bookingOrderId": "booking_order_3ALXI9WNRFlCpvTElWzBA5svomR",
+                "bookingOrderLineId": "booking_line_3ALXI4bgZGs7veQqNyXNKILb8qG",
+                "allocatedMinor": 5000,
+                "capturedMinor": 5000,
+                "refundedMinor": 0,
+                "sortOrder": 2,
+                "metadata": {},
+                "createdAt": "2026-03-01T13:45:41.728Z",
+                "updatedAt": "2026-03-01T13:45:41.728Z",
+                "deletedAt": null,
+                "createdBy": null,
+                "updatedBy": null,
+                "deletedBy": null
+              },
+              {
+                "id": "intent_line_alloc_3ALXI7RzqFz7spMGFolhJydyYEn",
+                "bizId": "3ALXHqrYWNogfrEqHc3gH7a0BQC",
+                "paymentIntentId": "payment_intent_3ALXI8T2As8n2TTgVRBto1kkseU",
+                "paymentIntentTenderId": "intent_tender_3ALXI4vpapIXIdmNJyuw4fbj9yl",
+                "bookingOrderId": "booking_order_3ALXI9WNRFlCpvTElWzBA5svomR",
+                "bookingOrderLineId": "booking_line_3ALXI5w6LhE2pB9ledeCG5sGFnl",
+                "allocatedMinor": 500,
+                "capturedMinor": 500,
+                "refundedMinor": 0,
+                "sortOrder": 3,
+                "metadata": {},
+                "createdAt": "2026-03-01T13:45:41.728Z",
+                "updatedAt": "2026-03-01T13:45:41.728Z",
+                "deletedAt": null,
+                "createdBy": null,
+                "updatedBy": null,
+                "deletedBy": null
+              }
+            ],
+            "transactions": [
+              {
+                "id": "payment_txn_3ALXI5IlSNB8dVVPzveRubiHf5V",
+                "bizId": "3ALXHqrYWNogfrEqHc3gH7a0BQC",
+                "paymentIntentId": "payment_intent_3ALXI8T2As8n2TTgVRBto1kkseU",
+                "bookingOrderId": "booking_order_3ALXI9WNRFlCpvTElWzBA5svomR",
+                "crossBizOrderId": null,
+                "paymentIntentTenderId": "intent_tender_3ALXI5bEC3O7uBn6edLeYJmYU1l",
+                "paymentMethodId": "payment_method_3ALXI63ftA9NhnEoVUJroFQ7Yg7",
+                "paymentProcessorAccountId": "pay_proc_account_3ALXIAEMaB0gum8TCUM1cwwPMhr",
+                "giftInstrumentId": null,
+                "type": "charge",
+                "status": "succeeded",
+                "amountMinor": 10000,
+                "currency": "USD",
+                "providerTransactionRef": null,
+                "idempotencyKey": null,
+                "actionRequestId": null,
+                "domainEventId": null,
+                "debugSnapshotId": null,
+                "occurredAt": "2026-03-01T13:45:41.731Z",
+                "failureReason": null,
+                "providerPayload": {
+                  "source": "simulated_advanced_checkout"
+                },
+                "metadata": {
+                  "tenderIndex": 0
+                },
+                "createdAt": "2026-03-01T13:45:41.730Z",
+                "updatedAt": "2026-03-01T13:45:41.730Z",
+                "deletedAt": null,
+                "createdBy": null,
+                "updatedBy": null,
+                "deletedBy": null
+              },
+              {
+                "id": "payment_txn_3ALXI6J3UZr2rvXnIMlN7ctWeE3",
+                "bizId": "3ALXHqrYWNogfrEqHc3gH7a0BQC",
+                "paymentIntentId": "payment_intent_3ALXI8T2As8n2TTgVRBto1kkseU",
+                "bookingOrderId": "booking_order_3ALXI9WNRFlCpvTElWzBA5svomR",
+                "crossBizOrderId": null,
+                "paymentIntentTenderId": "intent_tender_3ALXI4vpapIXIdmNJyuw4fbj9yl",
+                "paymentMethodId": "payment_method_3ALXIBYcliLWmGRlhZ6RVyyR8Z7",
+                "paymentProcessorAccountId": "pay_proc_account_3ALXIAEMaB0gum8TCUM1cwwPMhr",
+                "giftInstrumentId": null,
+                "type": "charge",
+                "status": "succeeded",
+                "amountMinor": 5500,
+                "currency": "USD",
+                "providerTransactionRef": null,
+                "idempotencyKey": null,
+                "actionRequestId": null,
+                "domainEventId": null,
+                "debugSnapshotId": null,
+                "occurredAt": "2026-03-01T13:45:41.731Z",
+                "failureReason": null,
+                "providerPayload": {
+                  "source": "simulated_advanced_checkout"
+                },
+                "metadata": {
+                  "tenderIndex": 1
+                },
+                "createdAt": "2026-03-01T13:45:41.730Z",
+                "updatedAt": "2026-03-01T13:45:41.730Z",
+                "deletedAt": null,
+                "createdBy": null,
+                "updatedBy": null,
+                "deletedBy": null
+              }
+            ],
+            "transactionLineAllocations": [
+              {
+                "id": "txn_line_alloc_3ALXIApkgQ3I43QCMmDrEhmxxSp",
+                "bizId": "3ALXHqrYWNogfrEqHc3gH7a0BQC",
+                "paymentTransactionId": "payment_txn_3ALXI5IlSNB8dVVPzveRubiHf5V",
+                "paymentIntentId": "payment_intent_3ALXI8T2As8n2TTgVRBto1kkseU",
+                "paymentIntentTenderId": "intent_tender_3ALXI5bEC3O7uBn6edLeYJmYU1l",
+                "bookingOrderId": "booking_order_3ALXI9WNRFlCpvTElWzBA5svomR",
+                "bookingOrderLineId": "booking_line_3ALXI4bgZGs7veQqNyXNKILb8qG",
+                "paymentIntentLineAllocationId": "intent_line_alloc_3ALXI7F7Rx5hMc47My0in0y8g1K",
+                "amountMinor": 10000,
+                "occurredAt": "2026-03-01T13:45:41.734Z",
+                "idempotencyKey": null,
+                "metadata": {},
+                "createdAt": "2026-03-01T13:45:41.734Z",
+                "updatedAt": "2026-03-01T13:45:41.734Z",
+                "deletedAt": null,
+                "createdBy": null,
+                "updatedBy": null,
+                "deletedBy": null
+              },
+              {
+                "id": "txn_line_alloc_3ALXIAjqveyBSH32GX2XHSFOe2w",
+                "bizId": "3ALXHqrYWNogfrEqHc3gH7a0BQC",
+                "paymentTransactionId": "payment_txn_3ALXI6J3UZr2rvXnIMlN7ctWeE3",
+                "paymentIntentId": "payment_intent_3ALXI8T2As8n2TTgVRBto1kkseU",
+                "paymentIntentTenderId": "intent_tender_3ALXI4vpapIXIdmNJyuw4fbj9yl",
+                "bookingOrderId": "booking_order_3ALXI9WNRFlCpvTElWzBA5svomR",
+                "bookingOrderLineId": "booking_line_3ALXI4bgZGs7veQqNyXNKILb8qG",
+                "paymentIntentLineAllocationId": "intent_line_alloc_3ALXIBaDDab01ockENIlSvaux3N",
+                "amountMinor": 5000,
+                "occurredAt": "2026-03-01T13:45:41.734Z",
+                "idempotencyKey": null,
+                "metadata": {},
+                "createdAt": "2026-03-01T13:45:41.734Z",
+                "updatedAt": "2026-03-01T13:45:41.734Z",
+                "deletedAt": null,
+                "createdBy": null,
+                "updatedBy": null,
+                "deletedBy": null
+              },
+              {
+                "id": "txn_line_alloc_3ALXI9OAHZTctXe8rBwMor8sQei",
+                "bizId": "3ALXHqrYWNogfrEqHc3gH7a0BQC",
+                "paymentTransactionId": "payment_txn_3ALXI6J3UZr2rvXnIMlN7ctWeE3",
+                "paymentIntentId": "payment_intent_3ALXI8T2As8n2TTgVRBto1kkseU",
+                "paymentIntentTenderId": "intent_tender_3ALXI4vpapIXIdmNJyuw4fbj9yl",
+                "bookingOrderId": "booking_order_3ALXI9WNRFlCpvTElWzBA5svomR",
+                "bookingOrderLineId": "booking_line_3ALXI5w6LhE2pB9ledeCG5sGFnl",
+                "paymentIntentLineAllocationId": "intent_line_alloc_3ALXI7RzqFz7spMGFolhJydyYEn",
+                "amountMinor": 500,
+                "occurredAt": "2026-03-01T13:45:41.734Z",
+                "idempotencyKey": null,
+                "metadata": {},
+                "createdAt": "2026-03-01T13:45:41.734Z",
+                "updatedAt": "2026-03-01T13:45:41.734Z",
+                "deletedAt": null,
+                "createdBy": null,
+                "updatedBy": null,
+                "deletedBy": null
+              }
+            ]
+          },
+          "meta": {
+            "requestId": "5c2e78af-9bdc-4b76-8fbb-a69da960caaf",
+            "timestamp": "2026-03-01T13:45:41.761Z"
+          }
+        },
+        "at": "2026-03-01T13:45:41.762Z"
+      }
+    ],
+    "contract": {
+      "description": "Advanced payment flow should hit checkout and intent read-model endpoints.",
+      "observedPaths": [
+        "/api/v1/public/bizes/3ALXHqrYWNogfrEqHc3gH7a0BQC/booking-orders/booking_order_3ALXI9WNRFlCpvTElWzBA5svomR/payments/advanced",
+        "/api/v1/bizes/3ALXHqrYWNogfrEqHc3gH7a0BQC/payment-intents?bookingOrderId=booking_order_3ALXI9WNRFlCpvTElWzBA5svomR",
+        "/api/v1/bizes/3ALXHqrYWNogfrEqHc3gH7a0BQC/payment-intents/payment_intent_3ALXI8T2As8n2TTgVRBto1kkseU"
+      ],
+      "matchedPaths": [
+        "/api/v1/public/bizes/3ALXHqrYWNogfrEqHc3gH7a0BQC/booking-orders/booking_order_3ALXI9WNRFlCpvTElWzBA5svomR/payments/advanced",
+        "/api/v1/bizes/3ALXHqrYWNogfrEqHc3gH7a0BQC/payment-intents?bookingOrderId=booking_order_3ALXI9WNRFlCpvTElWzBA5svomR"
+      ],
+      "rules": [
+        {
+          "label": "Advanced checkout endpoint called",
+          "passed": true,
+          "expectedPatterns": [
+            "\\/payments\\/advanced$"
+          ],
+          "matchedPath": "/api/v1/public/bizes/3ALXHqrYWNogfrEqHc3gH7a0BQC/booking-orders/booking_order_3ALXI9WNRFlCpvTElWzBA5svomR/payments/advanced"
+        },
+        {
+          "label": "Payment intents endpoint called",
+          "passed": true,
+          "expectedPatterns": [
+            "\\/payment-intents"
+          ],
+          "matchedPath": "/api/v1/bizes/3ALXHqrYWNogfrEqHc3gH7a0BQC/payment-intents?bookingOrderId=booking_order_3ALXI9WNRFlCpvTElWzBA5svomR"
+        }
+      ],
+      "passedRules": 2,
+      "failedRules": 0
+    }
+  },
+  "metadata": {}
+}

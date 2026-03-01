@@ -10,9 +10,12 @@ import {
   varchar,
 } from "drizzle-orm/pg-core";
 import { idRef, idWithTag, withAuditRefs } from "./_common";
+import { actionRequests } from "./action_backbone";
 import { bizes } from "./bizes";
 import { locations } from "./locations";
 import { auctions } from "./marketplace";
+import { domainEvents } from "./domain_events";
+import { debugSnapshots, projectionDocuments } from "./projections";
 import { resources } from "./resources";
 import { services } from "./services";
 import { users } from "./users";
@@ -824,6 +827,22 @@ export const staffingDemands = pgTable(
     /** Matching and award policy payload. */
     policy: jsonb("policy").default({}),
 
+    /** Canonical action that opened, updated, or resolved this staffing demand. */
+    actionRequestId: idRef("action_request_id").references(() => actionRequests.id),
+
+    /** Latest staffing event that explains the current demand state. */
+    latestDomainEventId: idRef("latest_domain_event_id").references(
+      () => domainEvents.id,
+    ),
+
+    /** Optional dispatch-board/read-model document for this demand. */
+    projectionDocumentId: idRef("projection_document_id").references(
+      () => projectionDocuments.id,
+    ),
+
+    /** Debug snapshot for matching, window, or auction-shape anomalies. */
+    debugSnapshotId: idRef("debug_snapshot_id").references(() => debugSnapshots.id),
+
     /** Extension payload. */
     metadata: jsonb("metadata").default({}),
 
@@ -864,6 +883,9 @@ export const staffingDemands = pgTable(
     staffingDemandsBizSourceAssignmentIdx: index(
       "staffing_demands_biz_source_assignment_idx",
     ).on(table.bizId, table.fulfillmentAssignmentId),
+    staffingDemandsActionRequestIdx: index(
+      "staffing_demands_action_request_idx",
+    ).on(table.actionRequestId),
 
     /** Tenant-safe FK to optional pool. */
     staffingDemandsBizPoolFk: foreignKey({
@@ -1336,6 +1358,17 @@ export const staffingResponses = pgTable(
     /** Optional actor pointer when response was entered by proxy. */
     respondedByUserId: idRef("responded_by_user_id").references(() => users.id),
 
+    /** Canonical action that invited, claimed, bid, accepted, or declined. */
+    actionRequestId: idRef("action_request_id").references(() => actionRequests.id),
+
+    /** Latest staffing-response event shared with workflows and timelines. */
+    latestDomainEventId: idRef("latest_domain_event_id").references(
+      () => domainEvents.id,
+    ),
+
+    /** Debug snapshot for bid, claim, or response-state anomalies. */
+    debugSnapshotId: idRef("debug_snapshot_id").references(() => debugSnapshots.id),
+
     /** Extension payload. */
     metadata: jsonb("metadata").default({}),
 
@@ -1357,6 +1390,9 @@ export const staffingResponses = pgTable(
     staffingResponsesBizCandidateStatusIdx: index(
       "staffing_responses_biz_candidate_status_idx",
     ).on(table.bizId, table.candidateResourceId, table.status, table.offeredAt),
+    staffingResponsesActionRequestIdx: index(
+      "staffing_responses_action_request_idx",
+    ).on(table.actionRequestId),
 
     /** Prevent duplicate non-bid rows for one candidate in one demand. */
     staffingResponsesUniqueNonBid: uniqueIndex("staffing_responses_unique_non_bid")
@@ -1484,6 +1520,22 @@ export const staffingAssignments = pgTable(
     /** Assignment confirmation timestamp. */
     assignedAt: timestamp("assigned_at", { withTimezone: true }).defaultNow().notNull(),
 
+    /** Canonical action that created, confirmed, or changed this assignment. */
+    actionRequestId: idRef("action_request_id").references(() => actionRequests.id),
+
+    /** Latest staffing-assignment event for this row. */
+    latestDomainEventId: idRef("latest_domain_event_id").references(
+      () => domainEvents.id,
+    ),
+
+    /** Optional workload/dispatch projection that includes this assignment. */
+    projectionDocumentId: idRef("projection_document_id").references(
+      () => projectionDocuments.id,
+    ),
+
+    /** Debug snapshot for assignment conflicts or compensation-shape issues. */
+    debugSnapshotId: idRef("debug_snapshot_id").references(() => debugSnapshots.id),
+
     /** Extension payload. */
     metadata: jsonb("metadata").default({}),
 
@@ -1510,6 +1562,9 @@ export const staffingAssignments = pgTable(
     staffingAssignmentsBizResourceStatusIdx: index(
       "staffing_assignments_biz_resource_status_idx",
     ).on(table.bizId, table.resourceId, table.status, table.startsAt),
+    staffingAssignmentsActionRequestIdx: index(
+      "staffing_assignments_action_request_idx",
+    ).on(table.actionRequestId),
 
     /** Tenant-safe FK to parent demand. */
     staffingAssignmentsBizDemandFk: foreignKey({

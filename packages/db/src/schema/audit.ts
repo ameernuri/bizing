@@ -2,7 +2,9 @@ import { sql } from "drizzle-orm";
 import { check, foreignKey, index, uniqueIndex } from "drizzle-orm/pg-core";
 import { boolean, integer, jsonb, pgTable, timestamp, varchar } from "drizzle-orm/pg-core";
 import { createdAt, idRef, idWithTag, withAuditRefs } from "./_common";
+import { actionExecutions, actionRequests } from "./action_backbone";
 import { bizes } from "./bizes";
+import { domainEvents } from "./domain_events";
 import { users } from "./users";
 import {
   auditActorTypeEnum,
@@ -138,6 +140,36 @@ export const auditEvents = pgTable(
     /** Request correlation id (API request id / job id). */
     requestRef: varchar("request_ref", { length: 200 }),
 
+    /**
+     * Optional canonical action request link.
+     *
+     * ELI5:
+     * `request_ref` is a generic string. `action_request_id` is the strong,
+     * structured pointer to the exact business action the audit event belongs
+     * to. This is much better for debugging and compliance evidence.
+     */
+    actionRequestId: idRef("action_request_id").references(() => actionRequests.id),
+
+    /**
+     * Optional action execution attempt link.
+     *
+     * ELI5:
+     * One requested action may have multiple execution attempts or phases.
+     * This lets the audit event say which exact attempt it describes.
+     */
+    actionExecutionId: idRef("action_execution_id").references(
+      () => actionExecutions.id,
+    ),
+
+    /**
+     * Optional domain event link.
+     *
+     * ELI5:
+     * This lets audit and business-event history point at each other instead
+     * of living in two disconnected worlds.
+     */
+    domainEventId: idRef("domain_event_id").references(() => domainEvents.id),
+
     /** Optional network/IP source. */
     sourceIp: varchar("source_ip", { length: 80 }),
 
@@ -199,6 +231,18 @@ export const auditEvents = pgTable(
       table.bizId,
       table.entityType,
       table.entityId,
+      table.occurredAt,
+    ),
+
+    /** Common trace path from action -> audit trail. */
+    auditEventsActionRequestIdx: index("audit_events_action_request_idx").on(
+      table.actionRequestId,
+      table.occurredAt,
+    ),
+
+    /** Common trace path from event -> audit trail. */
+    auditEventsDomainEventIdx: index("audit_events_domain_event_idx").on(
+      table.domainEventId,
       table.occurredAt,
     ),
 

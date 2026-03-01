@@ -1,0 +1,45 @@
+{
+  "stepKey": "uc-need-validate-8",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AJjkzylyegYr85NRj6SZPcamst/steps/uc-need-validate-8/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the requirement of 'Cancellation with retention offers', but the evidence does not confirm this requirement. While the use case mentions a cancellation attempt triggering an offer of 'Stay and get next month 50% off', there is no concrete evidence demonstrating the implementation of this functionality in the API or the system's behavior during cancellation. This indicates a gap in the requirement coverage, as the evidence does not sufficiently support the existence or execution of retention offers upon cancellation.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].summary"
+          ],
+          "gaps": [
+            "No concrete evidence of API behavior or state changes during cancellation with retention offers."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add cancellation flow validation",
+              "endpoint": "/api/v1/cancellation",
+              "assertion": "Verify that cancellation attempts trigger retention offers as specified."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "3b4aba23-d067-4084-9ee9-4b6d49d1441e",
+          "timestamp": "2026-02-28T22:29:24.252Z"
+        }
+      },
+      "at": "2026-02-28T22:29:24.253Z"
+    }
+  ]
+}

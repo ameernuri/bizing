@@ -9,7 +9,10 @@ import {
   varchar,
 } from "drizzle-orm/pg-core";
 import { idRef, idWithTag, withAuditRefs } from "./_common";
+import { actionRequests } from "./action_backbone";
 import { bizes } from "./bizes";
+import { domainEvents } from "./domain_events";
+import { debugSnapshots } from "./projections";
 import { users } from "./users";
 import { bookingOrderLines, bookingOrders } from "./fulfillment";
 import {
@@ -343,6 +346,13 @@ export const paymentIntents = pgTable(
     /** Optional creation source tag (web/admin/api/channel). */
     source: varchar("source", { length: 40 }).default("api").notNull(),
 
+    /** Optional canonical action/event/debug breadcrumbs for this intent. */
+    actionRequestId: idRef("action_request_id").references(() => actionRequests.id),
+    latestDomainEventId: idRef("latest_domain_event_id").references(
+      () => domainEvents.id,
+    ),
+    debugSnapshotId: idRef("debug_snapshot_id").references(() => debugSnapshots.id),
+
     /** Authorization time marker (if used). */
     authorizedAt: timestamp("authorized_at", { withTimezone: true }),
 
@@ -388,6 +398,11 @@ export const paymentIntents = pgTable(
     paymentIntentsBizProcessorStatusIdx: index(
       "payment_intents_biz_processor_status_idx",
     ).on(table.bizId, table.paymentProcessorAccountId, table.status),
+
+    /** Trace path from action backbone into payment intents. */
+    paymentIntentsActionRequestIdx: index("payment_intents_action_request_idx").on(
+      table.actionRequestId,
+    ),
 
     /** Tenant-safe FK to processor account routing row. */
     paymentIntentsBizProcessorAccountFk: foreignKey({
@@ -966,6 +981,11 @@ export const paymentTransactions = pgTable(
     /** Idempotency key from API caller/worker for safe retries. */
     idempotencyKey: varchar("idempotency_key", { length: 200 }),
 
+    /** Optional canonical action/event/debug breadcrumbs for this money event. */
+    actionRequestId: idRef("action_request_id").references(() => actionRequests.id),
+    domainEventId: idRef("domain_event_id").references(() => domainEvents.id),
+    debugSnapshotId: idRef("debug_snapshot_id").references(() => debugSnapshots.id),
+
     /** Transaction occurrence timestamp. */
     occurredAt: timestamp("occurred_at", { withTimezone: true }).defaultNow().notNull(),
 
@@ -1008,6 +1028,11 @@ export const paymentTransactions = pgTable(
     paymentTransactionsBizProcessorOccurredIdx: index(
       "payment_transactions_biz_processor_occurred_idx",
     ).on(table.bizId, table.paymentProcessorAccountId, table.occurredAt),
+
+    /** Trace path from action backbone into the immutable payment ledger. */
+    paymentTransactionsActionRequestIdx: index(
+      "payment_transactions_action_request_idx",
+    ).on(table.actionRequestId, table.occurredAt),
 
     /** Tenant-safe FK to intent. */
     paymentTransactionsBizIntentFk: foreignKey({

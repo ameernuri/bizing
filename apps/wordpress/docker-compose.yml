@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  wordpress:
+    image: wordpress:latest
+    ports:
+      - "8080:80"
+    environment:
+      WORDPRESS_DB_HOST: db:3306
+      WORDPRESS_DB_USER: wordpress
+      WORDPRESS_DB_PASSWORD: wordpress
+      WORDPRESS_DB_NAME: wordpress
+    volumes:
+      - wordpress_data:/var/www/html
+      - ./plugins/bizing-booking:/var/www/html/wp-content/plugins/bizing-booking
+      - ./plugins/bizing-booking/logs:/var/www/html/wp-content/plugins/bizing-booking/logs
+    depends_on:
+      - db
+    networks:
+      - wp-network
+
+  db:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: wordpress
+      MYSQL_USER: wordpress
+      MYSQL_PASSWORD: wordpress
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - wp-network
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    ports:
+      - "8081:80"
+    environment:
+      PMA_HOST: db
+      PMA_USER: root
+      PMA_PASSWORD: rootpassword
+    depends_on:
+      - db
+    networks:
+      - wp-network
+
+volumes:
+  wordpress_data:
+  db_data:
+
+networks:
+  wp-network:
+    driver: bridge

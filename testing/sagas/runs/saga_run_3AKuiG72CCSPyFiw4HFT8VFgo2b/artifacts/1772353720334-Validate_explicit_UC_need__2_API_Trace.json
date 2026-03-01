@@ -1,0 +1,46 @@
+{
+  "stepKey": "uc-need-validate-2",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AKuiG72CCSPyFiw4HFT8VFgo2b/steps/uc-need-validate-2/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the race condition handling requirement, specifically the 'first tap wins' scenario. However, the evidence provided does not confirm that the system correctly handles simultaneous booking attempts, as it lacks explicit confirmation of the race condition logic being implemented. The linked use case describes the scenario but does not provide concrete evidence of the system's behavior under concurrent booking attempts, indicating a gap in the requirement coverage.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].bodyMarkdownPreview",
+            "priorStepEvidence[6].evidence"
+          ],
+          "gaps": [
+            "No evidence confirming that the first tap wins in concurrent booking attempts."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add race condition handling verification",
+              "endpoint": "/api/v1/bookings",
+              "assertion": "Verify that the first booking confirmation is returned to the first user who taps, while others receive a 'claimed by another user' message."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "8eadbe0a-be59-43c7-a748-88e7fc178256",
+          "timestamp": "2026-03-01T08:28:40.287Z"
+        }
+      },
+      "at": "2026-03-01T08:28:40.289Z"
+    }
+  ]
+}

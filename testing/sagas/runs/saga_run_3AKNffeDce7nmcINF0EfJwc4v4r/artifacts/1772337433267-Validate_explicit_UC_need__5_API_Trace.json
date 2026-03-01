@@ -1,0 +1,45 @@
+{
+  "stepKey": "uc-need-validate-5",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AKNffeDce7nmcINF0EfJwc4v4r/steps/uc-need-validate-5/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the requirement that a failed item triggers a work order or equipment lockout. While the linked use case describes a scenario where a forklift fails inspection and is locked out, it does not provide sufficient evidence of the underlying API behavior or state checks that confirm this requirement is consistently enforced across all relevant equipment types. The evidence only pertains to a specific instance with a forklift and lacks broader validation for the requirement across different equipment types, indicating a gap in coverage.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].needs"
+          ],
+          "gaps": [
+            "No evidence of consistent triggering of work orders or equipment lockouts for failed items across all equipment types."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add API endpoint for equipment lockout validation",
+              "endpoint": "/api/v1/equipment/lockout",
+              "assertion": "Verify that a failed inspection triggers a lockout and creates a work order."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "d5973793-852b-496e-a8a4-c88888936a76",
+          "timestamp": "2026-03-01T03:57:13.220Z"
+        }
+      },
+      "at": "2026-03-01T03:57:13.221Z"
+    }
+  ]
+}

@@ -1,0 +1,45 @@
+{
+  "stepKey": "uc-need-validate-7",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AK6p1lgVBPxqjZ7tVekywyrZqM/steps/uc-need-validate-7/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the requirement for retainage tracking, specifically holding back 10% until completion. While the linked use case mentions a retainage of $682 held until final inspection passed, there is no concrete evidence of API reads or persisted state checks that confirm this functionality is implemented and working as required. The lack of specific evidence to demonstrate the tracking of retainage leads to a conclusion that there is a gap in the requirement coverage.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].needs"
+          ],
+          "gaps": [
+            "No evidence of API reads or persisted state checks confirming the implementation of retainage tracking."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add deterministic evidence for retainage tracking",
+              "endpoint": "/api/v1/invoices",
+              "assertion": "Define concrete endpoint calls and assertions that directly verify the retainage tracking functionality."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "6a6bb8dd-5bdc-4940-aea1-0dcc9b43684d",
+          "timestamp": "2026-03-01T01:38:50.046Z"
+        }
+      },
+      "at": "2026-03-01T01:38:50.048Z"
+    }
+  ]
+}

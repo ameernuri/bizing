@@ -2,7 +2,10 @@ import { sql } from "drizzle-orm";
 import { check, index, pgTable, uniqueIndex } from "drizzle-orm/pg-core";
 import { boolean, integer, jsonb, text, timestamp, varchar } from "drizzle-orm/pg-core";
 import { idRef, idWithTag, withAuditRefs } from "./_common";
+import { actionRequests } from "./action_backbone";
 import { bizes } from "./bizes";
+import { domainEvents } from "./domain_events";
+import { debugSnapshots, projectionDocuments } from "./projections";
 import { users } from "./users";
 import {
   sagaArtifactTypeEnum,
@@ -345,6 +348,29 @@ export const sagaRunSteps = pgTable(
     startedAt: timestamp("started_at", { withTimezone: true }),
     endedAt: timestamp("ended_at", { withTimezone: true }),
 
+    /**
+     * Optional main action request produced during this step.
+     *
+     * ELI5:
+     * A step may call several APIs, but there is often one "main business
+     * action" the step is testing. This points at that action directly so the
+     * test record can speak the same language as the platform core.
+     */
+    primaryActionRequestId: idRef("primary_action_request_id").references(
+      () => actionRequests.id,
+    ),
+
+    /**
+     * Optional main domain event produced/validated by this step.
+     *
+     * ELI5:
+     * This is the strongest link for answering:
+     * "did the system emit the business fact we expected?"
+     */
+    primaryDomainEventId: idRef("primary_domain_event_id").references(
+      () => domainEvents.id,
+    ),
+
     /** Optional failure taxonomy/code for structured reporting. */
     failureCode: varchar("failure_code", { length: 120 }),
     failureMessage: text("failure_message"),
@@ -382,6 +408,16 @@ export const sagaRunSteps = pgTable(
     sagaRunStepsRunStatusIdx: index("saga_run_steps_run_status_idx").on(
       table.sagaRunId,
       table.status,
+    ),
+
+    /** Trace path from action backbone back into test evidence. */
+    sagaRunStepsPrimaryActionIdx: index("saga_run_steps_primary_action_idx").on(
+      table.primaryActionRequestId,
+    ),
+
+    /** Trace path from business-event backbone back into test evidence. */
+    sagaRunStepsPrimaryDomainEventIdx: index("saga_run_steps_primary_domain_event_idx").on(
+      table.primaryDomainEventId,
     ),
 
     /** Step order fields and retries must be non-negative. */
@@ -487,6 +523,20 @@ export const sagaRunArtifacts = pgTable(
     /** Optional checksum of artifact payload for integrity checks. */
     checksum: varchar("checksum", { length: 128 }),
 
+    /**
+     * Optional canonical links back into the platform backbone.
+     *
+     * ELI5:
+     * Artifacts are evidence. These pointers let evidence attach directly to
+     * real platform records instead of only describing them in text.
+     */
+    actionRequestId: idRef("action_request_id").references(() => actionRequests.id),
+    domainEventId: idRef("domain_event_id").references(() => domainEvents.id),
+    projectionDocumentId: idRef("projection_document_id").references(
+      () => projectionDocuments.id,
+    ),
+    debugSnapshotId: idRef("debug_snapshot_id").references(() => debugSnapshots.id),
+
     /** Logical capture time (defaults to row create time when omitted). */
     capturedAt: timestamp("captured_at", { withTimezone: true }).defaultNow().notNull(),
 
@@ -512,6 +562,16 @@ export const sagaRunArtifacts = pgTable(
     /** Optional per-step artifact filtering path. */
     sagaRunArtifactsRunStepIdx: index("saga_run_artifacts_run_step_idx").on(
       table.sagaRunStepId,
+    ),
+
+    /** Useful when triaging by canonical business action. */
+    sagaRunArtifactsActionRequestIdx: index("saga_run_artifacts_action_request_idx").on(
+      table.actionRequestId,
+    ),
+
+    /** Useful when triaging by canonical business event. */
+    sagaRunArtifactsDomainEventIdx: index("saga_run_artifacts_domain_event_idx").on(
+      table.domainEventId,
     ),
 
     /** Byte size must be non-negative when present. */

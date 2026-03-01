@@ -1,0 +1,97 @@
+{
+  "stepKey": "uc-need-validate-1",
+  "callCount": 2,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/bizes/3AL0T5EeOSjOUQnH8dHtnk1LctT/subject-subscriptions",
+      "status": 201,
+      "requestBody": {
+        "targetSubjectType": "offer_watch",
+        "targetSubjectId": "offer-watch-offer_3AL0TFtJdbIyMqJhTQRMXQktCWK",
+        "targetDisplayName": "Saga Validation Subject",
+        "subscriptionType": "watch",
+        "status": "active",
+        "deliveryMode": "instant",
+        "preferredChannel": "in_app",
+        "minDeliveryIntervalMinutes": 0,
+        "autoRegisterTargetSubject": true,
+        "metadata": {
+          "source": "rerun-sagas",
+          "sagaKey": "uc-215-the-solo-entrepreneur-sarah"
+        }
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "id": "graph_subject_sub_3AL0TNOtVtRYvywS9mw1xoeZNsn",
+          "subscriberIdentityId": "graph_identity_3AL02XqVzA6Hdcqj10B1TkxVTY7",
+          "targetSubjectBizId": "3AL0T5EeOSjOUQnH8dHtnk1LctT",
+          "targetSubjectType": "offer_watch",
+          "targetSubjectId": "offer-watch-offer_3AL0TFtJdbIyMqJhTQRMXQktCWK",
+          "subscriptionType": "watch",
+          "status": "active",
+          "filterPolicy": {},
+          "deliveryMode": "instant",
+          "preferredChannel": "in_app",
+          "minDeliveryIntervalMinutes": 0,
+          "nextEligibleDeliveryAt": null,
+          "mutedAt": null,
+          "unsubscribedAt": null,
+          "metadata": {
+            "source": "rerun-sagas",
+            "sagaKey": "uc-215-the-solo-entrepreneur-sarah"
+          },
+          "createdAt": "2026-03-01T09:15:49.155Z",
+          "updatedAt": "2026-03-01T09:15:49.155Z",
+          "deletedAt": null,
+          "createdBy": null,
+          "updatedBy": null,
+          "deletedBy": null
+        },
+        "meta": {
+          "requestId": "f119d968-e510-4a83-bb58-d39120b1a261",
+          "timestamp": "2026-03-01T09:15:49.156Z"
+        }
+      },
+      "at": "2026-03-01T09:15:49.157Z"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AL0T2aB7z500P2HMvJ6o0xaE7I/steps/uc-need-validate-1/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the presence of tenant-safe foreign keys, which is a critical requirement for ensuring that delivery jobs do not leak notifications across tenants. However, the evidence provided does not include any checks or confirmations regarding the foreign key relationships between delivery rows and events/subscriptions. This indicates a gap in the validation process, as there is no concrete evidence to support that this requirement is met.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [],
+          "gaps": [
+            "Lack of evidence confirming tenant-safe foreign keys from delivery rows to events/subscriptions."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add deterministic evidence contract",
+              "endpoint": null,
+              "assertion": "Define concrete endpoint calls and assertions that directly verify this requirement."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "418ad3a1-0e73-4eba-89ad-9d4331df9e00",
+          "timestamp": "2026-03-01T09:15:53.283Z"
+        }
+      },
+      "at": "2026-03-01T09:15:53.283Z"
+    }
+  ]
+}

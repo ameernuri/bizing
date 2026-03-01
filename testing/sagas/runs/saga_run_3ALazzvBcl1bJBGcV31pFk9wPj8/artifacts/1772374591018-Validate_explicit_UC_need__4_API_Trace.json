@@ -1,0 +1,45 @@
+{
+  "stepKey": "uc-need-validate-4",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3ALazzvBcl1bJBGcV31pFk9wPj8/steps/uc-need-validate-4/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the requirement of automatic commission calculation per booking. However, the evidence does not explicitly demonstrate that the system performs this calculation automatically for each booking. While the linked use case describes a scenario where commission is calculated, there is no concrete evidence or API read that confirms this functionality is implemented in the system, leading to a gap in requirement coverage.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].bodyMarkdownPreview"
+          ],
+          "gaps": [
+            "No evidence confirming automatic commission calculation per booking."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Verify automatic commission calculation",
+              "endpoint": "/api/v1/bookings/{bookingId}/commission",
+              "assertion": "Check if the commission is calculated automatically for the booking."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "b3f76928-10f0-4a0c-9dfa-b42a688db212",
+          "timestamp": "2026-03-01T14:16:30.960Z"
+        }
+      },
+      "at": "2026-03-01T14:16:30.962Z"
+    }
+  ]
+}

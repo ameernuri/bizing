@@ -1,1 +1,0 @@
-ALTER TYPE "org_membership_role" ADD VALUE 'user';

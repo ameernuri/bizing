@@ -1,0 +1,45 @@
+{
+  "stepKey": "uc-need-validate-7",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AKA0aC0Due8J3Nro9Hc2KhX6mc/steps/uc-need-validate-7/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the requirement for 'Makeup session options', but the evidence does not confirm that such options are available or implemented. While the linked use case mentions that if an employee misses a session, they can make up at another company's session, there is no concrete evidence of API reads or persisted state checks that demonstrate this functionality. This indicates a clear gap in the requirement coverage, as the evidence does not support the expected result of confirming requirement satisfaction.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].bodyMarkdownPreview"
+          ],
+          "gaps": [
+            "No evidence of API endpoints or data structures that confirm the availability of makeup session options."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add evidence for makeup session options",
+              "endpoint": "/api/v1/makeup-sessions",
+              "assertion": "Verify that makeup session options are available for employees who miss a session."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "09345742-ea64-436a-9706-895960900fff",
+          "timestamp": "2026-03-01T02:05:10.510Z"
+        }
+      },
+      "at": "2026-03-01T02:05:10.511Z"
+    }
+  ]
+}

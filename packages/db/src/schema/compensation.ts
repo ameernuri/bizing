@@ -10,7 +10,9 @@ import {
   varchar,
 } from "drizzle-orm/pg-core";
 import { idRef, idWithTag, withAuditRefs } from "./_common";
+import { actionRequests } from "./action_backbone";
 import { bizes } from "./bizes";
+import { domainEvents } from "./domain_events";
 import {
   compensationCalculationModeEnum,
   compensationLedgerEntryTypeEnum,
@@ -34,6 +36,7 @@ import { resources } from "./resources";
 import { serviceProducts } from "./service_products";
 import { services } from "./services";
 import { staffingAssignments } from "./intelligence";
+import { debugSnapshots, projectionDocuments } from "./projections";
 import { resourceCapabilityTemplates } from "./supply";
 import { users } from "./users";
 import { offerComponents } from "./offers";
@@ -924,6 +927,25 @@ export const compensationLedgerEntries = pgTable(
     /** Optional dedupe key for idempotent write workers. */
     idempotencyKey: varchar("idempotency_key", { length: 200 }),
 
+    /**
+     * Canonical action behind this payout movement.
+     *
+     * This lets payroll, finance, and debugging trace the ledger row back to
+     * the exact business request that caused it.
+     */
+    actionRequestId: idRef("action_request_id").references(() => actionRequests.id),
+
+    /** Latest financial/business event explaining this ledger movement. */
+    domainEventId: idRef("domain_event_id").references(() => domainEvents.id),
+
+    /** Optional rendered statement/reconciliation view that includes this row. */
+    projectionDocumentId: idRef("projection_document_id").references(
+      () => projectionDocuments.id,
+    ),
+
+    /** Structured debug capture for calculator, settlement, or lineage failures. */
+    debugSnapshotId: idRef("debug_snapshot_id").references(() => debugSnapshots.id),
+
     /** Extension payload (calculator traces, debugging context, etc.). */
     metadata: jsonb("metadata").default({}),
 
@@ -962,6 +984,9 @@ export const compensationLedgerEntries = pgTable(
     compensationLedgerEntriesBizBookingOccurredIdx: index(
       "compensation_ledger_entries_biz_booking_occurred_idx",
     ).on(table.bizId, table.bookingOrderId, table.occurredAt),
+    compensationLedgerEntriesActionRequestOccurredIdx: index(
+      "compensation_ledger_entries_action_request_occurred_idx",
+    ).on(table.actionRequestId, table.occurredAt),
 
     /** Tenant-safe FK to payee resource. */
     compensationLedgerEntriesBizPayeeFk: foreignKey({
@@ -1153,6 +1178,22 @@ export const compensationPayRuns = pgTable(
     /** Optional notes for payroll ops. */
     notes: text("notes"),
 
+    /** Canonical action that opened, approved, finalized, or paid this batch. */
+    actionRequestId: idRef("action_request_id").references(() => actionRequests.id),
+
+    /** Latest payroll event associated with this batch. */
+    latestDomainEventId: idRef("latest_domain_event_id").references(
+      () => domainEvents.id,
+    ),
+
+    /** Optional rendered payroll batch summary. */
+    projectionDocumentId: idRef("projection_document_id").references(
+      () => projectionDocuments.id,
+    ),
+
+    /** Structured debug payload for pay-run calculation or approval issues. */
+    debugSnapshotId: idRef("debug_snapshot_id").references(() => debugSnapshots.id),
+
     /** Extension payload. */
     metadata: jsonb("metadata").default({}),
 
@@ -1169,6 +1210,9 @@ export const compensationPayRuns = pgTable(
     compensationPayRunsBizStatusPeriodIdx: index(
       "compensation_pay_runs_biz_status_period_idx",
     ).on(table.bizId, table.status, table.periodStartAt),
+    compensationPayRunsActionRequestIdx: index(
+      "compensation_pay_runs_action_request_idx",
+    ).on(table.actionRequestId),
 
     /** Time windows and timeline ordering invariants. */
     compensationPayRunsTimelineCheck: check(
@@ -1253,6 +1297,17 @@ export const compensationPayRunItems = pgTable(
     /** Optional operator notes for exceptions/withholds. */
     notes: text("notes"),
 
+    /** Canonical action that produced or updated this statement item. */
+    actionRequestId: idRef("action_request_id").references(() => actionRequests.id),
+
+    /** Latest event for this statement row. */
+    latestDomainEventId: idRef("latest_domain_event_id").references(
+      () => domainEvents.id,
+    ),
+
+    /** Structured debug pointer for payout exceptions or reconciliation issues. */
+    debugSnapshotId: idRef("debug_snapshot_id").references(() => debugSnapshots.id),
+
     /** Extension payload. */
     metadata: jsonb("metadata").default({}),
 
@@ -1279,6 +1334,9 @@ export const compensationPayRunItems = pgTable(
     compensationPayRunItemsBizPayeePaidIdx: index(
       "compensation_pay_run_items_biz_payee_paid_idx",
     ).on(table.bizId, table.payeeResourceId, table.paidAt),
+    compensationPayRunItemsActionRequestIdx: index(
+      "compensation_pay_run_items_action_request_idx",
+    ).on(table.actionRequestId),
 
     /** Tenant-safe FK to parent pay run. */
     compensationPayRunItemsBizPayRunFk: foreignKey({

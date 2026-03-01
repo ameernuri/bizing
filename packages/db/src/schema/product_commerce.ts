@@ -10,7 +10,9 @@ import {
   varchar,
 } from "drizzle-orm/pg-core";
 import { idRef, idWithTag, withAuditRefs } from "./_common";
+import { actionRequests } from "./action_backbone";
 import { bizes } from "./bizes";
+import { domainEvents } from "./domain_events";
 import {
   bookingOrderLines,
   bookingOrders,
@@ -19,6 +21,7 @@ import {
 import { locations } from "./locations";
 import { offerVersions, offers } from "./offers";
 import { products } from "./products";
+import { debugSnapshots, projectionDocuments } from "./projections";
 import { resources } from "./resources";
 import { serviceProducts } from "./service_products";
 import { users } from "./users";
@@ -80,6 +83,22 @@ export const sellables = pgTable(
     /** Commercial default currency for this sellable family. */
     currency: varchar("currency", { length: 3 }).default("USD").notNull(),
 
+    /** Canonical action that created or last materially changed this sellable root. */
+    actionRequestId: idRef("action_request_id").references(() => actionRequests.id),
+
+    /** Latest shared commercial fact for this sellable family. */
+    latestDomainEventId: idRef("latest_domain_event_id").references(
+      () => domainEvents.id,
+    ),
+
+    /** Optional catalog/read-model document for this sellable. */
+    projectionDocumentId: idRef("projection_document_id").references(
+      () => projectionDocuments.id,
+    ),
+
+    /** Debug bundle for catalog-bridge or attribution inconsistencies. */
+    debugSnapshotId: idRef("debug_snapshot_id").references(() => debugSnapshots.id),
+
     /** Optional policy envelope for global sellable behavior. */
     policy: jsonb("policy").default({}),
 
@@ -118,6 +137,9 @@ export const sellables = pgTable(
       table.bizId,
       table.kind,
       table.status,
+    ),
+    sellablesActionRequestIdx: index("sellables_action_request_idx").on(
+      table.actionRequestId,
     ),
 
     /** Currency should always use uppercase ISO-like code shape. */

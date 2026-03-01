@@ -1,0 +1,99 @@
+{
+  "schemaVersion": "snapshot.v1",
+  "screenKey": "adversary-marketplace-tenant-isolation-1772372333127",
+  "title": "Cross-biz isolation under marketplace/enterprise flow Snapshot",
+  "generatedAt": "2026-03-01T13:38:53.130Z",
+  "stepKey": "adversary-marketplace-tenant-isolation",
+  "status": "passed",
+  "view": {
+    "title": "Cross-biz isolation under marketplace/enterprise flow",
+    "subtitle": "Marketplace/cross-biz isolation enforced for non-member adversary.",
+    "blocks": [
+      {
+        "type": "alert",
+        "title": "Adversary Marketplace Tenant Isolation completed",
+        "message": "Marketplace/cross-biz isolation enforced for non-member adversary.",
+        "tone": "success"
+      },
+      {
+        "type": "key_value",
+        "title": "Screen details",
+        "items": [
+          {
+            "label": "AdversaryUserId",
+            "value": "GmhgnChVNSqUJuI8krUHq2QzJXvyoCvp"
+          }
+        ]
+      }
+    ]
+  },
+  "rawData": {
+    "stepKey": "adversary-marketplace-tenant-isolation",
+    "resultPayload": {
+      "note": "Marketplace/cross-biz isolation enforced for non-member adversary.",
+      "evidence": {
+        "adversaryUserId": "GmhgnChVNSqUJuI8krUHq2QzJXvyoCvp"
+      }
+    },
+    "apiCalls": [
+      {
+        "method": "GET",
+        "path": "/api/v1/bizes/3ALWSeO4yPViGpbEQtfHoezBnHA/offers",
+        "status": 403,
+        "responseBody": {
+          "success": false,
+          "error": {
+            "code": "FORBIDDEN",
+            "message": "You are not a member of this biz."
+          },
+          "meta": {
+            "requestId": "395fceb8-1e3b-4152-aa3d-e3b10ee215d6",
+            "timestamp": "2026-03-01T13:38:53.071Z"
+          }
+        },
+        "at": "2026-03-01T13:38:53.072Z"
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/bizes/3ALWSeO4yPViGpbEQtfHoezBnHA/booking-orders",
+        "status": 403,
+        "responseBody": {
+          "success": false,
+          "error": {
+            "code": "FORBIDDEN",
+            "message": "You are not a member of this biz."
+          },
+          "meta": {
+            "requestId": "4c28e0af-9dc9-4cc4-a8e6-56c74f2d27b1",
+            "timestamp": "2026-03-01T13:38:53.076Z"
+          }
+        },
+        "at": "2026-03-01T13:38:53.077Z"
+      }
+    ],
+    "contract": {
+      "description": "Tenant isolation step should attempt cross-tenant offers/orders reads.",
+      "observedPaths": [
+        "/api/v1/bizes/3ALWSeO4yPViGpbEQtfHoezBnHA/offers",
+        "/api/v1/bizes/3ALWSeO4yPViGpbEQtfHoezBnHA/booking-orders"
+      ],
+      "matchedPaths": [
+        "/api/v1/bizes/3ALWSeO4yPViGpbEQtfHoezBnHA/offers"
+      ],
+      "rules": [
+        {
+          "label": "Cross-biz offers or booking-orders endpoint attempted",
+          "passed": true,
+          "expectedPatterns": [
+            "\\/offers$",
+            "\\/booking-orders$"
+          ],
+          "matchedPath": "/api/v1/bizes/3ALWSeO4yPViGpbEQtfHoezBnHA/offers"
+        }
+      ],
+      "passedRules": 1,
+      "failedRules": 0
+    }
+  },
+  "metadata": {}
+}

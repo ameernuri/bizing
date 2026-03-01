@@ -1,0 +1,46 @@
+{
+  "stepKey": "uc-need-validate-2",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3ALD6K0flHUcS0rEvmp25Fr44RY/steps/uc-need-validate-2/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the requirement of multiple appointments being linked (consult → procedure → follow-up). However, the evidence provided does not confirm that these appointments are indeed linked in the system, nor does it capture any gaps related to this requirement. The linked use case outlines the need for these connections, but without concrete evidence of their implementation or validation, the requirement remains unfulfilled.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].bodyMarkdownPreview",
+            "exploratoryStep.expectedResult"
+          ],
+          "gaps": [
+            "No evidence of validation for the linkage between appointments (consult → procedure → follow-up)."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add validation for appointment linkage",
+              "endpoint": "/api/v1/appointments/link-validation",
+              "assertion": "Verify that appointments are linked correctly in the system."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "68afad8e-ed15-4338-abb8-6cbd2bcafc13",
+          "timestamp": "2026-03-01T10:59:50.488Z"
+        }
+      },
+      "at": "2026-03-01T10:59:50.489Z"
+    }
+  ]
+}

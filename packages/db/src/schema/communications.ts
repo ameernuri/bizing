@@ -11,9 +11,11 @@ import {
   varchar,
 } from "drizzle-orm/pg-core";
 import { idRef, idWithTag, withAuditRefs } from "./_common";
+import { actionRequests } from "./action_backbone";
 import { bizes } from "./bizes";
 import { groupAccounts } from "./group_accounts";
 import { users } from "./users";
+import { domainEvents } from "./domain_events";
 import {
   communicationChannelEnum,
   communicationConsentSourceEnum,
@@ -28,6 +30,7 @@ import {
   messageEventTypeEnum,
 } from "./enums";
 import { bizExtensionInstalls, lifecycleEvents } from "./extensions";
+import { debugSnapshots, projectionDocuments } from "./projections";
 
 /**
  * communication_consents
@@ -849,6 +852,22 @@ export const outboundMessages = pgTable(
     /** Rendered content and send payload snapshot. */
     payload: jsonb("payload").default({}).notNull(),
 
+    /** Canonical action that queued, retried, or cancelled this outbound send. */
+    actionRequestId: idRef("action_request_id").references(() => actionRequests.id),
+
+    /** Latest shared event for this outbound message lifecycle. */
+    latestDomainEventId: idRef("latest_domain_event_id").references(
+      () => domainEvents.id,
+    ),
+
+    /** Optional delivery-thread/read-model projection for operators or agents. */
+    projectionDocumentId: idRef("projection_document_id").references(
+      () => projectionDocuments.id,
+    ),
+
+    /** Debug snapshot for provider, policy, or rendering failures. */
+    debugSnapshotId: idRef("debug_snapshot_id").references(() => debugSnapshots.id),
+
     /** Extension payload. */
     metadata: jsonb("metadata").default({}),
 
@@ -878,6 +897,9 @@ export const outboundMessages = pgTable(
     outboundMessagesBizRecipientIdx: index(
       "outbound_messages_biz_recipient_idx",
     ).on(table.bizId, table.recipientUserId, table.channel, table.scheduledFor),
+    outboundMessagesActionRequestScheduleIdx: index(
+      "outbound_messages_action_request_schedule_idx",
+    ).on(table.actionRequestId, table.scheduledFor),
 
     /** Tenant-safe FK to message template. */
     outboundMessagesBizTemplateFk: foreignKey({
@@ -961,6 +983,15 @@ export const outboundMessageEvents = pgTable(
     /** Event payload snapshot from provider/system. */
     payload: jsonb("payload").default({}).notNull(),
 
+    /** Canonical action behind this message event when one exists. */
+    actionRequestId: idRef("action_request_id").references(() => actionRequests.id),
+
+    /** Canonical shared domain event pointer for this delivery event. */
+    domainEventId: idRef("domain_event_id").references(() => domainEvents.id),
+
+    /** Debug snapshot for webhook parsing or provider reconciliation issues. */
+    debugSnapshotId: idRef("debug_snapshot_id").references(() => debugSnapshots.id),
+
     /** Extension payload. */
     metadata: jsonb("metadata").default({}),
 
@@ -983,6 +1014,9 @@ export const outboundMessageEvents = pgTable(
     outboundMessageEventsBizMessageOccurredIdx: index(
       "outbound_message_events_biz_message_occurred_idx",
     ).on(table.bizId, table.outboundMessageId, table.occurredAt),
+    outboundMessageEventsActionRequestIdx: index(
+      "outbound_message_events_action_request_idx",
+    ).on(table.actionRequestId),
 
     /** Tenant-safe FK to parent message. */
     outboundMessageEventsBizMessageFk: foreignKey({

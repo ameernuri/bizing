@@ -1,0 +1,46 @@
+{
+  "stepKey": "uc-need-validate-6",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3ALHzYUyWY2Qrmf1Qn1fy1FFwp1/steps/uc-need-validate-6/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the requirement that a consultation must be completed before booking a surgery. However, the evidence does not provide any confirmation that the system enforces this prerequisite, leading to a clear gap in meeting the requirement. The linked use case explicitly states that a consultation must be completed before booking the procedure, but there is no evidence of validation or checks to ensure this requirement is enforced in the current saga run.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].bodyMarkdownPreview",
+            "exploratoryStep.instruction"
+          ],
+          "gaps": [
+            "No evidence of validation that a consultation must be completed before booking surgery."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add validation for consultation completion",
+              "endpoint": "/api/v1/consultations/validate",
+              "assertion": "Verify that a consultation is completed before allowing surgery booking."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "ab3c1cd8-5c11-480e-bb0b-b7daaeb038ad",
+          "timestamp": "2026-03-01T11:40:25.747Z"
+        }
+      },
+      "at": "2026-03-01T11:40:25.748Z"
+    }
+  ]
+}

@@ -1,0 +1,363 @@
+{
+  "stepKey": "owner-configure-demand-pricing",
+  "callCount": 5,
+  "calls": [
+    {
+      "method": "GET",
+      "path": "/api/v1/agents/tools",
+      "status": 200,
+      "responseBody": {
+        "_truncated": true,
+        "_preview": "{\"success\":true,\"data\":[{\"name\":\"bizing.bizes.list\",\"description\":\"List bizes available to the authenticated user.\",\"method\":\"GET\",\"path\":\"/api/v1/bizes\",\"tags\":[\"bizes\"],\"parameters\":{\"type\":\"object\",\"properties\":{\"page\":{\"type\":\"number\",\"default\":1},\"perPage\":{\"type\":\"number\",\"default\":20},\"status\":{\"type\":\"string\"},\"type\":{\"type\":\"string\"}}}},{\"name\":\"bizing.bizes.create\",\"description\":\"Create a biz and make current user owner.\",\"method\":\"POST\",\"path\":\"/api/v1/bizes\",\"tags\":[\"bizes\"],\"parameters\":{\"type\":\"object\",\"properties\":{\"name\":{\"type\":\"string\"},\"slug\":{\"type\":\"string\"},\"type\":{\"type\":\"string\"},\"timezone\":{\"type\":\"string\"},\"currency\":{\"type\":\"string\"}},\"required\":[\"name\",\"slug\"]}},{\"name\":\"bizing.locations.publicList\",\"description\":\"List public active locations for one biz.\",\"method\":\"GET\",\"path\":\"/api/v1/public/bizes/{bizId}/locations\",\"tags\":[\"locations\",\"public\"],\"parameters\":{\"type\":\"object\",\"properties\":{\"bizId\":{\"type\":\"string\"}},\"required\":[\"bizId\"]}},{\"name\":\"bizing.operations.locationOverview\",\"description\":\"Return consolidated per-location operational overview for one biz.\",\"method\":\"GET\",\"path\":\"/api/v1/bizes/{bizId}/operations/location-overview\",\"tags\":[\"operations\",\"locations\"],\"parameters\":{\"type\":\"object\",\"properties\":{\"bizId\":{\"type\":\"string\"}},\"required\":[\"bizId\"]}},{\"name\":\"bizing.analytics.overview\",\"description\":\"Return one canonical revenue and booking summary for a biz.\",\"method\":\"GET\",\"path\":\"/api/v1/bizes/{bizId}/analytics/overview\",\"tags\":[\"analytics\",\"operations\"],\"parameters\":{\"type\":\"object\",\"properties\":{\"bizId\":{\"type\":\"string\"}},\"required\":[\"bizId\"]}},{\"name\":\"bizing.calendars.timeline\",\"description\":\"Return the calendar story for one window: bindings, rules, holds, and matching bookings.\",\"method\":\"GET\",\"path\":\"/api/v1/bizes/{bizId}/calendars/{calendarId}/timeline\",\"tags\":[\"calendars\",\"availability\",\"timeline\"],\"parameters\":{\"type\":\"object\",\"properties\":{\"bizId\":{\"type\":\"string\"},\"calendarId\":{\"type\":\"string\"},\"startAt\":{\"type\":\"string\",\"description\":\"ISO datetime\"},\"endAt\":{\"type\":\"string\",\"description\":\"ISO datetime\"},\"includeInactive\":{\"type\":\"string\",\"enum\":[\"true\",\"false\"]},\"includeRules\":{\"type\":\"string\",\"enum\":[\"true\",\"false\"]},\"includeBookings\":{\"type\":\"string\",\"enum\":[\"true\",\"false\"]},\"includeHolds\":{\"type\":\"string\",\"enum\":[\"true\",\"false\"]}},\"required\":[\"bizId\",\"calendarId\"]}},{\"name\":\"bizing.instruments.list\",\"description\":\"List unified instruments such as intake forms, waivers, checklists, and surveys.\",\"method\":\"GET\",\"path\":\"/api/v1/bizes/{bizId}/instruments\",\"tags\":[\"instruments\",\"compliance\"],\"parameters\":{\"type\":\"object\",\"properties\":{\"bizId\":{\"type\":\"string\"},\"status\":{\"type\":\"string\"},\"instrumentType\":{\"type\":\"string\"},\"currentOnly\":{\"type\":\"boolean\"}},\"required\":[\"bizId\"]}},{\"name\":\"bizing.instruments.create\",\"description\":\"Create one instrument definition in the unified forms/checklists/surveys system.\",\"method\":\"POST\",\"path\":\"/api/v1/bizes/{bizId}/instruments\",\"tags\":[\"instruments\",\"compliance\"],\"parameters\":{\"type\":\"object\",\"properties\":{\"bizId\":{\"type\":\"string\"},\"name\":{\"type\":\"string\"},\"slug\":{\"type\":\"string\"},\"instrumentType\":{\"type\":\"string\"},\"status\":{\"type\":\"string\"},\"evaluationMode\":{\"type\":\"string\"},\"schemaSnapshot\":{\"type\":\"object\"},\"validationPolicy\":{\"type\":\"object\"},\"completionPolicy\":{\"type\":\"object\"}},\"required\":[\"bizId\",\"name\",\"slug\",\"instrumentType\"]}},{\"name\":\"bizing.instrumentRuns.create\",\"description\":\"Create one runtime instrument run for a target and assignee.\",\"method\":\"POST\",\"path\":\"/api/v1/bizes/{bizId}/instrument-runs\",\"tags\":[\"instruments\",\"runtime\"],\"parameters\":{\"type\":\"object\",\"properties\":{\"bizId\":{\"type\":\"string\"},\"instrumentId\":{\"type\":\"string\"},\"targetType\":{\"type\":\"string\"},\"targetRefId\":{\"type\":\"string\"},\"assigneeSubjectBizId\":{\"type\":\"string\"},\"assigneeSubjectType\":{\"type\":\"string\"},\"assigneeSubjectId\":{\"type\":\"string\"},\"expiresAt\":{\"type\":\"string\"}},\"required\":[\"bizId\",\"instrumentId\",\"targetType\",\"targetRefId\",\"assigneeSubjectBizId\",\"assigneeSubjectType\",\"assigneeSubjectId\"]}},{\"name\":\"bizing.messageTemplates.list\",\"description\":\"List reusable SMS/email/postal/etc templates for one biz.\",\"method\":\"GET\",\"path\":\"/api/v1/bizes/{bizId}/message-templates\",\"tags\":[\"communications\",\"templates\"],\"parameters\":{\"type\":\"object\",\"properties\":{\"bizId\":{\"type\":\"string\"}},\"required\":[\"bizId\"]}},{\"name\":\"bizing.marketingCampaigns.list\",\"description\":\"List marketing campaigns for one biz.\",\"method\":\"GET\",\"path\":\"/api/v1/bizes/{bizId}/marketing-campaigns\",\"tags\":[\"communications\",\"marketing\"],\"parameters\":{\"type\":\"object\",\"properties\":{\"bizId\":{\"type\":\"string\"}},\"required\":[\"bizId\"]}},{\"name\":\"bizing.actions.preview\",\"description\":\"Preview one canonical business action without committing it.\",\"method\":\"POST\",\"path\":\"/api/v1/bizes/{bizId}/actions/preview\",\"tags\":[\"actions\",\"preview\"],\"parameters\":{\"type\":\"object\",\"properties\":{\"bizId\":{\"type\":\"string\"},\"actionKey\":{\"type\":\"string\"},\"actionFamily\":{\"type\":\"string\"},\"targetSubjectType\":{\"type\":\"string\"},\"targetSubjectId\":{\"type\":\"string\"},\"sourceInstallationRef\":{\"type\":\"string\"},\"idempotencyKey\":{\"type\":\"string\"},\"payload\":{\"type\":\"object\"},\"metadata\":{\"type\":\"object\"}},\"required\":[\"bizId\",\"actionKey\",\"payload\"]}},{\"name\":\"bizing.actions.execute\",\"description\":\"Execute one canonical business action through the action backbone.\",\"method\":\"POST\",\"path\":\"/api/v1/bizes/{bizId}/actions/execute\",\"tags\":[\"actions\",\"execute\"],\"parameters\":{\"type\":\"object\",\"properties\":{\"bizId\":{\"type\":\"string\"},\"actionKey\":{\"type\":\"string\"},\"actionFamily\":{\"type\":\"string\"},\"targetSubjectType\":{\"type\":\"string\"},\"targetSubjectId\":{\"type\":\"string\"},\"sourceInstallationRef\":{\"type\":\"string\"},\"idempotencyKey\":{\"type\":\"string\"},\"payload\":{\"type\":\"object\"},\"metadata\":{\"type\":\"object\"}},\"required\":[\"bizId\",\"actionKey\",\"payload\"]}},{\"name\":\"bizing.actions.publicExecute\",\"description\":\"Execute one public-safe canonical business action for a customer-facing surface.\",\"method\":\"POST\",\"path\":\"/api/v1/public/bizes/{bizId}/actions/execute\",\"tags\":[\"actions\",\"public\"],\"parameters\":{\"type\":\"object\",\"properties\":{\"bizId\":{\"type\":\"string\"},\"actionKey\":{\"type\":\"string\"},\"actionFamily\":{\"type\":\"string\"},\"targetSubjectType\":{\"type\":\"string\"},\"targetSubjectId\":{\"type\":\"string\"},\"sourceInstallationRef\":{\"type\":\"string\"},\"idempotencyKey\":{\"type\":\"string\"},\"payload\":{\"type\":\"object\"},\"metadata\":{\"type\":\"object\"}},\"required\":[\"bizId\",\"actionKey\",\"payload\"]}},{\"name\":\"bizing.actions.list\",\"description\":\"List canonical action requests for one biz.\",\"method\":\"GET\",\"path\":\"/api/v1/bizes/{bizId}/actions\",\"tags\":[\"actions\"],\"parameters\":{\"type\":\"object\",\"properties\":{\"bizId\":{\"type\":\"string\"},\"page\":{\"type\":\"number\",\"default\":1},\"perPage\":{\"type\":\"number\",\"default\":20},\"actionFamily\":{\"type\":\"string\"},\"actionKey\":{\"type\":\"string\"},\"status\":{\"type\":\"string\"},\"intentMode\":{\"type\":\"string\"}},\"required\":[\"bizId\"]}},{\"name\":\"bizing.events.list\",\"description\":\"List canonical domain events for one biz.\",\"method\":\"GET\",\"path\":\"/api/v1/bizes/{bizId}/events\",\"tags\":[\"events\"],\"parameters\":{\"type\":\"object\",\"properties\":{\"bizId\":{\"type\":\"string\"},\"eventFamily\":{\"type\":\"string\"},\"eventKey\":{\"type\":\"string\"},\"subjectType\":{\"type\":\"string\"},\"subjectId\":{\"type\":\"string\"},\"actionRequestId\":{\"type\":\"string\"},\"page\":{\"type\":\"number\",\"default\":1},\"perPage\":{\"type\":\"number\",\"default\":20}},\"required\":[\"bizId\"]}},{\"name\":\"bizing.members.list\",\"description\":\"List members in one biz with their user profile basics.\",\"method\":\"GET\",\"path\":\"/api/v1/bizes/{bizId}/members\",\"tags\":[\"members\",\"authz\"],\"parameters\":{\"type\":\"object\",\"properties\":{\"bizId\":{\"type\":\"string\"}},\"required\":[\"bizId\"]}},{\"name\":\"bizing.members.create\",\"description\":\"Create one biz membership using userId or email.\",\"method\":\"POST\",\"path\":\"/api/v1/bizes/{bizId}/members\",\"tags\":[\"members\",\"authz\"],\"parameters\":{\"type\":\"object\",\"properties\":{\"bizId\":{\"type\":\"string\"},\"userId\":{\"type\":\"string\"},\"email\":{\"type\":\"string\"},\"role\":{\"type\":\"string\"}},\"required\":[\"bizId\"]}},{\"name\":\"bizing.members.update\",\"description\":\"Update one biz member role.\",\"method\":\"PATCH\",\"path\":\"/api/v1/bizes/{bizId}/members/{memberId}\",\"tags\":[\"members\",\"authz\"],\"parameters\":{\"type\":\"object\",\"properties\":{\"bizId\":{\"type\":\"string\"},\"memberId\":{\"type\":\"string\"},\"role\":{\"type\":\"string\"}},\"required\":[\"bizId\",\"memberId\",\"role\"]}},{\"name\":\"bizing.members.delete\",\"description\":\"Delete one biz membership.\",\"method\":\"DELETE\",\"path\":\"/api/v1/bizes/{bizId}/members/{memberId}\",\"tags\":[\"members\",\"authz\"],\"parameters\":{\"type\":\"object\",\"properties\":{\"bizId\":{\"type\":\"string\"},\"memberId\":{\"type\":\"string\"}},\"required\":[\"bizId\",\"memberId\"]}},{\"name\":\"bizing.members.offboard\",\"description\":\"Offboard one biz member with checklist and reason.\",\"method\":\"POST\",\"path\":\"/api/v1/bizes/{bizId}/members/{memberId}/offboard\",\"tags\":[\"members\",\"authz\",\"workflows\"],\"parameters\":{\"type\":\"object\",\"properties\":{\"bizId\":{\"type\":\"string\"},\"memberId\":{\"type\":\"string\"},\"reason\":{\"type\":\"string\"},\"checklist\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"properties\":{\"key\":{\"type\":\"string\"},\"label\":{\"type\":\"string\"},\"completed\":{\"type\":\"boolean\"}},\"required\":[\"key\",\"completed\"]}},\"metadata\":{\"type\":\"object\"}},\"required\":[\"bizId\",\"memberId\",\"reason\",\"checklist\"]}},{\"name\":\"bizing.invitations.list\",\"description\":\"List pending and historical biz invitations.\",\"method\":\"GET\",\"path\":\"/api/v1/bizes/{bizId}/invitations\",\"tags\":[\"invitations\",\"authz\"],\"parameters\":{\"type\":\"object\",\"properties\":{\"bizId\":{\"type\":\"string\"}},\"required\":[\"bizId\"]}},{\"name\":\"bizing.invitations.create\",\"description\":\"Create one biz invitation.\",\"method\":\"POST\",\"path\":\"/api/v1/bizes/{bizId}/invitations\",\"tags\":[\"invitations\",\"authz\"],\"parameters\":{\"type\":\"object\",\"properties\":{\"bizId\":{\"type\":\"string\"},\"email\":{\"type\":\"string\"},\"role\":{\"type\":\"string\"},\"expiresAt\":{\"type\":\"string\",\"description\":\"ISO datetime\"}},\"required\":[\"bizId\",\"email\"]}},{\"name\":\"bizing.invitations.delete\",\"description\":\"Delete or revoke one biz invitation.\",\"method\":\"DELETE\",\"path\":\"/api/v1/bizes/{bizId}/invitations/{invitationId}\",\"tags\":[\"invitations\",\"authz\"],\"parameters\":{\"type\":\"object\",\"properties\":{\"bizId\":{\"type\":\"string\"},\"invitationId\":{\"type\":\"string\"}},\"required\":[\"bizId\",\"invitationId\"]}},{\"name\":\"bizing.projections.list\",\"description\":\"List registered projections for one biz.\",\"method\":\"GET\",\"path\":\"/api/v1/bizes/{bizId}/projections\",\"tags\":[\"projections\"],\"parameters\":{\"type\":\"object\",\"properties\":{\"bizId\":{\"type\":\"string\"},\"projectionFamily\":{\"type\":\"string\"},\"status\":{\"type\":\"string\"},\"page\":{\"type\":\"number\",\"default\":1},\"perPage\":{\"type\":\"number\",\"default\":20}},\"required\":[\"bizId\"]}},{\"name\":\"bizing.projections.documents.list\",\"description\":\"List rendered projection documents for one projection.\",\"method\":\"GET\",\"path\":\"/api/v1/bizes/{bizId}/projections/{projectionId}/documents\",\"tags\":[\"projections\"],\"parameters\":{\"type\":\"object\",\"properties\":{\"bizId\":{\"type\":\"string\"},\"projectionId\":{\"type\":\"string\"},\"subjectType\":{\"type\":\"string\"},\"subjectId\":{\"type\":\"string\"},\"status\":{\"type\":\"string\"},\"page\":{\"type\":\"number\",\"default\":1},\"perPage\":{\"type\":\"number\",\"default\":20}},\"required\":[\"bizId\",\"projectionId\"]}},{\"name\":\"bizing.debug.snapshots.list\",\"description\":\"List structured debug snapshots for one biz.\",\"method\":\"GET\",\"path\":\"/api/v1/bizes/{bizId}/debug-snapshots\",\"tags\":[\"debug\",\"projections\"],\"parameters\":{\"type\":\"object\",\"properties\":{\"bizId\":{\"type\":\"string\"},\"snapshotFamily\":{\"type\":\"string\"},\"contextRef\":{\"type\":\"string\"},\"severity\":{\"type\":\"string\"},\"page\":{\"type\":\"number\",\"default\":1},\"perPage\":{\"type\":\"number\",\"default\":20}},\"required\":[\"bizId\"]}},{\"name\":\"bizing.reviewQueues.list\",\"description\":\"List manual review queues for one biz.\",\"method\":\"GET\",\"path\":\"/api/v1/bizes/{bizId}/review-queues\",\"tags\":[\"workflows\",\"reviews\"],\"parameters\":{\"type\":\"object\",\"properties\":{\"bizId\":{\"type\":\"string\"},\"type\":{\"type\":\"string\"},\"status\":{\"type\":\"string\"},\"page\":{\"type\":\"number\",\"d",
+        "_size": 65077
+      },
+      "at": "2026-03-01T01:27:31.288Z"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/bizes/3AK5WAre8cUt2E5WiDHRpDxnbgl/demand-pricing/policies",
+      "status": 201,
+      "requestBody": {
+        "name": "Peak demand policy 8w15",
+        "slug": "demand-uc-111-the-solo-entrepreneur-sarah-u5o7ds",
+        "status": "active",
+        "targetType": "global",
+        "scoringMode": "manual_only",
+        "scoreFloor": 0,
+        "scoreCeiling": 10000,
+        "defaultAdjustmentType": "percentage",
+        "defaultApplyAs": "surcharge",
+        "defaultAdjustmentValue": 2000,
+        "priority": 40,
+        "isEnabled": true,
+        "policy": {
+          "mode": "manual",
+          "source": "saga_runner"
+        },
+        "metadata": {
+          "sagaKey": "uc-111-the-solo-entrepreneur-sarah",
+          "runId": "saga_run_3AK5WFzjNonLLFY6lN15d0jslKU"
+        }
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "id": "demand_policy_3AK5WMaEywH8CxbCXo8vFFUDQ5Y",
+          "bizId": "3AK5WAre8cUt2E5WiDHRpDxnbgl",
+          "name": "Peak demand policy 8w15",
+          "slug": "demand-uc-111-the-solo-entrepreneur-sarah-u5o7ds",
+          "description": null,
+          "status": "active",
+          "targetType": "global",
+          "resourceId": null,
+          "serviceId": null,
+          "serviceProductId": null,
+          "offerId": null,
+          "offerVersionId": null,
+          "locationId": null,
+          "scoringMode": "manual_only",
+          "scoreFloor": 0,
+          "scoreCeiling": 10000,
+          "defaultAdjustmentType": "percentage",
+          "defaultApplyAs": "surcharge",
+          "defaultAdjustmentValue": 2000,
+          "minAdjustmentMinor": null,
+          "maxAdjustmentMinor": null,
+          "minFinalUnitPriceMinor": null,
+          "maxFinalUnitPriceMinor": null,
+          "cooldownMin": 0,
+          "effectiveStartAt": null,
+          "effectiveEndAt": null,
+          "priority": 40,
+          "isEnabled": true,
+          "policy": {
+            "mode": "manual",
+            "source": "saga_runner"
+          },
+          "metadata": {
+            "runId": "saga_run_3AK5WFzjNonLLFY6lN15d0jslKU",
+            "sagaKey": "uc-111-the-solo-entrepreneur-sarah"
+          },
+          "createdAt": "2026-03-01T01:27:31.295Z",
+          "updatedAt": "2026-03-01T01:27:31.295Z",
+          "deletedAt": null,
+          "createdBy": null,
+          "updatedBy": null,
+          "deletedBy": null
+        },
+        "meta": {
+          "requestId": "ec0cd205-ceed-4176-8cd5-a2935bb7c34c",
+          "timestamp": "2026-03-01T01:27:31.298Z"
+        }
+      },
+      "at": "2026-03-01T01:27:31.299Z"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/bizes/3AK5WAre8cUt2E5WiDHRpDxnbgl/demand-pricing/policies?status=active&perPage=50",
+      "status": 200,
+      "responseBody": {
+        "success": true,
+        "data": {
+          "items": [
+            {
+              "id": "demand_policy_3AK5WMaEywH8CxbCXo8vFFUDQ5Y",
+              "bizId": "3AK5WAre8cUt2E5WiDHRpDxnbgl",
+              "name": "Peak demand policy 8w15",
+              "slug": "demand-uc-111-the-solo-entrepreneur-sarah-u5o7ds",
+              "description": null,
+              "status": "active",
+              "targetType": "global",
+              "resourceId": null,
+              "serviceId": null,
+              "serviceProductId": null,
+              "offerId": null,
+              "offerVersionId": null,
+              "locationId": null,
+              "scoringMode": "manual_only",
+              "scoreFloor": 0,
+              "scoreCeiling": 10000,
+              "defaultAdjustmentType": "percentage",
+              "defaultApplyAs": "surcharge",
+              "defaultAdjustmentValue": 2000,
+              "minAdjustmentMinor": null,
+              "maxAdjustmentMinor": null,
+              "minFinalUnitPriceMinor": null,
+              "maxFinalUnitPriceMinor": null,
+              "cooldownMin": 0,
+              "effectiveStartAt": null,
+              "effectiveEndAt": null,
+              "priority": 40,
+              "isEnabled": true,
+              "policy": {
+                "mode": "manual",
+                "source": "saga_runner"
+              },
+              "metadata": {
+                "runId": "saga_run_3AK5WFzjNonLLFY6lN15d0jslKU",
+                "sagaKey": "uc-111-the-solo-entrepreneur-sarah"
+              }
+            }
+          ],
+          "page": 1,
+          "perPage": 50,
+          "total": 1,
+          "totalPages": 1
+        },
+        "meta": {
+          "requestId": "53918213-1611-4700-8214-8e0c272adf54",
+          "timestamp": "2026-03-01T01:27:31.308Z"
+        }
+      },
+      "at": "2026-03-01T01:27:31.309Z"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/agents/execute",
+      "status": 200,
+      "requestBody": {
+        "tool": "bizing.pricing.demandPolicies.list",
+        "params": {
+          "bizId": "3AK5WAre8cUt2E5WiDHRpDxnbgl",
+          "perPage": 20
+        },
+        "runId": "saga_run_3AK5WFzjNonLLFY6lN15d0jslKU",
+        "stepKey": "owner-configure-demand-pricing"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "tool": "bizing.pricing.demandPolicies.list",
+          "method": "GET",
+          "path": "/api/v1/bizes/3AK5WAre8cUt2E5WiDHRpDxnbgl/demand-pricing/policies",
+          "requestUrl": "http://localhost:6129/api/v1/bizes/3AK5WAre8cUt2E5WiDHRpDxnbgl/demand-pricing/policies?perPage=20",
+          "status": 200,
+          "success": true,
+          "response": {
+            "success": true,
+            "data": {
+              "items": [
+                {
+                  "id": "demand_policy_3AK5WMaEywH8CxbCXo8vFFUDQ5Y",
+                  "bizId": "3AK5WAre8cUt2E5WiDHRpDxnbgl",
+                  "name": "Peak demand policy 8w15",
+                  "slug": "demand-uc-111-the-solo-entrepreneur-sarah-u5o7ds",
+                  "description": null,
+                  "status": "active",
+                  "targetType": "global",
+                  "resourceId": null,
+                  "serviceId": null,
+                  "serviceProductId": null,
+                  "offerId": null,
+                  "offerVersionId": null,
+                  "locationId": null,
+                  "scoringMode": "manual_only",
+                  "scoreFloor": 0,
+                  "scoreCeiling": 10000,
+                  "defaultAdjustmentType": "percentage",
+                  "defaultApplyAs": "surcharge",
+                  "defaultAdjustmentValue": 2000,
+                  "minAdjustmentMinor": null,
+                  "maxAdjustmentMinor": null,
+                  "minFinalUnitPriceMinor": null,
+                  "maxFinalUnitPriceMinor": null,
+                  "cooldownMin": 0,
+                  "effectiveStartAt": null,
+                  "effectiveEndAt": null,
+                  "priority": 40,
+                  "isEnabled": true,
+                  "policy": {
+                    "mode": "manual",
+                    "source": "saga_runner"
+                  },
+                  "metadata": {
+                    "runId": "saga_run_3AK5WFzjNonLLFY6lN15d0jslKU",
+                    "sagaKey": "uc-111-the-solo-entrepreneur-sarah"
+                  }
+                }
+              ],
+              "page": 1,
+              "perPage": 20,
+              "total": 1,
+              "totalPages": 1
+            },
+            "meta": {
+              "requestId": "9275e168-e4f9-4f71-9cde-b4088aa59dbb",
+              "timestamp": "2026-03-01T01:27:31.338Z"
+            }
+          }
+        },
+        "meta": {
+          "requestId": "9275e168-e4f9-4f71-9cde-b4088aa59dbb",
+          "timestamp": "2026-03-01T01:27:31.351Z"
+        }
+      },
+      "at": "2026-03-01T01:27:31.351Z"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/bizes/3AK5WAre8cUt2E5WiDHRpDxnbgl",
+      "status": 200,
+      "requestBody": {
+        "metadata": {
+          "availability": {
+            "timezone": "UTC",
+            "weekly": {
+              "mon": [
+                "09:00-17:00"
+              ],
+              "tue": [
+                "09:00-17:00"
+              ],
+              "wed": [
+                "09:00-17:00"
+              ],
+              "thu": [
+                "09:00-17:00"
+              ],
+              "fri": [
+                "09:00-17:00"
+              ]
+            },
+            "leadTimeHours": 24,
+            "maxAdvanceDays": 60
+          },
+          "pricing": {
+            "baseCurrency": "USD",
+            "callFeeMinor": 5000,
+            "surgeManualEnabled": true
+          },
+          "demandPricing": {
+            "enabled": true,
+            "mode": "manual",
+            "rules": [
+              {
+                "name": "peak-hours",
+                "weekdays": [
+                  "mon",
+                  "tue",
+                  "wed",
+                  "thu",
+                  "fri"
+                ],
+                "timeRange": "17:00-20:00",
+                "multiplier": 1.2
+              }
+            ]
+          }
+        }
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "id": "3AK5WAre8cUt2E5WiDHRpDxnbgl",
+          "name": "Saga uc-111-the-solo-entrepreneur-sarah",
+          "slug": "uc-111-the-solo-entrepreneur-sarah-0dvow5kv",
+          "type": "small_business",
+          "logoUrl": null,
+          "timezone": "UTC",
+          "currency": "USD",
+          "status": "active",
+          "metadata": {
+            "pricing": {
+              "baseCurrency": "USD",
+              "callFeeMinor": 5000,
+              "surgeManualEnabled": true
+            },
+            "availability": {
+              "weekly": {
+                "fri": [
+                  "09:00-17:00"
+                ],
+                "mon": [
+                  "09:00-17:00"
+                ],
+                "thu": [
+                  "09:00-17:00"
+                ],
+                "tue": [
+                  "09:00-17:00"
+                ],
+                "wed": [
+                  "09:00-17:00"
+                ]
+              },
+              "timezone": "UTC",
+              "leadTimeHours": 24,
+              "maxAdvanceDays": 60
+            },
+            "demandPricing": {
+              "mode": "manual",
+              "rules": [
+                {
+                  "name": "peak-hours",
+                  "weekdays": [
+                    "mon",
+                    "tue",
+                    "wed",
+                    "thu",
+                    "fri"
+                  ],
+                  "timeRange": "17:00-20:00",
+                  "multiplier": 1.2
+                }
+              ],
+              "enabled": true
+            }
+          },
+          "createdAt": "2026-03-01T01:27:30.950Z",
+          "updatedAt": "2026-03-01T01:27:30.950Z",
+          "deletedAt": null,
+          "createdBy": null,
+          "updatedBy": null,
+          "deletedBy": null
+        },
+        "meta": {
+          "requestId": "371039b3-cd67-4c4d-8b7a-ab7d25e55038",
+          "timestamp": "2026-03-01T01:27:31.365Z"
+        }
+      },
+      "at": "2026-03-01T01:27:31.371Z"
+    }
+  ]
+}

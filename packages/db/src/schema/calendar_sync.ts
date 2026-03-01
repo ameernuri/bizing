@@ -2,7 +2,9 @@ import { sql } from "drizzle-orm";
 import { check, foreignKey, index, pgTable, uniqueIndex } from "drizzle-orm/pg-core";
 import { boolean, jsonb, timestamp, varchar } from "drizzle-orm/pg-core";
 import { idRef, idWithTag, withAuditRefs } from "./_common";
+import { actionRequests } from "./action_backbone";
 import { bizes } from "./bizes";
+import { domainEvents } from "./domain_events";
 import {
   calendarAccessGrantStatusEnum,
   calendarAccessLevelEnum,
@@ -15,6 +17,7 @@ import {
   externalCalendarSyncStateEnum,
 } from "./enums";
 import { calendarBindings } from "./time_availability";
+import { debugSnapshots, projectionDocuments } from "./projections";
 import { users } from "./users";
 
 /**
@@ -88,6 +91,22 @@ export const calendarSyncConnections = pgTable(
     /** Optional webhook/subscription reference issued by provider. */
     webhookChannelRef: varchar("webhook_channel_ref", { length: 255 }),
 
+    /** Canonical action that linked, refreshed, paused, or removed this connection. */
+    actionRequestId: idRef("action_request_id").references(() => actionRequests.id),
+
+    /** Latest sync/auth business fact for this connection. */
+    latestDomainEventId: idRef("latest_domain_event_id").references(
+      () => domainEvents.id,
+    ),
+
+    /** Optional connection health/read-model projection. */
+    projectionDocumentId: idRef("projection_document_id").references(
+      () => projectionDocuments.id,
+    ),
+
+    /** Debug snapshot for auth, sync, or webhook renewal failures. */
+    debugSnapshotId: idRef("debug_snapshot_id").references(() => debugSnapshots.id),
+
     /** Non-indexed extension payload. */
     metadata: jsonb("metadata").default({}).notNull(),
 
@@ -109,6 +128,9 @@ export const calendarSyncConnections = pgTable(
     calendarSyncConnectionsOwnerStatusIdx: index(
       "calendar_sync_connections_owner_status_idx",
     ).on(table.ownerUserId, table.status, table.provider),
+    calendarSyncConnectionsActionRequestIdx: index(
+      "calendar_sync_connections_action_request_idx",
+    ).on(table.actionRequestId),
 
     /** Failure timestamp should only exist when a failure reason is present. */
     calendarSyncConnectionsFailureShapeCheck: check(

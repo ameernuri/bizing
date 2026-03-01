@@ -1,0 +1,46 @@
+{
+  "stepKey": "uc-need-validate-2",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3ALagtCm2VzcMGL78jK0o2tfSvh/steps/uc-need-validate-2/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the issuance of a verification challenge (email OTP, magic link, etc.) for unverified guests. However, the evidence indicates that unverified guests cannot access their booking history without completing a verification process, which contradicts the requirement for a write-only booking path. This indicates a clear gap in the expected functionality as outlined in the linked use case, specifically in the needs section that states a verification challenge must be issued.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].Needs[1]",
+            "linkedUseCases[0].summary"
+          ],
+          "gaps": [
+            "No mechanism for unverified guests to access booking history without verification."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add deterministic evidence contract",
+              "endpoint": null,
+              "assertion": "Define concrete endpoint calls and assertions that directly verify this requirement."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "77fafd50-8ee8-45b0-8d4a-c4b9061271ff",
+          "timestamp": "2026-03-01T14:13:51.408Z"
+        }
+      },
+      "at": "2026-03-01T14:13:51.408Z"
+    }
+  ]
+}

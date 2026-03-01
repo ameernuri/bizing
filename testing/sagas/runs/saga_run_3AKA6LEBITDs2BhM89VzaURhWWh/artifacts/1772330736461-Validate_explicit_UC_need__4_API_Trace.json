@@ -1,0 +1,46 @@
+{
+  "stepKey": "uc-need-validate-4",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AKA6LEBITDs2BhM89VzaURhWWh/steps/uc-need-validate-4/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the requirement that weather conditions (temperature, precipitation, wind) are auto-captured. However, the evidence provided does not include any API reads or checks that confirm the auto-capture of these weather conditions, only a narrative description of a report that mentions weather being 'auto-logged'. This lack of concrete evidence leads to a gap in the requirement coverage.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].needs[3]",
+            "linkedUseCases[0].summary"
+          ],
+          "gaps": [
+            "No evidence of API reads or checks confirming the auto-capture of weather conditions."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add API endpoint for weather data capture",
+              "endpoint": "/api/v1/weather/capture",
+              "assertion": "Verify that weather conditions are captured and stored correctly."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "fc38cb69-6baa-4b6d-a868-6cf5500498ce",
+          "timestamp": "2026-03-01T02:05:36.412Z"
+        }
+      },
+      "at": "2026-03-01T02:05:36.419Z"
+    }
+  ]
+}

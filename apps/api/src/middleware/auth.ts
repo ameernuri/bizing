@@ -12,6 +12,7 @@ import type { Context, Next } from 'hono'
 import dbPackage from '@bizing/db'
 import { auth } from '../auth.js'
 import { evaluatePermission } from '../services/acl.js'
+import { detectAuthAttemptFromHeaders, recordRequestAuthEvent } from '../services/auth-observability.js'
 import { resolveMachineAuthFromHeaders } from '../services/machine-auth.js'
 
 const { db } = dbPackage
@@ -104,6 +105,10 @@ export async function requestId(c: Context, next: Next) {
   await next()
 }
 
+function emitAuthEventSafe(headers: Headers, input: Parameters<typeof recordRequestAuthEvent>[1]) {
+  void recordRequestAuthEvent(headers, input).catch(() => undefined)
+}
+
 /**
  * Attach user/session when present, but do not enforce auth.
  */
@@ -158,6 +163,22 @@ export async function requireAuth(c: Context, next: Next) {
       authScopes: machinePrincipal.authScopes,
       authCredentialId: machinePrincipal.credentialId,
     })
+    emitAuthEventSafe(c.req.raw.headers, {
+      authSource: machinePrincipal.authSource,
+      eventType: 'auth_check',
+      decision: 'allowed',
+      ownerUserId: machinePrincipal.user.id,
+      bizId: machinePrincipal.session.activeOrganizationId ?? null,
+      apiCredentialId: machinePrincipal.credentialId,
+      sessionId: machinePrincipal.session.id,
+      httpMethod: c.req.method,
+      httpPath: c.req.path,
+      requestId: c.get('requestId'),
+      actorUserId: machinePrincipal.user.id,
+      eventData: {
+        authScopes: machinePrincipal.authScopes,
+      },
+    })
     await next()
     return
   }
@@ -165,6 +186,98 @@ export async function requireAuth(c: Context, next: Next) {
   const session = await getSession(c)
 
   if (!session?.user || !session?.session) {
+    const attempted = detectAuthAttemptFromHeaders(c.req.raw.headers)
+    if (attempted.authSource) {
+      emitAuthEventSafe(c.req.raw.headers, {
+        authSource: attempted.authSource,
+        eventType: 'auth_check',
+        decision: 'denied',
+        reasonCode: 'UNAUTHORIZED',
+        reasonMessage: 'Authentication required for protected route.',
+        principalHint: attempted.principalHint ?? null,
+        httpMethod: c.req.method,
+        httpPath: c.req.path,
+        httpStatus: 401,
+        requestId: c.get('requestId'),
+        eventData: {
+          middleware: 'requireAuth',
+        },
+      })
+    }
+    return c.json(
+      {
+        success: false,
+        error: {
+          code: 'UNAUTHORIZED',
+          message:
+            'Authentication required. Use Better Auth session cookie or machine auth (x-api-key / bearer access token).',
+        },
+        meta: {
+          requestId: c.get('requestId') ?? crypto.randomUUID(),
+          timestamp: new Date().toISOString(),
+        },
+      },
+      401,
+    )
+  }
+
+  attachAuthContext(c, {
+    user: {
+      id: String(session.user.id),
+      email: session.user.email,
+      role: (session.user as { role?: string | null }).role ?? null,
+    },
+    session: {
+      id: String(session.session.id),
+      activeOrganizationId: (session.session as { activeOrganizationId?: string | null })
+        .activeOrganizationId,
+    },
+    authSource: 'session',
+    authScopes: ['*'],
+  })
+  emitAuthEventSafe(c.req.raw.headers, {
+    authSource: 'session',
+    eventType: 'auth_check',
+    decision: 'allowed',
+    ownerUserId: String(session.user.id),
+    bizId:
+      (session.session as { activeOrganizationId?: string | null }).activeOrganizationId ?? null,
+    sessionId: String(session.session.id),
+    httpMethod: c.req.method,
+    httpPath: c.req.path,
+    requestId: c.get('requestId'),
+    actorUserId: String(session.user.id),
+  })
+
+  await next()
+}
+
+/**
+ * Require interactive browser/session authentication specifically.
+ *
+ * ELI5:
+ * Some actions (like key management) should only be done by a logged-in human
+ * in an interactive session, not by another machine credential.
+ */
+export async function requireSessionAuth(c: Context, next: Next) {
+  const session = await getSession(c)
+  if (!session?.user || !session?.session) {
+    const attempted = detectAuthAttemptFromHeaders(c.req.raw.headers)
+    emitAuthEventSafe(c.req.raw.headers, {
+      authSource: attempted.authSource ?? 'unknown',
+      eventType: 'session_guard',
+      decision: 'denied',
+      reasonCode: 'SESSION_REQUIRED',
+      reasonMessage: 'Endpoint requires interactive browser session auth.',
+      principalHint: attempted.principalHint ?? null,
+      httpMethod: c.req.method,
+      httpPath: c.req.path,
+      httpStatus: 401,
+      requestId: c.get('requestId'),
+      eventData: {
+        middleware: 'requireSessionAuth',
+      },
+    })
     return c.json(
       {
         success: false,
@@ -194,6 +307,19 @@ export async function requireAuth(c: Context, next: Next) {
     },
     authSource: 'session',
     authScopes: ['*'],
+  })
+  emitAuthEventSafe(c.req.raw.headers, {
+    authSource: 'session',
+    eventType: 'session_guard',
+    decision: 'allowed',
+    ownerUserId: String(session.user.id),
+    bizId:
+      (session.session as { activeOrganizationId?: string | null }).activeOrganizationId ?? null,
+    sessionId: String(session.session.id),
+    httpMethod: c.req.method,
+    httpPath: c.req.path,
+    requestId: c.get('requestId'),
+    actorUserId: String(session.user.id),
   })
 
   await next()

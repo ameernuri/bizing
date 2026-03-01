@@ -1,0 +1,45 @@
+{
+  "stepKey": "uc-need-validate-3",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3ALavrvfzOINBmvhwRbyjbtp5k3/steps/uc-need-validate-3/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the requirement that a customer must be a certified diver to book a solo jump. However, there is no evidence provided that confirms whether the system checks for certification status before allowing bookings. The linked use case explicitly states the need for certification, but the absence of any checks or validations in the prior steps indicates a gap in the validation process.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].needs"
+          ],
+          "gaps": [
+            "No evidence confirming that the system checks for certification as a diver before allowing bookings."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add certification verification check",
+              "endpoint": "/api/v1/certification-verification",
+              "assertion": "Verify that the system checks the customer's certification status before allowing booking for solo jumps."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "06674003-4f0c-4c9c-807d-a1f2165b3342",
+          "timestamp": "2026-03-01T14:15:56.247Z"
+        }
+      },
+      "at": "2026-03-01T14:15:56.249Z"
+    }
+  ]
+}

@@ -1,0 +1,363 @@
+{
+  "stepKey": "owner-configure-demand-pricing",
+  "callCount": 5,
+  "calls": [
+    {
+      "method": "GET",
+      "path": "/api/v1/agents/tools",
+      "status": 200,
+      "responseBody": {
+        "_truncated": true,
+        "_preview": "{\"success\":true,\"data\":[{\"name\":\"bizing.bizes.list\",\"description\":\"List bizes available to the authenticated user.\",\"method\":\"GET\",\"path\":\"/api/v1/bizes\",\"tags\":[\"bizes\"],\"parameters\":{\"type\":\"object\",\"properties\":{\"page\":{\"type\":\"number\",\"default\":1},\"perPage\":{\"type\":\"number\",\"default\":20},\"status\":{\"type\":\"string\"},\"type\":{\"type\":\"string\"}}}},{\"name\":\"bizing.bizes.create\",\"description\":\"Create a biz and make current user owner.\",\"method\":\"POST\",\"path\":\"/api/v1/bizes\",\"tags\":[\"bizes\"],\"parameters\":{\"type\":\"object\",\"properties\":{\"name\":{\"type\":\"string\"},\"slug\":{\"type\":\"string\"},\"type\":{\"type\":\"string\"},\"timezone\":{\"type\":\"string\"},\"currency\":{\"type\":\"string\"}},\"required\":[\"name\",\"slug\"]}},{\"name\":\"bizing.locations.publicList\",\"description\":\"List public active locations for one biz.\",\"method\":\"GET\",\"path\":\"/api/v1/public/bizes/{bizId}/locations\",\"tags\":[\"locations\",\"public\"],\"parameters\":{\"type\":\"object\",\"properties\":{\"bizId\":{\"type\":\"string\"}},\"required\":[\"bizId\"]}},{\"name\":\"bizing.operations.locationOverview\",\"description\":\"Return consolidated per-location operational overview for one biz.\",\"method\":\"GET\",\"path\":\"/api/v1/bizes/{bizId}/operations/location-overview\",\"tags\":[\"operations\",\"locations\"],\"parameters\":{\"type\":\"object\",\"properties\":{\"bizId\":{\"type\":\"string\"}},\"required\":[\"bizId\"]}},{\"name\":\"bizing.analytics.overview\",\"description\":\"Return one canonical revenue and booking summary for a biz.\",\"method\":\"GET\",\"path\":\"/api/v1/bizes/{bizId}/analytics/overview\",\"tags\":[\"analytics\",\"operations\"],\"parameters\":{\"type\":\"object\",\"properties\":{\"bizId\":{\"type\":\"string\"}},\"required\":[\"bizId\"]}},{\"name\":\"bizing.calendars.timeline\",\"description\":\"Return the calendar story for one window: bindings, rules, holds, and matching bookings.\",\"method\":\"GET\",\"path\":\"/api/v1/bizes/{bizId}/calendars/{calendarId}/timeline\",\"tags\":[\"calendars\",\"availability\",\"timeline\"],\"parameters\":{\"type\":\"object\",\"properties\":{\"bizId\":{\"type\":\"string\"},\"calendarId\":{\"type\":\"string\"},\"startAt\":{\"type\":\"string\",\"description\":\"ISO datetime\"},\"endAt\":{\"type\":\"string\",\"description\":\"ISO datetime\"},\"includeInactive\":{\"type\":\"string\",\"enum\":[\"true\",\"false\"]},\"includeRules\":{\"type\":\"string\",\"enum\":[\"true\",\"false\"]},\"includeBookings\":{\"type\":\"string\",\"enum\":[\"true\",\"false\"]},\"includeHolds\":{\"type\":\"string\",\"enum\":[\"true\",\"false\"]}},\"required\":[\"bizId\",\"calendarId\"]}},{\"name\":\"bizing.instruments.list\",\"description\":\"List unified instruments such as intake forms, waivers, checklists, and surveys.\",\"method\":\"GET\",\"path\":\"/api/v1/bizes/{bizId}/instruments\",\"tags\":[\"instruments\",\"compliance\"],\"parameters\":{\"type\":\"object\",\"properties\":{\"bizId\":{\"type\":\"string\"},\"status\":{\"type\":\"string\"},\"instrumentType\":{\"type\":\"string\"},\"currentOnly\":{\"type\":\"boolean\"}},\"required\":[\"bizId\"]}},{\"name\":\"bizing.instruments.create\",\"description\":\"Create one instrument definition in the unified forms/checklists/surveys system.\",\"method\":\"POST\",\"path\":\"/api/v1/bizes/{bizId}/instruments\",\"tags\":[\"instruments\",\"compliance\"],\"parameters\":{\"type\":\"object\",\"properties\":{\"bizId\":{\"type\":\"string\"},\"name\":{\"type\":\"string\"},\"slug\":{\"type\":\"string\"},\"instrumentType\":{\"type\":\"string\"},\"status\":{\"type\":\"string\"},\"evaluationMode\":{\"type\":\"string\"},\"schemaSnapshot\":{\"type\":\"object\"},\"validationPolicy\":{\"type\":\"object\"},\"completionPolicy\":{\"type\":\"object\"}},\"required\":[\"bizId\",\"name\",\"slug\",\"instrumentType\"]}},{\"name\":\"bizing.instrumentRuns.create\",\"description\":\"Create one runtime instrument run for a target and assignee.\",\"method\":\"POST\",\"path\":\"/api/v1/bizes/{bizId}/instrument-runs\",\"tags\":[\"instruments\",\"runtime\"],\"parameters\":{\"type\":\"object\",\"properties\":{\"bizId\":{\"type\":\"string\"},\"instrumentId\":{\"type\":\"string\"},\"targetType\":{\"type\":\"string\"},\"targetRefId\":{\"type\":\"string\"},\"assigneeSubjectBizId\":{\"type\":\"string\"},\"assigneeSubjectType\":{\"type\":\"string\"},\"assigneeSubjectId\":{\"type\":\"string\"},\"expiresAt\":{\"type\":\"string\"}},\"required\":[\"bizId\",\"instrumentId\",\"targetType\",\"targetRefId\",\"assigneeSubjectBizId\",\"assigneeSubjectType\",\"assigneeSubjectId\"]}},{\"name\":\"bizing.messageTemplates.list\",\"description\":\"List reusable SMS/email/postal/etc templates for one biz.\",\"method\":\"GET\",\"path\":\"/api/v1/bizes/{bizId}/message-templates\",\"tags\":[\"communications\",\"templates\"],\"parameters\":{\"type\":\"object\",\"properties\":{\"bizId\":{\"type\":\"string\"}},\"required\":[\"bizId\"]}},{\"name\":\"bizing.marketingCampaigns.list\",\"description\":\"List marketing campaigns for one biz.\",\"method\":\"GET\",\"path\":\"/api/v1/bizes/{bizId}/marketing-campaigns\",\"tags\":[\"communications\",\"marketing\"],\"parameters\":{\"type\":\"object\",\"properties\":{\"bizId\":{\"type\":\"string\"}},\"required\":[\"bizId\"]}},{\"name\":\"bizing.notificationEndpoints.listMine\",\"description\":\"List notification endpoints owned by the authenticated user.\",\"method\":\"GET\",\"path\":\"/api/v1/users/me/notification-endpoints\",\"tags\":[\"notifications\",\"identity\"],\"parameters\":{\"type\":\"object\",\"properties\":{\"bizId\":{\"type\":\"string\"},\"channel\":{\"type\":\"string\"},\"status\":{\"type\":\"string\"}}}},{\"name\":\"bizing.notificationEndpoints.createMine\",\"description\":\"Create one notification endpoint for the authenticated user.\",\"method\":\"POST\",\"path\":\"/api/v1/users/me/notification-endpoints\",\"tags\":[\"notifications\",\"identity\"],\"parameters\":{\"type\":\"object\",\"properties\":{\"bizId\":{\"type\":\"string\"},\"channel\":{\"type\":\"string\"},\"destination\":{\"type\":\"string\"},\"status\":{\"type\":\"string\"},\"isDefault\":{\"type\":\"boolean\"},\"metadata\":{\"type\":\"object\"}},\"required\":[\"channel\"]}},{\"name\":\"bizing.subjectEvents.list\",\"description\":\"List immutable subject events for one biz.\",\"method\":\"GET\",\"path\":\"/api/v1/bizes/{bizId}/subject-events\",\"tags\":[\"events\",\"subjects\"],\"parameters\":{\"type\":\"object\",\"properties\":{\"bizId\":{\"type\":\"string\"},\"subjectType\":{\"type\":\"string\"},\"subjectId\":{\"type\":\"string\"},\"eventType\":{\"type\":\"string\"}},\"required\":[\"bizId\"]}},{\"name\":\"bizing.subjectEvents.create\",\"description\":\"Publish one immutable subject event for one biz.\",\"method\":\"POST\",\"path\":\"/api/v1/bizes/{bizId}/subject-events\",\"tags\":[\"events\",\"subjects\"],\"parameters\":{\"type\":\"object\",\"properties\":{\"bizId\":{\"type\":\"string\"},\"subjectType\":{\"type\":\"string\"},\"subjectId\":{\"type\":\"string\"},\"eventType\":{\"type\":\"string\"},\"requestKey\":{\"type\":\"string\"},\"correlationKey\":{\"type\":\"string\"},\"payload\":{\"type\":\"object\"}},\"required\":[\"bizId\",\"subjectType\",\"subjectId\",\"eventType\"]}},{\"name\":\"bizing.products.create\",\"description\":\"Create one catalog product.\",\"method\":\"POST\",\"path\":\"/api/v1/bizes/{bizId}/products\",\"tags\":[\"products\",\"catalog\"],\"parameters\":{\"type\":\"object\",\"properties\":{\"bizId\":{\"type\":\"string\"},\"name\":{\"type\":\"string\"},\"slug\":{\"type\":\"string\"},\"basePriceMinor\":{\"type\":\"number\"},\"currency\":{\"type\":\"string\"},\"type\":{\"type\":\"string\"}},\"required\":[\"bizId\",\"name\",\"slug\"]}},{\"name\":\"bizing.productBundles.create\",\"description\":\"Create one product bundle shell for a product.\",\"method\":\"POST\",\"path\":\"/api/v1/bizes/{bizId}/product-bundles\",\"tags\":[\"products\",\"bundles\"],\"parameters\":{\"type\":\"object\",\"properties\":{\"bizId\":{\"type\":\"string\"},\"bundleProductId\":{\"type\":\"string\"},\"pricingMode\":{\"type\":\"string\"},\"allowPartialSelection\":{\"type\":\"boolean\"}},\"required\":[\"bizId\",\"bundleProductId\"]}},{\"name\":\"bizing.requirementSets.create\",\"description\":\"Create one prerequisite/unlock requirement set.\",\"method\":\"POST\",\"path\":\"/api/v1/bizes/{bizId}/requirement-sets\",\"tags\":[\"progression\",\"requirements\"],\"parameters\":{\"type\":\"object\",\"properties\":{\"bizId\":{\"type\":\"string\"},\"name\":{\"type\":\"string\"},\"slug\":{\"type\":\"string\"},\"evaluationMode\":{\"type\":\"string\"}},\"required\":[\"bizId\",\"name\",\"slug\"]}},{\"name\":\"bizing.sessionInteractions.create\",\"description\":\"Record one live-session interaction such as chat, Q&A, poll, or replay.\",\"method\":\"POST\",\"path\":\"/api/v1/bizes/{bizId}/session-interactions\",\"tags\":[\"sessions\",\"engagement\"],\"parameters\":{\"type\":\"object\",\"properties\":{\"bizId\":{\"type\":\"string\"},\"sourceType\":{\"type\":\"string\"},\"interactionType\":{\"type\":\"string\"},\"payload\":{\"type\":\"object\"}},\"required\":[\"bizId\",\"sourceType\",\"interactionType\"]}},{\"name\":\"bizing.queueCounters.create\",\"description\":\"Create one queue counter/window/service point.\",\"method\":\"POST\",\"path\":\"/api/v1/bizes/{bizId}/queue-counters\",\"tags\":[\"queues\",\"counters\"],\"parameters\":{\"type\":\"object\",\"properties\":{\"bizId\":{\"type\":\"string\"},\"queueId\":{\"type\":\"string\"},\"code\":{\"type\":\"string\"},\"name\":{\"type\":\"string\"}},\"required\":[\"bizId\",\"queueId\",\"code\",\"name\"]}},{\"name\":\"bizing.library.me\",\"description\":\"Return one unified ownership view for the authenticated customer.\",\"method\":\"GET\",\"path\":\"/api/v1/me/library\",\"tags\":[\"library\",\"customer\"],\"parameters\":{\"type\":\"object\",\"properties\":{\"bizId\":{\"type\":\"string\"}}}},{\"name\":\"bizing.actions.preview\",\"description\":\"Preview one canonical business action without committing it.\",\"method\":\"POST\",\"path\":\"/api/v1/bizes/{bizId}/actions/preview\",\"tags\":[\"actions\",\"preview\"],\"parameters\":{\"type\":\"object\",\"properties\":{\"bizId\":{\"type\":\"string\"},\"actionKey\":{\"type\":\"string\"},\"actionFamily\":{\"type\":\"string\"},\"targetSubjectType\":{\"type\":\"string\"},\"targetSubjectId\":{\"type\":\"string\"},\"sourceInstallationRef\":{\"type\":\"string\"},\"idempotencyKey\":{\"type\":\"string\"},\"payload\":{\"type\":\"object\"},\"metadata\":{\"type\":\"object\"}},\"required\":[\"bizId\",\"actionKey\",\"payload\"]}},{\"name\":\"bizing.actions.execute\",\"description\":\"Execute one canonical business action through the action backbone.\",\"method\":\"POST\",\"path\":\"/api/v1/bizes/{bizId}/actions/execute\",\"tags\":[\"actions\",\"execute\"],\"parameters\":{\"type\":\"object\",\"properties\":{\"bizId\":{\"type\":\"string\"},\"actionKey\":{\"type\":\"string\"},\"actionFamily\":{\"type\":\"string\"},\"targetSubjectType\":{\"type\":\"string\"},\"targetSubjectId\":{\"type\":\"string\"},\"sourceInstallationRef\":{\"type\":\"string\"},\"idempotencyKey\":{\"type\":\"string\"},\"payload\":{\"type\":\"object\"},\"metadata\":{\"type\":\"object\"}},\"required\":[\"bizId\",\"actionKey\",\"payload\"]}},{\"name\":\"bizing.actions.publicExecute\",\"description\":\"Execute one public-safe canonical business action for a customer-facing surface.\",\"method\":\"POST\",\"path\":\"/api/v1/public/bizes/{bizId}/actions/execute\",\"tags\":[\"actions\",\"public\"],\"parameters\":{\"type\":\"object\",\"properties\":{\"bizId\":{\"type\":\"string\"},\"actionKey\":{\"type\":\"string\"},\"actionFamily\":{\"type\":\"string\"},\"targetSubjectType\":{\"type\":\"string\"},\"targetSubjectId\":{\"type\":\"string\"},\"sourceInstallationRef\":{\"type\":\"string\"},\"idempotencyKey\":{\"type\":\"string\"},\"payload\":{\"type\":\"object\"},\"metadata\":{\"type\":\"object\"}},\"required\":[\"bizId\",\"actionKey\",\"payload\"]}},{\"name\":\"bizing.actions.list\",\"description\":\"List canonical action requests for one biz.\",\"method\":\"GET\",\"path\":\"/api/v1/bizes/{bizId}/actions\",\"tags\":[\"actions\"],\"parameters\":{\"type\":\"object\",\"properties\":{\"bizId\":{\"type\":\"string\"},\"page\":{\"type\":\"number\",\"default\":1},\"perPage\":{\"type\":\"number\",\"default\":20},\"actionFamily\":{\"type\":\"string\"},\"actionKey\":{\"type\":\"string\"},\"status\":{\"type\":\"string\"},\"intentMode\":{\"type\":\"string\"}},\"required\":[\"bizId\"]}},{\"name\":\"bizing.events.list\",\"description\":\"List canonical domain events for one biz.\",\"method\":\"GET\",\"path\":\"/api/v1/bizes/{bizId}/events\",\"tags\":[\"events\"],\"parameters\":{\"type\":\"object\",\"properties\":{\"bizId\":{\"type\":\"string\"},\"eventFamily\":{\"type\":\"string\"},\"eventKey\":{\"type\":\"string\"},\"subjectType\":{\"type\":\"string\"},\"subjectId\":{\"type\":\"string\"},\"actionRequestId\":{\"type\":\"string\"},\"page\":{\"type\":\"number\",\"default\":1},\"perPage\":{\"type\":\"number\",\"default\":20}},\"required\":[\"bizId\"]}},{\"name\":\"bizing.members.list\",\"description\":\"List members in one biz with their user profile basics.\",\"method\":\"GET\",\"path\":\"/api/v1/bizes/{bizId}/members\",\"tags\":[\"members\",\"authz\"],\"parameters\":{\"type\":\"object\",\"properties\":{\"bizId\":{\"type\":\"string\"}},\"required\":[\"bizId\"]}},{\"name\":\"bizing.members.create\",\"description\":\"Create one biz membership using userId or email.\",\"method\":\"POST\",\"path\":\"/api/v1/bizes/{bizId}/members\",\"tags\":[\"members\",\"authz\"],\"parameters\":{\"type\":\"object\",\"properties\":{\"bizId\":{\"type\":\"string\"},\"userId\":{\"type\":\"string\"},\"email\":{\"type\"",
+        "_size": 69108
+      },
+      "at": "2026-03-01T11:39:54.519Z"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/bizes/3ALHzk4QKjNKDJxP0SRZTXmJJgH/demand-pricing/policies",
+      "status": 201,
+      "requestBody": {
+        "name": "Peak demand policy bkuj",
+        "slug": "demand-uc-24-the-appointment-heavy-professional-ehjxyk",
+        "status": "active",
+        "targetType": "global",
+        "scoringMode": "manual_only",
+        "scoreFloor": 0,
+        "scoreCeiling": 10000,
+        "defaultAdjustmentType": "percentage",
+        "defaultApplyAs": "surcharge",
+        "defaultAdjustmentValue": 2000,
+        "priority": 40,
+        "isEnabled": true,
+        "policy": {
+          "mode": "manual",
+          "source": "saga_runner"
+        },
+        "metadata": {
+          "sagaKey": "uc-24-the-appointment-heavy-professional-dr-ch",
+          "runId": "saga_run_3ALHzYUyWY2Qrmf1Qn1fy1FFwp1"
+        }
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "id": "demand_policy_3ALHzi1jagrbu3BYJifnwM7p3rs",
+          "bizId": "3ALHzk4QKjNKDJxP0SRZTXmJJgH",
+          "name": "Peak demand policy bkuj",
+          "slug": "demand-uc-24-the-appointment-heavy-professional-ehjxyk",
+          "description": null,
+          "status": "active",
+          "targetType": "global",
+          "resourceId": null,
+          "serviceId": null,
+          "serviceProductId": null,
+          "offerId": null,
+          "offerVersionId": null,
+          "locationId": null,
+          "scoringMode": "manual_only",
+          "scoreFloor": 0,
+          "scoreCeiling": 10000,
+          "defaultAdjustmentType": "percentage",
+          "defaultApplyAs": "surcharge",
+          "defaultAdjustmentValue": 2000,
+          "minAdjustmentMinor": null,
+          "maxAdjustmentMinor": null,
+          "minFinalUnitPriceMinor": null,
+          "maxFinalUnitPriceMinor": null,
+          "cooldownMin": 0,
+          "effectiveStartAt": null,
+          "effectiveEndAt": null,
+          "priority": 40,
+          "isEnabled": true,
+          "policy": {
+            "mode": "manual",
+            "source": "saga_runner"
+          },
+          "metadata": {
+            "runId": "saga_run_3ALHzYUyWY2Qrmf1Qn1fy1FFwp1",
+            "sagaKey": "uc-24-the-appointment-heavy-professional-dr-ch"
+          },
+          "createdAt": "2026-03-01T11:39:54.525Z",
+          "updatedAt": "2026-03-01T11:39:54.525Z",
+          "deletedAt": null,
+          "createdBy": null,
+          "updatedBy": null,
+          "deletedBy": null
+        },
+        "meta": {
+          "requestId": "dfa67f3a-9792-4be7-9537-53e830c23320",
+          "timestamp": "2026-03-01T11:39:54.527Z"
+        }
+      },
+      "at": "2026-03-01T11:39:54.528Z"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/bizes/3ALHzk4QKjNKDJxP0SRZTXmJJgH/demand-pricing/policies?status=active&perPage=50",
+      "status": 200,
+      "responseBody": {
+        "success": true,
+        "data": {
+          "items": [
+            {
+              "id": "demand_policy_3ALHzi1jagrbu3BYJifnwM7p3rs",
+              "bizId": "3ALHzk4QKjNKDJxP0SRZTXmJJgH",
+              "name": "Peak demand policy bkuj",
+              "slug": "demand-uc-24-the-appointment-heavy-professional-ehjxyk",
+              "description": null,
+              "status": "active",
+              "targetType": "global",
+              "resourceId": null,
+              "serviceId": null,
+              "serviceProductId": null,
+              "offerId": null,
+              "offerVersionId": null,
+              "locationId": null,
+              "scoringMode": "manual_only",
+              "scoreFloor": 0,
+              "scoreCeiling": 10000,
+              "defaultAdjustmentType": "percentage",
+              "defaultApplyAs": "surcharge",
+              "defaultAdjustmentValue": 2000,
+              "minAdjustmentMinor": null,
+              "maxAdjustmentMinor": null,
+              "minFinalUnitPriceMinor": null,
+              "maxFinalUnitPriceMinor": null,
+              "cooldownMin": 0,
+              "effectiveStartAt": null,
+              "effectiveEndAt": null,
+              "priority": 40,
+              "isEnabled": true,
+              "policy": {
+                "mode": "manual",
+                "source": "saga_runner"
+              },
+              "metadata": {
+                "runId": "saga_run_3ALHzYUyWY2Qrmf1Qn1fy1FFwp1",
+                "sagaKey": "uc-24-the-appointment-heavy-professional-dr-ch"
+              }
+            }
+          ],
+          "page": 1,
+          "perPage": 50,
+          "total": 1,
+          "totalPages": 1
+        },
+        "meta": {
+          "requestId": "783eb27c-ecaf-46ba-9c07-a591108eb2e2",
+          "timestamp": "2026-03-01T11:39:54.533Z"
+        }
+      },
+      "at": "2026-03-01T11:39:54.534Z"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/agents/execute",
+      "status": 200,
+      "requestBody": {
+        "tool": "bizing.pricing.demandPolicies.list",
+        "params": {
+          "bizId": "3ALHzk4QKjNKDJxP0SRZTXmJJgH",
+          "perPage": 20
+        },
+        "runId": "saga_run_3ALHzYUyWY2Qrmf1Qn1fy1FFwp1",
+        "stepKey": "owner-configure-demand-pricing"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "tool": "bizing.pricing.demandPolicies.list",
+          "method": "GET",
+          "path": "/api/v1/bizes/3ALHzk4QKjNKDJxP0SRZTXmJJgH/demand-pricing/policies",
+          "requestUrl": "http://localhost:6129/api/v1/bizes/3ALHzk4QKjNKDJxP0SRZTXmJJgH/demand-pricing/policies?perPage=20",
+          "status": 200,
+          "success": true,
+          "response": {
+            "success": true,
+            "data": {
+              "items": [
+                {
+                  "id": "demand_policy_3ALHzi1jagrbu3BYJifnwM7p3rs",
+                  "bizId": "3ALHzk4QKjNKDJxP0SRZTXmJJgH",
+                  "name": "Peak demand policy bkuj",
+                  "slug": "demand-uc-24-the-appointment-heavy-professional-ehjxyk",
+                  "description": null,
+                  "status": "active",
+                  "targetType": "global",
+                  "resourceId": null,
+                  "serviceId": null,
+                  "serviceProductId": null,
+                  "offerId": null,
+                  "offerVersionId": null,
+                  "locationId": null,
+                  "scoringMode": "manual_only",
+                  "scoreFloor": 0,
+                  "scoreCeiling": 10000,
+                  "defaultAdjustmentType": "percentage",
+                  "defaultApplyAs": "surcharge",
+                  "defaultAdjustmentValue": 2000,
+                  "minAdjustmentMinor": null,
+                  "maxAdjustmentMinor": null,
+                  "minFinalUnitPriceMinor": null,
+                  "maxFinalUnitPriceMinor": null,
+                  "cooldownMin": 0,
+                  "effectiveStartAt": null,
+                  "effectiveEndAt": null,
+                  "priority": 40,
+                  "isEnabled": true,
+                  "policy": {
+                    "mode": "manual",
+                    "source": "saga_runner"
+                  },
+                  "metadata": {
+                    "runId": "saga_run_3ALHzYUyWY2Qrmf1Qn1fy1FFwp1",
+                    "sagaKey": "uc-24-the-appointment-heavy-professional-dr-ch"
+                  }
+                }
+              ],
+              "page": 1,
+              "perPage": 20,
+              "total": 1,
+              "totalPages": 1
+            },
+            "meta": {
+              "requestId": "8a241581-2831-429b-b083-dd3eafec567e",
+              "timestamp": "2026-03-01T11:39:54.542Z"
+            }
+          }
+        },
+        "meta": {
+          "requestId": "8a241581-2831-429b-b083-dd3eafec567e",
+          "timestamp": "2026-03-01T11:39:54.546Z"
+        }
+      },
+      "at": "2026-03-01T11:39:54.547Z"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/bizes/3ALHzk4QKjNKDJxP0SRZTXmJJgH",
+      "status": 200,
+      "requestBody": {
+        "metadata": {
+          "availability": {
+            "timezone": "UTC",
+            "weekly": {
+              "mon": [
+                "09:00-17:00"
+              ],
+              "tue": [
+                "09:00-17:00"
+              ],
+              "wed": [
+                "09:00-17:00"
+              ],
+              "thu": [
+                "09:00-17:00"
+              ],
+              "fri": [
+                "09:00-17:00"
+              ]
+            },
+            "leadTimeHours": 24,
+            "maxAdvanceDays": 60
+          },
+          "pricing": {
+            "baseCurrency": "USD",
+            "callFeeMinor": 5000,
+            "surgeManualEnabled": true
+          },
+          "demandPricing": {
+            "enabled": true,
+            "mode": "manual",
+            "rules": [
+              {
+                "name": "peak-hours",
+                "weekdays": [
+                  "mon",
+                  "tue",
+                  "wed",
+                  "thu",
+                  "fri"
+                ],
+                "timeRange": "17:00-20:00",
+                "multiplier": 1.2
+              }
+            ]
+          }
+        }
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "id": "3ALHzk4QKjNKDJxP0SRZTXmJJgH",
+          "name": "Saga uc-24-the-appointment-heavy-professional-dr-ch",
+          "slug": "uc-24-the-appointment-heavy-professional-dr-ch-vrnjb1f0",
+          "type": "small_business",
+          "logoUrl": null,
+          "timezone": "UTC",
+          "currency": "USD",
+          "status": "active",
+          "metadata": {
+            "pricing": {
+              "baseCurrency": "USD",
+              "callFeeMinor": 5000,
+              "surgeManualEnabled": true
+            },
+            "availability": {
+              "weekly": {
+                "fri": [
+                  "09:00-17:00"
+                ],
+                "mon": [
+                  "09:00-17:00"
+                ],
+                "thu": [
+                  "09:00-17:00"
+                ],
+                "tue": [
+                  "09:00-17:00"
+                ],
+                "wed": [
+                  "09:00-17:00"
+                ]
+              },
+              "timezone": "UTC",
+              "leadTimeHours": 24,
+              "maxAdvanceDays": 60
+            },
+            "demandPricing": {
+              "mode": "manual",
+              "rules": [
+                {
+                  "name": "peak-hours",
+                  "weekdays": [
+                    "mon",
+                    "tue",
+                    "wed",
+                    "thu",
+                    "fri"
+                  ],
+                  "timeRange": "17:00-20:00",
+                  "multiplier": 1.2
+                }
+              ],
+              "enabled": true
+            }
+          },
+          "createdAt": "2026-03-01T11:39:54.270Z",
+          "updatedAt": "2026-03-01T11:39:54.270Z",
+          "deletedAt": null,
+          "createdBy": null,
+          "updatedBy": null,
+          "deletedBy": null
+        },
+        "meta": {
+          "requestId": "fb8ee081-907e-4af7-8836-e9bc9d94e909",
+          "timestamp": "2026-03-01T11:39:54.554Z"
+        }
+      },
+      "at": "2026-03-01T11:39:54.554Z"
+    }
+  ]
+}

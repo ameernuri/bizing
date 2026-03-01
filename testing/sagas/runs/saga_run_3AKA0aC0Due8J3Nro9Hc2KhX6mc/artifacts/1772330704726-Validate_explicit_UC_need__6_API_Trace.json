@@ -1,0 +1,45 @@
+{
+  "stepKey": "uc-need-validate-6",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AKA0aC0Due8J3Nro9Hc2KhX6mc/steps/uc-need-validate-6/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the requirement of 'Minimum attendance to run class', which states that if fewer than 8 attendees show up, the class is rescheduled. However, the evidence does not confirm that the minimum attendance requirement is being enforced or checked through API reads or persisted state checks. The linked use case mentions the rescheduling condition but lacks concrete evidence of how this is implemented, indicating a gap in the requirement coverage.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].bodyMarkdownPreview"
+          ],
+          "gaps": [
+            "No evidence of API checks or business logic enforcing the minimum attendance requirement."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add evidence for minimum attendance enforcement",
+              "endpoint": "/api/v1/classes/check-attendance",
+              "assertion": "Verify that the system checks for minimum attendance before confirming class execution."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "ffa7ab1c-c220-4acb-8a35-cfb535f61af0",
+          "timestamp": "2026-03-01T02:05:04.668Z"
+        }
+      },
+      "at": "2026-03-01T02:05:04.669Z"
+    }
+  ]
+}

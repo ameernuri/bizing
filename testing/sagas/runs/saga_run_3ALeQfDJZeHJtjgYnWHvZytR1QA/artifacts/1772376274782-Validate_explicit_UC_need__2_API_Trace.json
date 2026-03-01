@@ -1,0 +1,46 @@
+{
+  "stepKey": "uc-need-validate-2",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3ALeQfDJZeHJtjgYnWHvZytR1QA/steps/uc-need-validate-2/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the requirement of waiving fees for specific customer groups, but the evidence indicates a gap in implementation. Specifically, the booking evidence shows 'feeMinor': 0 for both customer bookings, which contradicts the requirement for a $5 call-handling fee for phone bookings. This suggests that the necessary logic to waive fees for eligible customers is either not implemented or not functioning as intended.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "priorStepEvidence[10].evidence[0].feeMinor",
+            "priorStepEvidence[10].evidence[1].feeMinor"
+          ],
+          "gaps": [
+            "No fee waiver logic for members/VIP/customers with accessibility needs implemented."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add deterministic evidence contract",
+              "endpoint": null,
+              "assertion": "Define concrete endpoint calls and assertions that directly verify this requirement."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "f463cb28-ac6d-444f-80d2-7534fb416d92",
+          "timestamp": "2026-03-01T14:44:34.735Z"
+        }
+      },
+      "at": "2026-03-01T14:44:34.736Z"
+    }
+  ]
+}

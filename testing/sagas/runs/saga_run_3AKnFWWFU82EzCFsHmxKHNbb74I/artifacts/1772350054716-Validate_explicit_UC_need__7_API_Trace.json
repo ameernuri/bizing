@@ -1,0 +1,46 @@
+{
+  "stepKey": "uc-need-validate-7",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AKnFWWFU82EzCFsHmxKHNbb74I/steps/uc-need-validate-7/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the requirement of walk-in support (queue management), which is explicitly mentioned in the linked use case. However, while there is evidence of customers entering a waitlist/queue flow, there is no concrete evidence demonstrating that the system effectively manages walk-ins or provides queue management functionalities as required. The evidence pointers indicate that the queue entry status is 'waiting', but it does not confirm the overall management of walk-ins or the expected functionalities associated with it.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].needs[6]",
+            "priorStepEvidence[1].evidence.queueEntryStatus"
+          ],
+          "gaps": [
+            "No evidence of effective queue management for walk-ins."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Verify queue management functionalities for walk-ins",
+              "endpoint": "/api/v1/queue-management",
+              "assertion": "Check if the system provides functionalities for managing walk-in customers effectively."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "08503079-ed13-4428-9938-0ee533da4137",
+          "timestamp": "2026-03-01T07:27:34.701Z"
+        }
+      },
+      "at": "2026-03-01T07:27:34.701Z"
+    }
+  ]
+}

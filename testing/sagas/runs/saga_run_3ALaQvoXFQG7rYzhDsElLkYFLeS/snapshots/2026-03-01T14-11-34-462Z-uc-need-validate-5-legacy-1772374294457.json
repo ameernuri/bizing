@@ -1,0 +1,158 @@
+{
+  "schemaVersion": "snapshot.v1",
+  "screenKey": "uc-need-validate-5-legacy-1772374294457",
+  "title": "Validate explicit UC need #5 Snapshot",
+  "generatedAt": "2026-03-01T14:11:34.461Z",
+  "stepKey": "uc-need-validate-5",
+  "status": "passed",
+  "view": {
+    "route": "/sagas/saga_run_3ALaQvoXFQG7rYzhDsElLkYFLeS/uc-need-validate-5",
+    "subtitle": "Validated machine-readable capability discovery through agent manifest/tool catalog APIs. (contract: agent-capabilities).",
+    "blocks": [
+      {
+        "type": "alert",
+        "title": "Step status: passed",
+        "message": "Validated machine-readable capability discovery through agent manifest/tool catalog APIs. (contract: agent-capabilities).",
+        "tone": "success"
+      },
+      {
+        "type": "table",
+        "title": "Probes",
+        "columns": [
+          "path",
+          "ok",
+          "shape",
+          "keys",
+          "rowCount"
+        ],
+        "rows": [
+          [
+            "/api/v1/agents/manifest",
+            true,
+            "object",
+            "[\"name\",\"version\",\"description\",\"transport\",\"toolsCount\",\"endpoints\"]",
+            null
+          ],
+          [
+            "/api/v1/agents/tools",
+            true,
+            "array",
+            null,
+            165
+          ]
+        ]
+      },
+      {
+        "type": "key_value",
+        "title": "Details",
+        "items": [
+          {
+            "label": "SagaKey",
+            "value": "uc-272-the-solo-entrepreneur-sarah"
+          },
+          {
+            "label": "StepKey",
+            "value": "uc-need-validate-5"
+          },
+          {
+            "label": "Instruction",
+            "value": "using concrete api reads and persisted state checks, validate this requirement is satisfied: \"versioned capability discovery\". if not satisfied, record exact gap and failing entities/endpoints."
+          },
+          {
+            "label": "Contract",
+            "value": "agent-capabilities"
+          }
+        ]
+      },
+      {
+        "type": "actions",
+        "title": "Visible Actions",
+        "items": [
+          {
+            "label": "Inspect detail",
+            "kind": "secondary",
+            "enabled": true
+          },
+          {
+            "label": "Review evidence",
+            "kind": "secondary",
+            "enabled": true
+          }
+        ]
+      }
+    ]
+  },
+  "rawData": {
+    "stepKey": "uc-need-validate-5",
+    "resultPayload": {
+      "note": "Validated machine-readable capability discovery through agent manifest/tool catalog APIs. (contract: agent-capabilities).",
+      "evidence": {
+        "sagaKey": "uc-272-the-solo-entrepreneur-sarah",
+        "stepKey": "uc-need-validate-5",
+        "instruction": "using concrete api reads and persisted state checks, validate this requirement is satisfied: \"versioned capability discovery\". if not satisfied, record exact gap and failing entities/endpoints.",
+        "contract": "agent-capabilities",
+        "probes": [
+          {
+            "path": "/api/v1/agents/manifest",
+            "ok": true,
+            "shape": "object",
+            "keys": [
+              "name",
+              "version",
+              "description",
+              "transport",
+              "toolsCount",
+              "endpoints"
+            ]
+          },
+          {
+            "path": "/api/v1/agents/tools",
+            "ok": true,
+            "shape": "array",
+            "rowCount": 165
+          }
+        ]
+      }
+    },
+    "apiCalls": [
+      {
+        "method": "GET",
+        "path": "/api/v1/agents/manifest",
+        "status": 200,
+        "responseBody": {
+          "success": true,
+          "data": {
+            "name": "bizing-agents",
+            "version": "0.2.0",
+            "description": "API-first tool interface for Bizing",
+            "transport": "http",
+            "toolsCount": 165,
+            "endpoints": {
+              "tools": "/api/v1/agents/tools",
+              "search": "/api/v1/agents/search",
+              "execute": "/api/v1/agents/execute"
+            }
+          },
+          "meta": {
+            "requestId": "f4ad32fd-f546-4924-b960-3dac4f7f5fca",
+            "timestamp": "2026-03-01T14:11:34.413Z"
+          }
+        },
+        "at": "2026-03-01T14:11:34.413Z"
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/agents/tools",
+        "status": 200,
+        "responseBody": {
+          "_truncated": true,
+          "_preview": "{\"success\":true,\"data\":[{\"name\":\"bizing.bizes.list\",\"description\":\"List bizes available to the authenticated user.\",\"method\":\"GET\",\"path\":\"/api/v1/bizes\",\"tags\":[\"bizes\"],\"parameters\":{\"type\":\"object\",\"properties\":{\"page\":{\"type\":\"number\",\"default\":1},\"perPage\":{\"type\":\"number\",\"default\":20},\"status\":{\"type\":\"string\"},\"type\":{\"type\":\"string\"}}}},{\"name\":\"bizing.bizes.create\",\"description\":\"Create a biz and make current user owner.\",\"method\":\"POST\",\"path\":\"/api/v1/bizes\",\"tags\":[\"bizes\"],\"parameters\":{\"type\":\"object\",\"properties\":{\"name\":{\"type\":\"string\"},\"slug\":{\"type\":\"string\"},\"type\":{\"type\":\"string\"},\"timezone\":{\"type\":\"string\"},\"currency\":{\"type\":\"string\"}},\"required\":[\"name\",\"slug\"]}},{\"name\":\"bizing.locations.publicList\",\"description\":\"List public active locations for one biz.\",\"method\":\"GET\",\"path\":\"/api/v1/public/bizes/{bizId}/locations\",\"tags\":[\"locations\",\"public\"],\"parameters\":{\"type\":\"object\",\"properties\":{\"bizId\":{\"type\":\"string\"}},\"required\":[\"bizId\"]}},{\"name\":\"bizing.operations.locationOverview\",\"description\":\"Return consolidated per-location operational overview for one biz.\",\"method\":\"GET\",\"path\":\"/api/v1/bizes/{bizId}/operations/location-overview\",\"tags\":[\"operations\",\"locations\"],\"parameters\":{\"type\":\"object\",\"properties\":{\"bizId\":{\"type\":\"string\"}},\"required\":[\"bizId\"]}},{\"name\":\"bizing.analytics.overview\",\"description\":\"Return one canonical revenue and booking summary for a biz.\",\"method\":\"GET\",\"path\":\"/api/v1/bizes/{bizId}/analytics/overview\",\"tags\":[\"analytics\",\"operations\"],\"parameters\":{\"type\":\"object\",\"properties\":{\"bizId\":{\"type\":\"string\"}},\"required\":[\"bizId\"]}},{\"name\":\"bizing.calendars.timeline\",\"description\":\"Return the calendar story for one window: bindings, rules, holds, and matching bookings.\",\"method\":\"GET\",\"path\":\"/api/v1/bizes/{bizId}/calendars/{calendarId}/timeline\",\"tags\":[\"calendars\",\"availability\",\"timeline\"],\"parameters\":{\"type\":\"object\",\"properties\":{\"bizId\":{\"type\":\"string\"},\"calendarId\":{\"type\":\"string\"},\"startAt\":{\"type\":\"string\",\"description\":\"ISO datetime\"},\"endAt\":{\"type\":\"string\",\"description\":\"ISO datetime\"},\"includeInactive\":{\"type\":\"string\",\"enum\":[\"true\",\"false\"]},\"includeRules\":{\"type\":\"string\",\"enum\":[\"true\",\"false\"]},\"includeBookings\":{\"type\":\"string\",\"enum\":[\"true\",\"false\"]},\"includeHolds\":{\"type\":\"string\",\"enum\":[\"true\",\"false\"]}},\"required\":[\"bizId\",\"calendarId\"]}},{\"name\":\"bizing.seating.maps.list\",\"description\":\"List seat maps for one biz, optionally filtered to one resource.\",\"method\":\"GET\",\"path\":\"/api/v1/bizes/{bizId}/seat-maps\",\"tags\":[\"seating\",\"resources\"],\"parameters\":{\"type\":\"object\",\"properties\":{\"bizId\":{\"type\":\"string\"},\"resourceId\":{\"type\":\"string\"}},\"required\":[\"bizId\"]}},{\"name\":\"bizing.seating.maps.create\",\"description\":\"Create one seat map attached to a resource or custom subject.\",\"method\":\"POST\",\"path\":\"/api/v1/bizes/{bizId}/seat-maps\",\"tags\":[\"seating\",\"resources\"],\"parameters\":{\"type\":\"object\",\"properties\":{\"bizId\":{\"type\":\"string\"},\"name\":{\"type\":\"string\"},\"slug\":{\"type\":\"string\"},\"status\":{\"type\":\"string\"},\"targetType\":{\"type\":\"string\"},\"resourceId\":{\"type\":\"string\"},\"targetSubjectType\":{\"type\":\"string\"},\"targetSubjectId\":{\"type\":\"string\"},\"timezone\":{\"type\":\"string\"},\"layout\":{\"type\":\"object\"},\"policy\":{\"type\":\"object\"},\"metadata\":{\"type\":\"object\"}},\"required\":[\"bizId\",\"name\",\"slug\"]}},{\"name\":\"bizing.seating.seats.list\",\"description\":\"List the concrete seats for one seat map.\",\"method\":\"GET\",\"path\":\"/api/v1/bizes/{bizId}/seat-maps/{seatMapId}/seats\",\"tags\":[\"seating\"],\"parameters\":{\"type\":\"object\",\"properties\":{\"bizId\":{\"type\":\"string\"},\"seatMapId\":{\"type\":\"string\"}},\"required\":[\"bizId\",\"seatMapId\"]}},{\"name\":\"bizing.seating.seats.create\",\"description\":\"Create one selectable seat inside a seat map.\",\"method\":\"POST\",\"path\":\"/api/v1/bizes/{bizId}/seat-maps/{seatMapId}/seats\",\"tags\":[\"seating\"],\"parameters\":{\"type\":\"object\",\"properties\":{\"bizId\":{\"type\":\"string\"},\"seatMapId\":{\"type\":\"string\"},\"seatKey\":{\"type\":\"string\"},\"sectionKey\":{\"type\":\"string\"},\"rowLabel\":{\"type\":\"string\"},\"columnLabel\":{\"type\":\"string\"},\"gridX\":{\"type\":\"number\"},\"gridY\":{\"type\":\"number\"},\"sortOrder\":{\"type\":\"number\"},\"status\":{\"type\":\"string\"},\"isAccessible\":{\"type\":\"boolean\"},\"capacity\":{\"type\":\"number\"},\"attributes\":{\"type\":\"object\"},\"metadata\":{\"type\":\"object\"}},\"required\":[\"bizId\",\"seatMapId\",\"seatKey\"]}},{\"name\":\"bizing.seating.holds.list\",\"description\":\"List seat holds for one seat map.\",\"method\":\"GET\",\"path\":\"/api/v1/bizes/{bizId}/seat-maps/{seatMapId}/holds\",\"tags\":[\"seating\",\"holds\"],\"parameters\":{\"type\":\"object\",\"properties\":{\"bizId\":{\"type\":\"string\"},\"seatMapId\":{\"type\":\"string\"}},\"required\":[\"bizId\",\"seatMapId\"]}},{\"name\":\"bizing.seating.holds.create\",\"description\":\"Create a temporary checkout hold for one seat.\",\"method\":\"POST\",\"path\":\"/api/v1/bizes/{bizId}/seat-maps/{seatMapId}/holds\",\"tags\":[\"seating\",\"holds\"],\"parameters\":{\"type\":\"object\",\"properties\":{\"bizId\":{\"type\":\"string\"},\"seatMapId\":{\"type\":\"string\"},\"seatMapSeatId\":{\"type\":\"string\"},\"bookingOrderId\":{\"type\":\"string\"},\"bookingOrderLineId\":{\"type\":\"string\"},\"queueEntryId\":{\"type\":\"string\"},\"holderUserId\":{\"type\":\"string\"},\"holderGroupAccountId\":{\"type\":\"string\"},\"holdType\":{\"type\":\"string\"},\"holdState\":{\"type\":\"string\"},\"expiresAt\":{\"type\":\"string\",\"description\":\"ISO datetime\"},\"idempotencyKey\":{\"type\":\"string\"},\"policySnapshot\":{\"type\":\"object\"},\"metadata\":{\"type\":\"object\"}},\"required\":[\"bizId\",\"seatMapId\",\"seatMapSeatId\",\"expiresAt\"]}},{\"name\":\"bizing.seating.holds.expire\",\"description\":\"Expire overdue seat holds for one seat map using the canonical release worker entrypoint.\",\"method\":\"POST\",\"path\":\"/api/v1/bizes/{bizId}/seat-maps/{seatMapId}/holds/expire\",\"tags\":[\"seating\",\"holds\"],\"parameters\":{\"type\":\"object\",\"properties\":{\"bizId\":{\"type\":\"string\"},\"seatMapId\":{\"type\":\"string\"},\"asOf\":{\"type\":\"string\",\"description\":\"Optional ISO datetime override for deterministic expiry checks.\"}},\"required\":[\"bizId\",\"seatMapId\"]}},{\"name\":\"bizing.seating.reservations.create\",\"description\":\"Create a committed seat reservation and link it to order or fulfillment context.\",\"method\":\"POST\",\"path\":\"/api/v1/bizes/{bizId}/seat-maps/{seatMapId}/reservations\",\"tags\":[\"seating\",\"reservations\"],\"parameters\":{\"type\":\"object\",\"properties\":{\"bizId\":{\"type\":\"string\"},\"seatMapId\":{\"type\":\"string\"},\"seatMapSeatId\":{\"type\":\"string\"},\"seatHoldId\":{\"type\":\"string\"},\"bookingOrderId\":{\"type\":\"string\"},\"bookingOrderLineId\":{\"type\":\"string\"},\"fulfillmentUnitId\":{\"type\":\"string\"},\"queueEntryId\":{\"type\":\"string\"},\"reservationState\":{\"type\":\"string\"},\"note\":{\"type\":\"string\"},\"metadata\":{\"type\":\"object\"}},\"required\":[\"bizId\",\"seatMapId\",\"seatMapSeatId\"]}},{\"name\":\"bizing.instruments.list\",\"description\":\"List unified instruments such as intake forms, waivers, checklists, and surveys.\",\"method\":\"GET\",\"path\":\"/api/v1/bizes/{bizId}/instruments\",\"tags\":[\"instruments\",\"compliance\"],\"parameters\":{\"type\":\"object\",\"properties\":{\"bizId\":{\"type\":\"string\"},\"status\":{\"type\":\"string\"},\"instrumentType\":{\"type\":\"string\"},\"currentOnly\":{\"type\":\"boolean\"}},\"required\":[\"bizId\"]}},{\"name\":\"bizing.instruments.create\",\"description\":\"Create one instrument definition in the unified forms/checklists/surveys system.\",\"method\":\"POST\",\"path\":\"/api/v1/bizes/{bizId}/instruments\",\"tags\":[\"instruments\",\"compliance\"],\"parameters\":{\"type\":\"object\",\"properties\":{\"bizId\":{\"type\":\"string\"},\"name\":{\"type\":\"string\"},\"slug\":{\"type\":\"string\"},\"instrumentType\":{\"type\":\"string\"},\"status\":{\"type\":\"string\"},\"evaluationMode\":{\"type\":\"string\"},\"schemaSnapshot\":{\"type\":\"object\"},\"validationPolicy\":{\"type\":\"object\"},\"completionPolicy\":{\"type\":\"object\"}},\"required\":[\"bizId\",\"name\",\"slug\",\"instrumentType\"]}},{\"name\":\"bizing.instrumentRuns.create\",\"description\":\"Create one runtime instrument run for a target and assignee.\",\"method\":\"POST\",\"path\":\"/api/v1/bizes/{bizId}/instrument-runs\",\"tags\":[\"instruments\",\"runtime\"],\"parameters\":{\"type\":\"object\",\"properties\":{\"bizId\":{\"type\":\"string\"},\"instrumentId\":{\"type\":\"string\"},\"targetType\":{\"type\":\"string\"},\"targetRefId\":{\"type\":\"string\"},\"assigneeSubjectBizId\":{\"type\":\"string\"},\"assigneeSubjectType\":{\"type\":\"string\"},\"assigneeSubjectId\":{\"type\":\"string\"},\"expiresAt\":{\"type\":\"string\"}},\"required\":[\"bizId\",\"instrumentId\",\"targetType\",\"targetRefId\",\"assigneeSubjectBizId\",\"assigneeSubjectType\",\"assigneeSubjectId\"]}},{\"name\":\"bizing.messageTemplates.list\",\"description\":\"List reusable SMS/email/postal/etc templates for one biz.\",\"method\":\"GET\",\"path\":\"/api/v1/bizes/{bizId}/message-templates\",\"tags\":[\"communications\",\"templates\"],\"parameters\":{\"type\":\"object\",\"properties\":{\"bizId\":{\"type\":\"string\"}},\"required\":[\"bizId\"]}},{\"name\":\"bizing.marketingCampaigns.list\",\"description\":\"List marketing campaigns for one biz.\",\"method\":\"GET\",\"path\":\"/api/v1/bizes/{bizId}/marketing-campaigns\",\"tags\":[\"communications\",\"marketing\"],\"parameters\":{\"type\":\"object\",\"properties\":{\"bizId\":{\"type\":\"string\"}},\"required\":[\"bizId\"]}},{\"name\":\"bizing.notificationEndpoints.listMine\",\"description\":\"List notification endpoints owned by the authenticated user.\",\"method\":\"GET\",\"path\":\"/api/v1/users/me/notification-endpoints\",\"tags\":[\"notifications\",\"identity\"],\"parameters\":{\"type\":\"object\",\"properties\":{\"bizId\":{\"type\":\"string\"},\"channel\":{\"type\":\"string\"},\"status\":{\"type\":\"string\"}}}},{\"name\":\"bizing.notificationEndpoints.createMine\",\"description\":\"Create one notification endpoint for the authenticated user.\",\"method\":\"POST\",\"path\":\"/api/v1/users/me/notification-endpoints\",\"tags\":[\"notifications\",\"identity\"],\"parameters\":{\"type\":\"object\",\"properties\":{\"bizId\":{\"type\":\"string\"},\"channel\":{\"type\":\"string\"},\"destination\":{\"type\":\"string\"},\"status\":{\"type\":\"string\"},\"isDefault\":{\"type\":\"boolean\"},\"metadata\":{\"type\":\"object\"}},\"required\":[\"channel\"]}},{\"name\":\"bizing.subjectEvents.list\",\"description\":\"List immutable subject events for one biz.\",\"method\":\"GET\",\"path\":\"/api/v1/bizes/{bizId}/subject-events\",\"tags\":[\"events\",\"subjects\"],\"parameters\":{\"type\":\"object\",\"properties\":{\"bizId\":{\"type\":\"string\"},\"subjectType\":{\"type\":\"string\"},\"subjectId\":{\"type\":\"string\"},\"eventType\":{\"type\":\"string\"}},\"required\":[\"bizId\"]}},{\"name\":\"bizing.subjectEvents.create\",\"description\":\"Publish one immutable subject event for one biz.\",\"method\":\"POST\",\"path\":\"/api/v1/bizes/{bizId}/subject-events\",\"tags\":[\"events\",\"subjects\"],\"parameters\":{\"type\":\"object\",\"properties\":{\"bizId\":{\"type\":\"string\"},\"subjectType\":{\"type\":\"string\"},\"subjectId\":{\"type\":\"string\"},\"eventType\":{\"type\":\"string\"},\"requestKey\":{\"type\":\"string\"},\"correlationKey\":{\"type\":\"string\"},\"payload\":{\"type\":\"object\"}},\"required\":[\"bizId\",\"subjectType\",\"subjectId\",\"eventType\"]}},{\"name\":\"bizing.products.create\",\"description\":\"Create one catalog product.\",\"method\":\"POST\",\"path\":\"/api/v1/bizes/{bizId}/products\",\"tags\":[\"products\",\"catalog\"],\"parameters\":{\"type\":\"object\",\"properties\":{\"bizId\":{\"type\":\"string\"},\"name\":{\"type\":\"string\"},\"slug\":{\"type\":\"string\"},\"basePriceMinor\":{\"type\":\"number\"},\"currency\":{\"type\":\"string\"},\"type\":{\"type\":\"string\"}},\"required\":[\"bizId\",\"name\",\"slug\"]}},{\"name\":\"bizing.productBundles.create\",\"description\":\"Create one product bundle shell for a product.\",\"method\":\"POST\",\"path\":\"/api/v1/bizes/{bizId}/product-bundles\",\"tags\":[\"products\",\"bundles\"],\"parameters\":{\"type\":\"object\",\"properties\":{\"bizId\":{\"type\":\"string\"},\"bundleProductId\":{\"type\":\"string\"},\"pricingMode\":{\"type\":\"string\"},\"allowPartialSelection\":{\"type\":\"boolean\"}},\"required\":[\"bizId\",\"bundleProductId\"]}},{\"name\":\"bizing.requirementSets.create\",\"description\":\"Create one prerequisite/unlock requirement set.\",\"method\":\"POST\",\"path\":\"/api/v1/bizes/{bizId}/requirement-sets\",\"tags\":[\"progression\",\"requirements\"],\"parameters\":{\"type\":\"object\",\"properties\":{\"bizId\":{\"type\":\"string\"},\"name\":{\"type\":\"string\"},\"slug\":{\"type\":\"string\"},\"evaluationMode\":{\"type\":\"string\"}},\"required\":[\"bizId\",\"name\",\"slug\"]}},{\"name\":\"bizing.sessionInteractions.create\",\"description\":\"Record one live-session interaction such as chat, ",
+          "_size": 73414
+        },
+        "at": "2026-03-01T14:11:34.417Z"
+      }
+    ],
+    "contract": null
+  },
+  "metadata": {}
+}

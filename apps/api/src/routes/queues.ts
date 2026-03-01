@@ -26,7 +26,7 @@ import {
 } from '../middleware/auth.js'
 import { fail, ok, parsePositiveInt } from './_api.js'
 
-const { db, queues, queueEntries } = dbPackage
+const { db, queues, queueEntries, bizConfigValues } = dbPackage
 
 /**
  * Canonical queue strategy values from schema enum.
@@ -123,6 +123,7 @@ const createQueueEntryBodySchema = z
 const updateQueueEntryBodySchema = z.object({
   status: queueEntryStatusSchema.optional(),
   statusConfigValueId: z.string().nullable().optional(),
+  bookingOrderId: z.string().nullable().optional(),
   priorityScore: z.number().int().optional(),
   displayCode: z.string().max(60).nullable().optional(),
   estimatedStartAt: z.string().datetime().nullable().optional(),
@@ -131,6 +132,17 @@ const updateQueueEntryBodySchema = z.object({
   offerExpiresAt: z.string().datetime().nullable().optional(),
   servedAt: z.string().datetime().nullable().optional(),
   decisionState: z.record(z.unknown()).optional(),
+  metadata: z.record(z.unknown()).optional(),
+})
+
+const offerNextQueueEntryBodySchema = z.object({
+  offerTtlMinutes: z.number().int().min(1).max(60 * 24 * 14).default(60),
+  sourceBookingOrderId: z.string().optional(),
+  metadata: z.record(z.unknown()).optional(),
+})
+
+const publicRespondQueueEntryBodySchema = z.object({
+  action: z.enum(['accept', 'decline']),
   metadata: z.record(z.unknown()).optional(),
 })
 
@@ -149,12 +161,52 @@ const publicCreateQueueEntryBodySchema = z.object({
   metadata: z.record(z.unknown()).optional(),
 })
 
+const transferQueueEntryBodySchema = z.object({
+  targetQueueId: z.string().min(1),
+  preservePriorityScore: z.boolean().default(true),
+  metadata: z.record(z.unknown()).optional(),
+})
+
+const recallQueueEntryBodySchema = z.object({
+  holdMinutes: z.number().int().min(1).max(60).default(2),
+  metadata: z.record(z.unknown()).optional(),
+})
+
 function isUniqueViolationForQueueActiveCustomer(error: unknown) {
   if (!error || typeof error !== 'object') return false
   const pgCode = (error as { code?: string }).code
   const message = String((error as { message?: string }).message || '')
   if (pgCode === '23505' && message.includes('queue_entries_active_customer_queue_unique')) return true
   return message.includes('queue_entries_active_customer_queue_unique')
+}
+
+/**
+ * Ensures a referenced config value is still active before new writes use it.
+ *
+ * ELI5:
+ * - historical rows may keep pointing at retired values forever,
+ * - but new rows should not revive a retired dictionary option by accident,
+ * - so create/update paths call this guard before saving `statusConfigValueId`.
+ */
+async function validateActiveStatusConfigValue(input: {
+  bizId: string
+  statusConfigValueId: string | null | undefined
+}) {
+  if (!input.statusConfigValueId) return { ok: true as const }
+  const row = await db.query.bizConfigValues.findFirst({
+    where: and(eq(bizConfigValues.bizId, input.bizId), eq(bizConfigValues.id, input.statusConfigValueId)),
+  })
+  if (!row) {
+    return { ok: false as const, code: 'CONFIG_VALUE_NOT_FOUND', message: 'Config value not found.' }
+  }
+  if (!row.isActive) {
+    return {
+      ok: false as const,
+      code: 'INACTIVE_CONFIG_VALUE',
+      message: 'Retired config values cannot be used for new queue-entry writes.',
+    }
+  }
+  return { ok: true as const }
 }
 
 export const queueRoutes = new Hono()
@@ -256,6 +308,62 @@ queueRoutes.get(
     })
     if (!row) return fail(c, 'NOT_FOUND', 'Queue not found.', 404)
     return ok(c, row)
+  },
+)
+
+queueRoutes.get(
+  '/bizes/:bizId/queues/:queueId/display-board',
+  requireAuth,
+  requireBizAccess('bizId'),
+  requireAclPermission('queues.read', { bizIdParam: 'bizId' }),
+  async (c) => {
+    const { bizId, queueId } = c.req.param()
+    const queue = await db.query.queues.findFirst({
+      where: and(eq(queues.bizId, bizId), eq(queues.id, queueId)),
+    })
+    if (!queue) return fail(c, 'NOT_FOUND', 'Queue not found.', 404)
+
+    const entries = await db.query.queueEntries.findMany({
+      where: and(eq(queueEntries.bizId, bizId), eq(queueEntries.queueId, queueId)),
+      orderBy: [asc(queueEntries.joinedAt)],
+    })
+
+    const waiting = entries.filter((row) => row.status === 'waiting')
+    const offered = entries.filter((row) => row.status === 'offered')
+    const served = entries.filter((row) => row.status === 'served')
+    const activeCounters = Array.isArray((queue.metadata as Record<string, unknown> | null)?.activeCounters)
+      ? ((queue.metadata as Record<string, unknown>).activeCounters as Array<Record<string, unknown>>)
+      : [
+          { counterKey: 'A', nowServing: served.at(-1)?.displayCode ?? null },
+        ]
+
+    const avgWait = waiting.length > 0
+      ? Math.round(waiting.reduce((sum, row) => sum + Number(row.estimatedWaitMin ?? 0), 0) / waiting.length)
+      : 0
+
+    return ok(c, {
+      queue: {
+        id: queue.id,
+        name: queue.name,
+        strategy: queue.strategy,
+        status: queue.status,
+      },
+      display: {
+        nowServing: activeCounters,
+        nextUp: waiting.slice(0, 5).map((row) => ({
+          queueEntryId: row.id,
+          displayCode: row.displayCode,
+          estimatedWaitMin: row.estimatedWaitMin,
+        })),
+        offered: offered.map((row) => ({
+          queueEntryId: row.id,
+          displayCode: row.displayCode,
+          offerExpiresAt: row.offerExpiresAt,
+        })),
+        averageEstimatedWaitMin: avgWait,
+        queueDepth: waiting.length,
+      },
+    })
   },
 )
 
@@ -380,6 +488,14 @@ queueRoutes.post(
     })
     if (!queue) return fail(c, 'NOT_FOUND', 'Queue not found.', 404)
 
+    const statusConfigValidation = await validateActiveStatusConfigValue({
+      bizId,
+      statusConfigValueId: parsed.data.statusConfigValueId,
+    })
+    if (!statusConfigValidation.ok) {
+      return fail(c, statusConfigValidation.code, statusConfigValidation.message, 409)
+    }
+
     try {
       const [created] = await db
         .insert(queueEntries)
@@ -444,12 +560,21 @@ queueRoutes.patch(
     })
     if (!existing) return fail(c, 'NOT_FOUND', 'Queue entry not found.', 404)
 
+    const statusConfigValidation = await validateActiveStatusConfigValue({
+      bizId,
+      statusConfigValueId: parsed.data.statusConfigValueId,
+    })
+    if (!statusConfigValidation.ok) {
+      return fail(c, statusConfigValidation.code, statusConfigValidation.message, 409)
+    }
+
     const [updated] = await db
       .update(queueEntries)
       .set({
         status: parsed.data.status,
         statusConfigValueId:
           parsed.data.statusConfigValueId === undefined ? undefined : parsed.data.statusConfigValueId,
+        bookingOrderId: parsed.data.bookingOrderId === undefined ? undefined : parsed.data.bookingOrderId,
         priorityScore: parsed.data.priorityScore,
         displayCode: parsed.data.displayCode === undefined ? undefined : parsed.data.displayCode,
         estimatedStartAt:
@@ -491,6 +616,191 @@ queueRoutes.patch(
       .returning()
 
     return ok(c, updated)
+  },
+)
+
+/**
+ * Transfer one queue ticket to another queue.
+ *
+ * ELI5:
+ * - sometimes a customer grabbed the wrong line,
+ * - or a simple task becomes a complex task mid-flow,
+ * - this keeps the same queue-entry identity but moves it to a new queue with
+ *   explicit transfer metadata so reporting/debugging can explain what happened.
+ */
+queueRoutes.post(
+  '/bizes/:bizId/queues/:queueId/entries/:queueEntryId/transfer',
+  requireAuth,
+  requireBizAccess('bizId'),
+  requireAclPermission('queue_entries.update', { bizIdParam: 'bizId' }),
+  async (c) => {
+    const { bizId, queueId, queueEntryId } = c.req.param()
+    const parsed = transferQueueEntryBodySchema.safeParse(await c.req.json().catch(() => null))
+    if (!parsed.success) {
+      return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
+    }
+
+    const [existing, targetQueue] = await Promise.all([
+      db.query.queueEntries.findFirst({
+        where: and(eq(queueEntries.bizId, bizId), eq(queueEntries.queueId, queueId), eq(queueEntries.id, queueEntryId)),
+      }),
+      db.query.queues.findFirst({
+        where: and(eq(queues.bizId, bizId), eq(queues.id, parsed.data.targetQueueId)),
+      }),
+    ])
+    if (!existing) return fail(c, 'NOT_FOUND', 'Queue entry not found.', 404)
+    if (!targetQueue) return fail(c, 'NOT_FOUND', 'Target queue not found.', 404)
+
+    const [updated] = await db
+      .update(queueEntries)
+      .set({
+        queueId: parsed.data.targetQueueId,
+        priorityScore: parsed.data.preservePriorityScore ? existing.priorityScore : 0,
+        metadata: {
+          ...((existing.metadata ?? {}) as Record<string, unknown>),
+          transfer: {
+            fromQueueId: queueId,
+            toQueueId: parsed.data.targetQueueId,
+            transferredAt: new Date().toISOString(),
+          },
+          ...((parsed.data.metadata ?? {}) as Record<string, unknown>),
+        },
+      })
+      .where(and(eq(queueEntries.bizId, bizId), eq(queueEntries.id, queueEntryId)))
+      .returning()
+
+    return ok(c, updated, 201)
+  },
+)
+
+/**
+ * Recall a missed customer and hold their spot for a short grace window.
+ *
+ * ELI5:
+ * - "you were called, but maybe you were in the bathroom"
+ * - instead of deleting the ticket immediately, we reopen the offer window for
+ *   a tiny grace period and record the recall count.
+ */
+queueRoutes.post(
+  '/bizes/:bizId/queues/:queueId/entries/:queueEntryId/recall',
+  requireAuth,
+  requireBizAccess('bizId'),
+  requireAclPermission('queue_entries.update', { bizIdParam: 'bizId' }),
+  async (c) => {
+    const { bizId, queueId, queueEntryId } = c.req.param()
+    const parsed = recallQueueEntryBodySchema.safeParse(await c.req.json().catch(() => null))
+    if (!parsed.success) {
+      return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
+    }
+
+    const existing = await db.query.queueEntries.findFirst({
+      where: and(eq(queueEntries.bizId, bizId), eq(queueEntries.queueId, queueId), eq(queueEntries.id, queueEntryId)),
+    })
+    if (!existing) return fail(c, 'NOT_FOUND', 'Queue entry not found.', 404)
+
+    const now = new Date()
+    const recallCount = Number(((existing.metadata ?? {}) as Record<string, unknown>).recallCount ?? 0) + 1
+    const [updated] = await db
+      .update(queueEntries)
+      .set({
+        status: 'offered',
+        offeredAt: now,
+        offerExpiresAt: new Date(now.getTime() + parsed.data.holdMinutes * 60 * 1000),
+        metadata: {
+          ...((existing.metadata ?? {}) as Record<string, unknown>),
+          recallCount,
+          recallHoldMinutes: parsed.data.holdMinutes,
+          recallAt: now.toISOString(),
+          ...((parsed.data.metadata ?? {}) as Record<string, unknown>),
+        },
+      })
+      .where(and(eq(queueEntries.bizId, bizId), eq(queueEntries.id, queueEntryId)))
+      .returning()
+
+    return ok(c, updated, 201)
+  },
+)
+
+/**
+ * Offer the next waiting queue entry.
+ *
+ * ELI5:
+ * - a waitlist is only useful if the business can promote the next person,
+ * - this endpoint picks the next eligible waiting entry using queue strategy,
+ * - then marks that entry as "offered" with an expiration window.
+ *
+ * Why this exists:
+ * - deterministic saga validation for waitlist promotion,
+ * - real operational need for cancellations/no-shows,
+ * - keeps queue promotion logic in one canonical place instead of scattered
+ *   client-side patches.
+ */
+queueRoutes.post(
+  '/bizes/:bizId/queues/:queueId/offer-next',
+  requireAuth,
+  requireBizAccess('bizId'),
+  requireAclPermission('queue_entries.update', { bizIdParam: 'bizId' }),
+  async (c) => {
+    const { bizId, queueId } = c.req.param()
+    const user = getCurrentUser(c)
+    if (!user) return fail(c, 'UNAUTHORIZED', 'Authentication required.', 401)
+    const body = await c.req.json().catch(() => ({}))
+    const parsed = offerNextQueueEntryBodySchema.safeParse(body)
+    if (!parsed.success) {
+      return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
+    }
+
+    const queue = await db.query.queues.findFirst({
+      where: and(eq(queues.bizId, bizId), eq(queues.id, queueId)),
+    })
+    if (!queue) return fail(c, 'NOT_FOUND', 'Queue not found.', 404)
+
+    const waitingEntries = await db.query.queueEntries.findMany({
+      where: and(eq(queueEntries.bizId, bizId), eq(queueEntries.queueId, queueId), eq(queueEntries.status, 'waiting')),
+    })
+    if (waitingEntries.length === 0) {
+      return fail(c, 'NO_WAITING_ENTRIES', 'No waiting queue entries are available to offer.', 409)
+    }
+
+    const sortedEntries = [...waitingEntries].sort((a, b) => {
+      if (queue.strategy === 'priority') {
+        if (b.priorityScore !== a.priorityScore) return b.priorityScore - a.priorityScore
+        return a.joinedAt.getTime() - b.joinedAt.getTime()
+      }
+      return a.joinedAt.getTime() - b.joinedAt.getTime()
+    })
+
+    const selected = sortedEntries[0]
+    const offeredAt = new Date()
+    const offerExpiresAt = new Date(offeredAt.getTime() + parsed.data.offerTtlMinutes * 60 * 1000)
+    const nextDecisionState = {
+      ...((selected.decisionState ?? {}) as Record<string, unknown>),
+      offer: {
+        action: 'offered',
+        offeredAt: offeredAt.toISOString(),
+        offerExpiresAt: offerExpiresAt.toISOString(),
+        sourceBookingOrderId: parsed.data.sourceBookingOrderId ?? null,
+        promotedByUserId: user.id,
+      },
+    }
+    const nextMetadata = {
+      ...((selected.metadata ?? {}) as Record<string, unknown>),
+      ...(parsed.data.metadata ?? {}),
+    }
+
+    const [updated] = await db
+      .update(queueEntries)
+      .set({
+        status: 'offered',
+        offeredAt,
+        offerExpiresAt,
+        decisionState: nextDecisionState,
+        metadata: nextMetadata,
+      })
+      .where(and(eq(queueEntries.bizId, bizId), eq(queueEntries.queueId, queueId), eq(queueEntries.id, selected.id)))
+      .returning()
+
+    return ok(c, updated, 201)
   },
 )
 
@@ -626,4 +936,72 @@ queueRoutes.get('/public/bizes/:bizId/queues/:queueId/entries', requireAuth, asy
       hasMore: pageNum * perPageNum < total,
     },
   })
+})
+
+/**
+ * Public customer response to an offered waitlist entry.
+ *
+ * ELI5:
+ * - once the business offers a spot, the customer needs to answer,
+ * - "accept" means they are taking the offered chance,
+ * - "decline" means give it to someone else.
+ *
+ * The route enforces:
+ * - customer can only respond to their own entry,
+ * - only offered entries can be answered,
+ * - expired offers cannot be accepted.
+ */
+queueRoutes.post('/public/bizes/:bizId/queues/:queueId/entries/:queueEntryId/respond', requireAuth, async (c) => {
+  const { bizId, queueId, queueEntryId } = c.req.param()
+  const user = getCurrentUser(c)
+  if (!user) return fail(c, 'UNAUTHORIZED', 'Authentication required.', 401)
+  const body = await c.req.json().catch(() => null)
+  const parsed = publicRespondQueueEntryBodySchema.safeParse(body)
+  if (!parsed.success) {
+    return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
+  }
+
+  const existing = await db.query.queueEntries.findFirst({
+    where: and(
+      eq(queueEntries.bizId, bizId),
+      eq(queueEntries.queueId, queueId),
+      eq(queueEntries.id, queueEntryId),
+      eq(queueEntries.customerUserId, user.id),
+    ),
+  })
+  if (!existing) return fail(c, 'NOT_FOUND', 'Queue entry not found.', 404)
+  if (existing.status !== 'offered') {
+    return fail(c, 'INVALID_STATE', 'Only offered queue entries can be answered.', 409)
+  }
+
+  const now = new Date()
+  if (parsed.data.action === 'accept' && existing.offerExpiresAt && existing.offerExpiresAt.getTime() < now.getTime()) {
+    return fail(c, 'OFFER_EXPIRED', 'The offered waitlist slot has already expired.', 409)
+  }
+
+  const nextStatus = parsed.data.action === 'accept' ? 'claimed' : 'cancelled'
+  const nextDecisionState = {
+    ...((existing.decisionState ?? {}) as Record<string, unknown>),
+    response: {
+      action: parsed.data.action,
+      respondedAt: now.toISOString(),
+      customerUserId: user.id,
+    },
+  }
+  const nextMetadata = {
+    ...((existing.metadata ?? {}) as Record<string, unknown>),
+    ...(parsed.data.metadata ?? {}),
+  }
+
+  const [updated] = await db
+    .update(queueEntries)
+    .set({
+      status: nextStatus,
+      decisionState: nextDecisionState,
+      metadata: nextMetadata,
+    })
+    .where(and(eq(queueEntries.bizId, bizId), eq(queueEntries.queueId, queueId), eq(queueEntries.id, queueEntryId)))
+    .returning()
+
+  return ok(c, updated)
 })

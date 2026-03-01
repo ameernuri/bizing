@@ -1,0 +1,45 @@
+{
+  "stepKey": "uc-need-validate-7",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AK6V1ThnPdPvrCRkgzzO0QtkbV/steps/uc-need-validate-7/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the requirement for 'Makeup session options', but the evidence does not confirm that the system supports this functionality. While the linked use case mentions that if an employee misses a session, they can make up at another company's session, there is no concrete evidence of an API or process that explicitly manages or tracks makeup sessions. This constitutes a gap in the requirement validation as the necessary functionality is not demonstrated through API reads or persisted state checks.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].bodyMarkdownPreview"
+          ],
+          "gaps": [
+            "No evidence of API functionality to manage or track makeup sessions."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add deterministic evidence contract for makeup session management",
+              "endpoint": "/api/v1/makeup-sessions",
+              "assertion": "Define concrete endpoint calls and assertions that verify the management of makeup sessions."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "bcf27db6-940a-46bc-90ba-25db67076e8e",
+          "timestamp": "2026-03-01T01:36:12.559Z"
+        }
+      },
+      "at": "2026-03-01T01:36:12.561Z"
+    }
+  ]
+}

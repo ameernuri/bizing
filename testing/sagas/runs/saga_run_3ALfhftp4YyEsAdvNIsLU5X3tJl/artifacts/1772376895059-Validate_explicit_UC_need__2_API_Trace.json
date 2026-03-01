@@ -1,0 +1,182 @@
+{
+  "stepKey": "uc-need-validate-2",
+  "callCount": 2,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/bizes/3ALfhiPsweVIXVCd8iUZ12QFlpi/lifecycle-event-subscriptions",
+      "status": 201,
+      "requestBody": {
+        "name": "Custom Payload Hook",
+        "eventPattern": "booking.created",
+        "deliveryMode": "webhook",
+        "webhookUrl": "https://hooks.example.test/custom",
+        "metadata": {
+          "payloadShape": {
+            "bookingId": "{{booking.id}}",
+            "customer": {
+              "name": "{{customer.name}}"
+            }
+          }
+        }
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "id": "event_sub_3ALfi696NQlyTWgUuBBxWoNHbm3",
+          "bizId": "3ALfhiPsweVIXVCd8iUZ12QFlpi",
+          "bizExtensionInstallId": null,
+          "name": "Custom Payload Hook",
+          "status": "active",
+          "eventPattern": "booking.created",
+          "phase": "after",
+          "deliveryMode": "webhook",
+          "internalHandlerKey": null,
+          "webhookUrl": "https://hooks.example.test/custom",
+          "signingSecretRef": null,
+          "timeoutMs": 10000,
+          "maxAttempts": 8,
+          "retryPolicy": {},
+          "filter": {},
+          "metadata": {
+            "payloadShape": {
+              "customer": {
+                "name": "{{customer.name}}"
+              },
+              "bookingId": "{{booking.id}}"
+            }
+          },
+          "createdAt": "2026-03-01T14:54:55.036Z",
+          "updatedAt": "2026-03-01T14:54:55.036Z",
+          "deletedAt": null,
+          "createdBy": null,
+          "updatedBy": null,
+          "deletedBy": null
+        },
+        "meta": {
+          "requestId": "a100d21d-0c65-4814-8eb8-ce70094df8c0",
+          "timestamp": "2026-03-01T14:54:55.038Z"
+        }
+      },
+      "at": "2026-03-01T14:54:55.039Z"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/bizes/3ALfhiPsweVIXVCd8iUZ12QFlpi/lifecycle-event-subscriptions/event_sub_3ALfi696NQlyTWgUuBBxWoNHbm3/test",
+      "status": 201,
+      "requestBody": {
+        "eventName": "booking.created",
+        "requestPayload": {
+          "bookingId": "booking_123",
+          "customer": {
+            "name": "Sarah"
+          }
+        }
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "event": {
+            "id": "lifecycle_event_3ALfiAGLrkajvHq4WTAbzXZIyui",
+            "bizId": "3ALfhiPsweVIXVCd8iUZ12QFlpi",
+            "sourceType": "manual",
+            "eventName": "booking.created",
+            "eventVersion": 1,
+            "entityType": "test_entity",
+            "entityId": "test",
+            "aggregateType": null,
+            "aggregateId": null,
+            "occurredAt": "2026-03-01T14:54:55.049Z",
+            "actorUserId": null,
+            "correlationId": null,
+            "causationEventId": null,
+            "idempotencyKey": null,
+            "payload": {
+              "customer": {
+                "name": "Sarah"
+              },
+              "bookingId": "booking_123"
+            },
+            "metadata": {
+              "testMode": true,
+              "generatedFromSubscriptionId": "event_sub_3ALfi696NQlyTWgUuBBxWoNHbm3"
+            },
+            "recordedAt": "2026-03-01T14:54:55.049Z"
+          },
+          "subscription": {
+            "id": "event_sub_3ALfi696NQlyTWgUuBBxWoNHbm3",
+            "bizId": "3ALfhiPsweVIXVCd8iUZ12QFlpi",
+            "bizExtensionInstallId": null,
+            "name": "Custom Payload Hook",
+            "status": "active",
+            "eventPattern": "booking.created",
+            "phase": "after",
+            "deliveryMode": "webhook",
+            "internalHandlerKey": null,
+            "webhookUrl": "https://hooks.example.test/custom",
+            "signingSecretRef": null,
+            "timeoutMs": 10000,
+            "maxAttempts": 8,
+            "retryPolicy": {},
+            "filter": {},
+            "metadata": {
+              "payloadShape": {
+                "customer": {
+                  "name": "{{customer.name}}"
+                },
+                "bookingId": "{{booking.id}}"
+              }
+            },
+            "createdAt": "2026-03-01T14:54:55.036Z",
+            "updatedAt": "2026-03-01T14:54:55.036Z",
+            "deletedAt": null,
+            "createdBy": null,
+            "updatedBy": null,
+            "deletedBy": null
+          },
+          "delivery": {
+            "id": "event_delivery_3ALfiAb6IzCUugUnaYy92PhRbdU",
+            "bizId": "3ALfhiPsweVIXVCd8iUZ12QFlpi",
+            "lifecycleEventId": "lifecycle_event_3ALfiAGLrkajvHq4WTAbzXZIyui",
+            "lifecycleEventSubscriptionId": "event_sub_3ALfi696NQlyTWgUuBBxWoNHbm3",
+            "status": "published",
+            "attemptCount": 1,
+            "nextAttemptAt": "2026-03-01T14:54:55.051Z",
+            "lockedAt": null,
+            "publishedAt": "2026-03-01T14:54:55.051Z",
+            "deadLetteredAt": null,
+            "httpStatus": 200,
+            "lastErrorCode": null,
+            "lastErrorMessage": null,
+            "requestPayload": {
+              "customer": {
+                "name": "Sarah"
+              },
+              "bookingId": "booking_123"
+            },
+            "responsePayload": null,
+            "idempotencyKey": "test:event_sub_3ALfi696NQlyTWgUuBBxWoNHbm3:1772376895051",
+            "metadata": {
+              "testMode": true,
+              "webhookUrl": "https://hooks.example.test/custom",
+              "retryPolicy": {},
+              "deliveryMode": "webhook",
+              "signingSecretRef": null
+            },
+            "createdAt": "2026-03-01T14:54:55.051Z",
+            "updatedAt": "2026-03-01T14:54:55.051Z",
+            "deletedAt": null,
+            "createdBy": null,
+            "updatedBy": null,
+            "deletedBy": null
+          }
+        },
+        "meta": {
+          "requestId": "49d475aa-32e2-4c19-b557-1ea46782209c",
+          "timestamp": "2026-03-01T14:54:55.054Z"
+        }
+      },
+      "at": "2026-03-01T14:54:55.054Z"
+    }
+  ]
+}

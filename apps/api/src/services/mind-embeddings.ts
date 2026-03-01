@@ -1,8 +1,8 @@
 import { readFileSync, existsSync, mkdirSync, statSync } from 'fs'
 import { join } from 'path'
 import { getCachedMindMap } from './mind-map.js'
+import { MIND_DIR } from './mind-root.js'
 
-const MIND_DIR = join(process.cwd(), '..', '..', 'mind')
 const OLLAMA_URL = process.env.OLLAMA_URL || 'http://localhost:11434'
 
 interface MindChunk {

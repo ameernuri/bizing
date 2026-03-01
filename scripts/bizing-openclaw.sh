@@ -8,8 +8,26 @@
 #   source scripts/bizing-openclaw.sh status   - Check Bizing's status
 #   source scripts/bizing-openclaw.sh restart  - Restart Bizing's daemon
 
-BIZING_OPENCLAW="$HOME/projects/bizing/.openclaw"
-BIZING_OPENCLAW_WS="$BIZING_OPENCLAW/workspace"
+set -euo pipefail
+
+BIZING_OPENCLAW="${BIZING_OPENCLAW:-${OPENCLAW_HOME:-$HOME/.openclaw}}"
+BIZING_OPENCLAW_WS="${BIZING_OPENCLAW_WS:-$BIZING_OPENCLAW/workspace}"
+BIZING_OPENCLAW_CONFIG="$BIZING_OPENCLAW/openclaw.json"
+
+openclaw_home() {
+    env -u OPENCLAW_GATEWAY_URL \
+        -u OPENCLAW_GATEWAY_TOKEN \
+        OPENCLAW_HOME="$BIZING_OPENCLAW" \
+        openclaw "$@"
+}
+
+gateway_port() {
+    if [ -f "$BIZING_OPENCLAW_CONFIG" ]; then
+        node -e "const fs=require('fs');const p=process.argv[1];const j=JSON.parse(fs.readFileSync(p,'utf8'));process.stdout.write(String(j?.gateway?.port ?? 'unknown'))" "$BIZING_OPENCLAW_CONFIG"
+    else
+        printf "unknown"
+    fi
+}
 
 case "$1" in
     setup)
@@ -18,32 +36,32 @@ case "$1" in
         echo "Instance already configured at: $BIZING_OPENCLAW"
         echo ""
         echo "📁 Location: $BIZING_OPENCLAW"
-        echo "🌐 Gateway Port: 6130"
+        echo "🌐 Gateway Port: $(gateway_port)"
         echo "🤖 Telegram: @bizing_bot"
         ;;
         
     start)
         echo "🚀 Starting Bizing's OpenClaw Gateway..."
         cd "$BIZING_OPENCLAW"
-        OPENCLAW_HOME="$BIZING_OPENCLAW" openclaw gateway start
+        openclaw_home gateway start
         ;;
         
     stop)
         echo "🛑 Stopping Bizing's OpenClaw Gateway..."
         cd "$BIZING_OPENCLAW"
-        OPENCLAW_HOME="$BIZING_OPENCLAW" openclaw gateway stop
+        openclaw_home gateway stop
         ;;
         
     status)
         echo "📊 Bizing's OpenClaw Status:"
         cd "$BIZING_OPENCLAW"
-        OPENCLAW_HOME="$BIZING_OPENCLAW" openclaw gateway status
+        openclaw_home gateway status
         ;;
         
     restart)
         echo "🔄 Restarting Bizing's OpenClaw Gateway..."
         cd "$BIZING_OPENCLAW"
-        OPENCLAW_HOME="$BIZING_OPENCLAW" openclaw gateway restart
+        openclaw_home gateway restart
         ;;
         
     *)
@@ -60,8 +78,8 @@ case "$1" in
         echo ""
         echo "Current Setup:"
         echo "  📁 $BIZING_OPENCLAW"
-        echo "  🌐 Port: 6130"
+        echo "  🌐 Port: $(gateway_port)"
         echo "  🤖 Telegram: @bizing_bot"
-        echo "  📁 Workspace: → ~/projects/bizing/mind"
+        echo "  📁 Workspace: $BIZING_OPENCLAW_WS"
         ;;
 esac

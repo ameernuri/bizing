@@ -1,0 +1,100 @@
+{
+  "stepKey": "uc-need-validate-1",
+  "callCount": 2,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/bizes/3ALeQnH79JrTkmfZ2McdowhrmBD/subject-subscriptions",
+      "status": 201,
+      "requestBody": {
+        "targetSubjectType": "offer_watch",
+        "targetSubjectId": "offer-watch-offer_3ALeQpVTcEVmnhqNEhL25gQhhk4",
+        "targetDisplayName": "Saga Validation Subject",
+        "subscriptionType": "watch",
+        "status": "active",
+        "deliveryMode": "instant",
+        "preferredChannel": "in_app",
+        "minDeliveryIntervalMinutes": 0,
+        "autoRegisterTargetSubject": true,
+        "metadata": {
+          "source": "rerun-sagas",
+          "sagaKey": "uc-71-the-solo-entrepreneur-sarah"
+        }
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "id": "graph_subject_sub_3ALeR2bBMi1jumeCMY4mkQ2EQ4H",
+          "subscriberIdentityId": "graph_identity_3ALd5bz55ufeLnqntJRcSKg3c0W",
+          "targetSubjectBizId": "3ALeQnH79JrTkmfZ2McdowhrmBD",
+          "targetSubjectType": "offer_watch",
+          "targetSubjectId": "offer-watch-offer_3ALeQpVTcEVmnhqNEhL25gQhhk4",
+          "subscriptionType": "watch",
+          "status": "active",
+          "filterPolicy": {},
+          "deliveryMode": "instant",
+          "preferredChannel": "in_app",
+          "minDeliveryIntervalMinutes": 0,
+          "nextEligibleDeliveryAt": null,
+          "mutedAt": null,
+          "unsubscribedAt": null,
+          "metadata": {
+            "source": "rerun-sagas",
+            "sagaKey": "uc-71-the-solo-entrepreneur-sarah"
+          },
+          "createdAt": "2026-03-01T14:44:25.743Z",
+          "updatedAt": "2026-03-01T14:44:25.743Z",
+          "deletedAt": null,
+          "createdBy": null,
+          "updatedBy": null,
+          "deletedBy": null
+        },
+        "meta": {
+          "requestId": "8d920310-e4c1-4116-9725-1ecc71d1e59e",
+          "timestamp": "2026-03-01T14:44:25.748Z"
+        }
+      },
+      "at": "2026-03-01T14:44:25.749Z"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3ALeQfDJZeHJtjgYnWHvZytR1QA/steps/uc-need-validate-1/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the requirement for an optional phone booking fee, but the evidence provided indicates that all bookings, including phone bookings, have a $0 fee applied. Specifically, the booking evidence shows 'feeMinor': 0 for both customer bookings, which contradicts the requirement for a $5 call-handling fee for phone bookings. This indicates a gap in the implementation of the required feature.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "priorStepEvidence[10].evidence[0].feeMinor",
+            "priorStepEvidence[10].evidence[1].feeMinor"
+          ],
+          "gaps": [
+            "No optional phone booking fee implemented as required."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add deterministic evidence contract",
+              "endpoint": null,
+              "assertion": "Define concrete endpoint calls and assertions that directly verify this requirement."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "cf2b5eea-2bf0-4773-a0f5-88f150ecc652",
+          "timestamp": "2026-03-01T14:44:30.057Z"
+        }
+      },
+      "at": "2026-03-01T14:44:30.058Z"
+    }
+  ]
+}

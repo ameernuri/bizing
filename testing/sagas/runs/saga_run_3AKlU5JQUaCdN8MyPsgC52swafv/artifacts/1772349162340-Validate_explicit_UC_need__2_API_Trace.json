@@ -1,0 +1,45 @@
+{
+  "stepKey": "uc-need-validate-2",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AKlU5JQUaCdN8MyPsgC52swafv/steps/uc-need-validate-2/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the requirement of capturing the subject target identity for breaches. However, the prior step evidence indicates a failure in the request to log a policy breach event due to missing required fields: 'targetSubjectType' and 'targetSubjectId'. This directly points to a gap in fulfilling the requirement as the necessary data to identify the subject of the breach was not provided.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "priorStepEvidence[uc-need-validate-1].failureMessage"
+          ],
+          "gaps": [
+            "Missing required fields 'targetSubjectType' and 'targetSubjectId' in the breach event logging."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Fix breach event logging",
+              "endpoint": "/api/v1/bizes/3AKlUJiFlSJenyHwsncIjnvYejK/policy-breach-events",
+              "assertion": "Ensure 'targetSubjectType' and 'targetSubjectId' are included in the request body."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "347dd987-7b35-42cc-b4b0-8a32319a1c1b",
+          "timestamp": "2026-03-01T07:12:42.296Z"
+        }
+      },
+      "at": "2026-03-01T07:12:42.298Z"
+    }
+  ]
+}

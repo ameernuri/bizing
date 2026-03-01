@@ -1,0 +1,45 @@
+{
+  "stepKey": "uc-need-validate-9",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AK7VT496XvczTFGlWuMMQIC8JS/steps/uc-need-validate-9/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "The exploratory step cannot be validated due to insufficient evidence.",
+          "assessment": "The requirement to validate the 'Failed inspection alert to supervisor' is not directly supported by the evidence provided. While the linked use case describes a scenario where a supervisor is alerted after a failed inspection, there are no concrete API reads or persisted state checks that confirm this behavior. The evidence does not explicitly demonstrate that the alerting mechanism is functioning as required, leading to an inconclusive status.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].needs"
+          ],
+          "gaps": [
+            "No evidence confirming the alerting of the supervisor upon a failed inspection."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add alert confirmation evidence",
+              "endpoint": "/api/v1/alerts",
+              "assertion": "Verify that the alert for failed inspections is sent to the supervisor."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "6646e26b-5469-4cbd-a101-0f6d1d79a187",
+          "timestamp": "2026-03-01T01:44:36.556Z"
+        }
+      },
+      "at": "2026-03-01T01:44:36.557Z"
+    }
+  ]
+}

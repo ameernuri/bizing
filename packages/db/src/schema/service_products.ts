@@ -9,6 +9,7 @@ import {
   varchar,
 } from "drizzle-orm/pg-core";
 import { id, idRef, withAuditRefs } from "./_common";
+import { actionRequests } from "./action_backbone";
 import {
   serviceProductKindEnum,
   requirementModeEnum,
@@ -19,9 +20,11 @@ import {
   lifecycleStatusEnum,
 } from "./enums";
 import { bizConfigValues } from "./biz_configs";
+import { domainEvents } from "./domain_events";
 import { resources } from "./resources";
 import { locations } from "./locations";
 import { products } from "./products";
+import { debugSnapshots, projectionDocuments } from "./projections";
 import { serviceGroups, services } from "./services";
 import { resourceCapabilityTemplates } from "./supply";
 import { subjects } from "./subjects";
@@ -153,6 +156,22 @@ export const serviceProducts = pgTable(
       () => bizConfigValues.id,
     ),
 
+    /** Canonical action that created or last materially changed this service product. */
+    actionRequestId: idRef("action_request_id").references(() => actionRequests.id),
+
+    /** Latest business fact explaining the current state of this service product. */
+    latestDomainEventId: idRef("latest_domain_event_id").references(
+      () => domainEvents.id,
+    ),
+
+    /** Optional catalog/booking projection for this service product. */
+    projectionDocumentId: idRef("projection_document_id").references(
+      () => projectionDocuments.id,
+    ),
+
+    /** Debug snapshot for pricing, availability, or selector anomalies. */
+    debugSnapshotId: idRef("debug_snapshot_id").references(() => debugSnapshots.id),
+
     /** Extension bucket for non-indexed custom attributes. */
     metadata: jsonb("metadata").default({}),
 
@@ -176,6 +195,9 @@ export const serviceProducts = pgTable(
       table.bizId,
       table.kind,
     ),
+    serviceProductsActionRequestIdx: index(
+      "service_products_action_request_idx",
+    ).on(table.actionRequestId),
     serviceProductsBizKindConfigIdx: index(
       "service_products_biz_kind_config_idx",
     ).on(table.bizId, table.kindConfigValueId),

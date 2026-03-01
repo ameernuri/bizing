@@ -1,7 +1,7 @@
 import "dotenv/config";
 import { serve } from "@hono/node-server";
 import { cors } from "hono/cors";
-import { desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { getTableConfig } from "drizzle-orm/pg-core";
 import { OpenAPIHono, z } from "@hono/zod-openapi";
 import { readFileSync, existsSync, readdirSync } from "fs";
@@ -42,15 +42,29 @@ import {
   translateNaturalLanguageRequest,
 } from "./agent-contract/index.js"
 import { coreApiRoutes } from "./routes/core-api.js";
-import { requestId } from "./middleware/auth.js";
+import {
+  getCurrentAuthCredentialId,
+  getCurrentAuthSource,
+  getCurrentUser,
+  requestId,
+  requireAclPermission,
+  requireAuth,
+  requireBizAccess,
+  requirePlatformAdmin,
+} from "./middleware/auth.js";
 import { installSagaWebSocketServer } from "./services/saga-ws.js";
+import { appendAuditEvent, createOperationalAlert } from "./lib/audit-log.js";
+import { sanitizePlainText, sanitizeUnknown } from "./lib/sanitize.js";
 
 const {
   db,
+  auditEvents,
+  auditStreams,
   checkDatabaseConnection,
   bookingOrders,
   offers,
   users,
+  members,
   bizes: bizesTable,
   locations: locationsTable,
   offerVersions: offerVersionsTable,
@@ -190,6 +204,59 @@ const createQueueEntryBodySchema = z.object({
   priorityScore: z.number().int().default(0),
   displayCode: z.string().max(60).optional(),
 });
+
+const listAuditEventsQuerySchema = z.object({
+  entityType: z.string().max(120).optional(),
+  entityId: z.string().max(140).optional(),
+  eventType: z
+    .enum(["create", "update", "delete", "read", "state_transition", "policy_decision", "payment_event", "custom"])
+    .optional(),
+  streamType: z.string().max(120).optional(),
+  page: z.string().optional(),
+  perPage: z.string().optional(),
+});
+
+const createDataExportRequestBodySchema = z.object({
+  exportType: z.string().min(1).max(120),
+  format: z.enum(["json", "csv", "zip"]).default("json"),
+  scopeType: z.enum(["biz", "location", "subject", "custom"]).default("biz"),
+  scopeRefId: z.string().max(140).optional(),
+  reason: z.string().min(1).max(500),
+  metadata: z.record(z.unknown()).optional(),
+});
+
+const bulkDeleteMembersBodySchema = z.object({
+  memberIds: z.array(z.string().min(1)).min(1),
+  confirmationText: z.string().min(1).max(120),
+  reason: z.string().min(1).max(500),
+});
+
+const offboardMemberBodySchema = z.object({
+  reason: z.string().min(1).max(500),
+  checklist: z
+    .array(
+      z.object({
+        key: z.string().min(1).max(120),
+        label: z.string().min(1).max(220).optional(),
+        completed: z.boolean(),
+      }),
+    )
+    .min(1),
+  metadata: z.record(z.unknown()).optional(),
+});
+
+function auditActorTypeFromSource(source: string | null | undefined) {
+  if (source === "api_key") return "api_key" as const;
+  if (source === "integration") return "integration" as const;
+  if (source === "system") return "system" as const;
+  return "user" as const;
+}
+
+function pagination(input: { page?: string; perPage?: string }) {
+  const page = Math.max(1, Number.parseInt(input.page ?? "1", 10) || 1);
+  const perPage = Math.min(100, Math.max(1, Number.parseInt(input.perPage ?? "20", 10) || 20));
+  return { page, perPage, offset: (page - 1) * perPage };
+}
 
 // ============================================
 // Constants
@@ -423,6 +490,27 @@ function log(message: string) {
   console.log(`[${timestamp}] ${message}`);
 }
 
+/**
+ * Tiny auth-throttling guard for Better Auth endpoints.
+ *
+ * ELI5:
+ * If one email/IP keeps hammering sign-in or sign-up, the API should slow that
+ * actor down. This local-memory version is enough for v0 and saga validation.
+ */
+const authThrottleWindowMs = 10 * 60 * 1000;
+const authThrottleMaxAttempts = 8;
+const authAttemptBuckets = new Map<string, number[]>();
+
+function getAuthThrottleKey(request: Request, bodyText: string) {
+  const ip =
+    request.headers.get("cf-connecting-ip") ||
+    request.headers.get("x-forwarded-for") ||
+    "local";
+  const emailMatch = bodyText.match(/"email"\s*:\s*"([^"]+)"/i);
+  const email = emailMatch?.[1]?.toLowerCase() ?? "unknown";
+  return `${request.method}:${new URL(request.url).pathname}:${ip}:${email}`;
+}
+
 // ============================================
 // API Routes
 // ============================================
@@ -437,6 +525,34 @@ app.use("/*", cors());
 
 // Better Auth endpoint handler
 app.on(["GET", "POST"], "/api/auth/*", async (c) => {
+  const pathname = new URL(c.req.raw.url).pathname;
+  if (c.req.method === "POST" && (pathname.endsWith("/sign-in/email") || pathname.endsWith("/sign-up/email"))) {
+    const bodyText = await c.req.raw.clone().text().catch(() => "");
+    const bucketKey = getAuthThrottleKey(c.req.raw, bodyText);
+    const now = Date.now();
+    const bucket = (authAttemptBuckets.get(bucketKey) ?? []).filter(
+      (entry) => now - entry < authThrottleWindowMs,
+    );
+    bucket.push(now);
+    authAttemptBuckets.set(bucketKey, bucket);
+
+    if (bucket.length > authThrottleMaxAttempts) {
+      return c.json(
+        {
+          success: false,
+          error: {
+            code: "RATE_LIMITED",
+            message: "Too many authentication attempts. Try again later.",
+          },
+          meta: {
+            requestId: c.get("requestId") ?? crypto.randomUUID(),
+            timestamp: new Date().toISOString(),
+          },
+        },
+        429,
+      );
+    }
+  }
   return auth.handler(c.req.raw);
 });
 
@@ -492,6 +608,386 @@ app.get("/api/v1/health/db", async (c) => {
   }
 });
 
+/**
+ * Explicit admin-control endpoints mounted directly on the app.
+ *
+ * Why these live here:
+ * A nested Hono dispatch anomaly was swallowing a few deep biz/member admin
+ * subpaths and returning global 404s even though the route tables contained
+ * them. Mounting these exact paths directly on the app keeps the external API
+ * truthful while the broader router structure continues to evolve.
+ */
+app.get(
+  "/api/v1/admin/bizes/:bizId/audit/events",
+  requireAuth,
+  requireBizAccess("bizId"),
+  requireAclPermission("bizes.read", { bizIdParam: "bizId" }),
+  async (c) => {
+    const bizId = c.req.param("bizId");
+    const parsed = listAuditEventsQuerySchema.safeParse(c.req.query());
+    if (!parsed.success) {
+      return c.json(
+        {
+          success: false,
+          error: { code: "VALIDATION_ERROR", message: "Invalid query parameters.", details: parsed.error.flatten() },
+          meta: { requestId: c.get("requestId") ?? crypto.randomUUID(), timestamp: new Date().toISOString() },
+        },
+        400,
+      );
+    }
+
+    const { page, perPage, offset } = pagination(parsed.data);
+    const rows = await db
+      .select({
+        id: auditEvents.id,
+        eventType: auditEvents.eventType,
+        occurredAt: auditEvents.occurredAt,
+        entityType: auditEvents.entityType,
+        entityId: auditEvents.entityId,
+        reasonCode: auditEvents.reasonCode,
+        note: auditEvents.note,
+        metadata: auditEvents.metadata,
+        beforeState: auditEvents.beforeState,
+        afterState: auditEvents.afterState,
+        diff: auditEvents.diff,
+        streamKey: auditStreams.streamKey,
+        streamType: auditStreams.streamType,
+      })
+      .from(auditEvents)
+      .innerJoin(auditStreams, eq(auditStreams.id, auditEvents.streamId))
+      .where(
+        and(
+          eq(auditEvents.bizId, bizId),
+          parsed.data.entityType ? eq(auditEvents.entityType, parsed.data.entityType) : undefined,
+          parsed.data.entityId ? eq(auditEvents.entityId, parsed.data.entityId) : undefined,
+          parsed.data.eventType ? eq(auditEvents.eventType, parsed.data.eventType) : undefined,
+          parsed.data.streamType ? eq(auditStreams.streamType, parsed.data.streamType) : undefined,
+        ),
+      )
+      .orderBy(desc(auditEvents.occurredAt))
+      .limit(perPage)
+      .offset(offset);
+
+    return c.json({
+      success: true,
+      data: { items: rows, page, perPage },
+      meta: { requestId: c.get("requestId") ?? crypto.randomUUID(), timestamp: new Date().toISOString() },
+    });
+  },
+);
+
+app.post(
+  "/api/v1/admin/bizes/:bizId/data-export-requests",
+  requireAuth,
+  requireBizAccess("bizId"),
+  requireAclPermission("bizes.update", { bizIdParam: "bizId" }),
+  async (c) => {
+    const bizId = c.req.param("bizId");
+    const parsed = createDataExportRequestBodySchema.safeParse(await c.req.json().catch(() => null));
+    if (!parsed.success) {
+      return c.json(
+        {
+          success: false,
+          error: { code: "VALIDATION_ERROR", message: "Invalid request body.", details: parsed.error.flatten() },
+          meta: { requestId: c.get("requestId") ?? crypto.randomUUID(), timestamp: new Date().toISOString() },
+        },
+        400,
+      );
+    }
+
+    const actor = getCurrentUser(c);
+    const requestId = `export_req_${crypto.randomUUID().replace(/-/g, "")}`;
+    const auditEvent = await appendAuditEvent({
+      bizId,
+      streamKey: `tenant:${bizId}`,
+      streamType: "tenant",
+      entityType: "data_export_request",
+      entityId: requestId,
+      eventType: "create",
+      actorType: auditActorTypeFromSource(getCurrentAuthSource(c)),
+      actorUserId: actor?.id ?? null,
+      actorRef: getCurrentAuthCredentialId(c) ?? null,
+      reasonCode: "data_export_request",
+      note: sanitizePlainText(parsed.data.reason),
+      requestRef: c.get("requestId") ?? null,
+      sourceIp: c.req.header("x-forwarded-for") ?? null,
+      userAgent: c.req.header("user-agent") ?? null,
+      afterState: {
+        exportType: parsed.data.exportType,
+        format: parsed.data.format,
+        scopeType: parsed.data.scopeType,
+        scopeRefId: parsed.data.scopeRefId ?? null,
+      },
+      metadata: sanitizeUnknown(parsed.data.metadata ?? {}) as Record<string, unknown>,
+    });
+
+    await createOperationalAlert({
+      bizId,
+      recipientUserId: actor?.id ?? null,
+      recipientRef: actor?.email ?? "ops@bizing.local",
+      subject: "Data export requested",
+      body: `Data export request ${requestId} was logged.`,
+      metadata: {
+        source: "data_export_request",
+        requestId,
+        auditEventId: auditEvent.id,
+        exportType: parsed.data.exportType,
+      },
+    });
+
+    return c.json(
+      {
+        success: true,
+        data: {
+          id: requestId,
+          exportType: parsed.data.exportType,
+          format: parsed.data.format,
+          scopeType: parsed.data.scopeType,
+          scopeRefId: parsed.data.scopeRefId ?? null,
+          reason: parsed.data.reason,
+          auditEventId: auditEvent.id,
+        },
+        meta: { requestId: c.get("requestId") ?? crypto.randomUUID(), timestamp: new Date().toISOString() },
+      },
+      201,
+    );
+  },
+);
+
+app.post(
+  "/api/v1/admin/bizes/:bizId/members/bulk-delete",
+  requireAuth,
+  requireBizAccess("bizId"),
+  requireAclPermission("members.manage", { bizIdParam: "bizId" }),
+  async (c) => {
+    const bizId = c.req.param("bizId");
+    const parsed = bulkDeleteMembersBodySchema.safeParse(await c.req.json().catch(() => null));
+    if (!parsed.success) {
+      return c.json(
+        {
+          success: false,
+          error: { code: "VALIDATION_ERROR", message: "Invalid request body.", details: parsed.error.flatten() },
+          meta: { requestId: c.get("requestId") ?? crypto.randomUUID(), timestamp: new Date().toISOString() },
+        },
+        400,
+      );
+    }
+
+    const expectedConfirmation = `DELETE ${parsed.data.memberIds.length} MEMBERS`;
+    if (parsed.data.confirmationText !== expectedConfirmation) {
+      return c.json(
+        {
+          success: false,
+          error: {
+            code: "CONFIRMATION_REQUIRED",
+            message: "Bulk delete requires exact confirmation text.",
+            details: { expectedConfirmation },
+          },
+          meta: { requestId: c.get("requestId") ?? crypto.randomUUID(), timestamp: new Date().toISOString() },
+        },
+        400,
+      );
+    }
+
+    const existingRows = await db
+      .select({
+        id: members.id,
+        userId: members.userId,
+        role: members.role,
+      })
+      .from(members)
+      .where(and(eq(members.organizationId, bizId), inArray(members.id, parsed.data.memberIds)));
+
+    if (existingRows.length !== parsed.data.memberIds.length) {
+      return c.json(
+        {
+          success: false,
+          error: {
+            code: "NOT_FOUND",
+            message: "One or more members were not found for bulk delete.",
+            details: { expectedCount: parsed.data.memberIds.length, foundCount: existingRows.length },
+          },
+          meta: { requestId: c.get("requestId") ?? crypto.randomUUID(), timestamp: new Date().toISOString() },
+        },
+        404,
+      );
+    }
+
+    const removedRows = await db
+      .delete(members)
+      .where(and(eq(members.organizationId, bizId), inArray(members.id, parsed.data.memberIds)))
+      .returning({ id: members.id });
+
+    const batchId = `bulk_member_delete_${crypto.randomUUID().replace(/-/g, "")}`;
+    await appendAuditEvent({
+      bizId,
+      streamKey: `tenant:${bizId}`,
+      streamType: "tenant",
+      entityType: "bulk_member_delete",
+      entityId: batchId,
+      eventType: "delete",
+      actorType: auditActorTypeFromSource(getCurrentAuthSource(c)),
+      actorUserId: getCurrentUser(c)?.id ?? null,
+      actorRef: getCurrentAuthCredentialId(c) ?? null,
+      reasonCode: "bulk_member_delete",
+      note: sanitizePlainText(parsed.data.reason),
+      requestRef: c.get("requestId") ?? null,
+      sourceIp: c.req.header("x-forwarded-for") ?? null,
+      userAgent: c.req.header("user-agent") ?? null,
+      beforeState: { members: existingRows },
+      afterState: { removedMemberIds: removedRows.map((row) => row.id) },
+      metadata: {
+        memberIds: parsed.data.memberIds,
+        deletedCount: removedRows.length,
+        confirmationText: parsed.data.confirmationText,
+      },
+    });
+
+    await createOperationalAlert({
+      bizId,
+      recipientUserId: getCurrentUser(c)?.id ?? null,
+      recipientRef: getCurrentUser(c)?.email ?? "ops@bizing.local",
+      subject: "Bulk member delete executed",
+      body: `Bulk member delete ${batchId} removed ${removedRows.length} members.`,
+      metadata: {
+        source: "bulk_member_delete",
+        batchId,
+        deletedCount: removedRows.length,
+      },
+    });
+
+    return c.json({
+      success: true,
+      data: {
+        batchId,
+        deletedCount: removedRows.length,
+        memberIds: removedRows.map((row) => row.id),
+        reason: parsed.data.reason,
+      },
+      meta: { requestId: c.get("requestId") ?? crypto.randomUUID(), timestamp: new Date().toISOString() },
+    });
+  },
+);
+
+app.post(
+  "/api/v1/admin/bizes/:bizId/members/:memberId/offboard",
+  requireAuth,
+  requireBizAccess("bizId"),
+  requireAclPermission("members.manage", { bizIdParam: "bizId" }),
+  async (c) => {
+    const { bizId, memberId } = c.req.param();
+    const parsed = offboardMemberBodySchema.safeParse(await c.req.json().catch(() => null));
+    if (!parsed.success) {
+      return c.json(
+        {
+          success: false,
+          error: { code: "VALIDATION_ERROR", message: "Invalid request body.", details: parsed.error.flatten() },
+          meta: { requestId: c.get("requestId") ?? crypto.randomUUID(), timestamp: new Date().toISOString() },
+        },
+        400,
+      );
+    }
+
+    if (parsed.data.checklist.some((item) => !item.completed)) {
+      return c.json(
+        {
+          success: false,
+          error: {
+            code: "CHECKLIST_INCOMPLETE",
+            message: "All offboarding checklist items must be completed.",
+            details: { checklist: parsed.data.checklist },
+          },
+          meta: { requestId: c.get("requestId") ?? crypto.randomUUID(), timestamp: new Date().toISOString() },
+        },
+        409,
+      );
+    }
+
+    const existing = await db.query.members.findFirst({
+      where: and(eq(members.organizationId, bizId), eq(members.id, memberId)),
+    });
+    if (!existing) {
+      return c.json(
+        {
+          success: false,
+          error: { code: "NOT_FOUND", message: "Member not found." },
+          meta: { requestId: c.get("requestId") ?? crypto.randomUUID(), timestamp: new Date().toISOString() },
+        },
+        404,
+      );
+    }
+
+    const [removed] = await db
+      .delete(members)
+      .where(and(eq(members.organizationId, bizId), eq(members.id, memberId)))
+      .returning({ id: members.id });
+
+    if (!removed) {
+      return c.json(
+        {
+          success: false,
+          error: { code: "NOT_FOUND", message: "Member not found." },
+          meta: { requestId: c.get("requestId") ?? crypto.randomUUID(), timestamp: new Date().toISOString() },
+        },
+        404,
+      );
+    }
+
+    await appendAuditEvent({
+      bizId,
+      streamKey: `member:${memberId}`,
+      streamType: "member",
+      entityType: "member_offboarding",
+      entityId: memberId,
+      eventType: "state_transition",
+      actorType: auditActorTypeFromSource(getCurrentAuthSource(c)),
+      actorUserId: getCurrentUser(c)?.id ?? null,
+      actorRef: getCurrentAuthCredentialId(c) ?? null,
+      reasonCode: "member_offboarded",
+      note: sanitizePlainText(parsed.data.reason),
+      requestRef: c.get("requestId") ?? null,
+      sourceIp: c.req.header("x-forwarded-for") ?? null,
+      userAgent: c.req.header("user-agent") ?? null,
+      beforeState: {
+        memberId: existing.id,
+        userId: existing.userId,
+        role: existing.role,
+      },
+      afterState: {
+        revoked: true,
+        checklistCompleted: true,
+      },
+      metadata: {
+        checklist: parsed.data.checklist,
+        ...(sanitizeUnknown(parsed.data.metadata ?? {}) as Record<string, unknown>),
+      },
+    });
+
+    await createOperationalAlert({
+      bizId,
+      recipientUserId: getCurrentUser(c)?.id ?? null,
+      recipientRef: getCurrentUser(c)?.email ?? "ops@bizing.local",
+      subject: "Member offboarded",
+      body: `Member ${memberId} was offboarded.`,
+      metadata: {
+        source: "member_offboarded",
+        memberId,
+      },
+    });
+
+    return c.json({
+      success: true,
+      data: {
+        memberId,
+        revoked: true,
+        checklistCompleted: true,
+        reason: parsed.data.reason,
+      },
+      meta: { requestId: c.get("requestId") ?? crypto.randomUUID(), timestamp: new Date().toISOString() },
+    });
+  },
+);
+
 // Mount core REST API routes
 app.route("/api/v1", coreApiRoutes)
 
@@ -517,9 +1013,36 @@ app.get("/api/v1/products", (c) => {
 // Stats Routes
 // ============================================
 
-app.get("/api/v1/stats", async (c) => {
+app.get("/api/v1/stats", requireAuth, async (c) => {
   try {
-    const [aggregate] = await db
+    const user = getCurrentUser(c);
+    if (!user) {
+      return c.json({ error: "Unauthorized" }, 401);
+    }
+
+    const isPlatformOperator = user.role === "admin" || user.role === "owner";
+    let scopedBizIds: string[] = [];
+    if (!isPlatformOperator) {
+      const memberRows = await db
+        .select({ bizId: members.organizationId })
+        .from(members)
+        .where(eq(members.userId, user.id));
+      scopedBizIds = memberRows.map((row) => row.bizId);
+      if (!scopedBizIds.length) {
+        return c.json({
+          totalRevenue: 0,
+          totalBookings: 0,
+          totalCustomers: 0,
+          pendingOrders: 0,
+        });
+      }
+    }
+
+    const where = isPlatformOperator
+      ? undefined
+      : inArray(bookingOrders.bizId, scopedBizIds);
+
+    const selectQuery = db
       .select({
         totalRevenueMinor: sql<number>`coalesce(sum(${bookingOrders.totalMinor}), 0)`.mapWith(Number),
         totalBookings: sql<number>`count(*)`.mapWith(Number),
@@ -531,6 +1054,8 @@ app.get("/api/v1/stats", async (c) => {
         totalCustomers: sql<number>`count(distinct ${bookingOrders.customerUserId})`.mapWith(Number),
       })
       .from(bookingOrders);
+
+    const [aggregate] = where ? await selectQuery.where(where) : await selectQuery;
 
     return c.json({
       totalRevenue: (aggregate?.totalRevenueMinor ?? 0) / 100,
@@ -568,7 +1093,7 @@ app.get("/api/v1/bookings", (c) => {
 // Schema Routes
 // ============================================
 
-app.get("/api/v1/schema/graph", (c) => {
+app.get("/api/v1/schema/graph", requireAuth, (c) => {
   try {
     return c.json(buildSchemaGraph());
   } catch (error) {
@@ -582,7 +1107,7 @@ app.get("/api/v1/schema/graph", (c) => {
 // Agent API Helpers (API-first, SQL executor removed)
 // ============================================
 
-app.get("/api/v1/agent/schema", (c) => {
+app.get("/api/v1/agent/schema", requireAuth, (c) => {
   try {
     const catalog = getSchemaCatalog();
     const tableQuery = c.req.query("table");
@@ -636,7 +1161,7 @@ app.get("/api/v1/agent/schema", (c) => {
   }
 });
 
-app.post("/api/v1/agent/translate", async (c) => {
+app.post("/api/v1/agent/translate", requireAuth, async (c) => {
   try {
     const body = await c.req.json();
     const result = translateNaturalLanguageRequest(body);
@@ -656,7 +1181,7 @@ app.post("/api/v1/agent/translate", async (c) => {
   }
 });
 
-app.post("/api/v1/agent/execute", (c) => {
+app.post("/api/v1/agent/execute", requireAuth, (c) => {
   return c.json(
     {
       success: false,
@@ -674,7 +1199,7 @@ app.post("/api/v1/agent/execute", (c) => {
   );
 });
 
-app.post("/api/v1/agent/simulate", (c) => {
+app.post("/api/v1/agent/simulate", requireAuth, (c) => {
   return c.json(
     {
       success: false,
@@ -692,7 +1217,7 @@ app.post("/api/v1/agent/simulate", (c) => {
   );
 });
 
-app.get("/api/v1/agent/testing/openapi.json", (c) => {
+app.get("/api/v1/agent/testing/openapi.json", requireAuth, (c) => {
   return c.json({
     openapi: "3.1.0",
     info: {
@@ -748,6 +1273,18 @@ app.get("/api/v1/agent/testing/openapi.json", (c) => {
       },
       "/api/v1/auth/api-keys/{apiCredentialId}/revoke": {
         post: { summary: "Revoke one API key and child tokens" },
+      },
+      "/api/v1/auth/api-keys/{apiCredentialId}/rotate": {
+        post: { summary: "Rotate one API key and optionally revoke prior credential" },
+      },
+      "/api/v1/auth/tokens": {
+        get: { summary: "List short-lived machine tokens for current user" },
+      },
+      "/api/v1/auth/events": {
+        get: { summary: "List auth decision/lifecycle events for observability" },
+      },
+      "/api/v1/auth/principals": {
+        get: { summary: "List normalized auth principals inventory" },
       },
       "/api/v1/auth/tokens/exchange": {
         post: { summary: "Exchange API key for short-lived bearer token" },
@@ -811,7 +1348,7 @@ const conversations = new Map<
 >();
 const MAX_HISTORY = 10; // Keep last 10 messages
 
-app.post("/api/v1/bizing/chat", async (c) => {
+app.post("/api/v1/bizing/chat", requireAuth, async (c) => {
   const body = await c.req.json();
   const {
     message,
@@ -901,16 +1438,16 @@ app.post("/api/v1/bizing/chat", async (c) => {
 // Mind API Routes (Dynamic Discovery)
 // ============================================
 
-app.get("/api/v1/mind/state", (c) => {
+app.get("/api/v1/mind/state", requireAuth, requirePlatformAdmin, (c) => {
   return c.json(getCompactMindState());
 });
 
-app.get("/api/v1/mind/file/:path{.+}", (c) => {
+app.get("/api/v1/mind/file/:path{.+}", requireAuth, requirePlatformAdmin, (c) => {
   const path = c.req.param("path");
   return c.json(getMindFile(path));
 });
 
-app.get("/api/v1/mind/map", (c) => {
+app.get("/api/v1/mind/map", requireAuth, requirePlatformAdmin, (c) => {
   const map = getCachedMindMap();
   return c.json({
     entryPoint: map.entryPoint,
@@ -926,33 +1463,33 @@ app.get("/api/v1/mind/map", (c) => {
   });
 });
 
-app.get("/api/v1/mind/search", (c) => {
+app.get("/api/v1/mind/search", requireAuth, requirePlatformAdmin, (c) => {
   const query = c.req.query("q");
   if (!query) return c.json({ error: "Missing query" }, 400);
   return c.json(searchMindDynamic(query));
 });
 
-app.get("/api/v1/mind/structure", (c) => {
+app.get("/api/v1/mind/structure", requireAuth, requirePlatformAdmin, (c) => {
   return c.json(getMindStructure());
 });
 
-app.get("/api/v1/mind/files", (c) => {
+app.get("/api/v1/mind/files", requireAuth, requirePlatformAdmin, (c) => {
   return c.json(listAllFiles());
 });
 
-app.get("/api/v1/mind/explore/:path{.*}", (c) => {
+app.get("/api/v1/mind/explore/:path{.*}", requireAuth, requirePlatformAdmin, (c) => {
   const path = c.req.param("path") || "";
   return c.json(exploreDirectory(path));
 });
 
 // Embeddings API
-app.get("/api/v1/mind/embeddings/status", async (c) => {
+app.get("/api/v1/mind/embeddings/status", requireAuth, requirePlatformAdmin, async (c) => {
   const stats = getEmbeddingStats();
   const providers = await testProviders();
   return c.json({ ...stats, providers });
 });
 
-app.post("/api/v1/mind/embeddings/build", async (c) => {
+app.post("/api/v1/mind/embeddings/build", requireAuth, requirePlatformAdmin, async (c) => {
   try {
     await buildAndCacheEmbeddings();
     return c.json({ success: true, stats: getEmbeddingStats() });
@@ -962,7 +1499,7 @@ app.post("/api/v1/mind/embeddings/build", async (c) => {
   }
 });
 
-app.get("/api/v1/mind/semantic-search", async (c) => {
+app.get("/api/v1/mind/semantic-search", requireAuth, requirePlatformAdmin, async (c) => {
   const query = c.req.query("q");
   const topK = parseInt(c.req.query("limit") || "5");
 
@@ -978,11 +1515,11 @@ app.get("/api/v1/mind/semantic-search", async (c) => {
 });
 
 // Knowledge Base API
-app.get("/api/v1/mind/knowledge/stats", (c) => {
+app.get("/api/v1/mind/knowledge/stats", requireAuth, requirePlatformAdmin, (c) => {
   return c.json(getKnowledgeStats());
 });
 
-app.get("/api/v1/mind/knowledge/search", (c) => {
+app.get("/api/v1/mind/knowledge/search", requireAuth, requirePlatformAdmin, (c) => {
   const query = c.req.query("q");
   const limit = parseInt(c.req.query("limit") || "10");
 
@@ -1003,7 +1540,7 @@ app.get("/api/v1/mind/knowledge/search", (c) => {
   });
 });
 
-app.get("/api/v1/mind/knowledge/entry/:path{.+}", (c) => {
+app.get("/api/v1/mind/knowledge/entry/:path{.+}", requireAuth, requirePlatformAdmin, (c) => {
   const path = c.req.param("path");
   const entry = getKnowledgeEntry(path);
 
@@ -1024,7 +1561,7 @@ app.get("/api/v1/mind/knowledge/entry/:path{.+}", (c) => {
   });
 });
 
-app.get("/api/v1/mind/knowledge/by-type/:type", (c) => {
+app.get("/api/v1/mind/knowledge/by-type/:type", requireAuth, requirePlatformAdmin, (c) => {
   const type = c.req.param("type") as any;
   const validTypes = [
     "research",
@@ -1056,11 +1593,11 @@ app.get("/api/v1/mind/knowledge/by-type/:type", (c) => {
 });
 
 // File Catalog API - Lightweight file index
-app.get("/api/v1/mind/catalog", (c) => {
+app.get("/api/v1/mind/catalog", requireAuth, requirePlatformAdmin, (c) => {
   return c.json(getFileCatalog());
 });
 
-app.get("/api/v1/mind/catalog/search", (c) => {
+app.get("/api/v1/mind/catalog/search", requireAuth, requirePlatformAdmin, (c) => {
   const query = c.req.query("q");
   const limit = parseInt(c.req.query("limit") || "10");
 
@@ -1074,12 +1611,12 @@ app.get("/api/v1/mind/catalog/search", (c) => {
   });
 });
 
-app.get("/api/v1/mind/catalog/stats", (c) => {
+app.get("/api/v1/mind/catalog/stats", requireAuth, requirePlatformAdmin, (c) => {
   return c.json(getCatalogStats());
 });
 
 // DISSONANCE API - Read specific dissonance entries
-app.get("/api/v1/mind/dissonance/:id?", (c) => {
+app.get("/api/v1/mind/dissonance/:id?", requireAuth, requirePlatformAdmin, (c) => {
   const id = c.req.param("id");
   const dissonancePath = join(MIND_DIR, "DISSONANCE.md");
 
@@ -1141,7 +1678,7 @@ app.get("/api/v1/mind/dissonance/:id?", (c) => {
 });
 
 // Get real activity from mind files
-app.get("/api/v1/mind/activity", (c) => {
+app.get("/api/v1/mind/activity", requireAuth, requirePlatformAdmin, (c) => {
   const activity: {
     id: string;
     type: "change" | "session" | "decision" | "learning" | "workflow";
@@ -1242,7 +1779,7 @@ app.get("/api/v1/mind/activity", (c) => {
 });
 
 // Backward compatibility - redirect brain/activity to mind/activity
-app.get("/api/v1/brain/activity", (c) => {
+app.get("/api/v1/brain/activity", requireAuth, requirePlatformAdmin, (c) => {
   return c.redirect("/api/v1/mind/activity");
 });
 

@@ -96,9 +96,18 @@ function parseAuthHeaders(headers: Headers) {
 
   let bearerToken: string | null = null;
   let apiKey: string | null = null;
+  const keyLikePrefixes = ["bizing_sk_", "sk_"];
 
   if (/^Bearer\s+/i.test(authorization)) {
-    bearerToken = authorization.replace(/^Bearer\s+/i, "").trim();
+    const rawBearer = authorization.replace(/^Bearer\s+/i, "").trim();
+    const looksLikeApiKey = keyLikePrefixes.some((prefix) =>
+      rawBearer.toLowerCase().startsWith(prefix),
+    );
+    if (looksLikeApiKey) {
+      apiKey = rawBearer;
+    } else {
+      bearerToken = rawBearer;
+    }
   } else if (/^ApiKey\s+/i.test(authorization)) {
     apiKey = authorization.replace(/^ApiKey\s+/i, "").trim();
   }

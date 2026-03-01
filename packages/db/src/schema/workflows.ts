@@ -9,7 +9,9 @@ import {
   varchar,
 } from "drizzle-orm/pg-core";
 import { idRef, idWithTag, withAuditRefs } from "./_common";
+import { actionRequests } from "./action_backbone";
 import { bizes } from "./bizes";
+import { domainEvents } from "./domain_events";
 import { users } from "./users";
 import { bookingOrders, fulfillmentUnits } from "./fulfillment";
 import {
@@ -124,6 +126,29 @@ export const reviewQueueItems = pgTable(
       () => fulfillmentUnits.id,
     ),
 
+    /**
+     * Optional action that caused this review item to exist.
+     *
+     * ELI5:
+     * Reviewers often need to see the original attempted action, not just the
+     * object under review. This gives them that "why did this land here?"
+     * breadcrumb without hunting through logs.
+     */
+    sourceActionRequestId: idRef("source_action_request_id").references(
+      () => actionRequests.id,
+    ),
+
+    /**
+     * Optional domain event that spawned this review item.
+     *
+     * ELI5:
+     * Some cases come from automated rules after an event happened. This lets
+     * us preserve that causal chain explicitly.
+     */
+    sourceDomainEventId: idRef("source_domain_event_id").references(
+      () => domainEvents.id,
+    ),
+
     /** Priority score for sorting and SLA handling. */
     priority: integer("priority").default(100).notNull(),
 
@@ -165,6 +190,16 @@ export const reviewQueueItems = pgTable(
       table.assignedToUserId,
       table.status,
     ),
+
+    /** Common triage path from one action to the review items it created. */
+    reviewQueueItemsSourceActionIdx: index("review_queue_items_source_action_idx").on(
+      table.sourceActionRequestId,
+    ),
+
+    /** Common triage path from one event to the review items it triggered. */
+    reviewQueueItemsSourceDomainEventIdx: index(
+      "review_queue_items_source_domain_event_idx",
+    ).on(table.sourceDomainEventId),
 
     /** Tenant-safe FK to parent queue. */
     reviewQueueItemsBizReviewQueueFk: foreignKey({
@@ -224,6 +259,26 @@ export const workflowInstances = pgTable(
 
     /** Trigger source. */
     triggerType: workflowTriggerTypeEnum("trigger_type").notNull(),
+
+    /**
+     * Optional originating action request.
+     *
+     * ELI5:
+     * This answers "which requested business action started this process?"
+     * Example: `booking.create` caused an approval workflow.
+     */
+    actionRequestId: idRef("action_request_id").references(() => actionRequests.id),
+
+    /**
+     * Optional triggering domain event.
+     *
+     * ELI5:
+     * This answers "which business fact woke up this workflow?"
+     * Example: `payment.failed` started a recovery process.
+     */
+    triggeringDomainEventId: idRef("triggering_domain_event_id").references(
+      () => domainEvents.id,
+    ),
 
     /** Instance lifecycle status. */
     status: workflowInstanceStatusEnum("status").default("pending").notNull(),
@@ -288,6 +343,16 @@ export const workflowInstances = pgTable(
       table.targetType,
       table.targetRefId,
     ),
+
+    /** Common trace path from action -> workflow. */
+    workflowInstancesActionRequestIdx: index("workflow_instances_action_request_idx").on(
+      table.actionRequestId,
+    ),
+
+    /** Common trace path from event -> workflow. */
+    workflowInstancesTriggeringDomainEventIdx: index(
+      "workflow_instances_triggering_domain_event_idx",
+    ).on(table.triggeringDomainEventId),
 
     /** Tenant-safe FK to booking order. */
     workflowInstancesBizBookingOrderFk: foreignKey({

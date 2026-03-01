@@ -1,0 +1,45 @@
+{
+  "stepKey": "uc-need-validate-3",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AK6Bqb1nPYlafRQ7A6HI55oVQc/steps/uc-need-validate-3/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the requirement for 'Cancellation and no-show rates', but the evidence provided only mentions a no-show rate of 8% without detailing how this rate is calculated or tracked. There is no concrete API read or persisted state check that confirms the mechanisms for tracking cancellations and no-shows, leading to a gap in the evidence. The lack of specific details on how these metrics are derived means the requirement cannot be considered satisfied.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].summary"
+          ],
+          "gaps": [
+            "No evidence of how cancellation and no-show rates are tracked or calculated."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add detailed evidence for cancellation and no-show tracking",
+              "endpoint": "/api/v1/cancellations",
+              "assertion": "Define concrete API calls that verify the tracking of cancellation and no-show rates."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "d76a944f-2828-41d5-8f8a-c0c655196dcf",
+          "timestamp": "2026-03-01T01:33:19.938Z"
+        }
+      },
+      "at": "2026-03-01T01:33:19.940Z"
+    }
+  ]
+}

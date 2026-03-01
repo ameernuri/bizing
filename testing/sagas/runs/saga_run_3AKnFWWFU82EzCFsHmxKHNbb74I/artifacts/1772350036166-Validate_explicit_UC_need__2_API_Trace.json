@@ -1,0 +1,45 @@
+{
+  "stepKey": "uc-need-validate-2",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AKnFWWFU82EzCFsHmxKHNbb74I/steps/uc-need-validate-2/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the requirement of having multiple providers (stylists) with individual calendars. However, the evidence does not explicitly confirm the existence of individual calendars for each stylist, nor does it demonstrate that multiple providers are effectively managed within the system. The linked use case mentions multiple providers, but without concrete evidence of their individual calendar functionalities, this requirement remains unfulfilled.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].needs[1]"
+          ],
+          "gaps": [
+            "No evidence of individual calendars for each stylist."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Verify individual calendar functionality for each stylist",
+              "endpoint": "/api/v1/stylists/{stylistId}/calendar",
+              "assertion": "Check if each stylist has a unique calendar and can manage their bookings independently."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "cd893367-c982-4640-8a62-cb20efafa31e",
+          "timestamp": "2026-03-01T07:27:16.149Z"
+        }
+      },
+      "at": "2026-03-01T07:27:16.149Z"
+    }
+  ]
+}

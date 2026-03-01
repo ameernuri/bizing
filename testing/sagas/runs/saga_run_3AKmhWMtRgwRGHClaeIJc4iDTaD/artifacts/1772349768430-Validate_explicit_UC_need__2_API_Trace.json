@@ -1,0 +1,46 @@
+{
+  "stepKey": "uc-need-validate-2",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AKmhWMtRgwRGHClaeIJc4iDTaD/steps/uc-need-validate-2/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aims to validate the requirement of race condition handling (first tap wins), but the evidence does not confirm that the system correctly handles simultaneous booking attempts. While the linked use case describes a scenario where multiple users tap to claim a spot, it does not provide concrete evidence that the system consistently enforces the 'first tap wins' rule. The prior steps indicate that concurrent booking attempts occurred, but they do not demonstrate the expected behavior of the system in handling these race conditions, leading to a gap in the requirement coverage.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].bodyMarkdownPreview",
+            "priorStepEvidence[10].evidence.id"
+          ],
+          "gaps": [
+            "No evidence of system behavior confirming 'first tap wins' during concurrent booking attempts."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add deterministic evidence contract",
+              "endpoint": null,
+              "assertion": "Define concrete endpoint calls and assertions that directly verify this requirement."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "7d442542-fdce-4a7e-893a-31982401d519",
+          "timestamp": "2026-03-01T07:22:48.417Z"
+        }
+      },
+      "at": "2026-03-01T07:22:48.417Z"
+    }
+  ]
+}

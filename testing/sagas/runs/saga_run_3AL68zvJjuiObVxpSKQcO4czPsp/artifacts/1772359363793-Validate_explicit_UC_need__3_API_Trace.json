@@ -1,0 +1,46 @@
+{
+  "stepKey": "uc-need-validate-3",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AL68zvJjuiObVxpSKQcO4czPsp/steps/uc-need-validate-3/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the requirement of 'Royalty tracking per booking (6% to franchisor)', but the evidence does not include any concrete API reads or persisted state checks that confirm this functionality. The prior steps indicate bookings and financial outputs, but they do not explicitly demonstrate the calculation or tracking of royalties as required. Therefore, there is a clear gap in the evidence needed to validate this requirement.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].needs[2]",
+            "priorStepEvidence[8].evidence"
+          ],
+          "gaps": [
+            "No evidence of royalty tracking mechanism or calculation for the franchisor's share."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add API endpoint for royalty tracking",
+              "endpoint": "/api/v1/royalty-tracking",
+              "assertion": "Verify that the royalty of 6% is calculated and tracked per booking."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "37180496-00fd-4a9c-a716-0f722a0924b8",
+          "timestamp": "2026-03-01T10:02:43.767Z"
+        }
+      },
+      "at": "2026-03-01T10:02:43.767Z"
+    }
+  ]
+}

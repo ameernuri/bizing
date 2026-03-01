@@ -199,6 +199,19 @@ export function Sidebar({
       data-side={side}
     >
       <div
+        data-sidebar="gap"
+        className={cn(
+          "relative h-svh w-[--sidebar-width] bg-transparent transition-[width] duration-200 ease-linear",
+          collapsible === "offcanvas" && "group-data-[collapsible=offcanvas]:w-0",
+          collapsible === "icon" &&
+            variant === "sidebar" &&
+            "group-data-[collapsible=icon]:w-[--sidebar-width-icon]",
+          collapsible === "icon" &&
+            (variant === "floating" || variant === "inset") &&
+            "group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+theme(spacing.4))]",
+        )}
+      />
+      <div
         className={cn(
           sidebarVariants({ side, variant, collapsible }),
           side === "left"

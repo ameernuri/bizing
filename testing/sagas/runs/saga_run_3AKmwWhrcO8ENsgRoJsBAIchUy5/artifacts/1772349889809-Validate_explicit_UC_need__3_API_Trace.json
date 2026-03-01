@@ -1,0 +1,46 @@
+{
+  "stepKey": "uc-need-validate-3",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AKmwWhrcO8ENsgRoJsBAIchUy5/steps/uc-need-validate-3/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the requirement for an 'Acceptance actor/timestamp trail', but the evidence provided does not include any checks or confirmations regarding the recording of the acceptance actor or the associated timestamps. The prior steps focus on various aspects of the booking process but do not address the necessary validation of the acceptance trail, indicating a clear gap in the evidence. Specifically, there is no evidence of API reads or persisted state checks that confirm the existence of the acceptance actor and timestamp, which are critical for this requirement.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "exploratoryStep.instruction",
+            "linkedUseCases[0].bodyMarkdownPreview"
+          ],
+          "gaps": [
+            "No evidence of checks for acceptance actor and timestamp trail."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add acceptance trail validation checks",
+              "endpoint": "/api/v1/acceptance-trail/{quoteId}",
+              "assertion": "Verify that the acceptance actor and timestamp are recorded for the accepted quote."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "9d9189e6-aedb-4794-a167-577ceb506438",
+          "timestamp": "2026-03-01T07:24:49.796Z"
+        }
+      },
+      "at": "2026-03-01T07:24:49.796Z"
+    }
+  ]
+}

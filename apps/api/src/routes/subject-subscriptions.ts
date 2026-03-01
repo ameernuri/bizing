@@ -115,6 +115,7 @@ const listQuerySchema = z.object({
 });
 
 const createBodySchema = z.object({
+  subscriberIdentityId: z.string().optional(),
   targetSubjectBizId: z.string().optional(),
   targetSubjectType: z.string().min(1).max(80),
   targetSubjectId: z.string().min(1).max(140),
@@ -125,6 +126,7 @@ const createBodySchema = z.object({
   deliveryMode: z.string().default("instant"),
   preferredChannel: z.string().default("in_app"),
   minDeliveryIntervalMinutes: z.number().int().min(0).default(0),
+  nextEligibleDeliveryAt: z.string().datetime().optional().nullable(),
   filterPolicy: z.record(z.unknown()).optional(),
   metadata: z.record(z.unknown()).optional(),
   autoRegisterTargetSubject: z.boolean().default(true),
@@ -136,6 +138,7 @@ const updateBodySchema = z.object({
   deliveryMode: z.string().optional(),
   preferredChannel: z.string().optional(),
   minDeliveryIntervalMinutes: z.number().int().min(0).optional(),
+  nextEligibleDeliveryAt: z.string().datetime().optional().nullable(),
   filterPolicy: z.record(z.unknown()).optional(),
   metadata: z.record(z.unknown()).optional(),
 });
@@ -245,10 +248,22 @@ subjectSubscriptionRoutes.post(
       return fail(c, "VALIDATION_ERROR", "Unsupported preferredChannel.", 400);
     }
 
-    const identity = await ensureUserGraphIdentity({
+    let identity = await ensureUserGraphIdentity({
       userId: user.id,
       email: user.email,
     });
+    if (parsed.data.subscriberIdentityId) {
+      const explicitIdentity = await db.query.graphIdentities.findFirst({
+        where: and(
+          eq(graphIdentities.id, parsed.data.subscriberIdentityId),
+          sql`"deleted_at" IS NULL`,
+        ),
+      });
+      if (!explicitIdentity) {
+        return fail(c, "NOT_FOUND", "Subscriber identity not found.", 404);
+      }
+      identity = explicitIdentity;
+    }
 
     const targetSubjectWhere = and(
       eq(subjects.bizId, targetSubjectBizId),
@@ -310,6 +325,9 @@ subjectSubscriptionRoutes.post(
         deliveryMode: parsed.data.deliveryMode,
         preferredChannel: parsed.data.preferredChannel,
         minDeliveryIntervalMinutes: parsed.data.minDeliveryIntervalMinutes,
+        nextEligibleDeliveryAt: parsed.data.nextEligibleDeliveryAt
+          ? new Date(parsed.data.nextEligibleDeliveryAt)
+          : null,
         filterPolicy: parsed.data.filterPolicy ?? {},
         metadata: parsed.data.metadata ?? {},
       })
@@ -390,6 +408,12 @@ subjectSubscriptionRoutes.patch(
         deliveryMode: parsed.data.deliveryMode,
         preferredChannel: parsed.data.preferredChannel,
         minDeliveryIntervalMinutes: parsed.data.minDeliveryIntervalMinutes,
+        nextEligibleDeliveryAt:
+          parsed.data.nextEligibleDeliveryAt === undefined
+            ? undefined
+            : parsed.data.nextEligibleDeliveryAt
+              ? new Date(parsed.data.nextEligibleDeliveryAt)
+              : null,
         filterPolicy: parsed.data.filterPolicy,
         metadata: parsed.data.metadata,
         mutedAt: nextMutedAt,

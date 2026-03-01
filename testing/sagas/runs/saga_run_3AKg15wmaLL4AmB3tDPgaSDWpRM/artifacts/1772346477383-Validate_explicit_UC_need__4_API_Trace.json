@@ -1,0 +1,45 @@
+{
+  "stepKey": "uc-need-validate-4",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AKg15wmaLL4AmB3tDPgaSDWpRM/steps/uc-need-validate-4/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the requirement of 'automatic buffer calculation based on selected duration', but the evidence does not confirm this functionality. The linked use case specifies that a 15-minute buffer is added after a 2.5-hour booking, but there is no evidence provided that demonstrates the buffer calculation for other durations or confirms that it is automatic based on the selected duration. This indicates a gap in the requirement coverage as the evidence does not sufficiently support the requirement's fulfillment.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].bodyMarkdownPreview"
+          ],
+          "gaps": [
+            "No evidence of buffer calculation for durations other than the confirmed 2.5 hours."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add buffer calculation validation tests",
+              "endpoint": "/api/v1/buffer/calculate",
+              "assertion": "Verify that the system automatically calculates the buffer based on different selected durations."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "2aba9409-5f57-45ca-8bb3-e49f139aded4",
+          "timestamp": "2026-03-01T06:27:57.307Z"
+        }
+      },
+      "at": "2026-03-01T06:27:57.308Z"
+    }
+  ]
+}

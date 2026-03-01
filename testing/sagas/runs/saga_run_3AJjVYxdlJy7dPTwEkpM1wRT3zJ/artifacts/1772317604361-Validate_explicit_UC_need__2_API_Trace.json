@@ -1,0 +1,45 @@
+{
+  "stepKey": "uc-need-validate-2",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AJjVYxdlJy7dPTwEkpM1wRT3zJ/steps/uc-need-validate-2/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate specific entry triggers: booking completed, no-show, membership expiring, and form submitted. While there is evidence of bookings being completed, there is no evidence provided for the other triggers such as no-show, membership expiring, or form submission. This lack of comprehensive evidence leads to a clear gap in the requirement coverage, as the expected result was not fully met.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].bodyMarkdownPreview"
+          ],
+          "gaps": [
+            "No evidence for entry triggers: no-show, membership expiring, form submitted."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add evidence for entry triggers",
+              "endpoint": "/api/v1/entry-triggers",
+              "assertion": "Verify that the system captures and processes no-show, membership expiring, and form submitted events."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "5eef166f-825d-4738-a0ff-fdeae5dbece7",
+          "timestamp": "2026-02-28T22:26:44.316Z"
+        }
+      },
+      "at": "2026-02-28T22:26:44.316Z"
+    }
+  ]
+}

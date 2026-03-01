@@ -1,0 +1,45 @@
+{
+  "stepKey": "uc-need-validate-10",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AJjVYxdlJy7dPTwEkpM1wRT3zJ/steps/uc-need-validate-10/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the requirement of suppression lists, which states that the system should not market to opted-out users. However, there is no evidence provided that confirms the existence or functionality of suppression lists within the API or persisted state checks. The linked use case mentions the need for suppression lists, but without concrete evidence of their implementation or checks against opted-out users, this leads to a clear gap in requirement coverage.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].bodyMarkdownPreview"
+          ],
+          "gaps": [
+            "No evidence confirming the implementation of suppression lists to prevent marketing to opted-out users."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add evidence for suppression lists functionality",
+              "endpoint": "/api/v1/suppression-lists",
+              "assertion": "Verify that the system correctly identifies and respects opted-out users in marketing communications."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "3daef513-04c3-442f-bacb-38341973d68c",
+          "timestamp": "2026-02-28T22:27:27.343Z"
+        }
+      },
+      "at": "2026-02-28T22:27:27.348Z"
+    }
+  ]
+}

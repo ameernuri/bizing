@@ -1,0 +1,45 @@
+{
+  "stepKey": "uc-need-validate-5",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3ALc70v70PtXN51yNPHk68IJmmR/steps/uc-need-validate-5/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the requirement for patient communication stating, 'Dr. Smith only does consultations on Mondays.' However, the evidence provided does not include any API reads or persisted state checks that confirm this specific communication is implemented. The linked use case mentions the need for patient communication but lacks concrete evidence to demonstrate that this requirement is covered, leading to a clear gap in validation.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].bodyMarkdownPreview"
+          ],
+          "gaps": [
+            "No evidence confirming the implementation of patient communication regarding Dr. Smith's availability."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add endpoint to verify patient communication",
+              "endpoint": "/api/v1/patient-communications",
+              "assertion": "Check if the system communicates Dr. Smith's availability correctly."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "7c507bd6-0da6-4c28-a429-2ef7ee6fdc38",
+          "timestamp": "2026-03-01T14:25:46.176Z"
+        }
+      },
+      "at": "2026-03-01T14:25:46.177Z"
+    }
+  ]
+}

@@ -1,0 +1,46 @@
+{
+  "stepKey": "uc-need-validate-2",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AL9Na0mnDAb43qu0akkkYkfa8q/steps/uc-need-validate-2/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the requirement for the expiration and status lifecycle (draft/sent/accepted/expired/rejected). However, the evidence provided does not include any checks or confirmations regarding the lifecycle statuses of the offers or bookings, which are critical to satisfy this requirement. The prior steps indicate successful bookings, but they do not provide explicit evidence of the status lifecycle management as required.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "priorStepEvidence",
+            "linkedUseCases[0].bodyMarkdownPreview"
+          ],
+          "gaps": [
+            "No evidence of checks for expiration and status lifecycle (draft/sent/accepted/expired/rejected)."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add lifecycle status validation checks",
+              "endpoint": "/api/v1/bookings/{bookingId}/status",
+              "assertion": "Verify that the booking status reflects the expected lifecycle states."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "ff0a5550-fae9-4721-a446-23200e83363e",
+          "timestamp": "2026-03-01T10:29:13.871Z"
+        }
+      },
+      "at": "2026-03-01T10:29:13.872Z"
+    }
+  ]
+}

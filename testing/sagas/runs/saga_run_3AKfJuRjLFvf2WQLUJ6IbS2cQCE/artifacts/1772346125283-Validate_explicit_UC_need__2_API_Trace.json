@@ -1,0 +1,46 @@
+{
+  "stepKey": "uc-need-validate-2",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AKfJuRjLFvf2WQLUJ6IbS2cQCE/steps/uc-need-validate-2/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the requirement for status shape/timeline integrity checks, which includes the need for timestamps such as `granted_at`, `revoked_at`, and `expires_at`. However, the evidence provided indicates a clear gap, as it explicitly states that these timestamps are missing, which is critical for confirming the integrity of the status transitions. This gap is further supported by the prior step evidence that confirms the absence of necessary data points to validate the requirement, leading to a failed status for this exploratory step.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].bodyMarkdownPreview",
+            "priorStepEvidence[1].failureMessage"
+          ],
+          "gaps": [
+            "Missing timestamps for grant status transitions: `granted_at`, `revoked_at`, `expires_at`."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add timestamps for grant status transitions",
+              "endpoint": null,
+              "assertion": "Ensure that the API provides timestamps for `granted_at`, `revoked_at`, and `expires_at` to validate status shape/timeline integrity."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "ae69cf60-1c6d-42ae-95c6-a0b082cebee6",
+          "timestamp": "2026-03-01T06:22:05.209Z"
+        }
+      },
+      "at": "2026-03-01T06:22:05.210Z"
+    }
+  ]
+}

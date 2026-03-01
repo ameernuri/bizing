@@ -2,9 +2,12 @@ import { sql } from 'drizzle-orm'
 import { check, foreignKey, index, uniqueIndex } from 'drizzle-orm/pg-core'
 import { integer, jsonb, pgTable, text, varchar } from 'drizzle-orm/pg-core'
 import { id, idRef, withAuditRefs } from './_common'
+import { actionRequests } from './action_backbone'
 import { lifecycleStatusEnum, productTypeEnum } from './enums'
 import { locations } from './locations'
 import { bizes } from './bizes'
+import { domainEvents } from './domain_events'
+import { debugSnapshots, projectionDocuments } from './projections'
 import { users } from './users'
 
 /**
@@ -66,6 +69,20 @@ export const products = pgTable('products', {
   /** Delivery target for downloadable assets when digital. */
   downloadUrl: varchar('download_url', { length: 500 }),
 
+  /** Canonical action that created or last materially changed this product shell. */
+  actionRequestId: idRef('action_request_id').references(() => actionRequests.id),
+
+  /** Latest business fact that explains this product's current state. */
+  latestDomainEventId: idRef('latest_domain_event_id').references(() => domainEvents.id),
+
+  /** Optional catalog projection shown to humans and agents. */
+  projectionDocumentId: idRef('projection_document_id').references(
+    () => projectionDocuments.id,
+  ),
+
+  /** Structured debug context for import, pricing, or publishing anomalies. */
+  debugSnapshotId: idRef('debug_snapshot_id').references(() => debugSnapshots.id),
+
   /** Extension payload for tags/attributes not yet normalized. */
   metadata: jsonb('metadata').default({}),
 
@@ -76,6 +93,7 @@ export const products = pgTable('products', {
   productsOrgSlugUnique: uniqueIndex('products_org_slug_unique').on(table.bizId, table.slug),
   productsOrgSkuUnique: uniqueIndex('products_org_sku_unique').on(table.bizId, table.sku),
   productsOrgStatusIdx: index('products_org_status_idx').on(table.bizId, table.status),
+  productsActionRequestIdx: index('products_action_request_idx').on(table.actionRequestId),
   /** Tenant-safe optional location scope pointer. */
   productsBizLocationFk: foreignKey({
     columns: [table.bizId, table.locationId],

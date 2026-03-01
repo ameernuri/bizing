@@ -1,0 +1,45 @@
+{
+  "stepKey": "uc-need-validate-5",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AKUDPgNbTCtMbRtTdPMceGq78L/steps/uc-need-validate-5/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the requirement for a partial refund for unused sessions, but the evidence does not include any API reads or persisted state checks that confirm this functionality. The linked use case mentions the need for a refund calculation based on unused value, yet there are no corresponding validations or checks in the prior steps that address this requirement. Therefore, there is a clear gap in the evidence provided to satisfy this requirement.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].needs[4]"
+          ],
+          "gaps": [
+            "No evidence of partial refund calculation for unused sessions."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add API validation for partial refund calculation",
+              "endpoint": "/api/v1/refunds/partial",
+              "assertion": "Verify that the API correctly calculates the partial refund amount based on unused sessions."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "934ca520-cb22-4435-b2d0-a3f4bcda3877",
+          "timestamp": "2026-03-01T04:50:59.028Z"
+        }
+      },
+      "at": "2026-03-01T04:50:59.029Z"
+    }
+  ]
+}

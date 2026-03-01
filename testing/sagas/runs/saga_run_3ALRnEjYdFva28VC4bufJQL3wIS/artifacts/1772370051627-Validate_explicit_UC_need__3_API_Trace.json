@@ -1,0 +1,46 @@
+{
+  "stepKey": "uc-need-validate-3",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3ALRnEjYdFva28VC4bufJQL3wIS/steps/uc-need-validate-3/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the requirement of 'Deterministic waitlist ordering per batch', but the evidence does not confirm that this requirement is satisfied. While there are successful steps related to bookings and waitlists, none of them provide direct evidence of how the waitlist is ordered or managed in relation to batch capacity. This leads to a clear gap in the requirement as the necessary validation for waitlist ordering is absent.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].bodyMarkdownPreview",
+            "priorStepEvidence[6].evidence.queueEntryStatus"
+          ],
+          "gaps": [
+            "Deterministic waitlist ordering per batch is not explicitly validated or confirmed."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add deterministic waitlist ordering validation",
+              "endpoint": "/api/v1/waitlist/validate-ordering",
+              "assertion": "Verify that the waitlist is ordered deterministically based on batch capacity."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "6fdbcb0f-9883-4401-937d-faa7ad6f1043",
+          "timestamp": "2026-03-01T13:00:51.532Z"
+        }
+      },
+      "at": "2026-03-01T13:00:51.536Z"
+    }
+  ]
+}

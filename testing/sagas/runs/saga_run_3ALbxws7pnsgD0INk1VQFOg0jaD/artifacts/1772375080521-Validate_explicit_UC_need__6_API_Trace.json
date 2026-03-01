@@ -1,0 +1,45 @@
+{
+  "stepKey": "uc-need-validate-6",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3ALbxws7pnsgD0INk1VQFOg0jaD/steps/uc-need-validate-6/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the requirement 'Refund if finished early'. However, the evidence indicates that the job took 3.5 hours, which exceeds the estimated time range of 2-3 hours, and does not provide any confirmation that a refund was issued for early completion. The linked use case states that a refund is applicable if the job is finished early, but there is no evidence of this occurring, leading to a clear gap in meeting the requirement.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].bodyMarkdownPreview"
+          ],
+          "gaps": [
+            "Refund for early completion not evidenced; job took longer than estimated."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Verify refund process for early job completion",
+              "endpoint": "/api/v1/refunds",
+              "assertion": "Check if a refund is issued when a job is completed early."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "97554a4f-cd81-4476-af85-773f8ea596d8",
+          "timestamp": "2026-03-01T14:24:40.410Z"
+        }
+      },
+      "at": "2026-03-01T14:24:40.413Z"
+    }
+  ]
+}

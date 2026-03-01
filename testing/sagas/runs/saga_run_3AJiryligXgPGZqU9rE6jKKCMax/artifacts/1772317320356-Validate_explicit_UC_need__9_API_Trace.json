@@ -1,0 +1,46 @@
+{
+  "stepKey": "uc-need-validate-9",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AJiryligXgPGZqU9rE6jKKCMax/steps/uc-need-validate-9/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the requirement of 'Booking cancellation if checklist not complete'. However, the evidence does not include any API reads or state checks that confirm the implementation of this cancellation feature. The linked use case mentions the need for this functionality but does not provide concrete evidence of how it is enforced, indicating a clear gap in requirement coverage.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].needs[8]",
+            "bodyMarkdownPreview"
+          ],
+          "gaps": [
+            "No evidence of booking cancellation logic when checklist is incomplete."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add evidence for booking cancellation logic",
+              "endpoint": "/api/v1/cancel-booking",
+              "assertion": "Verify that the API cancels bookings when the checklist is not complete."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "134d7541-f4de-4f23-8c4f-dcb738893111",
+          "timestamp": "2026-02-28T22:22:00.299Z"
+        }
+      },
+      "at": "2026-02-28T22:22:00.300Z"
+    }
+  ]
+}

@@ -1,0 +1,45 @@
+{
+  "stepKey": "uc-need-validate-9",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AKNffeDce7nmcINF0EfJwc4v4r/steps/uc-need-validate-9/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the requirement of sending a failed inspection alert to the supervisor. However, the evidence provided only describes the system locking out the forklift and creating a maintenance ticket, without explicitly confirming that an alert is sent to the supervisor. This constitutes a gap in the requirement coverage as the specific alert mechanism is not evidenced in the provided information.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].needs"
+          ],
+          "gaps": [
+            "No evidence of a failed inspection alert being sent to the supervisor."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add validation for supervisor alert mechanism",
+              "endpoint": "/api/v1/alerts/send",
+              "assertion": "Ensure that a failed inspection alert is sent to the supervisor when an inspection fails."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "0be86cc6-8a45-4431-b722-49d40c60b59d",
+          "timestamp": "2026-03-01T03:57:30.519Z"
+        }
+      },
+      "at": "2026-03-01T03:57:30.520Z"
+    }
+  ]
+}

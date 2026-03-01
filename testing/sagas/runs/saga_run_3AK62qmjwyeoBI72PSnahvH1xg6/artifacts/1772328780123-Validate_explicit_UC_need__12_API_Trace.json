@@ -1,0 +1,45 @@
+{
+  "stepKey": "uc-need-validate-12",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AK62qmjwyeoBI72PSnahvH1xg6/steps/uc-need-validate-12/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the requirement that upon a `customer.created` event, a POST should be made to the company CRM, resulting in the sales team seeing a new lead in Salesforce. However, the evidence does not confirm that the `customer.created` event triggers the expected POST action to the CRM or that the sales team sees the new lead in Salesforce. The lack of concrete API reads or persisted state checks to demonstrate this integration indicates a significant gap in the requirement coverage.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases.0.bodyMarkdownPreview"
+          ],
+          "gaps": [
+            "No evidence confirming the POST action to the company CRM upon `customer.created` event."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Verify CRM integration for customer.created event",
+              "endpoint": "/api/v1/crm-integration",
+              "assertion": "Check that the API correctly processes the customer.created event and posts to the CRM."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "21f3f441-8250-4f03-88a2-9354ebb2f158",
+          "timestamp": "2026-03-01T01:33:00.045Z"
+        }
+      },
+      "at": "2026-03-01T01:33:00.048Z"
+    }
+  ]
+}

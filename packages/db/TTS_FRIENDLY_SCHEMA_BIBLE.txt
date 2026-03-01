@@ -1,0 +1,105 @@
+The Ultimate Bizing Schema Bible. A Complete Guide to the Booking Platform Architecture. 
+
+Introduction.
+
+Bizing equals Business in Action. It is a platform where service providers like salons, doctors, and consultants offer appointments. Customers book time slots. Money flows securely. Resources like people, rooms, and equipment get scheduled. Queues manage waitlists. And enterprises handle complex business to business contracts.
+
+The Three Layer Architecture.
+
+Imagine a three story building. The top floor is where customers browse offers, book appointments, pay money, and join queues. The middle floor handles all the business logic like calculating availability, applying pricing rules, assigning resources, and processing payments. The bottom floor is where all the data lives. This is the schema with 479 tables, tenant isolation, audit trails, and relationships.
+
+Core Concepts Explained Simply.
+
+The Biz, or Tenant.
+
+Think of a biz like an apartment building. Each business gets their own apartment where all their data lives. Sarah's Salon cannot see data from Mike's Barbershop. They are completely separate. The bizes table is the root tenant record. There are also configuration sets that store settings like how far ahead people can book, and configuration values that store the actual numbers like 7 days.
+
+Users and Memberships.
+
+People who use the system are called users. A user can be an owner who runs the business, staff who works there, or a customer who books appointments. The same person can be a customer at one business and staff at another. The users table stores identity information like email, name, and phone. The memberships table connects users to businesses with a specific role. There are also group accounts for families or companies who book together.
+
+Offers. Shell versus Version.
+
+This is the most important concept in the entire system. Think of a restaurant menu. The offer is like the menu item that says we sell haircuts. The offer version is like the recipe that says haircut version 2 takes 50 minutes, costs 75 dollars, and is available Tuesday through Thursday.
+
+We have two tables because the menu item stays the same with a stable URL and reviews, but the recipe can change with new prices or durations. Old bookings still reference the old recipe. So if Sarah booked when the price was 60 dollars, and later the price goes to 75 dollars, Sarah's receipt still shows 60 dollars.
+
+An offer has an execution mode that determines how customers get the service. Slot mode means pick a time, like a standard appointment. Queue mode means join a line, like a walk-in waitlist. Request mode means ask first and the business approves later. Auction mode means bid for time. Async mode means submit a request and get results later. Route trip mode is for transportation scheduling. Open access means no specific time is needed. Itinerary mode is for multi-step experiences.
+
+Resources. The Supply Side.
+
+Resources are anything that provides service. A host is a person like a stylist, doctor, or consultant. An asset is a thing like a massage table or equipment. A venue is a place like a room or office. All resources have calendars and can be scheduled.
+
+Availability Rules.
+
+Every resource has rules that define when it is available. These rules have a precedence order where the most specific rule wins. A timestamp range blocks a specific time like 2 PM to 2:50 PM on March 15th. A date range closes specific days like Christmas. Recurring rules set regular hours like open 9 to 5 Monday through Friday. The default mode is closed unless opened by rules.
+
+Booking Orders. The Customer Commitment.
+
+When a customer says I want this and pays or promises to pay, we create a booking order. The critical thing is that booking orders contain snapshots. Just like when you buy something you get a receipt that doesn't change even if store prices change later.
+
+A booking order snapshots the pricing at the time of booking, the policy like cancellation rules at that moment, and which offer version was used. This way if the price changes later, the original booking still shows what was actually paid.
+
+Booking orders have a status flow. They start as draft, then become pending, then confirmed, then completed. They can also be cancelled or marked as no show.
+
+Fulfillment Units. The Atomic Delivery.
+
+A fulfillment unit is the smallest schedulable piece of a booking. Imagine you booked a spa day. The booking order is the spa day package. The fulfillment units are the individual pieces. At 9 AM you have a massage with Sarah. At 10:30 AM you have a facial with Mike. At 12 PM you have lunch. Each of these is a separate fulfillment unit that can be assigned to different resources at different times.
+
+Payments. The Money Flow.
+
+The payment system has a state machine. It starts as created, then may require action like 3D secure verification, then processes, and finally succeeds. It can also fail or be cancelled at various points.
+
+A payment intent represents the intention to pay a certain amount. It holds the funds temporarily. A tender represents how the customer pays, which could be split across multiple methods like 60 dollars on a card and 40 dollars in points. A transaction is the final immutable record of money movement. Once a transaction succeeds, it is never changed. Refunds create new records.
+
+Queues. Virtual Waiting Lines.
+
+When you cannot book a specific time, you join a queue. This is like a restaurant waitlist, a DMV line, or a walk-in clinic. Queues have different service orders. First in first out is fair and common. Last in first out is like a stack. Priority puts VIPs first. Shortest job handles quick tasks first.
+
+Queue entries track people in line with their position number. The lifecycle goes from waiting, to notified when their table is almost ready, to confirmed when they say they are coming, to serving when they are being helped, to completed.
+
+Standing Reservations. Recurring Bookings.
+
+A standing reservation is like saying every Tuesday at 2 PM for the next 6 months. The system uses recurrence rules to generate individual occurrences. These can become real bookings automatically or require confirmation.
+
+The Social Graph. Notifications and Subscriptions.
+
+The social graph handles the watch and notify system. It answers requests like notify me when Doctor Smith has openings, alert me when my table is ready, or email me when this item goes on sale.
+
+Users create subscriptions that watch specific subjects like offers, bookings, or queues. The system then delivers notifications through various channels like in-app, email, SMS, or push notifications.
+
+Enterprise and Business to Business.
+
+For complex business contracts, we have enterprise features. Contract rates provide special pricing for big customers. Payer eligibility controls which employees can bill to a company account. Service level agreements track promises about service quality like response times and uptime guarantees.
+
+Governance and Compliance.
+
+For legal and data protection, we track where data lives for GDPR compliance, manage user consent for marketing and analytics, log who accessed patient data for HIPAA compliance, and maintain immutable audit logs of everything that happened.
+
+Domain Breakdown Summary.
+
+The Identity and Access domain has 40 tables covering users, memberships, group accounts, and authorization. The Catalog and Commerce domain has 48 tables covering offers, versions, components, and pricing. The Supply and Resources domain has 50 tables covering resources, calendars, and availability. The Bookings and Fulfillment domain has 23 tables covering orders, lines, and fulfillment units.
+
+The Payments and Money domain has 15 tables covering intents, tenders, transactions, and refunds. The Queue and Waitlist domain has 10 tables covering queues and entries. The Social and Notifications domain has 25 tables covering identities and subscriptions. The Marketplace and Multi-Business domain has 12 tables covering listings and referrals.
+
+The Enterprise and Business to Business domain has 23 tables covering contracts and eligibility. The Governance and Compliance domain has 21 tables covering data residency, consent, and audit logs. The Education and Learning domain has 19 tables covering assessments and certifications.
+
+The Intelligence and Analytics domain has 22 tables covering facts and predictions. The Access Control domain has 16 tables. The Operations and Workflow domain has 12 tables. The Marketing and Customer Relationship Management domain has 18 tables. The Gifts and Promotions domain has 9 tables. The Core Infrastructure domain has 97 tables for supporting systems.
+
+Use Case Complexity.
+
+Simple use cases like basic booking involve 10 to 15 tables including users, offers, offer versions, booking orders, and payment intents. Medium use cases like package deals or recurring bookings involve 10 to 30 tables. Complex use cases like corporate accounts or auctions involve 30 or more tables.
+
+Key Architectural Patterns.
+
+Every table has a biz_id for tenant isolation. This ensures complete data separation between businesses. The shell plus version pattern keeps stable identities while allowing recipes to change over time. The snapshot pattern freezes pricing and policy at booking time for historical accuracy.
+
+Resources are polymorphic, meaning hosts, assets, and venues all live in one table with unified scheduling logic. Audit trails are immutable and log everything for compliance and forensics.
+
+In Summary.
+
+The Bizing schema has 479 tables organized into 17 domains. There are 8,778 fields capturing every data point. There are 515 relationships linking everything together. And over 100 use cases are covered.
+
+Key architectural decisions include tenant isolation where every row has a biz_id. Shell plus version where mutable shells have immutable versions. Snapshot pattern where bookings freeze pricing and policy at time of purchase. Polymorphic resources where hosts, assets, and venues share one table. And audit everything with immutable logs for compliance.
+
+This is Bizing. Business in Action.

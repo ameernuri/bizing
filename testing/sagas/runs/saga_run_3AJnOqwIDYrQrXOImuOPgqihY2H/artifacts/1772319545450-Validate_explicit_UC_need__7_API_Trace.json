@@ -1,0 +1,46 @@
+{
+  "stepKey": "uc-need-validate-7",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AJnOqwIDYrQrXOImuOPgqihY2H/steps/uc-need-validate-7/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the requirement that task dependencies exist, specifically that 'step 3 cannot be completed until step 1 is complete.' However, the evidence does not provide any concrete API reads or persisted state checks that demonstrate this dependency. The linked use case mentions task dependencies but lacks specific details or validation of how these dependencies are enforced in the system, indicating a clear gap in the evidence provided.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].needs[6]",
+            "linkedUseCases[0].summary"
+          ],
+          "gaps": [
+            "No evidence of how task dependencies are enforced or validated."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add task dependency validation endpoints",
+              "endpoint": "/api/v1/task-dependencies",
+              "assertion": "Verify that the system enforces task dependencies as specified in the requirements."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "ca8d3815-c708-4d08-a25f-b2474ac1cdb9",
+          "timestamp": "2026-02-28T22:59:05.391Z"
+        }
+      },
+      "at": "2026-02-28T22:59:05.391Z"
+    }
+  ]
+}

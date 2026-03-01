@@ -1,0 +1,45 @@
+{
+  "stepKey": "uc-need-validate-12",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AJjVYxdlJy7dPTwEkpM1wRT3zJ/steps/uc-need-validate-12/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the Abandoned Booking Recovery sequence, which includes specific messaging at defined intervals after cart abandonment. However, there is no evidence provided that confirms the implementation of these messages or the conditions under which they are triggered. The absence of concrete API reads or persisted state checks to demonstrate this functionality leads to a clear gap in the requirement coverage.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].bodyMarkdownPreview"
+          ],
+          "gaps": [
+            "No evidence of the messaging sequence for abandoned bookings: immediate follow-up, 24h reminder, and 72h last chance offer."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add evidence for abandoned booking messaging",
+              "endpoint": "/api/v1/abandoned-booking-messages",
+              "assertion": "Verify that the system sends the correct messages at the specified intervals after cart abandonment."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "fd4b2592-9e9e-457e-b4b7-37aa2ccbcb6a",
+          "timestamp": "2026-02-28T22:27:41.673Z"
+        }
+      },
+      "at": "2026-02-28T22:27:41.675Z"
+    }
+  ]
+}

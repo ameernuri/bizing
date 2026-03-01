@@ -1,0 +1,46 @@
+{
+  "stepKey": "uc-need-validate-4",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AL5aNdvsG5i6tU00pDPjsNmUjr/steps/uc-need-validate-4/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the requirement of 'automatic hold expiry and seat release.' However, the evidence does not include any API reads or persisted state checks that confirm this functionality is implemented correctly. The linked use case describes the expected behavior, but there is no evidence of the system automatically releasing held seats after the specified time, indicating a clear gap in the validation process.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].bodyMarkdownPreview",
+            "priorStepEvidence"
+          ],
+          "gaps": [
+            "No evidence of automatic hold expiry and seat release functionality."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add validation for automatic hold expiry",
+              "endpoint": "/api/v1/seat-hold-expiry",
+              "assertion": "Verify that seats are automatically released after the hold period expires."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "d71dd8d1-c4f6-45e3-a86f-6c92322c2993",
+          "timestamp": "2026-03-01T09:58:08.366Z"
+        }
+      },
+      "at": "2026-03-01T09:58:08.368Z"
+    }
+  ]
+}

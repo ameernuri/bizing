@@ -1,0 +1,45 @@
+{
+  "stepKey": "uc-need-validate-2",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AKpaNrfYepVpfVBeN8pYq4SFHH/steps/uc-need-validate-2/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the requirement of race condition handling (first tap wins), but the evidence provided does not confirm that this requirement is met. While the linked use case describes a scenario where multiple users tap to claim a spot, it does not provide concrete evidence of the system's behavior in handling these concurrent requests. Specifically, there is no evidence showing that the system correctly identifies and confirms the first tap while denying subsequent taps, leading to a gap in requirement satisfaction.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].bodyMarkdownPreview"
+          ],
+          "gaps": [
+            "No evidence of the system confirming the first tap and denying others in the race condition scenario."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add race condition handling test",
+              "endpoint": "/api/v1/booking",
+              "assertion": "Verify that the first tap receives confirmation while subsequent taps receive a denial message."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "ea2ade9b-331b-48ab-a121-f907a38a8e0d",
+          "timestamp": "2026-03-01T07:46:29.409Z"
+        }
+      },
+      "at": "2026-03-01T07:46:29.411Z"
+    }
+  ]
+}
