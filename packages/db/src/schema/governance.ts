@@ -10,8 +10,11 @@ import {
   varchar,
 } from "drizzle-orm/pg-core";
 import { idRef, idWithTag, withAuditRefs } from "./_common";
+import { actionRequests } from "./action_backbone";
 import { bizes } from "./bizes";
 import { compensationLedgerEntries } from "./compensation";
+import { debugSnapshots } from "./projections";
+import { domainEvents } from "./domain_events";
 import { locations } from "./locations";
 import { offerVersions, offers } from "./offers";
 import { paymentTransactions, settlementEntries } from "./payments";
@@ -1339,6 +1342,19 @@ export const policyBreachEvents = pgTable(
       .default("auto_engine")
       .notNull(),
 
+    /**
+     * Optional canonical request/event breadcrumbs.
+     *
+     * ELI5:
+     * These answer:
+     * - which action was being attempted?
+     * - which business fact triggered this detection?
+     */
+    actionRequestId: idRef("action_request_id").references(() => actionRequests.id),
+    triggeringDomainEventId: idRef("triggering_domain_event_id").references(
+      () => domainEvents.id,
+    ),
+
     /** Severity snapshot at detection time. */
     severity: policyRuleSeverityEnum("severity").default("medium").notNull(),
 
@@ -1371,6 +1387,9 @@ export const policyBreachEvents = pgTable(
     /** Context snapshot captured at detection time. */
     contextSnapshot: jsonb("context_snapshot").default({}).notNull(),
 
+    /** Optional shared debugging artifact for deeper incident analysis. */
+    debugSnapshotId: idRef("debug_snapshot_id").references(() => debugSnapshots.id),
+
     /** Extension payload. */
     metadata: jsonb("metadata").default({}),
 
@@ -1398,6 +1417,12 @@ export const policyBreachEvents = pgTable(
     policyBreachEventsBizTargetOccurredIdx: index(
       "policy_breach_events_biz_target_occurred_idx",
     ).on(table.bizId, table.targetSubjectType, table.targetSubjectId, table.occurredAt),
+
+    /** Trace path from action backbone into policy incidents. */
+    policyBreachEventsActionRequestIdx: index("policy_breach_events_action_request_idx").on(
+      table.actionRequestId,
+      table.occurredAt,
+    ),
 
     /** Tenant-safe FK to template. */
     policyBreachEventsBizTemplateFk: foreignKey({
@@ -1539,6 +1564,16 @@ export const policyConsequenceEvents = pgTable(
     /** Optional actor that executed or changed this consequence. */
     actorUserId: idRef("actor_user_id").references(() => users.id),
 
+    /**
+     * Optional canonical request/event breadcrumbs for the consequence itself.
+     *
+     * ELI5:
+     * The breach explains why the consequence exists. These fields explain
+     * which request/event executed or emitted the consequence record.
+     */
+    actionRequestId: idRef("action_request_id").references(() => actionRequests.id),
+    domainEventId: idRef("domain_event_id").references(() => domainEvents.id),
+
     /** Optional financial/workflow artifact links for traceability. */
     compensationLedgerEntryId: idRef("compensation_ledger_entry_id").references(
       () => compensationLedgerEntries.id,
@@ -1552,6 +1587,9 @@ export const policyConsequenceEvents = pgTable(
 
     /** Structured outcome details and execution metadata. */
     details: jsonb("details").default({}).notNull(),
+
+    /** Optional shared debugging artifact when application failed or needed triage. */
+    debugSnapshotId: idRef("debug_snapshot_id").references(() => debugSnapshots.id),
 
     /** Extension payload. */
     metadata: jsonb("metadata").default({}),
@@ -1581,6 +1619,11 @@ export const policyConsequenceEvents = pgTable(
     policyConsequenceEventsBizTypeStatusIdx: index(
       "policy_consequence_events_biz_type_status_idx",
     ).on(table.bizId, table.consequenceType, table.status),
+
+    /** Trace path from action backbone into consequence ledger. */
+    policyConsequenceEventsActionRequestIdx: index(
+      "policy_consequence_events_action_request_idx",
+    ).on(table.actionRequestId, table.plannedAt),
 
     /** Tenant-safe FK to breach. */
     policyConsequenceEventsBizBreachFk: foreignKey({

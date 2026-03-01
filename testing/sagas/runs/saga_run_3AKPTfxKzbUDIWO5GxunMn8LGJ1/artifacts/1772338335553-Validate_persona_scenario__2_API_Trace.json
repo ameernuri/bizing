@@ -1,0 +1,46 @@
+{
+  "stepKey": "persona-scenario-validate-2",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AKPTfxKzbUDIWO5GxunMn8LGJ1/steps/persona-scenario-validate-2/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "persona-scenario-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the scenario behavior of GPS-based arrival confirmation, but the system's prior steps indicate significant failures, particularly with HTTP 500 errors in related use cases. Specifically, the failures in uc-need-validate-2 and uc-need-validate-3 highlight that the system cannot process route stops correctly, which is essential for confirming arrival notifications. This indicates a gap in functionality that directly impacts the ability to validate the expected result of the scenario behavior.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "priorStepEvidence[8].status",
+            "priorStepEvidence[9].status"
+          ],
+          "gaps": [
+            "The system fails to handle route stop inputs correctly, preventing validation of arrival notifications."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add deterministic evidence contract",
+              "endpoint": null,
+              "assertion": "Define concrete endpoint calls and assertions that directly verify this requirement."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "3067158e-5f75-4840-bab4-19c7ab159aea",
+          "timestamp": "2026-03-01T04:12:15.271Z"
+        }
+      },
+      "at": "2026-03-01T04:12:15.276Z"
+    }
+  ]
+}

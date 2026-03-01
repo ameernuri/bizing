@@ -1,0 +1,45 @@
+{
+  "stepKey": "uc-need-validate-2",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AKeyQLW0dET8NDykXdWhMPgr27/steps/uc-need-validate-2/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the requirement of 'Different pricing per seat (front row premium)', but the evidence provided does not confirm that this specific pricing structure is implemented or validated. The linked use case mentions different prices for various seating options, including a premium price for front row seats, but there is no evidence of API reads or persisted state checks that demonstrate this requirement is satisfied. This indicates a clear gap in the requirement coverage.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].bodyMarkdownPreview"
+          ],
+          "gaps": [
+            "No evidence confirming the implementation of different pricing per seat, specifically for the front row premium."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Verify pricing structure for front row seats",
+              "endpoint": "/api/v1/seats/pricing",
+              "assertion": "Check that the API returns different prices for front row seats compared to other seating options."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "568b5f04-415d-4086-b18c-1049e5ce4cb0",
+          "timestamp": "2026-03-01T06:19:14.408Z"
+        }
+      },
+      "at": "2026-03-01T06:19:14.409Z"
+    }
+  ]
+}

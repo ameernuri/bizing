@@ -1,0 +1,45 @@
+{
+  "stepKey": "uc-need-validate-10",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AKATvGwy4dCrwO5lu206p4ShPR/steps/uc-need-validate-10/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the presence of an audit trail with timestamp and IP, which is a specified need in the linked use case. However, the evidence provided does not include any concrete API reads or persisted state checks that confirm the existence of such an audit trail. The prior steps do not address this requirement, leading to a clear gap in coverage for this specific need.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].bodyMarkdownPreview"
+          ],
+          "gaps": [
+            "No evidence of an audit trail with timestamp and IP."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add evidence for audit trail functionality",
+              "endpoint": "/api/v1/audit-trail",
+              "assertion": "Verify that the audit trail captures timestamps and IP addresses for actions taken."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "1cae880b-0b4c-451b-9818-35a473366986",
+          "timestamp": "2026-03-01T02:09:10.682Z"
+        }
+      },
+      "at": "2026-03-01T02:09:10.683Z"
+    }
+  ]
+}

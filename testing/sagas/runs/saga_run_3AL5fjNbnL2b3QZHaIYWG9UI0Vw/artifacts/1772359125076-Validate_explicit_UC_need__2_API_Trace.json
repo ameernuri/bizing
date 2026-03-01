@@ -1,0 +1,46 @@
+{
+  "stepKey": "uc-need-validate-2",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AL5fjNbnL2b3QZHaIYWG9UI0Vw/steps/uc-need-validate-2/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step requires validation of specific policy fields (deadline, fee, max transfer count), but there is no evidence provided that confirms these fields are present or correctly implemented. The linked use case specifies the need for these policy fields, yet the prior steps do not indicate any creation or validation of such fields, indicating a gap in the implementation of the requirement. This is further supported by the blocked status of a related exploratory step that highlights the absence of a transfer contract record, which is crucial for the validation process.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].bodyMarkdownPreview",
+            "priorStepEvidence"
+          ],
+          "gaps": [
+            "No evidence of policy fields (deadline, fee, max transfer count) being validated or present."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add deterministic evidence for policy fields",
+              "endpoint": "/api/v1/policy-fields",
+              "assertion": "Verify that policy fields (deadline, fee, max transfer count) are correctly set and accessible."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "4646103d-af86-48d7-8bc9-3e9d37e78e4c",
+          "timestamp": "2026-03-01T09:58:45.037Z"
+        }
+      },
+      "at": "2026-03-01T09:58:45.038Z"
+    }
+  ]
+}

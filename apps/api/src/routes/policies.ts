@@ -26,6 +26,15 @@ import {
 } from '../middleware/auth.js'
 import { fail, ok } from './_api.js'
 
+function slugifyPolicyTemplate(value: string) {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 140)
+}
+
 const { db, policyTemplates, policyRules, policyBindings } = dbPackage
 
 const lifecycleSchema = z.enum(['draft', 'active', 'inactive', 'archived'])
@@ -37,7 +46,7 @@ const listTemplatesQuerySchema = z.object({
 
 const createTemplateBodySchema = z.object({
   name: z.string().min(1).max(220),
-  slug: z.string().min(1).max(140).regex(/^[a-z0-9-]+$/),
+  slug: z.string().min(1).max(140).regex(/^[a-z0-9-]+$/).optional(),
   status: lifecycleSchema.default('active'),
   domainKey: z.string().min(1).max(120),
   description: z.string().max(4000).optional(),
@@ -219,7 +228,9 @@ policyRoutes.post(
       .values({
         bizId,
         name: parsed.data.name,
-        slug: parsed.data.slug,
+        slug:
+          parsed.data.slug ??
+          (slugifyPolicyTemplate(`${parsed.data.domainKey}-${parsed.data.name}`) || `policy-${Date.now()}`),
         status: parsed.data.status,
         domainKey: parsed.data.domainKey,
         description: parsed.data.description ?? null,
@@ -235,6 +246,21 @@ policyRoutes.post(
       .returning()
 
     return ok(c, created, 201)
+  },
+)
+
+policyRoutes.get(
+  '/bizes/:bizId/policies/templates/:policyTemplateId',
+  requireAuth,
+  requireBizAccess('bizId'),
+  requireAclPermission('compliance.read', { bizIdParam: 'bizId' }),
+  async (c) => {
+    const { bizId, policyTemplateId } = c.req.param()
+    const row = await db.query.policyTemplates.findFirst({
+      where: and(eq(policyTemplates.bizId, bizId), eq(policyTemplates.id, policyTemplateId)),
+    })
+    if (!row) return fail(c, 'NOT_FOUND', 'Policy template not found.', 404)
+    return ok(c, row)
   },
 )
 

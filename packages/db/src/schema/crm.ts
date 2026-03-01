@@ -10,12 +10,15 @@ import {
   varchar,
 } from "drizzle-orm/pg-core";
 import { idRef, idWithTag, withAuditRefs } from "./_common";
+import { actionRequests } from "./action_backbone";
 import { bizes } from "./bizes";
 import { bizConfigValues } from "./biz_configs";
 import { outboundMessages } from "./communications";
+import { domainEvents } from "./domain_events";
 import { lifecycleStatusEnum } from "./enums";
 import { groupAccounts } from "./group_accounts";
 import { locations } from "./locations";
+import { debugSnapshots, projectionDocuments } from "./projections";
 import { subjects } from "./subjects";
 import { users } from "./users";
 
@@ -542,6 +545,22 @@ export const crmLeads = pgTable(
     /** Lead attributes payload (custom fields snapshot, ad params, etc.). */
     attributes: jsonb("attributes").default({}).notNull(),
 
+    /** Canonical action that created or last materially changed this lead card. */
+    actionRequestId: idRef("action_request_id").references(() => actionRequests.id),
+
+    /** Latest shared business fact for this lead. */
+    latestDomainEventId: idRef("latest_domain_event_id").references(
+      () => domainEvents.id,
+    ),
+
+    /** Optional board/detail read-model document for this lead. */
+    projectionDocumentId: idRef("projection_document_id").references(
+      () => projectionDocuments.id,
+    ),
+
+    /** Debug snapshot for scoring, conversion, or pipeline consistency issues. */
+    debugSnapshotId: idRef("debug_snapshot_id").references(() => debugSnapshots.id),
+
     /** Extensible metadata payload. */
     metadata: jsonb("metadata").default({}),
 
@@ -584,6 +603,9 @@ export const crmLeads = pgTable(
       table.bizId,
       table.ownerUserId,
       table.status,
+    ),
+    crmLeadsActionRequestIdx: index("crm_leads_action_request_idx").on(
+      table.actionRequestId,
     ),
 
     /** Tenant-safe FK to selected pipeline. */
@@ -696,6 +718,15 @@ export const crmLeadEvents = pgTable(
     /** Event payload snapshot. */
     payload: jsonb("payload").default({}).notNull(),
 
+    /** Action responsible for this lead event, when applicable. */
+    actionRequestId: idRef("action_request_id").references(() => actionRequests.id),
+
+    /** Shared domain-event bridge for cross-domain timelines. */
+    domainEventId: idRef("domain_event_id").references(() => domainEvents.id),
+
+    /** Debug snapshot for routing, parsing, or state-transition failures. */
+    debugSnapshotId: idRef("debug_snapshot_id").references(() => debugSnapshots.id),
+
     /** Extensible metadata payload. */
     metadata: jsonb("metadata").default({}),
 
@@ -719,6 +750,9 @@ export const crmLeadEvents = pgTable(
       table.bizId,
       table.eventType,
       table.happenedAt,
+    ),
+    crmLeadEventsActionRequestIdx: index("crm_lead_events_action_request_idx").on(
+      table.actionRequestId,
     ),
 
     /** Tenant-safe FK to lead. */
@@ -814,6 +848,22 @@ export const crmOpportunities = pgTable(
     /** Optional source reference id. */
     sourceRef: varchar("source_ref", { length: 220 }),
 
+    /** Canonical action that created or updated this opportunity. */
+    actionRequestId: idRef("action_request_id").references(() => actionRequests.id),
+
+    /** Latest opportunity business fact shared with timelines and workflows. */
+    latestDomainEventId: idRef("latest_domain_event_id").references(
+      () => domainEvents.id,
+    ),
+
+    /** Optional board/detail projection for this opportunity. */
+    projectionDocumentId: idRef("projection_document_id").references(
+      () => projectionDocuments.id,
+    ),
+
+    /** Debug snapshot for forecast, stage, or ownership anomalies. */
+    debugSnapshotId: idRef("debug_snapshot_id").references(() => debugSnapshots.id),
+
     /** Extensible metadata payload. */
     metadata: jsonb("metadata").default({}),
 
@@ -850,6 +900,9 @@ export const crmOpportunities = pgTable(
     crmOpportunitiesBizContactStatusIdx: index(
       "crm_opportunities_biz_contact_status_idx",
     ).on(table.bizId, table.crmContactId, table.status, table.expectedCloseAt),
+    crmOpportunitiesActionRequestIdx: index(
+      "crm_opportunities_action_request_idx",
+    ).on(table.actionRequestId),
 
     /** Tenant-safe FK to pipeline. */
     crmOpportunitiesBizPipelineFk: foreignKey({
@@ -1084,6 +1137,22 @@ export const crmConversations = pgTable(
     /** External thread id from provider channel. */
     externalThreadRef: varchar("external_thread_ref", { length: 240 }),
 
+    /** Canonical action that created, assigned, snoozed, or closed this thread. */
+    actionRequestId: idRef("action_request_id").references(() => actionRequests.id),
+
+    /** Latest domain event for this conversation thread. */
+    latestDomainEventId: idRef("latest_domain_event_id").references(
+      () => domainEvents.id,
+    ),
+
+    /** Optional inbox/thread read-model document. */
+    projectionDocumentId: idRef("projection_document_id").references(
+      () => projectionDocuments.id,
+    ),
+
+    /** Debug snapshot for channel-sync, SLA, or assignment anomalies. */
+    debugSnapshotId: idRef("debug_snapshot_id").references(() => debugSnapshots.id),
+
     /** Extensible metadata payload. */
     metadata: jsonb("metadata").default({}),
 
@@ -1122,6 +1191,9 @@ export const crmConversations = pgTable(
     crmConversationsBizContactStatusIdx: index(
       "crm_conversations_biz_contact_status_idx",
     ).on(table.bizId, table.crmContactId, table.status, table.lastMessageAt),
+    crmConversationsActionRequestIdx: index(
+      "crm_conversations_action_request_idx",
+    ).on(table.actionRequestId),
 
     /** Tenant-safe FK to optional lead context. */
     crmConversationsBizLeadFk: foreignKey({
@@ -1415,6 +1487,20 @@ export const crmConversationMessages = pgTable(
     /** Provider message ref for inbound/outbound reconciliation. */
     providerMessageRef: varchar("provider_message_ref", { length: 220 }),
 
+    /** Canonical action behind this message send, ingest, or status update. */
+    actionRequestId: idRef("action_request_id").references(() => actionRequests.id),
+
+    /** Shared domain event pointer for automations and timelines. */
+    domainEventId: idRef("domain_event_id").references(() => domainEvents.id),
+
+    /** Optional rendered thread projection that includes this message. */
+    projectionDocumentId: idRef("projection_document_id").references(
+      () => projectionDocuments.id,
+    ),
+
+    /** Debug snapshot for provider, delivery, or parsing failures. */
+    debugSnapshotId: idRef("debug_snapshot_id").references(() => debugSnapshots.id),
+
     /** Extensible metadata payload. */
     metadata: jsonb("metadata").default({}),
 
@@ -1449,6 +1535,9 @@ export const crmConversationMessages = pgTable(
     crmConversationMessagesBizSenderSubjectIdx: index(
       "crm_conversation_messages_biz_sender_subject_idx",
     ).on(table.bizId, table.senderSubjectType, table.senderSubjectId, table.occurredAt),
+    crmConversationMessagesActionRequestIdx: index(
+      "crm_conversation_messages_action_request_idx",
+    ).on(table.actionRequestId),
 
     /** Provider dedupe path when provider refs exist. */
     crmConversationMessagesProviderRefUnique: uniqueIndex(
@@ -1729,6 +1818,20 @@ export const crmMergeDecisions = pgTable(
     /** Optional field-level conflict resolution payload. */
     fieldResolution: jsonb("field_resolution").default({}).notNull(),
 
+    /** Canonical action that produced this final merge decision. */
+    actionRequestId: idRef("action_request_id").references(() => actionRequests.id),
+
+    /** Domain event emitted after merge, reject, or defer. */
+    domainEventId: idRef("domain_event_id").references(() => domainEvents.id),
+
+    /** Optional merge review/result projection document. */
+    projectionDocumentId: idRef("projection_document_id").references(
+      () => projectionDocuments.id,
+    ),
+
+    /** Debug bundle for merge policy or redirect generation problems. */
+    debugSnapshotId: idRef("debug_snapshot_id").references(() => debugSnapshots.id),
+
     /** Extensible metadata payload. */
     metadata: jsonb("metadata").default({}),
 
@@ -1751,6 +1854,9 @@ export const crmMergeDecisions = pgTable(
     crmMergeDecisionsBizTypeDecidedIdx: index(
       "crm_merge_decisions_biz_type_decided_idx",
     ).on(table.bizId, table.decisionType, table.decidedAt),
+    crmMergeDecisionsActionRequestIdx: index(
+      "crm_merge_decisions_action_request_idx",
+    ).on(table.actionRequestId),
 
     /** Tenant-safe FK to candidate. */
     crmMergeDecisionsBizCandidateFk: foreignKey({

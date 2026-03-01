@@ -1,0 +1,45 @@
+{
+  "stepKey": "uc-need-validate-4",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AJnbDpffedkxFxlM3tSE0YdBTX/steps/uc-need-validate-4/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the requirement for quiet hours compliance, specifically ensuring that SMS messages are not sent at 3 AM. However, the evidence provided does not include any concrete API reads or checks that demonstrate this compliance. The linked use case mentions the need for quiet hours compliance, but without specific evidence of implementation or testing of this feature, it is clear that there is a gap in meeting the requirement.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].bodyMarkdownPreview"
+          ],
+          "gaps": [
+            "No evidence of implementation for quiet hours compliance (don't text at 3am)."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add compliance check for quiet hours",
+              "endpoint": "/api/v1/sms/send",
+              "assertion": "Verify that SMS messages are not sent during quiet hours (3 AM to 6 AM)."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "dc2157cc-e8f4-4263-a664-fc51e811b981",
+          "timestamp": "2026-02-28T23:00:34.346Z"
+        }
+      },
+      "at": "2026-02-28T23:00:34.347Z"
+    }
+  ]
+}

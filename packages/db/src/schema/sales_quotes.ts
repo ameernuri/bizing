@@ -10,12 +10,15 @@ import {
   varchar,
 } from "drizzle-orm/pg-core";
 import { idRef, idWithTag, withAuditRefs } from "./_common";
+import { actionRequests } from "./action_backbone";
 import { bizes } from "./bizes";
 import { bizConfigValues } from "./biz_configs";
 import { checkoutSessions } from "./checkout";
 import { crmContacts } from "./crm";
+import { domainEvents } from "./domain_events";
 import { bookingOrders } from "./fulfillment";
 import { instrumentRuns } from "./instruments";
+import { debugSnapshots, projectionDocuments } from "./projections";
 import {
   lifecycleStatusEnum,
   salesQuoteGenerationStatusEnum,
@@ -776,6 +779,15 @@ export const salesQuoteRequests = pgTable(
     /** Optional link to final generated quote thread. */
     salesQuoteId: idRef("sales_quote_id").references(() => salesQuotes.id),
 
+    /**
+     * Optional canonical request/action link.
+     *
+     * ELI5:
+     * Quote requests often start because of one business action or API call.
+     * This stores that breadcrumb explicitly.
+     */
+    actionRequestId: idRef("action_request_id").references(() => actionRequests.id),
+
     /** Conversion timestamp once quote thread created. */
     convertedAt: timestamp("converted_at", { withTimezone: true }),
 
@@ -809,6 +821,11 @@ export const salesQuoteRequests = pgTable(
       table.bizId,
       table.crmContactId,
       table.status,
+    ),
+
+    /** Trace path from action backbone into quote requests. */
+    salesQuoteRequestsActionRequestIdx: index("sales_quote_requests_action_request_idx").on(
+      table.actionRequestId,
     ),
 
     /** Tenant-safe FK to requestor contact. */
@@ -905,6 +922,22 @@ export const salesQuoteGenerationRuns = pgTable(
     generatorSubjectType: varchar("generator_subject_type", { length: 80 }),
     generatorSubjectId: idRef("generator_subject_id"),
 
+    /**
+     * Optional canonical traceability links.
+     *
+     * ELI5:
+     * Quote generation may be manual, rule-driven, or agent-driven.
+     * These links make the run explainable regardless of who or what did it.
+     */
+    actionRequestId: idRef("action_request_id").references(() => actionRequests.id),
+    resultingDomainEventId: idRef("resulting_domain_event_id").references(
+      () => domainEvents.id,
+    ),
+    projectionDocumentId: idRef("projection_document_id").references(
+      () => projectionDocuments.id,
+    ),
+    debugSnapshotId: idRef("debug_snapshot_id").references(() => debugSnapshots.id),
+
     /** Run start/end timestamps. */
     startedAt: timestamp("started_at", { withTimezone: true }),
     completedAt: timestamp("completed_at", { withTimezone: true }),
@@ -941,6 +974,11 @@ export const salesQuoteGenerationRuns = pgTable(
     salesQuoteGenerationRunsBizRequestIdx: index(
       "sales_quote_generation_runs_biz_request_idx",
     ).on(table.bizId, table.salesQuoteRequestId, table.startedAt),
+
+    /** Trace path from action backbone into quote generation. */
+    salesQuoteGenerationRunsActionRequestIdx: index(
+      "sales_quote_generation_runs_action_request_idx",
+    ).on(table.actionRequestId),
 
     /** Tenant-safe FK to request thread. */
     salesQuoteGenerationRunsBizRequestFk: foreignKey({

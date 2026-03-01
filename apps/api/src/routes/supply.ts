@@ -23,6 +23,8 @@ import { fail, ok } from './_api.js'
 
 const {
   db,
+  productionBatches,
+  productionBatchReservations,
   resourceConditionReports,
   resourceMaintenancePolicies,
   resourceMaintenanceWorkOrders,
@@ -99,6 +101,49 @@ const conditionReportBodySchema = z.object({
   resolvedAt: z.string().datetime().optional(),
   metadata: z.record(z.unknown()).optional(),
 })
+
+const productionBatchBodySchema = z.object({
+  locationId: z.string().optional().nullable(),
+  sellableId: z.string().min(1),
+  batchCode: z.string().min(1).max(120),
+  name: z.string().max(220).optional().nullable(),
+  status: z.string().max(40).default('planned'),
+  statusConfigValueId: z.string().optional().nullable(),
+  plannedQuantity: z.number().int().min(0).default(0),
+  producedQuantity: z.number().int().min(0).default(0),
+  reservedQuantity: z.number().int().min(0).default(0),
+  releasedQuantity: z.number().int().min(0).default(0),
+  productionStartAt: z.string().datetime().optional().nullable(),
+  readyAt: z.string().datetime().optional().nullable(),
+  expiresAt: z.string().datetime().optional().nullable(),
+  closedAt: z.string().datetime().optional().nullable(),
+  policySnapshot: z.record(z.unknown()).optional(),
+  metadata: z.record(z.unknown()).optional(),
+})
+
+const productionBatchPatchSchema = productionBatchBodySchema.partial()
+
+const productionBatchReservationBodySchema = z.object({
+  status: z.string().max(40).default('waitlisted'),
+  statusConfigValueId: z.string().optional().nullable(),
+  ownerUserId: z.string().optional().nullable(),
+  ownerGroupAccountId: z.string().optional().nullable(),
+  guestEmail: z.string().email().optional().nullable(),
+  requestedQuantity: z.number().int().positive().default(1),
+  allocatedQuantity: z.number().int().min(0).default(0),
+  paidAmountMinor: z.number().int().min(0).default(0),
+  currency: z.string().regex(/^[A-Z]{3}$/).default('USD'),
+  sourceCheckoutSessionId: z.string().optional().nullable(),
+  bookingOrderId: z.string().optional().nullable(),
+  requestedAt: z.string().datetime().optional(),
+  fulfilledAt: z.string().datetime().optional().nullable(),
+  cancelledAt: z.string().datetime().optional().nullable(),
+  expiresAt: z.string().datetime().optional().nullable(),
+  notes: z.string().max(4000).optional().nullable(),
+  metadata: z.record(z.unknown()).optional(),
+})
+
+const productionBatchReservationPatchSchema = productionBatchReservationBodySchema.partial()
 
 export const supplyRoutes = new Hono()
 
@@ -368,5 +413,188 @@ supplyRoutes.post(
       metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
     }).returning()
     return ok(c, created, 201)
+  },
+)
+
+supplyRoutes.get(
+  '/bizes/:bizId/production-batches',
+  requireAuth,
+  requireBizAccess('bizId'),
+  requireAclPermission('bizes.read', { bizIdParam: 'bizId' }),
+  async (c) => {
+    const bizId = c.req.param('bizId')
+    const sellableId = c.req.query('sellableId')
+    const rows = await db.query.productionBatches.findMany({
+      where: and(
+        eq(productionBatches.bizId, bizId),
+        sellableId ? eq(productionBatches.sellableId, sellableId) : undefined,
+      ),
+      orderBy: [desc(productionBatches.readyAt), asc(productionBatches.batchCode)],
+    })
+    return ok(c, rows)
+  },
+)
+
+supplyRoutes.post(
+  '/bizes/:bizId/production-batches',
+  requireAuth,
+  requireBizAccess('bizId'),
+  requireAclPermission('bizes.update', { bizIdParam: 'bizId' }),
+  async (c) => {
+    const bizId = c.req.param('bizId')
+    const parsed = productionBatchBodySchema.safeParse(await c.req.json().catch(() => null))
+    if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid production batch body.', 400, parsed.error.flatten())
+
+    const [created] = await db.insert(productionBatches).values({
+      bizId,
+      locationId: parsed.data.locationId ?? null,
+      sellableId: parsed.data.sellableId,
+      batchCode: sanitizePlainText(parsed.data.batchCode),
+      name: parsed.data.name ? sanitizePlainText(parsed.data.name) : null,
+      status: sanitizePlainText(parsed.data.status),
+      statusConfigValueId: parsed.data.statusConfigValueId ?? null,
+      plannedQuantity: parsed.data.plannedQuantity,
+      producedQuantity: parsed.data.producedQuantity,
+      reservedQuantity: parsed.data.reservedQuantity,
+      releasedQuantity: parsed.data.releasedQuantity,
+      productionStartAt: parsed.data.productionStartAt ? new Date(parsed.data.productionStartAt) : null,
+      readyAt: parsed.data.readyAt ? new Date(parsed.data.readyAt) : null,
+      expiresAt: parsed.data.expiresAt ? new Date(parsed.data.expiresAt) : null,
+      closedAt: parsed.data.closedAt ? new Date(parsed.data.closedAt) : null,
+      policySnapshot: sanitizeUnknown(parsed.data.policySnapshot ?? {}),
+      metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
+    }).returning()
+
+    return ok(c, created, 201)
+  },
+)
+
+supplyRoutes.patch(
+  '/bizes/:bizId/production-batches/:batchId',
+  requireAuth,
+  requireBizAccess('bizId'),
+  requireAclPermission('bizes.update', { bizIdParam: 'bizId' }),
+  async (c) => {
+    const { bizId, batchId } = c.req.param()
+    const parsed = productionBatchPatchSchema.safeParse(await c.req.json().catch(() => null))
+    if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid production batch body.', 400, parsed.error.flatten())
+
+    const existing = await db.query.productionBatches.findFirst({
+      where: and(eq(productionBatches.bizId, bizId), eq(productionBatches.id, batchId)),
+    })
+    if (!existing) return fail(c, 'NOT_FOUND', 'Production batch not found.', 404)
+
+    const [updated] = await db.update(productionBatches).set({
+      locationId: parsed.data.locationId === undefined ? undefined : parsed.data.locationId,
+      sellableId: parsed.data.sellableId ?? undefined,
+      batchCode: parsed.data.batchCode ? sanitizePlainText(parsed.data.batchCode) : undefined,
+      name: parsed.data.name === undefined ? undefined : parsed.data.name ? sanitizePlainText(parsed.data.name) : null,
+      status: parsed.data.status ? sanitizePlainText(parsed.data.status) : undefined,
+      statusConfigValueId: parsed.data.statusConfigValueId === undefined ? undefined : parsed.data.statusConfigValueId,
+      plannedQuantity: parsed.data.plannedQuantity ?? undefined,
+      producedQuantity: parsed.data.producedQuantity ?? undefined,
+      reservedQuantity: parsed.data.reservedQuantity ?? undefined,
+      releasedQuantity: parsed.data.releasedQuantity ?? undefined,
+      productionStartAt: parsed.data.productionStartAt === undefined ? undefined : parsed.data.productionStartAt ? new Date(parsed.data.productionStartAt) : null,
+      readyAt: parsed.data.readyAt === undefined ? undefined : parsed.data.readyAt ? new Date(parsed.data.readyAt) : null,
+      expiresAt: parsed.data.expiresAt === undefined ? undefined : parsed.data.expiresAt ? new Date(parsed.data.expiresAt) : null,
+      closedAt: parsed.data.closedAt === undefined ? undefined : parsed.data.closedAt ? new Date(parsed.data.closedAt) : null,
+      policySnapshot: parsed.data.policySnapshot ? sanitizeUnknown(parsed.data.policySnapshot) : undefined,
+      metadata: parsed.data.metadata ? sanitizeUnknown(parsed.data.metadata) : undefined,
+    }).where(and(eq(productionBatches.bizId, bizId), eq(productionBatches.id, batchId))).returning()
+
+    return ok(c, updated)
+  },
+)
+
+supplyRoutes.get(
+  '/bizes/:bizId/production-batches/:batchId/reservations',
+  requireAuth,
+  requireBizAccess('bizId'),
+  requireAclPermission('bizes.read', { bizIdParam: 'bizId' }),
+  async (c) => {
+    const { bizId, batchId } = c.req.param()
+    const rows = await db.query.productionBatchReservations.findMany({
+      where: and(eq(productionBatchReservations.bizId, bizId), eq(productionBatchReservations.productionBatchId, batchId)),
+      orderBy: [asc(productionBatchReservations.requestedAt), asc(productionBatchReservations.id)],
+    })
+    return ok(c, rows)
+  },
+)
+
+supplyRoutes.post(
+  '/bizes/:bizId/production-batches/:batchId/reservations',
+  requireAuth,
+  requireBizAccess('bizId'),
+  requireAclPermission('bizes.update', { bizIdParam: 'bizId' }),
+  async (c) => {
+    const { bizId, batchId } = c.req.param()
+    const parsed = productionBatchReservationBodySchema.safeParse(await c.req.json().catch(() => null))
+    if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid batch reservation body.', 400, parsed.error.flatten())
+
+    const [created] = await db.insert(productionBatchReservations).values({
+      bizId,
+      productionBatchId: batchId,
+      status: sanitizePlainText(parsed.data.status),
+      statusConfigValueId: parsed.data.statusConfigValueId ?? null,
+      ownerUserId: parsed.data.ownerUserId ?? null,
+      ownerGroupAccountId: parsed.data.ownerGroupAccountId ?? null,
+      guestEmail: parsed.data.guestEmail ?? null,
+      requestedQuantity: parsed.data.requestedQuantity,
+      allocatedQuantity: parsed.data.allocatedQuantity,
+      paidAmountMinor: parsed.data.paidAmountMinor,
+      currency: parsed.data.currency,
+      sourceCheckoutSessionId: parsed.data.sourceCheckoutSessionId ?? null,
+      bookingOrderId: parsed.data.bookingOrderId ?? null,
+      requestedAt: parsed.data.requestedAt ? new Date(parsed.data.requestedAt) : new Date(),
+      fulfilledAt: parsed.data.fulfilledAt ? new Date(parsed.data.fulfilledAt) : null,
+      cancelledAt: parsed.data.cancelledAt ? new Date(parsed.data.cancelledAt) : null,
+      expiresAt: parsed.data.expiresAt ? new Date(parsed.data.expiresAt) : null,
+      notes: parsed.data.notes ? sanitizePlainText(parsed.data.notes) : null,
+      metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
+    }).returning()
+    return ok(c, created, 201)
+  },
+)
+
+supplyRoutes.patch(
+  '/bizes/:bizId/production-batches/:batchId/reservations/:reservationId',
+  requireAuth,
+  requireBizAccess('bizId'),
+  requireAclPermission('bizes.update', { bizIdParam: 'bizId' }),
+  async (c) => {
+    const { bizId, batchId, reservationId } = c.req.param()
+    const parsed = productionBatchReservationPatchSchema.safeParse(await c.req.json().catch(() => null))
+    if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid batch reservation body.', 400, parsed.error.flatten())
+
+    const existing = await db.query.productionBatchReservations.findFirst({
+      where: and(
+        eq(productionBatchReservations.bizId, bizId),
+        eq(productionBatchReservations.productionBatchId, batchId),
+        eq(productionBatchReservations.id, reservationId),
+      ),
+    })
+    if (!existing) return fail(c, 'NOT_FOUND', 'Production batch reservation not found.', 404)
+
+    const [updated] = await db.update(productionBatchReservations).set({
+      status: parsed.data.status ? sanitizePlainText(parsed.data.status) : undefined,
+      statusConfigValueId: parsed.data.statusConfigValueId === undefined ? undefined : parsed.data.statusConfigValueId,
+      ownerUserId: parsed.data.ownerUserId === undefined ? undefined : parsed.data.ownerUserId,
+      ownerGroupAccountId: parsed.data.ownerGroupAccountId === undefined ? undefined : parsed.data.ownerGroupAccountId,
+      guestEmail: parsed.data.guestEmail === undefined ? undefined : parsed.data.guestEmail,
+      requestedQuantity: parsed.data.requestedQuantity ?? undefined,
+      allocatedQuantity: parsed.data.allocatedQuantity ?? undefined,
+      paidAmountMinor: parsed.data.paidAmountMinor ?? undefined,
+      currency: parsed.data.currency ?? undefined,
+      sourceCheckoutSessionId: parsed.data.sourceCheckoutSessionId === undefined ? undefined : parsed.data.sourceCheckoutSessionId,
+      bookingOrderId: parsed.data.bookingOrderId === undefined ? undefined : parsed.data.bookingOrderId,
+      requestedAt: parsed.data.requestedAt === undefined ? undefined : new Date(parsed.data.requestedAt),
+      fulfilledAt: parsed.data.fulfilledAt === undefined ? undefined : parsed.data.fulfilledAt ? new Date(parsed.data.fulfilledAt) : null,
+      cancelledAt: parsed.data.cancelledAt === undefined ? undefined : parsed.data.cancelledAt ? new Date(parsed.data.cancelledAt) : null,
+      expiresAt: parsed.data.expiresAt === undefined ? undefined : parsed.data.expiresAt ? new Date(parsed.data.expiresAt) : null,
+      notes: parsed.data.notes === undefined ? undefined : parsed.data.notes ? sanitizePlainText(parsed.data.notes) : null,
+      metadata: parsed.data.metadata ? sanitizeUnknown(parsed.data.metadata) : undefined,
+    }).where(and(eq(productionBatchReservations.bizId, bizId), eq(productionBatchReservations.id, reservationId))).returning()
+    return ok(c, updated)
   },
 )

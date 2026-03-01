@@ -1,0 +1,45 @@
+{
+  "stepKey": "uc-need-validate-3",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AKNffeDce7nmcINF0EfJwc4v4r/steps/uc-need-validate-3/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the requirement of having photo evidence for each checkpoint in the safety inspection process. However, the evidence provided does not include any confirmation of photo evidence being captured for the checkpoints, particularly for the failed item (lights) on forklift #FL-042. This constitutes a clear gap in the requirement coverage as the explicit need for photo evidence is stated in the linked use case but not supported by the evidence provided.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].needs"
+          ],
+          "gaps": [
+            "No evidence of photo evidence captured for each checkpoint."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add photo evidence validation",
+              "endpoint": "/api/v1/checkpoints/{checkpointId}/photos",
+              "assertion": "Verify that photo evidence exists for each checkpoint in the inspection process."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "d07630f7-faf1-4907-bdab-9b2cbf95cb71",
+          "timestamp": "2026-03-01T03:57:02.078Z"
+        }
+      },
+      "at": "2026-03-01T03:57:02.079Z"
+    }
+  ]
+}

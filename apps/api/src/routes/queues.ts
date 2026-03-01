@@ -26,7 +26,7 @@ import {
 } from '../middleware/auth.js'
 import { fail, ok, parsePositiveInt } from './_api.js'
 
-const { db, queues, queueEntries } = dbPackage
+const { db, queues, queueEntries, bizConfigValues } = dbPackage
 
 /**
  * Canonical queue strategy values from schema enum.
@@ -161,12 +161,52 @@ const publicCreateQueueEntryBodySchema = z.object({
   metadata: z.record(z.unknown()).optional(),
 })
 
+const transferQueueEntryBodySchema = z.object({
+  targetQueueId: z.string().min(1),
+  preservePriorityScore: z.boolean().default(true),
+  metadata: z.record(z.unknown()).optional(),
+})
+
+const recallQueueEntryBodySchema = z.object({
+  holdMinutes: z.number().int().min(1).max(60).default(2),
+  metadata: z.record(z.unknown()).optional(),
+})
+
 function isUniqueViolationForQueueActiveCustomer(error: unknown) {
   if (!error || typeof error !== 'object') return false
   const pgCode = (error as { code?: string }).code
   const message = String((error as { message?: string }).message || '')
   if (pgCode === '23505' && message.includes('queue_entries_active_customer_queue_unique')) return true
   return message.includes('queue_entries_active_customer_queue_unique')
+}
+
+/**
+ * Ensures a referenced config value is still active before new writes use it.
+ *
+ * ELI5:
+ * - historical rows may keep pointing at retired values forever,
+ * - but new rows should not revive a retired dictionary option by accident,
+ * - so create/update paths call this guard before saving `statusConfigValueId`.
+ */
+async function validateActiveStatusConfigValue(input: {
+  bizId: string
+  statusConfigValueId: string | null | undefined
+}) {
+  if (!input.statusConfigValueId) return { ok: true as const }
+  const row = await db.query.bizConfigValues.findFirst({
+    where: and(eq(bizConfigValues.bizId, input.bizId), eq(bizConfigValues.id, input.statusConfigValueId)),
+  })
+  if (!row) {
+    return { ok: false as const, code: 'CONFIG_VALUE_NOT_FOUND', message: 'Config value not found.' }
+  }
+  if (!row.isActive) {
+    return {
+      ok: false as const,
+      code: 'INACTIVE_CONFIG_VALUE',
+      message: 'Retired config values cannot be used for new queue-entry writes.',
+    }
+  }
+  return { ok: true as const }
 }
 
 export const queueRoutes = new Hono()
@@ -268,6 +308,62 @@ queueRoutes.get(
     })
     if (!row) return fail(c, 'NOT_FOUND', 'Queue not found.', 404)
     return ok(c, row)
+  },
+)
+
+queueRoutes.get(
+  '/bizes/:bizId/queues/:queueId/display-board',
+  requireAuth,
+  requireBizAccess('bizId'),
+  requireAclPermission('queues.read', { bizIdParam: 'bizId' }),
+  async (c) => {
+    const { bizId, queueId } = c.req.param()
+    const queue = await db.query.queues.findFirst({
+      where: and(eq(queues.bizId, bizId), eq(queues.id, queueId)),
+    })
+    if (!queue) return fail(c, 'NOT_FOUND', 'Queue not found.', 404)
+
+    const entries = await db.query.queueEntries.findMany({
+      where: and(eq(queueEntries.bizId, bizId), eq(queueEntries.queueId, queueId)),
+      orderBy: [asc(queueEntries.joinedAt)],
+    })
+
+    const waiting = entries.filter((row) => row.status === 'waiting')
+    const offered = entries.filter((row) => row.status === 'offered')
+    const served = entries.filter((row) => row.status === 'served')
+    const activeCounters = Array.isArray((queue.metadata as Record<string, unknown> | null)?.activeCounters)
+      ? ((queue.metadata as Record<string, unknown>).activeCounters as Array<Record<string, unknown>>)
+      : [
+          { counterKey: 'A', nowServing: served.at(-1)?.displayCode ?? null },
+        ]
+
+    const avgWait = waiting.length > 0
+      ? Math.round(waiting.reduce((sum, row) => sum + Number(row.estimatedWaitMin ?? 0), 0) / waiting.length)
+      : 0
+
+    return ok(c, {
+      queue: {
+        id: queue.id,
+        name: queue.name,
+        strategy: queue.strategy,
+        status: queue.status,
+      },
+      display: {
+        nowServing: activeCounters,
+        nextUp: waiting.slice(0, 5).map((row) => ({
+          queueEntryId: row.id,
+          displayCode: row.displayCode,
+          estimatedWaitMin: row.estimatedWaitMin,
+        })),
+        offered: offered.map((row) => ({
+          queueEntryId: row.id,
+          displayCode: row.displayCode,
+          offerExpiresAt: row.offerExpiresAt,
+        })),
+        averageEstimatedWaitMin: avgWait,
+        queueDepth: waiting.length,
+      },
+    })
   },
 )
 
@@ -392,6 +488,14 @@ queueRoutes.post(
     })
     if (!queue) return fail(c, 'NOT_FOUND', 'Queue not found.', 404)
 
+    const statusConfigValidation = await validateActiveStatusConfigValue({
+      bizId,
+      statusConfigValueId: parsed.data.statusConfigValueId,
+    })
+    if (!statusConfigValidation.ok) {
+      return fail(c, statusConfigValidation.code, statusConfigValidation.message, 409)
+    }
+
     try {
       const [created] = await db
         .insert(queueEntries)
@@ -456,6 +560,14 @@ queueRoutes.patch(
     })
     if (!existing) return fail(c, 'NOT_FOUND', 'Queue entry not found.', 404)
 
+    const statusConfigValidation = await validateActiveStatusConfigValue({
+      bizId,
+      statusConfigValueId: parsed.data.statusConfigValueId,
+    })
+    if (!statusConfigValidation.ok) {
+      return fail(c, statusConfigValidation.code, statusConfigValidation.message, 409)
+    }
+
     const [updated] = await db
       .update(queueEntries)
       .set({
@@ -504,6 +616,108 @@ queueRoutes.patch(
       .returning()
 
     return ok(c, updated)
+  },
+)
+
+/**
+ * Transfer one queue ticket to another queue.
+ *
+ * ELI5:
+ * - sometimes a customer grabbed the wrong line,
+ * - or a simple task becomes a complex task mid-flow,
+ * - this keeps the same queue-entry identity but moves it to a new queue with
+ *   explicit transfer metadata so reporting/debugging can explain what happened.
+ */
+queueRoutes.post(
+  '/bizes/:bizId/queues/:queueId/entries/:queueEntryId/transfer',
+  requireAuth,
+  requireBizAccess('bizId'),
+  requireAclPermission('queue_entries.update', { bizIdParam: 'bizId' }),
+  async (c) => {
+    const { bizId, queueId, queueEntryId } = c.req.param()
+    const parsed = transferQueueEntryBodySchema.safeParse(await c.req.json().catch(() => null))
+    if (!parsed.success) {
+      return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
+    }
+
+    const [existing, targetQueue] = await Promise.all([
+      db.query.queueEntries.findFirst({
+        where: and(eq(queueEntries.bizId, bizId), eq(queueEntries.queueId, queueId), eq(queueEntries.id, queueEntryId)),
+      }),
+      db.query.queues.findFirst({
+        where: and(eq(queues.bizId, bizId), eq(queues.id, parsed.data.targetQueueId)),
+      }),
+    ])
+    if (!existing) return fail(c, 'NOT_FOUND', 'Queue entry not found.', 404)
+    if (!targetQueue) return fail(c, 'NOT_FOUND', 'Target queue not found.', 404)
+
+    const [updated] = await db
+      .update(queueEntries)
+      .set({
+        queueId: parsed.data.targetQueueId,
+        priorityScore: parsed.data.preservePriorityScore ? existing.priorityScore : 0,
+        metadata: {
+          ...((existing.metadata ?? {}) as Record<string, unknown>),
+          transfer: {
+            fromQueueId: queueId,
+            toQueueId: parsed.data.targetQueueId,
+            transferredAt: new Date().toISOString(),
+          },
+          ...((parsed.data.metadata ?? {}) as Record<string, unknown>),
+        },
+      })
+      .where(and(eq(queueEntries.bizId, bizId), eq(queueEntries.id, queueEntryId)))
+      .returning()
+
+    return ok(c, updated, 201)
+  },
+)
+
+/**
+ * Recall a missed customer and hold their spot for a short grace window.
+ *
+ * ELI5:
+ * - "you were called, but maybe you were in the bathroom"
+ * - instead of deleting the ticket immediately, we reopen the offer window for
+ *   a tiny grace period and record the recall count.
+ */
+queueRoutes.post(
+  '/bizes/:bizId/queues/:queueId/entries/:queueEntryId/recall',
+  requireAuth,
+  requireBizAccess('bizId'),
+  requireAclPermission('queue_entries.update', { bizIdParam: 'bizId' }),
+  async (c) => {
+    const { bizId, queueId, queueEntryId } = c.req.param()
+    const parsed = recallQueueEntryBodySchema.safeParse(await c.req.json().catch(() => null))
+    if (!parsed.success) {
+      return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
+    }
+
+    const existing = await db.query.queueEntries.findFirst({
+      where: and(eq(queueEntries.bizId, bizId), eq(queueEntries.queueId, queueId), eq(queueEntries.id, queueEntryId)),
+    })
+    if (!existing) return fail(c, 'NOT_FOUND', 'Queue entry not found.', 404)
+
+    const now = new Date()
+    const recallCount = Number(((existing.metadata ?? {}) as Record<string, unknown>).recallCount ?? 0) + 1
+    const [updated] = await db
+      .update(queueEntries)
+      .set({
+        status: 'offered',
+        offeredAt: now,
+        offerExpiresAt: new Date(now.getTime() + parsed.data.holdMinutes * 60 * 1000),
+        metadata: {
+          ...((existing.metadata ?? {}) as Record<string, unknown>),
+          recallCount,
+          recallHoldMinutes: parsed.data.holdMinutes,
+          recallAt: now.toISOString(),
+          ...((parsed.data.metadata ?? {}) as Record<string, unknown>),
+        },
+      })
+      .where(and(eq(queueEntries.bizId, bizId), eq(queueEntries.id, queueEntryId)))
+      .returning()
+
+    return ok(c, updated, 201)
   },
 )
 

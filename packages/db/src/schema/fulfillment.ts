@@ -37,6 +37,9 @@ import {
   offerVersions,
   offers,
 } from "./offers";
+import { actionRequests } from "./action_backbone";
+import { domainEvents } from "./domain_events";
+import { debugSnapshots } from "./projections";
 import { calendarBindings } from "./time_availability";
 import { bizConfigValues } from "./biz_configs";
 
@@ -503,6 +506,13 @@ export const bookingOrders = pgTable(
     /** Confirmed end after allocation/approval. */
     confirmedEndAt: timestamp("confirmed_end_at", { withTimezone: true }),
 
+    /** Optional canonical action/event/debug breadcrumbs for this booking. */
+    actionRequestId: idRef("action_request_id").references(() => actionRequests.id),
+    latestDomainEventId: idRef("latest_domain_event_id").references(
+      () => domainEvents.id,
+    ),
+    debugSnapshotId: idRef("debug_snapshot_id").references(() => debugSnapshots.id),
+
     /**
      * Pricing snapshot copied at purchase to make invoices/explanations stable.
      * Should mirror relevant offer_version pricing config at the time of order.
@@ -544,6 +554,11 @@ export const bookingOrders = pgTable(
       table.bizId,
       table.customerUserId,
       table.confirmedStartAt,
+    ),
+
+    /** Trace path from action backbone into booking contracts. */
+    bookingOrdersActionRequestIdx: index("booking_orders_action_request_idx").on(
+      table.actionRequestId,
     ),
 
     /** Tenant-safe FK to offer shell. */

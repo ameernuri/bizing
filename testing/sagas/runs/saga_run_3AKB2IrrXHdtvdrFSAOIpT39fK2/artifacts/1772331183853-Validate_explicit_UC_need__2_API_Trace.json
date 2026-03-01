@@ -1,0 +1,45 @@
+{
+  "stepKey": "uc-need-validate-2",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AKB2IrrXHdtvdrFSAOIpT39fK2/steps/uc-need-validate-2/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the requirement of checkpoint-by-checklist completion, specifically for tires, brakes, lights, and horn. However, the evidence provided only details the inspection of a forklift, which includes passing for tires and brakes but fails on lights, without addressing the horn or providing a comprehensive checklist for all required checkpoints. This indicates a gap in the requirement coverage as the evidence does not confirm that all checkpoints are validated as required.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].bodyMarkdownPreview"
+          ],
+          "gaps": [
+            "No evidence of completion for all required checkpoints (horn not mentioned)."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add detailed inspection checklist validation",
+              "endpoint": "/api/v1/checklist/validate",
+              "assertion": "Ensure all checkpoints (tires, brakes, lights, horn) are validated and documented."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "28441a4b-0489-4245-b794-dedccab31278",
+          "timestamp": "2026-03-01T02:13:03.805Z"
+        }
+      },
+      "at": "2026-03-01T02:13:03.806Z"
+    }
+  ]
+}

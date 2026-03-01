@@ -1,0 +1,45 @@
+{
+  "stepKey": "uc-need-validate-6",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3ALavrvfzOINBmvhwRbyjbtp5k3/steps/uc-need-validate-6/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the requirement of expiration tracking for certifications, but there is no evidence provided that confirms whether the system checks for expired certifications before allowing bookings. The linked use case explicitly states the need for expiration tracking, yet the prior steps do not include any checks or validations related to certification expiration, indicating a clear gap in the validation process. Specifically, the evidence does not demonstrate that the system recognizes when a certification has expired, which is critical for compliance with the stated requirement.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].needs"
+          ],
+          "gaps": [
+            "No evidence confirming that the system tracks and enforces certification expiration before allowing bookings."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add certification expiration check",
+              "endpoint": "/api/v1/certification-status",
+              "assertion": "Verify that the system checks the certification expiration status before allowing bookings."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "b60a9592-fc0a-4a42-9d8a-82800041d445",
+          "timestamp": "2026-03-01T14:16:10.094Z"
+        }
+      },
+      "at": "2026-03-01T14:16:10.096Z"
+    }
+  ]
+}

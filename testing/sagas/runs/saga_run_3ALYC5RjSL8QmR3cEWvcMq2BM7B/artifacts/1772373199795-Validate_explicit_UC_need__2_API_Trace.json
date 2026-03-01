@@ -1,0 +1,46 @@
+{
+  "stepKey": "uc-need-validate-2",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3ALYC5RjSL8QmR3cEWvcMq2BM7B/steps/uc-need-validate-2/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step requires validation of curation events such as promote, reject, and retire. However, the evidence provided does not include any checks or records of these specific curation events, indicating a clear gap in the required coverage. The linked use case mentions the need for these events, but without evidence of their existence or validation, the requirement remains unfulfilled.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "exploratoryStep.instruction",
+            "linkedUseCases[0].needs"
+          ],
+          "gaps": [
+            "Curation events (promote, reject, retire, etc.) are not validated or present."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add curation event validation",
+              "endpoint": "/api/v1/curation-events",
+              "assertion": "Verify that curation events are recorded and can be retrieved."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "a886c033-eb35-457a-8556-584e8b1589a5",
+          "timestamp": "2026-03-01T13:53:19.716Z"
+        }
+      },
+      "at": "2026-03-01T13:53:19.717Z"
+    }
+  ]
+}

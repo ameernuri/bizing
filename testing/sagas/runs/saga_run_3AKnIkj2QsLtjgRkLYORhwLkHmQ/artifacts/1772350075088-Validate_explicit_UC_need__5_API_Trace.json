@@ -1,0 +1,46 @@
+{
+  "stepKey": "uc-need-validate-5",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AKnIkj2QsLtjgRkLYORhwLkHmQ/steps/uc-need-validate-5/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the requirement that 'Permissions (teen can book but parent gets notified)' is satisfied. However, the evidence does not provide any concrete API reads or persisted state checks that confirm this requirement is met. While the linked use case describes the scenario, there is no specific evidence demonstrating that the notification mechanism for the parent is functioning as required, indicating a clear gap in the evidence regarding this validation.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases",
+            "priorStepEvidence"
+          ],
+          "gaps": [
+            "No evidence confirming that a teen can book and that a parent receives a notification."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add deterministic evidence contract",
+              "endpoint": "/api/v1/notifications",
+              "assertion": "Define concrete endpoint calls and assertions that directly verify the notification to the parent when a teen books."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "526984db-5635-4419-9508-1affe479c291",
+          "timestamp": "2026-03-01T07:27:55.046Z"
+        }
+      },
+      "at": "2026-03-01T07:27:55.047Z"
+    }
+  ]
+}

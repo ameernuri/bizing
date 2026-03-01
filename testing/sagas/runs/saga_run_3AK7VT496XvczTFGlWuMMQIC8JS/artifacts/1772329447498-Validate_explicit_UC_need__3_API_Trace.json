@@ -1,0 +1,45 @@
+{
+  "stepKey": "uc-need-validate-3",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AK7VT496XvczTFGlWuMMQIC8JS/steps/uc-need-validate-3/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the requirement for 'Photo evidence for each checkpoint', but the evidence provided does not confirm that photo evidence was captured for all required checkpoints. The linked use case mentions checkpoints but does not provide specific evidence of photos being taken for each item, which is a clear gap in meeting the requirement. The failure to provide concrete API reads or persisted state checks further supports this conclusion.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].needs"
+          ],
+          "gaps": [
+            "No evidence of photo evidence for each checkpoint as required."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add photo evidence validation endpoint",
+              "endpoint": "/api/v1/checkpoints/{checkpointId}/photos",
+              "assertion": "Verify that photo evidence exists for each checkpoint in the inspection checklist."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "18791f2f-b98f-43e7-940a-fca88b84ef47",
+          "timestamp": "2026-03-01T01:44:07.397Z"
+        }
+      },
+      "at": "2026-03-01T01:44:07.399Z"
+    }
+  ]
+}

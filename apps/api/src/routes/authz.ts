@@ -561,68 +561,6 @@ authzRoutes.post(
  * Offboarding also comes before generic `:memberId` handlers to keep the
  * lifecycle endpoint unambiguous and easy to reason about.
  */
-authzRoutes.post(
-  '/bizes/:bizId/members/:memberId/offboard',
-  requireAuth,
-  requireBizAccess('bizId'),
-  requireAclPermission('members.manage', { bizIdParam: 'bizId' }),
-  async (c) => {
-    const { bizId, memberId } = c.req.param()
-    const parsed = offboardMemberBodySchema.safeParse(await c.req.json().catch(() => null))
-    if (!parsed.success) {
-      return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
-    }
-
-    if (parsed.data.checklist.some((item) => !item.completed)) {
-      return fail(c, 'CHECKLIST_INCOMPLETE', 'All offboarding checklist items must be completed.', 409, {
-        checklist: parsed.data.checklist,
-      })
-    }
-
-    const existing = await db.query.members.findFirst({
-      where: and(eq(members.organizationId, bizId), eq(members.id, memberId)),
-    })
-    if (!existing) return fail(c, 'NOT_FOUND', 'Member not found.', 404)
-
-    const [removed] = await db
-      .delete(members)
-      .where(and(eq(members.organizationId, bizId), eq(members.id, memberId)))
-      .returning({ id: members.id })
-
-    if (!removed) return fail(c, 'NOT_FOUND', 'Member not found.', 404)
-
-    await emitAdminActionTrace(c, {
-      bizId,
-      streamKey: `member:${memberId}`,
-      streamType: 'member',
-      entityType: 'member_offboarding',
-      entityId: memberId,
-      eventType: 'state_transition',
-      reasonCode: 'member_offboarded',
-      note: sanitizePlainText(parsed.data.reason),
-      beforeState: {
-        memberId: existing.id,
-        userId: existing.userId,
-        role: existing.role,
-      },
-      afterState: {
-        revoked: true,
-        checklistCompleted: true,
-      },
-      metadata: {
-        checklist: parsed.data.checklist,
-        ...(sanitizeUnknown(parsed.data.metadata ?? {}) as Record<string, unknown>),
-      },
-    })
-
-    return ok(c, {
-      memberId,
-      revoked: true,
-      checklistCompleted: true,
-      reason: parsed.data.reason,
-    })
-  },
-)
 
 authzRoutes.patch(
   '/bizes/:bizId/members/:memberId',

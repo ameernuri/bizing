@@ -1,0 +1,46 @@
+{
+  "stepKey": "uc-need-validate-5",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3ALD6K0flHUcS0rEvmp25Fr44RY/steps/uc-need-validate-5/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the requirement for 'care instructions between appointments', but the evidence provided does not confirm that this requirement is being satisfied. The linked use case explicitly mentions the need for care instructions, yet there is no evidence of API reads or persisted state checks that demonstrate this requirement is covered. Therefore, there is a clear gap in the validation of this requirement.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].bodyMarkdownPreview",
+            "exploratoryStep.expectedResult"
+          ],
+          "gaps": [
+            "No evidence of care instructions being provided or validated between appointments."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add validation for care instructions",
+              "endpoint": "/api/v1/care-instructions/validate",
+              "assertion": "Verify that care instructions are provided and validated between appointments."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "83670c04-4212-41c0-be9a-cff6b71200d6",
+          "timestamp": "2026-03-01T11:00:04.462Z"
+        }
+      },
+      "at": "2026-03-01T11:00:04.464Z"
+    }
+  ]
+}

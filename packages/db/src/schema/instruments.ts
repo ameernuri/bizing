@@ -11,8 +11,11 @@ import {
   varchar,
 } from "drizzle-orm/pg-core";
 import { idRef, idWithTag, withAuditRefs } from "./_common";
+import { actionRequests } from "./action_backbone";
 import { bizes } from "./bizes";
 import { bizConfigValues } from "./biz_configs";
+import { debugSnapshots, projectionDocuments } from "./projections";
+import { domainEvents } from "./domain_events";
 import { customFieldTargetTypeEnum, lifecycleStatusEnum, requirementModeEnum } from "./enums";
 import {
   instrumentEvaluationModeEnum,
@@ -485,6 +488,15 @@ export const instrumentRuns = pgTable(
     /** Optional idempotency/request key for API retries. */
     requestKey: varchar("request_key", { length: 140 }),
 
+    /**
+     * Optional canonical action request that created or advanced this run.
+     *
+     * ELI5:
+     * This tells us which business action caused the run to exist.
+     * Example: `booking.create` spawned an intake form run.
+     */
+    actionRequestId: idRef("action_request_id").references(() => actionRequests.id),
+
     /** Runtime timestamps. */
     startedAt: timestamp("started_at", { withTimezone: true }).defaultNow().notNull(),
     submittedAt: timestamp("submitted_at", { withTimezone: true }),
@@ -510,6 +522,26 @@ export const instrumentRuns = pgTable(
     evaluatorSubjectType: varchar("evaluator_subject_type", { length: 80 }),
     evaluatorSubjectId: idRef("evaluator_subject_id"),
 
+    /**
+     * Optional latest canonical business event linked to this run.
+     *
+     * ELI5:
+     * Good for answering "what meaningful fact most recently happened here?"
+     */
+    latestDomainEventId: idRef("latest_domain_event_id").references(() => domainEvents.id),
+
+    /**
+     * Optional projection/debug pointers.
+     *
+     * ELI5:
+     * These help UIs and debuggers jump directly to the latest read model or
+     * debugging snapshot instead of rebuilding context from raw rows.
+     */
+    latestProjectionDocumentId: idRef("latest_projection_document_id").references(
+      () => projectionDocuments.id,
+    ),
+    debugSnapshotId: idRef("debug_snapshot_id").references(() => debugSnapshots.id),
+
     /** Extensible payload. */
     metadata: jsonb("metadata").default({}),
 
@@ -517,6 +549,12 @@ export const instrumentRuns = pgTable(
     ...withAuditRefs(() => users.id),
   },
   (table) => ({
+    /** Composite key for tenant-safe references from quote and event tables. */
+    instrumentRunsBizIdIdUnique: uniqueIndex("instrument_runs_biz_id_id_unique").on(
+      table.bizId,
+      table.id,
+    ),
+
     /** Composite key used by response/event child rows with strict instrument tie. */
     instrumentRunsBizIdIdInstrumentUnique: uniqueIndex(
       "instrument_runs_biz_id_id_instrument_unique",
@@ -536,6 +574,11 @@ export const instrumentRuns = pgTable(
       table.assigneeSubjectType,
       table.assigneeSubjectId,
       table.startedAt,
+    ),
+
+    /** Common trace path from action -> instrument run. */
+    instrumentRunsActionRequestIdx: index("instrument_runs_action_request_idx").on(
+      table.actionRequestId,
     ),
 
     /** Optional request-key uniqueness for idempotent run creation. */
@@ -726,6 +769,12 @@ export const instrumentEvents = pgTable(
       .references(() => instrumentRuns.id)
       .notNull(),
 
+    /**
+     * Optional canonical links for stronger traceability.
+     */
+    actionRequestId: idRef("action_request_id").references(() => actionRequests.id),
+    domainEventId: idRef("domain_event_id").references(() => domainEvents.id),
+
     /** Event key (example: run_started, submitted, auto_graded, waived). */
     eventType: varchar("event_type", { length: 80 }).notNull(),
 
@@ -757,6 +806,16 @@ export const instrumentEvents = pgTable(
       table.bizId,
       table.instrumentRunId,
       table.occurredAt,
+    ),
+
+    /** Common trace path from action backbone into instrument timeline. */
+    instrumentEventsActionRequestIdx: index("instrument_events_action_request_idx").on(
+      table.actionRequestId,
+    ),
+
+    /** Common trace path from domain-event backbone into instrument timeline. */
+    instrumentEventsDomainEventIdx: index("instrument_events_domain_event_idx").on(
+      table.domainEventId,
     ),
 
     /** Tenant-safe FK to run. */

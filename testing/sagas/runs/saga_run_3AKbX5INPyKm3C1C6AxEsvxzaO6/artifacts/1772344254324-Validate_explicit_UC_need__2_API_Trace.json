@@ -1,0 +1,45 @@
+{
+  "stepKey": "uc-need-validate-2",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AKbX5INPyKm3C1C6AxEsvxzaO6/steps/uc-need-validate-2/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the requirement of having a primary admission path for default UX routing, but the prior step 'uc-need-validate-1' failed with an HTTP 500 error indicating a duplicate key violation. This suggests that the system is unable to establish the necessary admission modes, which directly impacts the ability to confirm the requirement is satisfied. The evidence from the failed step clearly indicates a gap in fulfilling the requirement.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "uc-need-validate-1"
+          ],
+          "gaps": [
+            "Primary admission path not established due to duplicate key violation."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Fix duplicate key issue",
+              "endpoint": "/api/v1/bizes/3AKbX4bunrUn4VEULVIwMOPzN1P/offers/offer_3AKbXEWAhff7ukRFGBl9YwSj7af/versions/offer_version_3AKbXKXvKwIb7ZZh1NLhF67R1JG/admission-modes",
+              "assertion": "Ensure unique primary admission path is set without conflicts."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "a54e86cf-fa54-429f-ae1a-0c61e13bd150",
+          "timestamp": "2026-03-01T05:50:54.273Z"
+        }
+      },
+      "at": "2026-03-01T05:50:54.274Z"
+    }
+  ]
+}

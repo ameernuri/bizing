@@ -1,0 +1,490 @@
+{
+  "schemaVersion": "snapshot.v1",
+  "screenKey": "uc-need-validate-2-1772345335533",
+  "title": "Validate explicit UC need #2 Snapshot",
+  "generatedAt": "2026-03-01T06:08:55.536Z",
+  "stepKey": "uc-need-validate-2",
+  "status": "passed",
+  "view": {
+    "title": "Validate explicit UC need #2",
+    "subtitle": "Validated lifecycle delivery retries track attempts and compute a concrete backoff window before requeueing work.",
+    "blocks": [
+      {
+        "type": "alert",
+        "title": "Uc Need Validate 2 completed",
+        "message": "Validated lifecycle delivery retries track attempts and compute a concrete backoff window before requeueing work.",
+        "tone": "success"
+      },
+      {
+        "type": "raw_json",
+        "title": "Evidence payload",
+        "data": {
+          "test": {
+            "event": {
+              "id": "lifecycle_event_3AKdk3EkhHSzTCIP6ERdmDBw5ar",
+              "bizId": "3AKdjjzlfCCqgCHXF9aguY3KDbL",
+              "sourceType": "manual",
+              "eventName": "test.event",
+              "eventVersion": 1,
+              "entityType": "test_entity",
+              "entityId": "test",
+              "aggregateType": null,
+              "aggregateId": null,
+              "occurredAt": "2026-03-01T06:08:55.473Z",
+              "actorUserId": null,
+              "correlationId": null,
+              "causationEventId": null,
+              "idempotencyKey": null,
+              "payload": {},
+              "metadata": {
+                "testMode": true,
+                "generatedFromSubscriptionId": "event_sub_3AKdk3VhUwsIljclJsNUtawEEPD"
+              },
+              "recordedAt": "2026-03-01T06:08:55.473Z"
+            },
+            "subscription": {
+              "id": "event_sub_3AKdk3VhUwsIljclJsNUtawEEPD",
+              "bizId": "3AKdjjzlfCCqgCHXF9aguY3KDbL",
+              "bizExtensionInstallId": null,
+              "name": "Retry policy 3a1h",
+              "status": "active",
+              "eventPattern": "booking.created",
+              "phase": "after",
+              "deliveryMode": "webhook",
+              "internalHandlerKey": null,
+              "webhookUrl": "https://extensions.example.test/retry",
+              "signingSecretRef": null,
+              "timeoutMs": 10000,
+              "maxAttempts": 5,
+              "retryPolicy": {
+                "strategy": "exponential_backoff",
+                "baseMinutes": 1
+              },
+              "filter": {},
+              "metadata": {},
+              "createdAt": "2026-03-01T06:08:55.459Z",
+              "updatedAt": "2026-03-01T06:08:55.459Z",
+              "deletedAt": null,
+              "createdBy": null,
+              "updatedBy": null,
+              "deletedBy": null
+            },
+            "delivery": {
+              "id": "event_delivery_3AKdk7jx1Ds6GCqdeKAK7BGU7rI",
+              "bizId": "3AKdjjzlfCCqgCHXF9aguY3KDbL",
+              "lifecycleEventId": "lifecycle_event_3AKdk3EkhHSzTCIP6ERdmDBw5ar",
+              "lifecycleEventSubscriptionId": "event_sub_3AKdk3VhUwsIljclJsNUtawEEPD",
+              "status": "dead_letter",
+              "attemptCount": 0,
+              "nextAttemptAt": "2026-03-01T06:08:55.476Z",
+              "lockedAt": null,
+              "publishedAt": null,
+              "deadLetteredAt": "2026-03-01T06:08:55.476Z",
+              "httpStatus": null,
+              "lastErrorCode": null,
+              "lastErrorMessage": null,
+              "requestPayload": {},
+              "responsePayload": null,
+              "idempotencyKey": "test:event_sub_3AKdk3VhUwsIljclJsNUtawEEPD:1772345335476",
+              "metadata": {
+                "testMode": true,
+                "webhookUrl": "https://extensions.example.test/retry",
+                "retryPolicy": {
+                  "strategy": "exponential_backoff",
+                  "baseMinutes": 1
+                },
+                "deliveryMode": "webhook",
+                "signingSecretRef": null
+              },
+              "createdAt": "2026-03-01T06:08:55.476Z",
+              "updatedAt": "2026-03-01T06:08:55.476Z",
+              "deletedAt": null,
+              "createdBy": null,
+              "updatedBy": null,
+              "deletedBy": null
+            }
+          },
+          "retried": {
+            "delivery": {
+              "id": "event_delivery_3AKdk7jx1Ds6GCqdeKAK7BGU7rI",
+              "bizId": "3AKdjjzlfCCqgCHXF9aguY3KDbL",
+              "lifecycleEventId": "lifecycle_event_3AKdk3EkhHSzTCIP6ERdmDBw5ar",
+              "lifecycleEventSubscriptionId": "event_sub_3AKdk3VhUwsIljclJsNUtawEEPD",
+              "status": "pending",
+              "attemptCount": 1,
+              "nextAttemptAt": "2026-03-01T06:09:55.492Z",
+              "lockedAt": null,
+              "publishedAt": null,
+              "deadLetteredAt": null,
+              "httpStatus": null,
+              "lastErrorCode": null,
+              "lastErrorMessage": null,
+              "requestPayload": {},
+              "responsePayload": null,
+              "idempotencyKey": "test:event_sub_3AKdk3VhUwsIljclJsNUtawEEPD:1772345335476",
+              "metadata": {
+                "testMode": true,
+                "webhookUrl": "https://extensions.example.test/retry",
+                "retryPolicy": {
+                  "strategy": "exponential_backoff",
+                  "baseMinutes": 1
+                },
+                "deliveryMode": "webhook",
+                "signingSecretRef": null,
+                "nextBackoffMinutes": 1,
+                "manualRetryRequested": true
+              },
+              "createdAt": "2026-03-01T06:08:55.476Z",
+              "updatedAt": "2026-03-01T06:08:55.476Z",
+              "deletedAt": null,
+              "createdBy": null,
+              "updatedBy": null,
+              "deletedBy": null
+            },
+            "backoffMinutes": 1
+          }
+        }
+      }
+    ]
+  },
+  "rawData": {
+    "stepKey": "uc-need-validate-2",
+    "resultPayload": {
+      "note": "Validated lifecycle delivery retries track attempts and compute a concrete backoff window before requeueing work.",
+      "evidence": {
+        "test": {
+          "event": {
+            "id": "lifecycle_event_3AKdk3EkhHSzTCIP6ERdmDBw5ar",
+            "bizId": "3AKdjjzlfCCqgCHXF9aguY3KDbL",
+            "sourceType": "manual",
+            "eventName": "test.event",
+            "eventVersion": 1,
+            "entityType": "test_entity",
+            "entityId": "test",
+            "aggregateType": null,
+            "aggregateId": null,
+            "occurredAt": "2026-03-01T06:08:55.473Z",
+            "actorUserId": null,
+            "correlationId": null,
+            "causationEventId": null,
+            "idempotencyKey": null,
+            "payload": {},
+            "metadata": {
+              "testMode": true,
+              "generatedFromSubscriptionId": "event_sub_3AKdk3VhUwsIljclJsNUtawEEPD"
+            },
+            "recordedAt": "2026-03-01T06:08:55.473Z"
+          },
+          "subscription": {
+            "id": "event_sub_3AKdk3VhUwsIljclJsNUtawEEPD",
+            "bizId": "3AKdjjzlfCCqgCHXF9aguY3KDbL",
+            "bizExtensionInstallId": null,
+            "name": "Retry policy 3a1h",
+            "status": "active",
+            "eventPattern": "booking.created",
+            "phase": "after",
+            "deliveryMode": "webhook",
+            "internalHandlerKey": null,
+            "webhookUrl": "https://extensions.example.test/retry",
+            "signingSecretRef": null,
+            "timeoutMs": 10000,
+            "maxAttempts": 5,
+            "retryPolicy": {
+              "strategy": "exponential_backoff",
+              "baseMinutes": 1
+            },
+            "filter": {},
+            "metadata": {},
+            "createdAt": "2026-03-01T06:08:55.459Z",
+            "updatedAt": "2026-03-01T06:08:55.459Z",
+            "deletedAt": null,
+            "createdBy": null,
+            "updatedBy": null,
+            "deletedBy": null
+          },
+          "delivery": {
+            "id": "event_delivery_3AKdk7jx1Ds6GCqdeKAK7BGU7rI",
+            "bizId": "3AKdjjzlfCCqgCHXF9aguY3KDbL",
+            "lifecycleEventId": "lifecycle_event_3AKdk3EkhHSzTCIP6ERdmDBw5ar",
+            "lifecycleEventSubscriptionId": "event_sub_3AKdk3VhUwsIljclJsNUtawEEPD",
+            "status": "dead_letter",
+            "attemptCount": 0,
+            "nextAttemptAt": "2026-03-01T06:08:55.476Z",
+            "lockedAt": null,
+            "publishedAt": null,
+            "deadLetteredAt": "2026-03-01T06:08:55.476Z",
+            "httpStatus": null,
+            "lastErrorCode": null,
+            "lastErrorMessage": null,
+            "requestPayload": {},
+            "responsePayload": null,
+            "idempotencyKey": "test:event_sub_3AKdk3VhUwsIljclJsNUtawEEPD:1772345335476",
+            "metadata": {
+              "testMode": true,
+              "webhookUrl": "https://extensions.example.test/retry",
+              "retryPolicy": {
+                "strategy": "exponential_backoff",
+                "baseMinutes": 1
+              },
+              "deliveryMode": "webhook",
+              "signingSecretRef": null
+            },
+            "createdAt": "2026-03-01T06:08:55.476Z",
+            "updatedAt": "2026-03-01T06:08:55.476Z",
+            "deletedAt": null,
+            "createdBy": null,
+            "updatedBy": null,
+            "deletedBy": null
+          }
+        },
+        "retried": {
+          "delivery": {
+            "id": "event_delivery_3AKdk7jx1Ds6GCqdeKAK7BGU7rI",
+            "bizId": "3AKdjjzlfCCqgCHXF9aguY3KDbL",
+            "lifecycleEventId": "lifecycle_event_3AKdk3EkhHSzTCIP6ERdmDBw5ar",
+            "lifecycleEventSubscriptionId": "event_sub_3AKdk3VhUwsIljclJsNUtawEEPD",
+            "status": "pending",
+            "attemptCount": 1,
+            "nextAttemptAt": "2026-03-01T06:09:55.492Z",
+            "lockedAt": null,
+            "publishedAt": null,
+            "deadLetteredAt": null,
+            "httpStatus": null,
+            "lastErrorCode": null,
+            "lastErrorMessage": null,
+            "requestPayload": {},
+            "responsePayload": null,
+            "idempotencyKey": "test:event_sub_3AKdk3VhUwsIljclJsNUtawEEPD:1772345335476",
+            "metadata": {
+              "testMode": true,
+              "webhookUrl": "https://extensions.example.test/retry",
+              "retryPolicy": {
+                "strategy": "exponential_backoff",
+                "baseMinutes": 1
+              },
+              "deliveryMode": "webhook",
+              "signingSecretRef": null,
+              "nextBackoffMinutes": 1,
+              "manualRetryRequested": true
+            },
+            "createdAt": "2026-03-01T06:08:55.476Z",
+            "updatedAt": "2026-03-01T06:08:55.476Z",
+            "deletedAt": null,
+            "createdBy": null,
+            "updatedBy": null,
+            "deletedBy": null
+          },
+          "backoffMinutes": 1
+        }
+      }
+    },
+    "apiCalls": [
+      {
+        "method": "POST",
+        "path": "/api/v1/bizes/3AKdjjzlfCCqgCHXF9aguY3KDbL/lifecycle-event-subscriptions",
+        "status": 201,
+        "requestBody": {
+          "name": "Retry policy 3a1h",
+          "eventPattern": "booking.created",
+          "deliveryMode": "webhook",
+          "webhookUrl": "https://extensions.example.test/retry",
+          "maxAttempts": 5,
+          "retryPolicy": {
+            "strategy": "exponential_backoff",
+            "baseMinutes": 1
+          }
+        },
+        "responseBody": {
+          "success": true,
+          "data": {
+            "id": "event_sub_3AKdk3VhUwsIljclJsNUtawEEPD",
+            "bizId": "3AKdjjzlfCCqgCHXF9aguY3KDbL",
+            "bizExtensionInstallId": null,
+            "name": "Retry policy 3a1h",
+            "status": "active",
+            "eventPattern": "booking.created",
+            "phase": "after",
+            "deliveryMode": "webhook",
+            "internalHandlerKey": null,
+            "webhookUrl": "https://extensions.example.test/retry",
+            "signingSecretRef": null,
+            "timeoutMs": 10000,
+            "maxAttempts": 5,
+            "retryPolicy": {
+              "strategy": "exponential_backoff",
+              "baseMinutes": 1
+            },
+            "filter": {},
+            "metadata": {},
+            "createdAt": "2026-03-01T06:08:55.459Z",
+            "updatedAt": "2026-03-01T06:08:55.459Z",
+            "deletedAt": null,
+            "createdBy": null,
+            "updatedBy": null,
+            "deletedBy": null
+          },
+          "meta": {
+            "requestId": "a4b73845-3fa2-4021-a038-1b9d3634400c",
+            "timestamp": "2026-03-01T06:08:55.462Z"
+          }
+        },
+        "at": "2026-03-01T06:08:55.462Z"
+      },
+      {
+        "method": "POST",
+        "path": "/api/v1/bizes/3AKdjjzlfCCqgCHXF9aguY3KDbL/lifecycle-event-subscriptions/event_sub_3AKdk3VhUwsIljclJsNUtawEEPD/test",
+        "status": 201,
+        "requestBody": {
+          "simulateStatus": "dead_letter"
+        },
+        "responseBody": {
+          "success": true,
+          "data": {
+            "event": {
+              "id": "lifecycle_event_3AKdk3EkhHSzTCIP6ERdmDBw5ar",
+              "bizId": "3AKdjjzlfCCqgCHXF9aguY3KDbL",
+              "sourceType": "manual",
+              "eventName": "test.event",
+              "eventVersion": 1,
+              "entityType": "test_entity",
+              "entityId": "test",
+              "aggregateType": null,
+              "aggregateId": null,
+              "occurredAt": "2026-03-01T06:08:55.473Z",
+              "actorUserId": null,
+              "correlationId": null,
+              "causationEventId": null,
+              "idempotencyKey": null,
+              "payload": {},
+              "metadata": {
+                "testMode": true,
+                "generatedFromSubscriptionId": "event_sub_3AKdk3VhUwsIljclJsNUtawEEPD"
+              },
+              "recordedAt": "2026-03-01T06:08:55.473Z"
+            },
+            "subscription": {
+              "id": "event_sub_3AKdk3VhUwsIljclJsNUtawEEPD",
+              "bizId": "3AKdjjzlfCCqgCHXF9aguY3KDbL",
+              "bizExtensionInstallId": null,
+              "name": "Retry policy 3a1h",
+              "status": "active",
+              "eventPattern": "booking.created",
+              "phase": "after",
+              "deliveryMode": "webhook",
+              "internalHandlerKey": null,
+              "webhookUrl": "https://extensions.example.test/retry",
+              "signingSecretRef": null,
+              "timeoutMs": 10000,
+              "maxAttempts": 5,
+              "retryPolicy": {
+                "strategy": "exponential_backoff",
+                "baseMinutes": 1
+              },
+              "filter": {},
+              "metadata": {},
+              "createdAt": "2026-03-01T06:08:55.459Z",
+              "updatedAt": "2026-03-01T06:08:55.459Z",
+              "deletedAt": null,
+              "createdBy": null,
+              "updatedBy": null,
+              "deletedBy": null
+            },
+            "delivery": {
+              "id": "event_delivery_3AKdk7jx1Ds6GCqdeKAK7BGU7rI",
+              "bizId": "3AKdjjzlfCCqgCHXF9aguY3KDbL",
+              "lifecycleEventId": "lifecycle_event_3AKdk3EkhHSzTCIP6ERdmDBw5ar",
+              "lifecycleEventSubscriptionId": "event_sub_3AKdk3VhUwsIljclJsNUtawEEPD",
+              "status": "dead_letter",
+              "attemptCount": 0,
+              "nextAttemptAt": "2026-03-01T06:08:55.476Z",
+              "lockedAt": null,
+              "publishedAt": null,
+              "deadLetteredAt": "2026-03-01T06:08:55.476Z",
+              "httpStatus": null,
+              "lastErrorCode": null,
+              "lastErrorMessage": null,
+              "requestPayload": {},
+              "responsePayload": null,
+              "idempotencyKey": "test:event_sub_3AKdk3VhUwsIljclJsNUtawEEPD:1772345335476",
+              "metadata": {
+                "testMode": true,
+                "webhookUrl": "https://extensions.example.test/retry",
+                "retryPolicy": {
+                  "strategy": "exponential_backoff",
+                  "baseMinutes": 1
+                },
+                "deliveryMode": "webhook",
+                "signingSecretRef": null
+              },
+              "createdAt": "2026-03-01T06:08:55.476Z",
+              "updatedAt": "2026-03-01T06:08:55.476Z",
+              "deletedAt": null,
+              "createdBy": null,
+              "updatedBy": null,
+              "deletedBy": null
+            }
+          },
+          "meta": {
+            "requestId": "b8467b76-e5b5-4b66-8688-c303a853f731",
+            "timestamp": "2026-03-01T06:08:55.479Z"
+          }
+        },
+        "at": "2026-03-01T06:08:55.480Z"
+      },
+      {
+        "method": "POST",
+        "path": "/api/v1/bizes/3AKdjjzlfCCqgCHXF9aguY3KDbL/lifecycle-event-deliveries/event_delivery_3AKdk7jx1Ds6GCqdeKAK7BGU7rI/retry",
+        "status": 200,
+        "responseBody": {
+          "success": true,
+          "data": {
+            "delivery": {
+              "id": "event_delivery_3AKdk7jx1Ds6GCqdeKAK7BGU7rI",
+              "bizId": "3AKdjjzlfCCqgCHXF9aguY3KDbL",
+              "lifecycleEventId": "lifecycle_event_3AKdk3EkhHSzTCIP6ERdmDBw5ar",
+              "lifecycleEventSubscriptionId": "event_sub_3AKdk3VhUwsIljclJsNUtawEEPD",
+              "status": "pending",
+              "attemptCount": 1,
+              "nextAttemptAt": "2026-03-01T06:09:55.492Z",
+              "lockedAt": null,
+              "publishedAt": null,
+              "deadLetteredAt": null,
+              "httpStatus": null,
+              "lastErrorCode": null,
+              "lastErrorMessage": null,
+              "requestPayload": {},
+              "responsePayload": null,
+              "idempotencyKey": "test:event_sub_3AKdk3VhUwsIljclJsNUtawEEPD:1772345335476",
+              "metadata": {
+                "testMode": true,
+                "webhookUrl": "https://extensions.example.test/retry",
+                "retryPolicy": {
+                  "strategy": "exponential_backoff",
+                  "baseMinutes": 1
+                },
+                "deliveryMode": "webhook",
+                "signingSecretRef": null,
+                "nextBackoffMinutes": 1,
+                "manualRetryRequested": true
+              },
+              "createdAt": "2026-03-01T06:08:55.476Z",
+              "updatedAt": "2026-03-01T06:08:55.476Z",
+              "deletedAt": null,
+              "createdBy": null,
+              "updatedBy": null,
+              "deletedBy": null
+            },
+            "backoffMinutes": 1
+          },
+          "meta": {
+            "requestId": "6ec3f4ec-d2dd-4fe1-978a-0078e3e58933",
+            "timestamp": "2026-03-01T06:08:55.493Z"
+          }
+        },
+        "at": "2026-03-01T06:08:55.494Z"
+      }
+    ],
+    "contract": null
+  },
+  "metadata": {}
+}

@@ -1,0 +1,45 @@
+{
+  "stepKey": "uc-need-validate-2",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AKf4OSH46s72bjl06jfI97hQYB/steps/uc-need-validate-2/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step requires validation of health states (`healthy`, `lagging`, `degraded`, `failed`) for projection checkpoints. However, the evidence only mentions a `sellable`-scoped projection marked as `lagging`, without confirming the health states for all required scopes or the existence of checkpoints for `biz`, `location`, `resource`, and `custom_subject`. This indicates a clear gap in the evidence provided, as it does not cover the full requirement.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].bodyMarkdownPreview"
+          ],
+          "gaps": [
+            "No evidence of health states for all required projection checkpoints: `biz`, `location`, `resource`, `sellable`, `custom_subject`."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add health state validation for all projection checkpoints",
+              "endpoint": "/api/v1/projection_checkpoints",
+              "assertion": "Verify health states for all required scopes."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "3498571a-c10c-494d-abc6-e4d7973d40ae",
+          "timestamp": "2026-03-01T06:20:01.884Z"
+        }
+      },
+      "at": "2026-03-01T06:20:01.885Z"
+    }
+  ]
+}

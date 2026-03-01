@@ -1,0 +1,45 @@
+{
+  "stepKey": "uc-need-validate-5",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AK6Bqb1nPYlafRQ7A6HI55oVQc/steps/uc-need-validate-5/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step requires validation of the customer acquisition sources, specifically where bookings come from. While the linked use case mentions 'Top referrer: Instagram (28% of new customers)' and 'CLV by source: Google Ads customers = $420 average, Instagram = $680', it does not provide concrete API reads or persisted state checks to confirm that this requirement is fully satisfied. The evidence does not capture a precise, reproducible gap, but rather indicates that the requirement is not adequately covered by the existing data.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].summary"
+          ],
+          "gaps": [
+            "No concrete API reads or persisted state checks confirming customer acquisition sources."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add API endpoint for customer acquisition sources",
+              "endpoint": "/api/v1/customer-acquisition-sources",
+              "assertion": "Verify that the API returns accurate data on customer acquisition sources."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "8eb67332-0b2f-44b0-b231-11570fddea11",
+          "timestamp": "2026-03-01T01:33:29.469Z"
+        }
+      },
+      "at": "2026-03-01T01:33:29.470Z"
+    }
+  ]
+}

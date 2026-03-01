@@ -10,7 +10,9 @@ import {
   varchar,
 } from "drizzle-orm/pg-core";
 import { idRef, idWithTag, withAuditRefs } from "./_common";
+import { actionRequests } from "./action_backbone";
 import { bizes } from "./bizes";
+import { domainEvents } from "./domain_events";
 import { groupAccounts } from "./group_accounts";
 import { users } from "./users";
 import { bookingOrders, fulfillmentUnits } from "./fulfillment";
@@ -406,6 +408,12 @@ export const entitlementGrants = pgTable(
     /** Optional user-facing reason text. */
     reason: varchar("reason", { length: 400 }),
 
+    /** Optional canonical action/event breadcrumbs for this grant. */
+    actionRequestId: idRef("action_request_id").references(() => actionRequests.id),
+    sourceDomainEventId: idRef("source_domain_event_id").references(
+      () => domainEvents.id,
+    ),
+
     /** Extension payload. */
     metadata: jsonb("metadata").default({}),
 
@@ -424,6 +432,11 @@ export const entitlementGrants = pgTable(
       table.bizId,
       table.walletId,
       table.validFromAt,
+    ),
+
+    /** Trace path from action backbone into entitlement issuance. */
+    entitlementGrantsActionRequestIdx: index("entitlement_grants_action_request_idx").on(
+      table.actionRequestId,
     ),
 
     /** Tenant-safe FK to wallet. */

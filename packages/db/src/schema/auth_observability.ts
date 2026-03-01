@@ -3,6 +3,7 @@ import { check, index, pgTable, uniqueIndex } from "drizzle-orm/pg-core";
 import { boolean, integer, jsonb, timestamp, varchar } from "drizzle-orm/pg-core";
 import { idRef, idWithTag, withAuditRefs } from "./_common";
 import { bizes } from "./bizes";
+import { clientInstallations } from "./external_installations";
 import { users } from "./users";
 import { apiAccessTokens, apiCredentials } from "./api_credentials";
 
@@ -79,6 +80,17 @@ export const authPrincipals = pgTable(
     /** Optional external subject ref (session id, service account id, etc.). */
     externalSubjectRef: varchar("external_subject_ref", { length: 320 }),
 
+    /**
+     * Optional external installation pointer.
+     *
+     * ELI5:
+     * This says which outside installation this principal belongs to when the
+     * actor came through a WordPress site, widget, partner app, or similar.
+     */
+    clientInstallationId: idRef("client_installation_id").references(
+      () => clientInstallations.id,
+    ),
+
     /** UI-friendly label to help ops understand what this principal is. */
     displayLabel: varchar("display_label", { length: 220 }),
 
@@ -128,6 +140,10 @@ export const authPrincipals = pgTable(
     authPrincipalsCredentialIdx: index("auth_principals_credential_idx").on(
       table.apiCredentialId,
       table.apiAccessTokenId,
+    ),
+    authPrincipalsInstallationIdx: index("auth_principals_installation_idx").on(
+      table.clientInstallationId,
+      table.status,
     ),
     authPrincipalsTypeCheck: check(
       "auth_principals_type_check",
@@ -210,6 +226,11 @@ export const authAccessEvents = pgTable(
 
     /** Snapshot of access-token context (if any). */
     apiAccessTokenId: idRef("api_access_token_id").references(() => apiAccessTokens.id),
+
+    /** Optional external installation context when auth came through one install. */
+    clientInstallationId: idRef("client_installation_id").references(
+      () => clientInstallations.id,
+    ),
 
     /**
      * Auth source for this event.
@@ -299,6 +320,9 @@ export const authAccessEvents = pgTable(
       table.authPrincipalId,
       table.occurredAt,
     ),
+    authAccessEventsInstallationOccurredIdx: index(
+      "auth_access_events_installation_occurred_idx",
+    ).on(table.clientInstallationId, table.occurredAt),
     authAccessEventsSourceDecisionOccurredIdx: index(
       "auth_access_events_source_decision_occurred_idx",
     ).on(table.authSource, table.decision, table.occurredAt),
@@ -321,4 +345,3 @@ export const authAccessEvents = pgTable(
     ),
   }),
 );
-

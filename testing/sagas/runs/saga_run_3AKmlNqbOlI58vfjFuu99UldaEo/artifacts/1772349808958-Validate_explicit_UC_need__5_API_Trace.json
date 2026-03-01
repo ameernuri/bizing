@@ -1,0 +1,45 @@
+{
+  "stepKey": "uc-need-validate-5",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AKmlNqbOlI58vfjFuu99UldaEo/steps/uc-need-validate-5/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the requirement of pausing a subscription, but the evidence provided does not confirm this functionality. The linked use case mentions the ability to pause a subscription for maternity leave, yet there are no concrete API reads or persisted state checks that demonstrate this capability. Therefore, there is a clear gap in the evidence regarding the requirement's satisfaction.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].bodyMarkdownPreview"
+          ],
+          "gaps": [
+            "No evidence confirming the ability to pause the subscription while keeping the slot reserved."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add API validation for pausing subscription",
+              "endpoint": "/api/v1/validate-pause-subscription",
+              "assertion": "Verify that the API allows pausing a subscription while keeping the slot reserved."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "a6a82ed9-1add-499d-ab83-afc12bdd6bb3",
+          "timestamp": "2026-03-01T07:23:28.929Z"
+        }
+      },
+      "at": "2026-03-01T07:23:28.930Z"
+    }
+  ]
+}

@@ -8,7 +8,9 @@ import {
   varchar,
 } from "drizzle-orm/pg-core";
 import { idRef, idWithTag, withAuditRefs } from "./_common";
+import { actionRequests } from "./action_backbone";
 import { bizes } from "./bizes";
+import { domainEvents } from "./domain_events";
 import { fulfillmentAssignments, fulfillmentUnits } from "./fulfillment";
 import { staffingAssignments, staffingDemands } from "./intelligence";
 import {
@@ -16,6 +18,7 @@ import {
   operationalAssignmentSourceTypeEnum,
   operationalDemandSourceTypeEnum,
 } from "./enums";
+import { debugSnapshots, projectionDocuments } from "./projections";
 import { resources } from "./resources";
 import { subjects } from "./subjects";
 import { users } from "./users";
@@ -99,6 +102,41 @@ export const operationalDemands = pgTable(
     /** Optional idempotency key for upsert workers. */
     requestKey: varchar("request_key", { length: 140 }),
 
+    /**
+     * Canonical action that created or last materially changed this demand row.
+     *
+     * ELI5:
+     * If somebody asks "who created this demand card?" or "which API call
+     * changed it?", this pointer is the breadcrumb to follow.
+     */
+    actionRequestId: idRef("action_request_id").references(() => actionRequests.id),
+
+    /**
+     * Most relevant business fact emitted when this demand snapshot changed.
+     *
+     * This usually points at events like:
+     * - staffing demand opened
+     * - fulfillment demand rescheduled
+     * - demand cancelled
+     */
+    latestDomainEventId: idRef("latest_domain_event_id").references(
+      () => domainEvents.id,
+    ),
+
+    /**
+     * Optional cached board/timeline read-model that explains how this demand
+     * should appear to operators right now.
+     */
+    projectionDocumentId: idRef("projection_document_id").references(
+      () => projectionDocuments.id,
+    ),
+
+    /**
+     * Structured debug snapshot captured when demand normalization failed or
+     * required operator attention.
+     */
+    debugSnapshotId: idRef("debug_snapshot_id").references(() => debugSnapshots.id),
+
     /** Extensible non-indexed payload for custom demand metadata. */
     metadata: jsonb("metadata").default({}),
 
@@ -127,6 +165,12 @@ export const operationalDemands = pgTable(
     operationalDemandsBizSourceTypeStatusIdx: index(
       "operational_demands_biz_source_type_status_idx",
     ).on(table.bizId, table.sourceType, table.sourceStatus),
+    operationalDemandsActionRequestIdx: index(
+      "operational_demands_action_request_idx",
+    ).on(table.actionRequestId),
+    operationalDemandsLatestDomainEventIdx: index(
+      "operational_demands_latest_domain_event_idx",
+    ).on(table.latestDomainEventId),
 
     /** Reverse lookup path for custom source subjects. */
     operationalDemandsBizCustomSubjectIdx: index(
@@ -306,6 +350,39 @@ export const operationalAssignments = pgTable(
     /** Optional idempotency key for upsert workers. */
     requestKey: varchar("request_key", { length: 140 }),
 
+    /**
+     * Canonical action that created or last reassigned this operational row.
+     *
+     * This is the audit/debug bridge from "assignment board changed" back to
+     * the exact business action request.
+     */
+    actionRequestId: idRef("action_request_id").references(() => actionRequests.id),
+
+    /**
+     * Latest meaningful business event for this assignment.
+     *
+     * Example:
+     * - assignment.accepted
+     * - assignment.reassigned
+     * - assignment.cancelled
+     */
+    latestDomainEventId: idRef("latest_domain_event_id").references(
+      () => domainEvents.id,
+    ),
+
+    /**
+     * Optional board/timeline read-model used by dispatch and workload UIs.
+     */
+    projectionDocumentId: idRef("projection_document_id").references(
+      () => projectionDocuments.id,
+    ),
+
+    /**
+     * Debug bundle for edge cases like ambiguous source mapping or impossible
+     * assignment states.
+     */
+    debugSnapshotId: idRef("debug_snapshot_id").references(() => debugSnapshots.id),
+
     /** Extensible non-indexed payload. */
     metadata: jsonb("metadata").default({}),
 
@@ -339,6 +416,12 @@ export const operationalAssignments = pgTable(
     operationalAssignmentsBizDemandIdx: index(
       "operational_assignments_biz_demand_idx",
     ).on(table.bizId, table.operationalDemandId, table.status),
+    operationalAssignmentsActionRequestIdx: index(
+      "operational_assignments_action_request_idx",
+    ).on(table.actionRequestId),
+    operationalAssignmentsLatestDomainEventIdx: index(
+      "operational_assignments_latest_domain_event_idx",
+    ).on(table.latestDomainEventId),
 
     /** Reverse lookup path for custom-source assignments. */
     operationalAssignmentsBizCustomSubjectIdx: index(

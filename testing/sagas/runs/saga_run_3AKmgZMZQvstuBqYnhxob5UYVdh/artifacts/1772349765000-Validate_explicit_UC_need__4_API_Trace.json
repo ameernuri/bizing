@@ -1,0 +1,49 @@
+{
+  "stepKey": "uc-need-validate-4",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AKmgZMZQvstuBqYnhxob5UYVdh/steps/uc-need-validate-4/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the presence of lifecycle timestamps (open/acknowledged/resolved/waived/dismissed) for the breach events. However, the evidence provided does not include any timestamps for acknowledged, resolved, waived, or dismissed states, which are critical for confirming the requirement. The only timestamp present is for the 'createdAt' field of the breach, which does not fulfill the requirement for all lifecycle states.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "breach.createdAt",
+            "breach.acknowledgedAt",
+            "breach.resolvedAt",
+            "breach.waivedAt",
+            "breach.dismissedAt"
+          ],
+          "gaps": [
+            "Missing lifecycle timestamps for acknowledged, resolved, waived, and dismissed states."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add deterministic evidence contract",
+              "endpoint": null,
+              "assertion": "Define concrete endpoint calls and assertions that directly verify this requirement."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "d84e033b-590f-410f-91ea-65674219bd8b",
+          "timestamp": "2026-03-01T07:22:44.985Z"
+        }
+      },
+      "at": "2026-03-01T07:22:44.985Z"
+    }
+  ]
+}

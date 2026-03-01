@@ -10,7 +10,9 @@ import {
   varchar,
 } from "drizzle-orm/pg-core";
 import { idRef, idWithTag, withAuditRefs } from "./_common";
+import { actionRequests } from "./action_backbone";
 import { bizes } from "./bizes";
+import { domainEvents } from "./domain_events";
 import {
   bizingAgentRoleEnum,
   bizingAutomationModeEnum,
@@ -25,6 +27,7 @@ import {
   requirementModeEnum,
 } from "./enums";
 import { marketplaceListings } from "./marketplace";
+import { debugSnapshots, projectionDocuments } from "./projections";
 import { sellables } from "./product_commerce";
 import { resourceCapabilityTemplates } from "./supply";
 import { subjects } from "./subjects";
@@ -92,6 +95,24 @@ export const bizings = pgTable(
     /** Matching rules for supply-demand resolution within this bizing. */
     matchingPolicy: jsonb("matching_policy").default({}).notNull(),
 
+    /**
+     * Optional canonical pointers to the latest important change/read model.
+     *
+     * ELI5:
+     * These keep the network shell connected to the rest of the platform:
+     * action -> event -> projection/debug.
+     */
+    latestActionRequestId: idRef("latest_action_request_id").references(
+      () => actionRequests.id,
+    ),
+    latestDomainEventId: idRef("latest_domain_event_id").references(
+      () => domainEvents.id,
+    ),
+    projectionDocumentId: idRef("projection_document_id").references(
+      () => projectionDocuments.id,
+    ),
+    debugSnapshotId: idRef("debug_snapshot_id").references(() => debugSnapshots.id),
+
     /** Extensible payload. */
     metadata: jsonb("metadata").default({}),
 
@@ -113,6 +134,9 @@ export const bizings = pgTable(
       table.visibility,
       table.status,
       table.slug,
+    ),
+    bizingsLatestActionRequestIdx: index("bizings_latest_action_request_idx").on(
+      table.latestActionRequestId,
     ),
   }),
 );
@@ -558,6 +582,10 @@ export const bizingCurationEvents = pgTable(
     /** Event type (upvote/downvote/bookmark/flag/review/endorse). */
     eventType: bizingCurationEventTypeEnum("event_type").notNull(),
 
+    /** Optional canonical action/event breadcrumbs for this curation record. */
+    actionRequestId: idRef("action_request_id").references(() => actionRequests.id),
+    domainEventId: idRef("domain_event_id").references(() => domainEvents.id),
+
     /** Numeric vote delta when relevant (-1/0/+1). */
     voteDelta: integer("vote_delta").default(0).notNull(),
 
@@ -582,6 +610,9 @@ export const bizingCurationEvents = pgTable(
       table.bizingRecipeId,
       table.eventAt,
     ),
+    bizingCurationEventsActionRequestIdx: index(
+      "bizing_curation_events_action_request_idx",
+    ).on(table.actionRequestId),
 
     /** Tenant-safe FK to recipe by bizing scope. */
     bizingCurationEventsRecipeFk: foreignKey({
@@ -895,6 +926,11 @@ export const bizingAgentProfiles = pgTable(
     ...withAuditRefs(() => users.id),
   },
   (table) => ({
+    /** Composite key for tenant-safe references from automation runs. */
+    bizingAgentProfilesBizingIdIdUnique: uniqueIndex(
+      "bizing_agent_profiles_bizing_id_id_unique",
+    ).on(table.bizingId, table.id),
+
     bizingAgentProfilesStatusIdx: index("bizing_agent_profiles_status_idx").on(
       table.bizingId,
       table.status,
@@ -957,6 +993,16 @@ export const bizingAutomationRuns = pgTable(
     /** Trigger source (schedule/manual/webhook/system). */
     triggerSource: varchar("trigger_source", { length: 80 }).default("system").notNull(),
 
+    /** Optional canonical action/event/debug links for this automation run. */
+    actionRequestId: idRef("action_request_id").references(() => actionRequests.id),
+    resultingDomainEventId: idRef("resulting_domain_event_id").references(
+      () => domainEvents.id,
+    ),
+    projectionDocumentId: idRef("projection_document_id").references(
+      () => projectionDocuments.id,
+    ),
+    debugSnapshotId: idRef("debug_snapshot_id").references(() => debugSnapshots.id),
+
     /** Execution timestamps. */
     startedAt: timestamp("started_at", { withTimezone: true }),
     completedAt: timestamp("completed_at", { withTimezone: true }),
@@ -982,6 +1028,9 @@ export const bizingAutomationRuns = pgTable(
       table.status,
       table.startedAt,
     ),
+    bizingAutomationRunsActionRequestIdx: index(
+      "bizing_automation_runs_action_request_idx",
+    ).on(table.actionRequestId),
 
     /** Tenant-safe FK to agent profile by bizing scope. */
     bizingAutomationRunsAgentFk: foreignKey({

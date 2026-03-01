@@ -1,0 +1,46 @@
+{
+  "stepKey": "uc-need-validate-2",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AKmyT3dMy4sngYpyyeFLTwU1Ki/steps/uc-need-validate-2/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the requirement of 'Prepay checkout for each reservation', but the evidence provided does not confirm that each reservation has a prepay mechanism in place. While there are multiple successful booking steps, there is no explicit evidence showing that the checkout process requires prepayment for each reservation, leading to a gap in validation. The prior step evidence does not address the specific requirement of prepayment, which is critical for confirming the requirement's coverage.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases",
+            "priorStepEvidence"
+          ],
+          "gaps": [
+            "No evidence confirming that each reservation requires prepayment."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add prepayment validation checks",
+              "endpoint": "/api/v1/reservations/prepay",
+              "assertion": "Verify that each reservation requires a prepayment before confirmation."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "bde027a7-5901-4466-85fa-5704264f8c69",
+          "timestamp": "2026-03-01T07:25:00.495Z"
+        }
+      },
+      "at": "2026-03-01T07:25:00.496Z"
+    }
+  ]
+}

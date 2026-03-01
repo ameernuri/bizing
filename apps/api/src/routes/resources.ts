@@ -9,12 +9,15 @@ import { and, asc, desc, eq, ilike, sql } from 'drizzle-orm'
 import { z } from 'zod'
 import dbPackage from '@bizing/db'
 import {
+  getCurrentAuthCredentialId,
+  getCurrentAuthSource,
   getCurrentUser,
   requireAclPermission,
   requireAuth,
   requireBizAccess,
 } from '../middleware/auth.js'
 import { sanitizePlainText, sanitizeUnknown } from '../lib/sanitize.js'
+import { persistCanonicalAction } from '../services/action-runtime.js'
 import { fail, ok, parsePositiveInt } from './_api.js'
 
 const { db, resources } = dbPackage
@@ -51,6 +54,28 @@ const createBodySchema = z.object({
 })
 
 const updateBodySchema = createBodySchema.partial().omit({ type: true })
+
+async function executeBizAction(c: Parameters<typeof getCurrentUser>[0], bizId: string, actionKey: string, payload: Record<string, unknown>) {
+  const user = getCurrentUser(c)
+  if (!user) throw new Error('Authentication required.')
+  return persistCanonicalAction({
+    bizId,
+    input: {
+      actionKey,
+      payload,
+      metadata: {},
+    },
+    intentMode: 'execute',
+    context: {
+      bizId,
+      user,
+      authSource: getCurrentAuthSource(c),
+      authCredentialId: getCurrentAuthCredentialId(c),
+      requestId: c.get('requestId'),
+      accessMode: 'biz',
+    },
+  })
+}
 
 export const resourceRoutes = new Hono()
 
@@ -122,7 +147,6 @@ resourceRoutes.post(
   requireAclPermission('resources.create', { bizIdParam: 'bizId' }),
   async (c) => {
     const bizId = c.req.param('bizId')
-    const _user = getCurrentUser(c)
 
     const body = await c.req.json().catch(() => null)
     const parsed = createBodySchema.safeParse(body)
@@ -130,29 +154,28 @@ resourceRoutes.post(
       return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
     }
 
-    const [created] = await db
-      .insert(resources)
-      .values({
-        bizId,
-        locationId: parsed.data.locationId,
-        type: parsed.data.type,
-        name: sanitizePlainText(parsed.data.name),
-        slug: parsed.data.slug,
-        description: parsed.data.description ? sanitizePlainText(parsed.data.description) : undefined,
-        timezone: parsed.data.timezone,
-        statusDefinitionId: parsed.data.statusDefinitionId,
-        hostUserId: parsed.data.hostUserId,
-        groupAccountId: parsed.data.groupAccountId,
-        assetId: parsed.data.assetId,
-        venueId: parsed.data.venueId,
-        capacity: parsed.data.capacity,
-        allowSimultaneousBookings: parsed.data.allowSimultaneousBookings,
-        maxSimultaneousBookings: parsed.data.maxSimultaneousBookings,
-        bufferBeforeMinutes: parsed.data.bufferBeforeMinutes,
-        bufferAfterMinutes: parsed.data.bufferAfterMinutes,
-        metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
-      })
-      .returning()
+    const action = await executeBizAction(c, bizId, 'resource.create', {
+      ...parsed.data,
+      name: sanitizePlainText(parsed.data.name),
+      description: parsed.data.description ? sanitizePlainText(parsed.data.description) : undefined,
+      metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
+    })
+    const actionRequest = action.actionRequest as {
+      outputPayload?: Record<string, unknown>
+      targetSubjectId?: string | null
+    }
+    const resourceId =
+      (actionRequest.outputPayload?.resourceId as string | undefined)
+      ?? actionRequest.targetSubjectId
+      ?? null
+    const created = await db.query.resources.findFirst({
+      where: and(
+        eq(resources.bizId, bizId),
+        resourceId ? eq(resources.id, resourceId) : eq(resources.slug, parsed.data.slug),
+      ),
+      orderBy: [desc(resources.id)],
+    })
+    if (!created) return fail(c, 'INTERNAL_ERROR', 'Resource action succeeded but row could not be reloaded.', 500)
 
     return ok(c, created, 201)
   },
@@ -181,7 +204,6 @@ resourceRoutes.patch(
   requireAclPermission('resources.update', { bizIdParam: 'bizId', resourceIdParam: 'resourceId' }),
   async (c) => {
     const { bizId, resourceId } = c.req.param()
-    const _user = getCurrentUser(c)
 
     const body = await c.req.json().catch(() => null)
     const parsed = updateBodySchema.safeParse(body)
@@ -194,16 +216,25 @@ resourceRoutes.patch(
     })
     if (!existing) return fail(c, 'NOT_FOUND', 'Resource not found.', 404)
 
-    const [updated] = await db
-      .update(resources)
-      .set({
-        ...parsed.data,
-        name: parsed.data.name ? sanitizePlainText(parsed.data.name) : undefined,
-        description: parsed.data.description ? sanitizePlainText(parsed.data.description) : undefined,
-        metadata: parsed.data.metadata ? sanitizeUnknown(parsed.data.metadata) : undefined,
-      })
-      .where(and(eq(resources.bizId, bizId), eq(resources.id, resourceId)))
-      .returning()
+    const action = await executeBizAction(c, bizId, 'resource.update', {
+      resourceId,
+      ...parsed.data,
+      name: parsed.data.name ? sanitizePlainText(parsed.data.name) : undefined,
+      description: parsed.data.description ? sanitizePlainText(parsed.data.description) : undefined,
+      metadata: parsed.data.metadata ? sanitizeUnknown(parsed.data.metadata) : undefined,
+    })
+    const actionRequest = action.actionRequest as {
+      outputPayload?: Record<string, unknown>
+      targetSubjectId?: string | null
+    }
+    const updatedId =
+      (actionRequest.outputPayload?.resourceId as string | undefined)
+      ?? actionRequest.targetSubjectId
+      ?? resourceId
+    const updated = await db.query.resources.findFirst({
+      where: and(eq(resources.bizId, bizId), eq(resources.id, updatedId)),
+    })
+    if (!updated) return fail(c, 'INTERNAL_ERROR', 'Resource action succeeded but row could not be reloaded.', 500)
 
     return ok(c, updated)
   },
@@ -216,14 +247,13 @@ resourceRoutes.delete(
   requireAclPermission('resources.archive', { bizIdParam: 'bizId', resourceIdParam: 'resourceId' }),
   async (c) => {
     const { bizId, resourceId } = c.req.param()
-    const _user = getCurrentUser(c)
 
     const existing = await db.query.resources.findFirst({
       where: and(eq(resources.bizId, bizId), eq(resources.id, resourceId)),
     })
     if (!existing) return fail(c, 'NOT_FOUND', 'Resource not found.', 404)
 
-    await db.delete(resources).where(and(eq(resources.bizId, bizId), eq(resources.id, resourceId)))
+    await executeBizAction(c, bizId, 'resource.delete', { resourceId })
 
     return ok(c, { id: resourceId })
   },

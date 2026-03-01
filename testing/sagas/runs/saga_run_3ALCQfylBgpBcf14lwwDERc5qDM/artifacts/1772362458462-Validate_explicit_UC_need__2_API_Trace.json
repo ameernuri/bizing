@@ -1,0 +1,47 @@
+{
+  "stepKey": "uc-need-validate-2",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3ALCQfylBgpBcf14lwwDERc5qDM/steps/uc-need-validate-2/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the requirement for filterable facts such as 'has Class C license', 'background check verified', and 'expires after 90 days'. However, the evidence provided does not include any checks or validations related to these specific filterable facts, indicating a clear gap in the evidence. The linked use case mentions the need for these filterable facts, but without corresponding evidence from prior steps, the requirement is not covered.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].needs[1]",
+            "linkedUseCases[0].needs[2]",
+            "linkedUseCases[0].needs[3]"
+          ],
+          "gaps": [
+            "No evidence validating the filterable facts requirement."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add checks for filterable facts",
+              "endpoint": "/api/v1/candidates/filter",
+              "assertion": "Verify that candidates can be filtered by 'has Class C license', 'background check verified', and 'expires after 90 days'."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "0595ec4e-385b-435d-b6af-2bb9baeed2c8",
+          "timestamp": "2026-03-01T10:54:18.393Z"
+        }
+      },
+      "at": "2026-03-01T10:54:18.398Z"
+    }
+  ]
+}

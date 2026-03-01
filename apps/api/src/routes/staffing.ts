@@ -730,6 +730,31 @@ staffingRoutes.patch(
     const parsed = updateResponseBodySchema.safeParse(await c.req.json().catch(() => null))
     if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
 
+    const existing = await db.query.staffingResponses.findFirst({
+      where: and(eq(staffingResponses.bizId, bizId), eq(staffingResponses.id, responseId)),
+    })
+    if (!existing) return fail(c, 'NOT_FOUND', 'Staffing response not found.', 404)
+
+    const demand = await db.query.staffingDemands.findFirst({
+      where: and(eq(staffingDemands.bizId, bizId), eq(staffingDemands.id, existing.staffingDemandId)),
+    })
+    if (!demand) return fail(c, 'NOT_FOUND', 'Staffing demand not found.', 404)
+
+    if (
+      parsed.data.proposedHourlyRateMinor !== undefined &&
+      demand.baseRateMinor !== null &&
+      parsed.data.proposedHourlyRateMinor < demand.baseRateMinor
+    ) {
+      return fail(c, 'RATE_BELOW_BASE', 'Proposed rate is below the staffing demand base rate.', 409)
+    }
+    if (
+      parsed.data.proposedHourlyRateMinor !== undefined &&
+      demand.maxRateMinor !== null &&
+      parsed.data.proposedHourlyRateMinor > demand.maxRateMinor
+    ) {
+      return fail(c, 'RATE_ABOVE_MAX', 'Proposed rate is above the staffing demand max rate.', 409)
+    }
+
     const [updated] = await db
       .update(staffingResponses)
       .set({
@@ -743,8 +768,6 @@ staffingRoutes.patch(
       })
       .where(and(eq(staffingResponses.bizId, bizId), eq(staffingResponses.id, responseId)))
       .returning()
-
-    if (!updated) return fail(c, 'NOT_FOUND', 'Staffing response not found.', 404)
     return ok(c, updated)
   },
 )
@@ -814,6 +837,24 @@ staffingRoutes.post(
           respondedAt: response.respondedAt ?? new Date(),
         })
         .where(and(eq(staffingResponses.bizId, bizId), eq(staffingResponses.id, response.id)))
+
+      if (graph.demand.fillMode === 'auction') {
+        await db
+          .update(staffingResponses)
+          .set({
+            status: 'lost',
+            respondedAt: sql`coalesce(${staffingResponses.respondedAt}, now())`,
+            responseReason: sql`coalesce(${staffingResponses.responseReason}, 'lost_after_award')`,
+          })
+          .where(
+            and(
+              eq(staffingResponses.bizId, bizId),
+              eq(staffingResponses.staffingDemandId, demandId),
+              sql`${staffingResponses.id} <> ${response.id}`,
+              inArray(staffingResponses.status, ['pending', 'accepted']),
+            ),
+          )
+      }
     }
 
     let clientMessageId: string | null = null

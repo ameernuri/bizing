@@ -1,0 +1,45 @@
+{
+  "stepKey": "uc-need-validate-10",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AK7VT496XvczTFGlWuMMQIC8JS/steps/uc-need-validate-10/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the requirement for inspection history by equipment serial number, but the evidence does not include any API reads or persisted state checks that confirm this requirement is met. The linked use case outlines the inspection process but does not provide any details on how inspection history is tracked or retrieved by serial number, indicating a clear gap in the requirement coverage. Therefore, the validation step fails due to insufficient evidence to support the requirement.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].needs"
+          ],
+          "gaps": [
+            "No evidence of inspection history retrieval by equipment serial number."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add inspection history retrieval endpoint",
+              "endpoint": "/api/v1/inspections/history",
+              "assertion": "Verify that inspection history can be retrieved by equipment serial number."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "bc46bfd2-57bf-4249-b4e8-58cfbca08c5e",
+          "timestamp": "2026-03-01T01:44:41.185Z"
+        }
+      },
+      "at": "2026-03-01T01:44:41.185Z"
+    }
+  ]
+}

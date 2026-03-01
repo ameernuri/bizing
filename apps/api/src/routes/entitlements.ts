@@ -133,7 +133,7 @@ const createMembershipPlanBodySchema = z.object({
   billingIntervalUnit: z.enum(['day', 'week', 'month', 'year', 'custom']).default('month'),
   priceMinor: z.number().int().min(0).default(0),
   currency: z.string().regex(/^[A-Z]{3}$/).default('USD'),
-  entitlementType: entitlementTypeSchema,
+  entitlementType: entitlementTypeSchema.default('custom'),
   entitlementQuantityPerCycle: z.number().int().min(0).default(0),
   allowRollover: z.boolean().default(false),
   rolloverCapQuantity: z.number().int().min(0).optional(),

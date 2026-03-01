@@ -6,6 +6,11 @@
  * stable, and easy to extend without introducing parallel table families.
  */
 export * from "./offers";
+export * from "./action_backbone";
+export * from "./domain_events";
+export * from "./external_installations";
+export * from "./schedule_subjects";
+export * from "./projections";
 export * from "./supply";
 export * from "./time_availability";
 export * from "./calendar_sync";

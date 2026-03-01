@@ -1,0 +1,45 @@
+{
+  "stepKey": "uc-need-validate-4",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AKnG5n5AfjstD7AnWpw1EtqMUW/steps/uc-need-validate-4/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Insufficient evidence to validate the requirement for priority rebooking if cancelled.",
+          "assessment": "The exploratory step aimed to validate the requirement of 'Priority rebooking if cancelled', but the evidence does not provide concrete API reads or persisted state checks that confirm this functionality. While the linked use case describes a scenario where a customer can reschedule within the same week and get priority, there is no direct evidence demonstrating that the system enforces this priority rebooking mechanism. This leads to an inconclusive status as the requirement cannot be definitively validated or invalidated based on the current evidence.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].bodyMarkdownPreview"
+          ],
+          "gaps": [
+            "No direct evidence confirming the priority rebooking mechanism if a booking is cancelled."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add priority rebooking validation checks",
+              "endpoint": "/api/v1/bookings",
+              "assertion": "Verify that the system allows priority rebooking for cancelled bookings."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "cbc5a084-7867-442c-92cc-deaa2f20bae7",
+          "timestamp": "2026-03-01T07:27:30.759Z"
+        }
+      },
+      "at": "2026-03-01T07:27:30.760Z"
+    }
+  ]
+}

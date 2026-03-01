@@ -1,0 +1,45 @@
+{
+  "stepKey": "uc-need-validate-4",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AKf4OSH46s72bjl06jfI97hQYB/steps/uc-need-validate-4/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step requires validation of the last lifecycle-event cursor for replay/recovery workflows. However, the evidence provided does not include any information regarding the existence or status of the last lifecycle-event cursor, which is critical for confirming this requirement. The linked use case mentions the need for this cursor but does not provide any concrete evidence or checks related to it, indicating a clear gap in the evidence.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].bodyMarkdownPreview"
+          ],
+          "gaps": [
+            "No evidence of the last lifecycle-event cursor for replay/recovery workflows."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add validation for last lifecycle-event cursor",
+              "endpoint": "/api/v1/lifecycle_event_cursor",
+              "assertion": "Verify the existence and status of the last lifecycle-event cursor."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "513f4747-2885-4394-945b-d9c240902efd",
+          "timestamp": "2026-03-01T06:20:10.140Z"
+        }
+      },
+      "at": "2026-03-01T06:20:10.141Z"
+    }
+  ]
+}

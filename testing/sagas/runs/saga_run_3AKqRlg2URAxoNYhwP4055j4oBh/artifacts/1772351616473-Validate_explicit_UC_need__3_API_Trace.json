@@ -1,0 +1,46 @@
+{
+  "stepKey": "uc-need-validate-3",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AKqRlg2URAxoNYhwP4055j4oBh/steps/uc-need-validate-3/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the lifecycle states of bookings, but there is no evidence provided that confirms the existence of the required lifecycle states (pending, accepted, rejected, expired) for the bookings. The prior steps indicate successful bookings but do not address the lifecycle management aspect, leading to a clear gap in the requirement. Specifically, the evidence does not show any bookings transitioning through these states, which is essential for confirming the requirement's coverage.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].bodyMarkdownPreview",
+            "priorStepEvidence[8].evidence"
+          ],
+          "gaps": [
+            "No evidence of bookings transitioning through the required lifecycle states (pending, accepted, rejected, expired)."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add lifecycle state validation",
+              "endpoint": "/api/v1/bookings/{bookingId}/lifecycle",
+              "assertion": "Verify that bookings can transition through pending, accepted, rejected, and expired states."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "1ab16740-820d-4add-89bd-31a04ef069a4",
+          "timestamp": "2026-03-01T07:53:36.441Z"
+        }
+      },
+      "at": "2026-03-01T07:53:36.442Z"
+    }
+  ]
+}

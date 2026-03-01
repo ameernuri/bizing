@@ -16,10 +16,14 @@ import { and, asc, desc, eq, ilike, sql } from "drizzle-orm";
 import { z } from "zod";
 import dbPackage from "@bizing/db";
 import {
+  getCurrentAuthCredentialId,
+  getCurrentAuthSource,
+  getCurrentUser,
   requireAclPermission,
   requireAuth,
   requireBizAccess,
 } from "../middleware/auth.js";
+import { persistCanonicalAction } from "../services/action-runtime.js";
 import { fail, ok, parsePositiveInt } from "./_api.js";
 
 const { db, serviceGroups, services } = dbPackage;
@@ -87,6 +91,24 @@ const createServiceBodySchema = z.object({
 
 const updateServiceBodySchema = createServiceBodySchema.partial().omit({ serviceGroupId: true });
 
+async function executeBizAction(c: Parameters<typeof getCurrentUser>[0], bizId: string, actionKey: string, payload: Record<string, unknown>) {
+  const user = getCurrentUser(c);
+  if (!user) throw new Error("Authentication required.");
+  return persistCanonicalAction({
+    bizId,
+    input: { actionKey, payload, metadata: {} },
+    intentMode: "execute",
+    context: {
+      bizId,
+      user,
+      authSource: getCurrentAuthSource(c),
+      authCredentialId: getCurrentAuthCredentialId(c),
+      requestId: c.get("requestId"),
+      accessMode: "biz",
+    },
+  });
+}
+
 export const serviceRoutes = new Hono();
 
 serviceRoutes.get(
@@ -149,18 +171,12 @@ serviceRoutes.post(
       return fail(c, "VALIDATION_ERROR", "Invalid request body.", 400, parsed.error.flatten());
     }
 
-    const [created] = await db
-      .insert(serviceGroups)
-      .values({
-        bizId,
-        name: parsed.data.name,
-        slug: parsed.data.slug,
-        description: parsed.data.description,
-        status: parsed.data.status,
-        statusConfigValueId: parsed.data.statusConfigValueId,
-        metadata: parsed.data.metadata ?? {},
-      })
-      .returning();
+    const action = await executeBizAction(c, bizId, "service_group.create", parsed.data);
+    const createdId = (action.actionRequest as { outputPayload?: Record<string, unknown> }).outputPayload?.serviceGroupId;
+    const created = await db.query.serviceGroups.findFirst({
+      where: and(eq(serviceGroups.bizId, bizId), eq(serviceGroups.id, String(createdId))),
+    });
+    if (!created) return fail(c, "INTERNAL_ERROR", "Service group action succeeded but row could not be reloaded.", 500);
 
     return ok(c, created, 201);
   },
@@ -199,13 +215,15 @@ serviceRoutes.patch(
     });
     if (!existing) return fail(c, "NOT_FOUND", "Service group not found.", 404);
 
-    const [updated] = await db
-      .update(serviceGroups)
-      .set({
-        ...parsed.data,
-      })
-      .where(and(eq(serviceGroups.bizId, bizId), eq(serviceGroups.id, serviceGroupId)))
-      .returning();
+    const action = await executeBizAction(c, bizId, "service_group.update", {
+      serviceGroupId,
+      ...parsed.data,
+    });
+    const updatedId = (action.actionRequest as { outputPayload?: Record<string, unknown> }).outputPayload?.serviceGroupId;
+    const updated = await db.query.serviceGroups.findFirst({
+      where: and(eq(serviceGroups.bizId, bizId), eq(serviceGroups.id, String(updatedId))),
+    });
+    if (!updated) return fail(c, "INTERNAL_ERROR", "Service group action succeeded but row could not be reloaded.", 500);
 
     return ok(c, updated);
   },
@@ -223,13 +241,12 @@ serviceRoutes.delete(
     });
     if (!existing) return fail(c, "NOT_FOUND", "Service group not found.", 404);
 
-    const [updated] = await db
-      .update(serviceGroups)
-      .set({
-        status: "archived",
-      })
-      .where(and(eq(serviceGroups.bizId, bizId), eq(serviceGroups.id, serviceGroupId)))
-      .returning();
+    const action = await executeBizAction(c, bizId, "service_group.archive", { serviceGroupId });
+    const updatedId = (action.actionRequest as { outputPayload?: Record<string, unknown> }).outputPayload?.serviceGroupId;
+    const updated = await db.query.serviceGroups.findFirst({
+      where: and(eq(serviceGroups.bizId, bizId), eq(serviceGroups.id, String(updatedId))),
+    });
+    if (!updated) return fail(c, "INTERNAL_ERROR", "Service group action succeeded but row could not be reloaded.", 500);
 
     return ok(c, updated);
   },
@@ -321,36 +338,12 @@ serviceRoutes.post(
       return fail(c, "BAD_REQUEST", "serviceGroupId is not in this biz.", 400);
     }
 
-    const [created] = await db
-      .insert(services)
-      .values({
-        bizId,
-        serviceGroupId: parsed.data.serviceGroupId,
-        name: parsed.data.name,
-        slug: parsed.data.slug,
-        description: parsed.data.description,
-        type: parsed.data.type,
-        typeConfigValueId: parsed.data.typeConfigValueId,
-        visibility: parsed.data.visibility,
-        visibilityConfigValueId: parsed.data.visibilityConfigValueId,
-        minAdvanceBookingHours: parsed.data.minAdvanceBookingHours ?? null,
-        maxAdvanceBookingDays: parsed.data.maxAdvanceBookingDays ?? null,
-        bookingCutoffMinutes: parsed.data.bookingCutoffMinutes ?? null,
-        requiresApproval: parsed.data.requiresApproval,
-        allowWaitlist: parsed.data.allowWaitlist,
-        allowOverbooking: parsed.data.allowOverbooking,
-        minCancellationNoticeHours: parsed.data.minCancellationNoticeHours ?? null,
-        minRescheduleNoticeHours: parsed.data.minRescheduleNoticeHours ?? null,
-        bookingPolicy: parsed.data.bookingPolicy ?? {},
-        cancellationPolicy: parsed.data.cancellationPolicy ?? {},
-        depositPolicy: parsed.data.depositPolicy ?? {},
-        eligibilityPolicy: parsed.data.eligibilityPolicy ?? {},
-        metadata: parsed.data.metadata ?? {},
-        isSelfBookable: parsed.data.isSelfBookable ?? true,
-        status: parsed.data.status,
-        statusConfigValueId: parsed.data.statusConfigValueId,
-      })
-      .returning();
+    const action = await executeBizAction(c, bizId, "service.create", parsed.data);
+    const createdId = (action.actionRequest as { outputPayload?: Record<string, unknown> }).outputPayload?.serviceId;
+    const created = await db.query.services.findFirst({
+      where: and(eq(services.bizId, bizId), eq(services.id, String(createdId))),
+    });
+    if (!created) return fail(c, "INTERNAL_ERROR", "Service action succeeded but row could not be reloaded.", 500);
 
     return ok(c, created, 201);
   },
@@ -389,13 +382,15 @@ serviceRoutes.patch(
     });
     if (!existing) return fail(c, "NOT_FOUND", "Service not found.", 404);
 
-    const [updated] = await db
-      .update(services)
-      .set({
-        ...parsed.data,
-      })
-      .where(and(eq(services.bizId, bizId), eq(services.id, serviceId)))
-      .returning();
+    const action = await executeBizAction(c, bizId, "service.update", {
+      serviceId,
+      ...parsed.data,
+    });
+    const updatedId = (action.actionRequest as { outputPayload?: Record<string, unknown> }).outputPayload?.serviceId;
+    const updated = await db.query.services.findFirst({
+      where: and(eq(services.bizId, bizId), eq(services.id, String(updatedId))),
+    });
+    if (!updated) return fail(c, "INTERNAL_ERROR", "Service action succeeded but row could not be reloaded.", 500);
 
     return ok(c, updated);
   },
@@ -413,13 +408,12 @@ serviceRoutes.delete(
     });
     if (!existing) return fail(c, "NOT_FOUND", "Service not found.", 404);
 
-    const [updated] = await db
-      .update(services)
-      .set({
-        status: "archived",
-      })
-      .where(and(eq(services.bizId, bizId), eq(services.id, serviceId)))
-      .returning();
+    const action = await executeBizAction(c, bizId, "service.archive", { serviceId });
+    const updatedId = (action.actionRequest as { outputPayload?: Record<string, unknown> }).outputPayload?.serviceId;
+    const updated = await db.query.services.findFirst({
+      where: and(eq(services.bizId, bizId), eq(services.id, String(updatedId))),
+    });
+    if (!updated) return fail(c, "INTERNAL_ERROR", "Service action succeeded but row could not be reloaded.", 500);
 
     return ok(c, updated);
   },

@@ -1,0 +1,47 @@
+{
+  "stepKey": "uc-need-validate-4",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AKFg0m6nSCm0hYxb5GwxMF4mUH/steps/uc-need-validate-4/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the invoicing requirement, but the evidence does not confirm that the company is billed for services rather than charged immediately. The prior steps indicate successful bookings, but they do not provide any information about the payment mechanism or whether invoicing is used. This leads to a clear gap in the validation of the requirement, as there is no evidence of invoicing processes or related endpoints.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].bodyMarkdownPreview",
+            "priorStepEvidence[customer-book-primary]",
+            "priorStepEvidence[customer-two-concurrent]"
+          ],
+          "gaps": [
+            "No evidence of invoicing mechanism for company payments."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add invoicing mechanism validation",
+              "endpoint": "/api/v1/invoices",
+              "assertion": "Verify that the company is billed for services instead of immediate charges."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "8bdb84ad-a23e-4657-a2cb-57f8e62d2b69",
+          "timestamp": "2026-03-01T02:51:26.679Z"
+        }
+      },
+      "at": "2026-03-01T02:51:26.679Z"
+    }
+  ]
+}

@@ -51,6 +51,51 @@ const issueBookingTicketBodySchema = z.object({
   metadata: z.record(z.unknown()).optional(),
 })
 
+const createAccessArtifactBodySchema = z.object({
+  artifactType: z.enum(['access_grant', 'license_key', 'download_entitlement', 'ticket_entitlement', 'content_gate', 'replay_access', 'custom']),
+  status: z.enum(['draft', 'active', 'suspended', 'revoked', 'expired', 'consumed', 'transferred']).default('active'),
+  publicCode: z.string().max(200).optional(),
+  holderUserId: z.string().optional(),
+  holderGroupAccountId: z.string().optional(),
+  holderSubjectType: z.string().optional(),
+  holderSubjectId: z.string().optional(),
+  sellableId: z.string().optional(),
+  expiresAt: z.string().datetime().optional(),
+  transferable: z.boolean().default(false),
+  usageGranted: z.number().int().min(0).optional(),
+  usageRemaining: z.number().int().min(0).optional(),
+  policySnapshot: z.record(z.unknown()).optional(),
+  metadata: z.record(z.unknown()).optional(),
+})
+
+const createAccessArtifactLinkBodySchema = z.object({
+  accessArtifactId: z.string().min(1),
+  linkType: z.enum(['sellable', 'booking_order', 'booking_order_line', 'membership', 'entitlement_grant', 'payment_transaction', 'fulfillment_unit', 'custom_subject', 'external_reference']),
+  relationKey: z.string().max(120).default('source'),
+  sellableId: z.string().optional(),
+  bookingOrderId: z.string().optional(),
+  bookingOrderLineId: z.string().optional(),
+  membershipId: z.string().optional(),
+  entitlementGrantId: z.string().optional(),
+  paymentTransactionId: z.string().optional(),
+  fulfillmentUnitId: z.string().optional(),
+  customSubjectType: z.string().optional(),
+  customSubjectId: z.string().optional(),
+  externalReferenceType: z.string().optional(),
+  externalReferenceId: z.string().optional(),
+  metadata: z.record(z.unknown()).optional(),
+})
+
+const createAccessLinkBodySchema = z.object({
+  accessArtifactId: z.string().min(1),
+  actionType: z.enum(['verify', 'view', 'download', 'redeem', 'transfer', 'support_override']).default('verify'),
+  tokenTtlHours: z.number().int().min(1).max(24 * 365).default(24 * 30),
+  maxValidationCount: z.number().int().min(1).max(100).default(1),
+  tokenType: z.enum(['opaque_link', 'numeric_code', 'qr_code', 'one_time_password', 'custom']).default('opaque_link'),
+  requestKey: z.string().max(140).optional(),
+  metadata: z.record(z.unknown()).optional(),
+})
+
 const reissueTicketBodySchema = z.object({
   deliveryChannels: z.array(z.enum(['email', 'app'])).default(['email']),
   tokenTtlHours: z.number().int().min(1).max(24 * 365).default(24 * 30),
@@ -289,6 +334,197 @@ async function loadTicketContext(bizId: string, accessArtifactId: string) {
 }
 
 export const accessRoutes = new Hono()
+
+accessRoutes.get(
+  '/bizes/:bizId/access-artifacts',
+  requireAuth,
+  requireBizAccess('bizId'),
+  requireAclPermission('bookings.read', { bizIdParam: 'bizId' }),
+  async (c) => {
+    const bizId = c.req.param('bizId')
+    const artifactType = c.req.query('artifactType')
+    const rows = await db.query.accessArtifacts.findMany({
+      where: and(eq(accessArtifacts.bizId, bizId), artifactType ? eq(accessArtifacts.artifactType, artifactType as never) : undefined),
+      orderBy: [asc(accessArtifacts.issuedAt)],
+    })
+    return ok(c, rows)
+  },
+)
+
+accessRoutes.post(
+  '/bizes/:bizId/access-artifacts',
+  requireAuth,
+  requireBizAccess('bizId'),
+  requireAclPermission('bookings.update', { bizIdParam: 'bizId' }),
+  async (c) => {
+    const bizId = c.req.param('bizId')
+    const parsed = createAccessArtifactBodySchema.safeParse(await c.req.json().catch(() => null))
+    if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
+    const [row] = await db.insert(accessArtifacts).values({
+      bizId,
+      artifactType: parsed.data.artifactType,
+      status: parsed.data.status,
+      publicCode: parsed.data.publicCode ?? randomCode('ACC-', 10),
+      holderUserId: parsed.data.holderUserId ?? null,
+      holderGroupAccountId: parsed.data.holderGroupAccountId ?? null,
+      holderSubjectType: parsed.data.holderSubjectType ?? null,
+      holderSubjectId: parsed.data.holderSubjectId ?? null,
+      sellableId: parsed.data.sellableId ?? null,
+      activatedAt: new Date(),
+      expiresAt: parsed.data.expiresAt ? new Date(parsed.data.expiresAt) : null,
+      transferable: parsed.data.transferable,
+      usageGranted: parsed.data.usageGranted ?? null,
+      usageRemaining: parsed.data.usageRemaining ?? parsed.data.usageGranted ?? null,
+      policySnapshot: parsed.data.policySnapshot ?? {},
+      metadata: parsed.data.metadata ?? {},
+    }).returning()
+    return ok(c, row, 201)
+  },
+)
+
+accessRoutes.get(
+  '/bizes/:bizId/access-artifacts/:artifactId',
+  requireAuth,
+  requireBizAccess('bizId'),
+  requireAclPermission('bookings.read', { bizIdParam: 'bizId' }),
+  async (c) => {
+    const { bizId, artifactId } = c.req.param()
+    const artifact = await db.query.accessArtifacts.findFirst({ where: and(eq(accessArtifacts.bizId, bizId), eq(accessArtifacts.id, artifactId)) })
+    if (!artifact) return fail(c, 'NOT_FOUND', 'Access artifact not found.', 404)
+    const [links, events, tokens] = await Promise.all([
+      db.query.accessArtifactLinks.findMany({ where: and(eq(accessArtifactLinks.bizId, bizId), eq(accessArtifactLinks.accessArtifactId, artifactId)) }),
+      db.query.accessArtifactEvents.findMany({ where: and(eq(accessArtifactEvents.bizId, bizId), eq(accessArtifactEvents.accessArtifactId, artifactId)), orderBy: [asc(accessArtifactEvents.happenedAt)] }),
+      db.query.accessActionTokens.findMany({ where: and(eq(accessActionTokens.bizId, bizId), eq(accessActionTokens.accessArtifactId, artifactId)), orderBy: [asc(accessActionTokens.issuedAt)] }),
+    ])
+    return ok(c, { artifact, links, events, tokens })
+  },
+)
+
+accessRoutes.post(
+  '/bizes/:bizId/access-artifact-links',
+  requireAuth,
+  requireBizAccess('bizId'),
+  requireAclPermission('bookings.update', { bizIdParam: 'bizId' }),
+  async (c) => {
+    const bizId = c.req.param('bizId')
+    const parsed = createAccessArtifactLinkBodySchema.safeParse(await c.req.json().catch(() => null))
+    if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
+    const [row] = await db.insert(accessArtifactLinks).values({
+      bizId,
+      accessArtifactId: parsed.data.accessArtifactId,
+      linkType: parsed.data.linkType,
+      relationKey: parsed.data.relationKey,
+      sellableId: parsed.data.sellableId ?? null,
+      bookingOrderId: parsed.data.bookingOrderId ?? null,
+      bookingOrderLineId: parsed.data.bookingOrderLineId ?? null,
+      membershipId: parsed.data.membershipId ?? null,
+      entitlementGrantId: parsed.data.entitlementGrantId ?? null,
+      paymentTransactionId: parsed.data.paymentTransactionId ?? null,
+      fulfillmentUnitId: parsed.data.fulfillmentUnitId ?? null,
+      customSubjectType: parsed.data.customSubjectType ?? null,
+      customSubjectId: parsed.data.customSubjectId ?? null,
+      externalReferenceType: parsed.data.externalReferenceType ?? null,
+      externalReferenceId: parsed.data.externalReferenceId ?? null,
+      metadata: parsed.data.metadata ?? {},
+    }).returning()
+    return ok(c, row, 201)
+  },
+)
+
+accessRoutes.post(
+  '/bizes/:bizId/access-links',
+  requireAuth,
+  requireBizAccess('bizId'),
+  requireAclPermission('bookings.update', { bizIdParam: 'bizId' }),
+  async (c) => {
+    const bizId = c.req.param('bizId')
+    const parsed = createAccessLinkBodySchema.safeParse(await c.req.json().catch(() => null))
+    if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
+    const rawToken = randomCode('lnk_', 24)
+    const [token] = await db.insert(accessActionTokens).values({
+      bizId,
+      accessArtifactId: parsed.data.accessArtifactId,
+      actionType: parsed.data.actionType,
+      tokenType: parsed.data.tokenType,
+      status: 'active',
+      tokenHash: hashToken(rawToken),
+      tokenPreview: rawToken.slice(-6),
+      maxValidationCount: parsed.data.maxValidationCount,
+      expiresAt: new Date(Date.now() + parsed.data.tokenTtlHours * 60 * 60 * 1000),
+      requestKey: parsed.data.requestKey ?? null,
+      metadata: parsed.data.metadata ?? {},
+    }).returning()
+    return ok(c, { token, rawToken }, 201)
+  },
+)
+
+accessRoutes.post(
+  '/public/access/resolve',
+  async (c) => {
+    const parsed = resolveTicketBodySchema.safeParse(await c.req.json().catch(() => null))
+    if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
+    const tokenHash = parsed.data.token ? hashToken(parsed.data.token) : null
+    const artifact = parsed.data.token
+      ? await db.query.accessActionTokens.findFirst({ where: eq(accessActionTokens.tokenHash, tokenHash!) })
+      : null
+    let accessArtifactId: string | null = artifact?.accessArtifactId ?? null
+    let bizId: string | null = artifact?.bizId ?? null
+    if (!accessArtifactId && parsed.data.publicCode) {
+      const row = await db.query.accessArtifacts.findFirst({ where: eq(accessArtifacts.publicCode, parsed.data.publicCode) })
+      accessArtifactId = row?.id ?? null
+      bizId = row?.bizId ?? null
+    }
+    if (!accessArtifactId || !bizId) return fail(c, 'NOT_FOUND', 'Access artifact not found.', 404)
+    const detail = await db.query.accessArtifacts.findFirst({ where: and(eq(accessArtifacts.bizId, bizId), eq(accessArtifacts.id, accessArtifactId)) })
+    return ok(c, detail)
+  },
+)
+
+accessRoutes.post(
+  '/public/access/consume',
+  async (c) => {
+    const parsed = z.object({
+      token: z.string().optional(),
+      publicCode: z.string().optional(),
+      actionType: z.enum(['verify', 'view', 'download', 'redeem', 'transfer', 'support_override']).default('verify'),
+      requestKey: z.string().max(140).optional(),
+      metadata: z.record(z.unknown()).optional(),
+    }).refine((value) => Boolean(value.token || value.publicCode), { message: 'token or publicCode is required.' }).safeParse(await c.req.json().catch(() => null))
+    if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
+    const resolved = parsed.data.token
+      ? await db.query.accessActionTokens.findFirst({ where: eq(accessActionTokens.tokenHash, hashToken(parsed.data.token)) })
+      : null
+    const artifact = resolved
+      ? await db.query.accessArtifacts.findFirst({ where: and(eq(accessArtifacts.bizId, resolved.bizId), eq(accessArtifacts.id, resolved.accessArtifactId)) })
+      : await db.query.accessArtifacts.findFirst({ where: eq(accessArtifacts.publicCode, parsed.data.publicCode!) })
+    if (!artifact) return fail(c, 'NOT_FOUND', 'Access artifact not found.', 404)
+    if (artifact.status === 'revoked' || artifact.status === 'expired') return fail(c, 'ACCESS_DENIED', 'Access artifact is not active.', 409)
+    if (
+      parsed.data.actionType === 'download' &&
+      typeof artifact.usageRemaining === 'number' &&
+      artifact.usageRemaining <= 0
+    ) {
+      return fail(c, 'USAGE_EXHAUSTED', 'No remaining downloads are available for this artifact.', 409)
+    }
+    const [event] = await db.insert(accessArtifactEvents).values({
+      bizId: artifact.bizId,
+      accessArtifactId: artifact.id,
+      eventType: parsed.data.actionType === 'download' ? 'usage_debited' : 'verified',
+      quantityDelta: parsed.data.actionType === 'download' ? -1 : 0,
+      outcome: 'allowed',
+      requestKey: parsed.data.requestKey ?? null,
+      payload: parsed.data.metadata ?? {},
+      metadata: parsed.data.metadata ?? {},
+    }).returning()
+    if (parsed.data.actionType === 'download' && typeof artifact.usageRemaining === 'number') {
+      await db.update(accessArtifacts).set({
+        usageRemaining: Math.max(0, artifact.usageRemaining - 1),
+        consumedAt: artifact.usageRemaining - 1 <= 0 ? new Date() : artifact.consumedAt,
+      }).where(and(eq(accessArtifacts.bizId, artifact.bizId), eq(accessArtifacts.id, artifact.id)))
+    }
+    return ok(c, { artifactId: artifact.id, event }, 200)
+  },
+)
 
 /**
  * Issue one ticket artifact for a booking.

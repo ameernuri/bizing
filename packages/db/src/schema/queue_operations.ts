@@ -7,10 +7,13 @@ import {
   varchar,
 } from "drizzle-orm/pg-core";
 import { idRef, idWithTag, withAuditRefs } from "./_common";
+import { actionRequests } from "./action_backbone";
 import { bizes } from "./bizes";
+import { domainEvents } from "./domain_events";
 import { groupAccounts } from "./group_accounts";
 import { lifecycleStatusEnum } from "./enums";
 import { locations } from "./locations";
+import { debugSnapshots, projectionDocuments } from "./projections";
 import { queueEntries, queueTickets, queues } from "./queue";
 import { resources } from "./resources";
 import { subjects } from "./subjects";
@@ -175,6 +178,22 @@ export const queueCounterAssignments = pgTable(
     /** Optional actor who made this assignment decision. */
     assignedByUserId: idRef("assigned_by_user_id").references(() => users.id),
 
+    /** Canonical action behind this counter staffing change. */
+    actionRequestId: idRef("action_request_id").references(() => actionRequests.id),
+
+    /** Latest event describing this assignment's state. */
+    latestDomainEventId: idRef("latest_domain_event_id").references(
+      () => domainEvents.id,
+    ),
+
+    /** Optional rendered staffing-board document for this assignment. */
+    projectionDocumentId: idRef("projection_document_id").references(
+      () => projectionDocuments.id,
+    ),
+
+    /** Structured debug snapshot for queue staffing anomalies. */
+    debugSnapshotId: idRef("debug_snapshot_id").references(() => debugSnapshots.id),
+
     /** Extension payload. */
     metadata: jsonb("metadata").default({}),
 
@@ -191,6 +210,9 @@ export const queueCounterAssignments = pgTable(
     queueCounterAssignmentsBizCounterStateStartIdx: index(
       "queue_counter_assignments_biz_counter_state_start_idx",
     ).on(table.bizId, table.queueCounterId, table.assignmentState, table.startsAt),
+    queueCounterAssignmentsActionRequestIdx: index(
+      "queue_counter_assignments_action_request_idx",
+    ).on(table.actionRequestId),
 
     /** One active assignment per counter at a time. */
     queueCounterAssignmentsActiveCounterUnique: uniqueIndex(
@@ -325,6 +347,24 @@ export const queueTicketCalls = pgTable(
     /** Optional staff user who served this call. */
     servedByUserId: idRef("served_by_user_id").references(() => users.id),
 
+    /**
+     * Canonical action that performed this call or changed its state.
+     */
+    actionRequestId: idRef("action_request_id").references(() => actionRequests.id),
+
+    /** Latest queue business fact attached to this call attempt. */
+    latestDomainEventId: idRef("latest_domain_event_id").references(
+      () => domainEvents.id,
+    ),
+
+    /** Optional queue-screen/timeline projection for this call row. */
+    projectionDocumentId: idRef("projection_document_id").references(
+      () => projectionDocuments.id,
+    ),
+
+    /** Structured debug context for recalls, race conditions, or bad transitions. */
+    debugSnapshotId: idRef("debug_snapshot_id").references(() => debugSnapshots.id),
+
     /** Extension payload. */
     metadata: jsonb("metadata").default({}),
 
@@ -349,6 +389,9 @@ export const queueTicketCalls = pgTable(
     queueTicketCallsBizCounterCalledIdx: index(
       "queue_ticket_calls_biz_counter_called_idx",
     ).on(table.bizId, table.queueCounterId, table.calledAt),
+    queueTicketCallsActionRequestCalledIdx: index(
+      "queue_ticket_calls_action_request_called_idx",
+    ).on(table.actionRequestId, table.calledAt),
 
     /** Tenant-safe FK to ticket. */
     queueTicketCallsBizTicketFk: foreignKey({
@@ -398,4 +441,3 @@ export type QueueCounterAssignment = typeof queueCounterAssignments.$inferSelect
 export type NewQueueCounterAssignment = typeof queueCounterAssignments.$inferInsert;
 export type QueueTicketCall = typeof queueTicketCalls.$inferSelect;
 export type NewQueueTicketCall = typeof queueTicketCalls.$inferInsert;
-

@@ -1,0 +1,45 @@
+{
+  "stepKey": "uc-need-validate-3",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AKIj9gPaE6dzb4561sjzuT3ueG/steps/uc-need-validate-3/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the requirement that acknowledgment is required before shift booking or work assignment. However, the evidence does not provide any confirmation that such a mechanism is in place, nor does it detail any API reads or state checks that would demonstrate compliance with this requirement. The linked use case explicitly states the need for acknowledgment before booking, but the absence of supporting evidence indicates a gap in the requirement coverage.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].bodyMarkdownPreview"
+          ],
+          "gaps": [
+            "No evidence confirming acknowledgment is required before shift booking/work assignment."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Verify acknowledgment requirement implementation",
+              "endpoint": "/api/v1/acknowledgment/check",
+              "assertion": "Confirm that acknowledgment is required before proceeding with booking."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "5e26638d-a3fb-47d0-bb43-2a9b97f80989",
+          "timestamp": "2026-03-01T03:16:28.895Z"
+        }
+      },
+      "at": "2026-03-01T03:16:28.896Z"
+    }
+  ]
+}

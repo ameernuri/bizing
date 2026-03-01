@@ -2,8 +2,8 @@
 
 > **The canonical reference for understanding Bizing's data architecture.**
 
-**Version:** 2026.02.26  
-**Total Schema Files:** 88 modules  
+**Version:** 2026.02.28  
+**Total Schema Files:** 85 modules  
 **Core Tables:** 150+  
 **Enums:** 100+ state machines  
 
@@ -45,6 +45,12 @@
   - `metadata` JSONB on most tables
   - `tags` tables for cross-cutting concerns
   - `subjects` registry for custom entity types
+6. **One Instrument Backbone**
+  Intake forms, surveys, quizzes, assessments, and similar flows now live in
+  one canonical module: `instruments.ts`.
+  The older split schema files for forms/surveys/assessments were removed so
+  the platform has one reusable run/response/event model instead of three
+  overlapping families.
 
 ---
 

@@ -16,7 +16,7 @@ import { Hono } from 'hono'
 import { and, asc, desc, eq, sql } from 'drizzle-orm'
 import { z } from 'zod'
 import dbPackage from '@bizing/db'
-import { requireAclPermission, requireAuth, requireBizAccess } from '../middleware/auth.js'
+import { getCurrentUser, requireAclPermission, requireAuth, requireBizAccess } from '../middleware/auth.js'
 import { sanitizePlainText, sanitizeUnknown } from '../lib/sanitize.js'
 import { fail, ok, parsePositiveInt } from './_api.js'
 
@@ -24,7 +24,10 @@ const {
   db,
   bizExtensionInstalls,
   extensionDefinitions,
+  extensionPermissionDefinitions,
+  bizExtensionPermissionGrants,
   extensionStateDocuments,
+  eventProjectionCheckpoints,
 } = dbPackage
 
 const catalogQuerySchema = z.object({
@@ -82,6 +85,46 @@ const updateInstallBodySchema = z.object({
   metadata: z.record(z.unknown()).optional(),
 })
 
+const permissionDefinitionBodySchema = z.object({
+  permissionKey: z.string().min(1).max(160),
+  name: z.string().min(1).max(220),
+  description: z.string().max(2000).optional(),
+  scope: z.enum(['biz', 'location', 'custom_subject']).default('biz'),
+  isRequired: z.boolean().default(false),
+  defaultEffect: z.enum(['allow', 'deny']).default('deny'),
+  riskLevel: z.number().int().min(1).max(5).default(2),
+  status: z.enum(['draft', 'active', 'inactive', 'archived']).default('active'),
+  metadata: z.record(z.unknown()).optional(),
+})
+
+const permissionGrantBodySchema = z.object({
+  extensionPermissionDefinitionId: z.string().min(1),
+  scope: z.enum(['biz', 'location', 'custom_subject']).default('biz'),
+  locationId: z.string().optional(),
+  subjectRefType: z.string().max(80).optional(),
+  subjectRefId: z.string().max(140).optional(),
+  effect: z.enum(['allow', 'deny']),
+  status: z.enum(['draft', 'active', 'inactive', 'archived', 'suspended']).default('active'),
+  expiresAt: z.string().datetime().optional(),
+  reason: z.string().max(1200).optional(),
+  metadata: z.record(z.unknown()).optional(),
+}).superRefine((value, ctx) => {
+  if (value.scope === 'location' && !value.locationId) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'locationId is required when scope=location.' })
+  }
+  if (value.scope === 'custom_subject' && (!value.subjectRefType || !value.subjectRefId)) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'subjectRefType and subjectRefId are required when scope=custom_subject.' })
+  }
+})
+
+const updatePermissionGrantBodySchema = z.object({
+  effect: z.enum(['allow', 'deny']).optional(),
+  status: z.enum(['draft', 'active', 'inactive', 'archived', 'suspended']).optional(),
+  expiresAt: z.string().datetime().nullable().optional(),
+  reason: z.string().max(1200).optional(),
+  metadata: z.record(z.unknown()).optional(),
+})
+
 const stateDocumentScopeSchema = z.enum(['biz', 'location', 'custom_subject'])
 
 const createStateDocumentBodySchema = z.object({
@@ -117,7 +160,17 @@ const updateStateDocumentBodySchema = z.object({
   payload: z.record(z.unknown()).optional(),
   payloadChecksum: z.string().max(128).optional(),
   metadata: z.record(z.unknown()).optional(),
+  expectedRevision: z.number().int().positive().optional(),
   revision: z.number().int().positive().optional(),
+})
+
+const projectionCheckpointBodySchema = z.object({
+  projectionKey: z.string().min(1).max(160),
+  consumerRef: z.string().min(1).max(160),
+  lastDomainEventId: z.string().optional().nullable(),
+  status: z.string().min(1).max(32).default('active'),
+  lagHint: z.number().int().min(0).default(0),
+  metadata: z.record(z.unknown()).optional(),
 })
 
 function pagination(input: { page?: string; perPage?: string }) {
@@ -341,6 +394,209 @@ extensionRoutes.patch(
 )
 
 extensionRoutes.get(
+  '/bizes/:bizId/extensions/installs/:installId',
+  requireAuth,
+  requireBizAccess('bizId'),
+  requireAclPermission('bizes.read', { bizIdParam: 'bizId' }),
+  async (c) => {
+    const { bizId, installId } = c.req.param()
+    const install = await db.query.bizExtensionInstalls.findFirst({
+      where: and(eq(bizExtensionInstalls.bizId, bizId), eq(bizExtensionInstalls.id, installId)),
+    })
+    if (!install) return fail(c, 'NOT_FOUND', 'Extension install not found.', 404)
+    return ok(c, install)
+  },
+)
+
+extensionRoutes.post(
+  '/bizes/:bizId/extensions/catalog/:extensionDefinitionId/permissions',
+  requireAuth,
+  requireBizAccess('bizId'),
+  requireAclPermission('bizes.update', { bizIdParam: 'bizId' }),
+  async (c) => {
+    const { extensionDefinitionId } = c.req.param()
+    const parsed = permissionDefinitionBodySchema.safeParse(await c.req.json().catch(() => null))
+    if (!parsed.success) {
+      return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
+    }
+
+    const definition = await db.query.extensionDefinitions.findFirst({
+      where: eq(extensionDefinitions.id, extensionDefinitionId),
+    })
+    if (!definition) return fail(c, 'NOT_FOUND', 'Extension definition not found.', 404)
+
+    const [created] = await db.insert(extensionPermissionDefinitions).values({
+      extensionDefinitionId,
+      permissionKey: sanitizePlainText(parsed.data.permissionKey),
+      name: sanitizePlainText(parsed.data.name),
+      description: parsed.data.description ? sanitizePlainText(parsed.data.description) : null,
+      scope: parsed.data.scope,
+      isRequired: parsed.data.isRequired,
+      defaultEffect: parsed.data.defaultEffect,
+      riskLevel: parsed.data.riskLevel,
+      status: parsed.data.status,
+      metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
+    }).onConflictDoUpdate({
+      target: [extensionPermissionDefinitions.extensionDefinitionId, extensionPermissionDefinitions.permissionKey],
+      set: {
+        name: sanitizePlainText(parsed.data.name),
+        description: parsed.data.description ? sanitizePlainText(parsed.data.description) : null,
+        scope: parsed.data.scope,
+        isRequired: parsed.data.isRequired,
+        defaultEffect: parsed.data.defaultEffect,
+        riskLevel: parsed.data.riskLevel,
+        status: parsed.data.status,
+        metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
+      },
+    }).returning()
+
+    return ok(c, created, 201)
+  },
+)
+
+extensionRoutes.get(
+  '/bizes/:bizId/extensions/installs/:installId/permissions',
+  requireAuth,
+  requireBizAccess('bizId'),
+  requireAclPermission('bizes.read', { bizIdParam: 'bizId' }),
+  async (c) => {
+    const { bizId, installId } = c.req.param()
+    const install = await db.query.bizExtensionInstalls.findFirst({
+      where: and(eq(bizExtensionInstalls.bizId, bizId), eq(bizExtensionInstalls.id, installId)),
+    })
+    if (!install) return fail(c, 'NOT_FOUND', 'Extension install not found.', 404)
+
+    const [definitions, grants] = await Promise.all([
+      db.query.extensionPermissionDefinitions.findMany({
+        where: eq(extensionPermissionDefinitions.extensionDefinitionId, install.extensionDefinitionId),
+        orderBy: [asc(extensionPermissionDefinitions.permissionKey)],
+      }),
+      db.query.bizExtensionPermissionGrants.findMany({
+        where: and(eq(bizExtensionPermissionGrants.bizId, bizId), eq(bizExtensionPermissionGrants.bizExtensionInstallId, installId)),
+        orderBy: [asc(bizExtensionPermissionGrants.scopeRefKey), desc(bizExtensionPermissionGrants.grantedAt)],
+      }),
+    ])
+
+    return ok(c, {
+      definitions,
+      grants,
+    })
+  },
+)
+
+extensionRoutes.post(
+  '/bizes/:bizId/extensions/installs/:installId/permission-grants',
+  requireAuth,
+  requireBizAccess('bizId'),
+  requireAclPermission('bizes.update', { bizIdParam: 'bizId' }),
+  async (c) => {
+    const { bizId, installId } = c.req.param()
+    const currentUser = getCurrentUser(c)
+    const parsed = permissionGrantBodySchema.safeParse(await c.req.json().catch(() => null))
+    if (!parsed.success) {
+      return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
+    }
+
+    const install = await db.query.bizExtensionInstalls.findFirst({
+      where: and(eq(bizExtensionInstalls.bizId, bizId), eq(bizExtensionInstalls.id, installId)),
+    })
+    if (!install) return fail(c, 'NOT_FOUND', 'Extension install not found.', 404)
+
+    const permissionDefinition = await db.query.extensionPermissionDefinitions.findFirst({
+      where: eq(extensionPermissionDefinitions.id, parsed.data.extensionPermissionDefinitionId),
+    })
+    if (!permissionDefinition) return fail(c, 'NOT_FOUND', 'Permission definition not found.', 404)
+    if (permissionDefinition.extensionDefinitionId !== install.extensionDefinitionId) {
+      return fail(c, 'VALIDATION_ERROR', 'Permission definition does not belong to this extension install.', 400)
+    }
+
+    const scopeRefKey = buildScopeRefKey({
+      scope: parsed.data.scope,
+      locationId: parsed.data.locationId,
+      subjectRefType: parsed.data.subjectRefType,
+      subjectRefId: parsed.data.subjectRefId,
+    })
+
+    const [created] = await db.insert(bizExtensionPermissionGrants).values({
+      bizId,
+      bizExtensionInstallId: installId,
+      extensionPermissionDefinitionId: parsed.data.extensionPermissionDefinitionId,
+      scope: parsed.data.scope,
+      scopeRefKey,
+      locationId: parsed.data.locationId ?? null,
+      subjectRefType: parsed.data.subjectRefType ?? null,
+      subjectRefId: parsed.data.subjectRefId ?? null,
+      effect: parsed.data.effect,
+      status: parsed.data.status,
+      grantedByUserId: currentUser?.id ?? null,
+      expiresAt: parsed.data.expiresAt ? new Date(parsed.data.expiresAt) : null,
+      reason: parsed.data.reason ? sanitizePlainText(parsed.data.reason) : null,
+      metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
+    }).onConflictDoUpdate({
+      target: [
+        bizExtensionPermissionGrants.bizId,
+        bizExtensionPermissionGrants.bizExtensionInstallId,
+        bizExtensionPermissionGrants.extensionPermissionDefinitionId,
+        bizExtensionPermissionGrants.scopeRefKey,
+      ],
+      set: {
+        effect: parsed.data.effect,
+        status: parsed.data.status,
+        expiresAt: parsed.data.expiresAt ? new Date(parsed.data.expiresAt) : null,
+        reason: parsed.data.reason ? sanitizePlainText(parsed.data.reason) : null,
+        metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
+        grantedAt: new Date(),
+      },
+    }).returning()
+
+    return ok(c, created, 201)
+  },
+)
+
+extensionRoutes.patch(
+  '/bizes/:bizId/extensions/installs/:installId/permission-grants/:grantId',
+  requireAuth,
+  requireBizAccess('bizId'),
+  requireAclPermission('bizes.update', { bizIdParam: 'bizId' }),
+  async (c) => {
+    const { bizId, installId, grantId } = c.req.param()
+    const parsed = updatePermissionGrantBodySchema.safeParse(await c.req.json().catch(() => null))
+    if (!parsed.success) {
+      return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
+    }
+
+    const existing = await db.query.bizExtensionPermissionGrants.findFirst({
+      where: and(
+        eq(bizExtensionPermissionGrants.bizId, bizId),
+        eq(bizExtensionPermissionGrants.bizExtensionInstallId, installId),
+        eq(bizExtensionPermissionGrants.id, grantId),
+      ),
+    })
+    if (!existing) return fail(c, 'NOT_FOUND', 'Permission grant not found.', 404)
+
+    const install = await db.query.bizExtensionInstalls.findFirst({
+      where: and(eq(bizExtensionInstalls.bizId, bizId), eq(bizExtensionInstalls.id, installId)),
+      columns: { id: true },
+    })
+    if (!install) return fail(c, 'NOT_FOUND', 'Extension install not found.', 404)
+
+    const [updated] = await db.update(bizExtensionPermissionGrants).set({
+      effect: parsed.data.effect ?? undefined,
+      status: parsed.data.status ?? undefined,
+      expiresAt: parsed.data.expiresAt === undefined ? undefined : parsed.data.expiresAt ? new Date(parsed.data.expiresAt) : null,
+      reason: parsed.data.reason ? sanitizePlainText(parsed.data.reason) : undefined,
+      metadata: parsed.data.metadata ? sanitizeUnknown(parsed.data.metadata) : undefined,
+    }).where(and(
+      eq(bizExtensionPermissionGrants.bizId, bizId),
+      eq(bizExtensionPermissionGrants.bizExtensionInstallId, installId),
+      eq(bizExtensionPermissionGrants.id, grantId),
+    )).returning()
+
+    return ok(c, updated)
+  },
+)
+
+extensionRoutes.get(
   '/bizes/:bizId/extensions/installs/:installId/state-documents',
   requireAuth,
   requireBizAccess('bizId'),
@@ -429,6 +685,12 @@ extensionRoutes.patch(
       ),
     })
     if (!existing) return fail(c, 'NOT_FOUND', 'Extension state document not found.', 404)
+    if (parsed.data.expectedRevision !== undefined && existing.revision !== parsed.data.expectedRevision) {
+      return fail(c, 'REVISION_CONFLICT', 'Extension state document revision mismatch.', 409, {
+        expectedRevision: parsed.data.expectedRevision,
+        actualRevision: existing.revision,
+      })
+    }
 
     const nextScope = parsed.data.scope ?? existing.scope
     const scopeRefKey = buildScopeRefKey({
@@ -465,5 +727,71 @@ extensionRoutes.patch(
     }).where(and(eq(extensionStateDocuments.bizId, bizId), eq(extensionStateDocuments.id, documentId))).returning()
 
     return ok(c, updated)
+  },
+)
+
+extensionRoutes.get(
+  '/bizes/:bizId/extensions/installs/:installId/projection-checkpoints',
+  requireAuth,
+  requireBizAccess('bizId'),
+  requireAclPermission('events.read', { bizIdParam: 'bizId' }),
+  async (c) => {
+    const { bizId, installId } = c.req.param()
+    const rows = await db.query.eventProjectionCheckpoints.findMany({
+      where: and(
+        eq(eventProjectionCheckpoints.bizId, bizId),
+        sql`${eventProjectionCheckpoints.metadata} ->> 'bizExtensionInstallId' = ${installId}`,
+      ),
+      orderBy: [asc(eventProjectionCheckpoints.projectionKey), asc(eventProjectionCheckpoints.consumerRef)],
+    })
+    return ok(c, rows)
+  },
+)
+
+extensionRoutes.post(
+  '/bizes/:bizId/extensions/installs/:installId/projection-checkpoints',
+  requireAuth,
+  requireBizAccess('bizId'),
+  requireAclPermission('events.read', { bizIdParam: 'bizId' }),
+  async (c) => {
+    const { bizId, installId } = c.req.param()
+    const parsed = projectionCheckpointBodySchema.safeParse(await c.req.json().catch(() => null))
+    if (!parsed.success) {
+      return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
+    }
+
+    const install = await db.query.bizExtensionInstalls.findFirst({
+      where: and(eq(bizExtensionInstalls.bizId, bizId), eq(bizExtensionInstalls.id, installId)),
+      columns: { id: true },
+    })
+    if (!install) return fail(c, 'NOT_FOUND', 'Extension install not found.', 404)
+
+    const [createdOrUpdated] = await db.insert(eventProjectionCheckpoints).values({
+      bizId,
+      projectionKey: sanitizePlainText(parsed.data.projectionKey),
+      consumerRef: sanitizePlainText(parsed.data.consumerRef),
+      lastDomainEventId: parsed.data.lastDomainEventId ?? null,
+      lastProcessedAt: new Date(),
+      status: sanitizePlainText(parsed.data.status),
+      lagHint: parsed.data.lagHint,
+      metadata: sanitizeUnknown({
+        ...(parsed.data.metadata ?? {}),
+        bizExtensionInstallId: installId,
+      }),
+    }).onConflictDoUpdate({
+      target: [eventProjectionCheckpoints.bizId, eventProjectionCheckpoints.projectionKey, eventProjectionCheckpoints.consumerRef],
+      set: {
+        lastDomainEventId: parsed.data.lastDomainEventId ?? null,
+        lastProcessedAt: new Date(),
+        status: sanitizePlainText(parsed.data.status),
+        lagHint: parsed.data.lagHint,
+        metadata: sanitizeUnknown({
+          ...(parsed.data.metadata ?? {}),
+          bizExtensionInstallId: installId,
+        }),
+      },
+    }).returning()
+
+    return ok(c, createdOrUpdated, 201)
   },
 )

@@ -13,11 +13,14 @@ import {
   varchar,
 } from "drizzle-orm/pg-core";
 import { idRef, idWithTag, withAuditRefs } from "./_common";
+import { actionRequests } from "./action_backbone";
 import { bizes } from "./bizes";
 import { bizExtensionInstalls, idempotencyKeys } from "./extensions";
 import { groupAccounts } from "./group_accounts";
 import { staffingAssignments } from "./intelligence";
 import { locations } from "./locations";
+import { domainEvents } from "./domain_events";
+import { debugSnapshots, projectionDocuments } from "./projections";
 import { resources } from "./resources";
 import { users } from "./users";
 import {
@@ -386,6 +389,40 @@ export const workRuns = pgTable(
     idempotencyKeyId: idRef("idempotency_key_id").references(() => idempotencyKeys.id),
 
     /**
+     * Canonical business action that created or last materially changed this run.
+     *
+     * ELI5:
+     * This is the "which request kicked off this real work?" pointer.
+     */
+    actionRequestId: idRef("action_request_id").references(() => actionRequests.id),
+
+    /**
+     * Most important event currently explaining this run's state.
+     *
+     * Example:
+     * - work.run.created
+     * - work.run.submitted
+     * - work.run.completed
+     */
+    latestDomainEventId: idRef("latest_domain_event_id").references(
+      () => domainEvents.id,
+    ),
+
+    /**
+     * Optional read-model document used by inbox/board/timeline UIs so agents
+     * and humans can inspect the run without reconstructing everything by hand.
+     */
+    projectionDocumentId: idRef("projection_document_id").references(
+      () => projectionDocuments.id,
+    ),
+
+    /**
+     * Structured debug snapshot for failures, stalled workflows, or weird
+     * payload combinations that need postmortem inspection.
+     */
+    debugSnapshotId: idRef("debug_snapshot_id").references(() => debugSnapshots.id),
+
+    /**
      * Snapshot payload of the resolved policy/context at creation.
      * Prevents behavior drift if templates change later.
      */
@@ -422,6 +459,12 @@ export const workRuns = pgTable(
       table.targetType,
       table.targetRefId,
       table.status,
+    ),
+    workRunsActionRequestIdx: index("work_runs_action_request_idx").on(
+      table.actionRequestId,
+    ),
+    workRunsLatestDomainEventIdx: index("work_runs_latest_domain_event_idx").on(
+      table.latestDomainEventId,
     ),
 
     /** Tenant-safe FK to template. */
@@ -515,6 +558,22 @@ export const workRunSteps = pgTable(
     /** Optional actor who completed or updated this step. */
     completedByUserId: idRef("completed_by_user_id").references(() => users.id),
 
+    /**
+     * Action responsible for this step transition.
+     *
+     * This gives a deterministic breadcrumb from a changed step back to the
+     * request that changed it.
+     */
+    actionRequestId: idRef("action_request_id").references(() => actionRequests.id),
+
+    /** Latest step-level business fact. */
+    latestDomainEventId: idRef("latest_domain_event_id").references(
+      () => domainEvents.id,
+    ),
+
+    /** Debug payload pointer when the step failed or became inconsistent. */
+    debugSnapshotId: idRef("debug_snapshot_id").references(() => debugSnapshots.id),
+
     /** Runtime result payload for structured outcomes. */
     result: jsonb("result").default({}).notNull(),
 
@@ -545,6 +604,9 @@ export const workRunSteps = pgTable(
       table.bizId,
       table.workRunId,
       table.status,
+    ),
+    workRunStepsActionRequestIdx: index("work_run_steps_action_request_idx").on(
+      table.actionRequestId,
     ),
     workRunStepsBizStatusConfigIdx: index("work_run_steps_biz_status_config_idx").on(
       table.bizId,
@@ -666,6 +728,19 @@ export const workEntries = pgTable(
     /** Structured payload for type-specific details. */
     payload: jsonb("payload").default({}).notNull(),
 
+    /**
+     * Action that logged or corrected this entry.
+     *
+     * This matters for debugging payroll, expense, and field evidence disputes.
+     */
+    actionRequestId: idRef("action_request_id").references(() => actionRequests.id),
+
+    /** Optional domain event emitted from this entry. */
+    domainEventId: idRef("domain_event_id").references(() => domainEvents.id),
+
+    /** Optional debug capture for invalid entry payloads or corrections. */
+    debugSnapshotId: idRef("debug_snapshot_id").references(() => debugSnapshots.id),
+
     /** Extension payload. */
     metadata: jsonb("metadata").default({}),
 
@@ -692,6 +767,9 @@ export const workEntries = pgTable(
       table.entryType,
       table.occurredAt,
     ),
+    workEntriesActionRequestOccurredIdx: index(
+      "work_entries_action_request_occurred_idx",
+    ).on(table.actionRequestId, table.occurredAt),
     workEntriesBizStatusConfigIdx: index("work_entries_biz_status_config_idx").on(
       table.bizId,
       table.statusConfigValueId,
@@ -823,6 +901,19 @@ export const workTimeSegments = pgTable(
     /** Optional note for manual corrections. */
     correctionNote: text("correction_note"),
 
+    /**
+     * Canonical action behind the clock-in, clock-out, or correction.
+     */
+    actionRequestId: idRef("action_request_id").references(() => actionRequests.id),
+
+    /** Latest timekeeping event tied to this segment. */
+    latestDomainEventId: idRef("latest_domain_event_id").references(
+      () => domainEvents.id,
+    ),
+
+    /** Debug payload pointer for geofence or correction anomalies. */
+    debugSnapshotId: idRef("debug_snapshot_id").references(() => debugSnapshots.id),
+
     /** Extension payload. */
     metadata: jsonb("metadata").default({}),
 
@@ -849,6 +940,9 @@ export const workTimeSegments = pgTable(
       table.workRunId,
       table.clockInAt,
     ),
+    workTimeSegmentsActionRequestClockInIdx: index(
+      "work_time_segments_action_request_clock_in_idx",
+    ).on(table.actionRequestId, table.clockInAt),
 
     /** Tenant-safe FK to parent run. */
     workTimeSegmentsBizRunFk: foreignKey({
@@ -1049,6 +1143,25 @@ export const workArtifacts = pgTable(
     /** Optional capture actor. */
     capturedByUserId: idRef("captured_by_user_id").references(() => users.id),
 
+    /**
+     * Action that captured or attached this artifact.
+     */
+    actionRequestId: idRef("action_request_id").references(() => actionRequests.id),
+
+    /** Event emitted because of this artifact capture, if any. */
+    domainEventId: idRef("domain_event_id").references(() => domainEvents.id),
+
+    /**
+     * Optional rendered document that uses this artifact in a customer/admin
+     * facing read-model.
+     */
+    projectionDocumentId: idRef("projection_document_id").references(
+      () => projectionDocuments.id,
+    ),
+
+    /** Structured debug capture for ingestion or evidence-validation failures. */
+    debugSnapshotId: idRef("debug_snapshot_id").references(() => debugSnapshots.id),
+
     /** Extension payload. */
     metadata: jsonb("metadata").default({}),
 
@@ -1072,6 +1185,9 @@ export const workArtifacts = pgTable(
       table.bizId,
       table.workEntryId,
     ),
+    workArtifactsActionRequestCapturedIdx: index(
+      "work_artifacts_action_request_captured_idx",
+    ).on(table.actionRequestId, table.capturedAt),
 
     /** Tenant-safe FK to run. */
     workArtifactsBizRunFk: foreignKey({
@@ -1165,6 +1281,27 @@ export const workApprovals = pgTable(
     /** Optional deadline for this approval node. */
     dueAt: timestamp("due_at", { withTimezone: true }),
 
+    /**
+     * Action that created or resolved this approval node.
+     *
+     * This is the bridge from "approval changed" back to the originating
+     * business request.
+     */
+    actionRequestId: idRef("action_request_id").references(() => actionRequests.id),
+
+    /** Latest approval-related business event. */
+    latestDomainEventId: idRef("latest_domain_event_id").references(
+      () => domainEvents.id,
+    ),
+
+    /** Optional rendered approval/inbox document. */
+    projectionDocumentId: idRef("projection_document_id").references(
+      () => projectionDocuments.id,
+    ),
+
+    /** Structured debug bundle for approval routing mistakes or deadlocks. */
+    debugSnapshotId: idRef("debug_snapshot_id").references(() => debugSnapshots.id),
+
     /** Extension payload. */
     metadata: jsonb("metadata").default({}),
 
@@ -1181,6 +1318,9 @@ export const workApprovals = pgTable(
       table.bizId,
       table.decision,
       table.dueAt,
+    ),
+    workApprovalsActionRequestIdx: index("work_approvals_action_request_idx").on(
+      table.actionRequestId,
     ),
 
     /** Common run approval chain path. */

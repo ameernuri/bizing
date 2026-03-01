@@ -1,0 +1,46 @@
+{
+  "stepKey": "uc-need-validate-9",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AJnOqwIDYrQrXOImuOPgqihY2H/steps/uc-need-validate-9/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the requirement of 'Booking cancellation if checklist not complete', but the evidence does not include any concrete API reads or persisted state checks that confirm this functionality. The linked use case mentions the need for booking cancellation based on checklist completion, yet there is no evidence demonstrating how this requirement is implemented or validated. This indicates a clear gap in the validation process, as the requirement is not supported by the current evidence.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].needs[8]",
+            "linkedUseCases[0].summary"
+          ],
+          "gaps": [
+            "No evidence of how booking cancellation is triggered based on checklist completion."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add booking cancellation validation endpoint",
+              "endpoint": "/api/v1/bookings/cancel",
+              "assertion": "Verify that the system cancels bookings when checklist items are incomplete."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "af498f66-ef28-40bf-af9a-1737c7a3988e",
+          "timestamp": "2026-02-28T22:59:14.452Z"
+        }
+      },
+      "at": "2026-02-28T22:59:14.454Z"
+    }
+  ]
+}

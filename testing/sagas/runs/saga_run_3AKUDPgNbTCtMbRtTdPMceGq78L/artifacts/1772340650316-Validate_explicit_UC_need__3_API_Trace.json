@@ -1,0 +1,45 @@
+{
+  "stepKey": "uc-need-validate-3",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AKUDPgNbTCtMbRtTdPMceGq78L/steps/uc-need-validate-3/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the requirement of 'Expiration dates (use within 6 months)', but the evidence provided does not include any API reads or persisted state checks that confirm this functionality. While the linked use case mentions the expiration of the pass, there are no corresponding validations or checks in the prior steps that address this requirement. Therefore, there is a clear gap in the evidence provided to satisfy this requirement.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].needs[2]"
+          ],
+          "gaps": [
+            "No evidence of expiration date validation for the '10-class flex pass'."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add API validation for expiration date",
+              "endpoint": "/api/v1/offers/expiration",
+              "assertion": "Verify that the API correctly enforces the expiration date for the user's pass."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "a5a3776e-6737-4a98-a60b-a98c11050390",
+          "timestamp": "2026-03-01T04:50:50.258Z"
+        }
+      },
+      "at": "2026-03-01T04:50:50.258Z"
+    }
+  ]
+}

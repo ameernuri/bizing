@@ -1,0 +1,46 @@
+{
+  "stepKey": "uc-need-validate-2",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AKg15wmaLL4AmB3tDPgaSDWpRM/steps/uc-need-validate-2/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the requirement of 'hourly pricing that scales with duration', but the evidence provided does not confirm this requirement. The linked use case indicates a fixed pricing model of $100/hr for a 2.5-hour booking, but there is no evidence of pricing adjustments for different durations, which is a critical aspect of the requirement. This indicates a gap in the requirement coverage as the evidence does not demonstrate the ability to scale pricing based on varying durations, which is essential for the requirement to be satisfied.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].bodyMarkdownPreview",
+            "priorStepEvidence[8].evidence.totalMinor"
+          ],
+          "gaps": [
+            "No evidence of pricing adjustments for durations other than the confirmed 2.5 hours."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add pricing validation tests",
+              "endpoint": "/api/v1/pricing/validate",
+              "assertion": "Verify that pricing scales correctly with different booking durations."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "82757992-141a-4d0a-bc57-5135aefe8bea",
+          "timestamp": "2026-03-01T06:27:48.910Z"
+        }
+      },
+      "at": "2026-03-01T06:27:48.911Z"
+    }
+  ]
+}

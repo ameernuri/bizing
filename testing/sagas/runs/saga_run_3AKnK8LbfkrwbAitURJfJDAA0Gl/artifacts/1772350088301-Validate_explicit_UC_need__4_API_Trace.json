@@ -1,0 +1,45 @@
+{
+  "stepKey": "uc-need-validate-4",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AKnK8LbfkrwbAitURJfJDAA0Gl/steps/uc-need-validate-4/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the requirement of a manual admin override for seasonality, but the evidence does not confirm that this functionality is implemented or accessible through the API. While the linked use case mentions that a manager can temporarily boost a stylist's favorability during busy seasons, there are no concrete API reads or persisted state checks provided to demonstrate that this manual override capability exists. This indicates a clear gap in the validation process, as the necessary details to confirm the requirement's satisfaction are missing.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].bodyMarkdownPreview"
+          ],
+          "gaps": [
+            "No explicit confirmation of the implementation of a manual admin override for seasonality."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add deterministic evidence contract for manual override",
+              "endpoint": "/api/v1/admin/override-seasonality",
+              "assertion": "Define concrete endpoint calls and assertions that directly verify the manual admin override functionality."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "89bf4a24-d58c-451c-aff5-df080fc2ee98",
+          "timestamp": "2026-03-01T07:28:08.259Z"
+        }
+      },
+      "at": "2026-03-01T07:28:08.260Z"
+    }
+  ]
+}

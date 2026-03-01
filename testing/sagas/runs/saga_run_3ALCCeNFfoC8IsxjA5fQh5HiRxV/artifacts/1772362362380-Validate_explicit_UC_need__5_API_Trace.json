@@ -1,0 +1,46 @@
+{
+  "stepKey": "uc-need-validate-5",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3ALCCeNFfoC8IsxjA5fQh5HiRxV/steps/uc-need-validate-5/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the requirement of final reservation linkage to order/fulfillment. However, the evidence provided does not include any concrete API reads or persisted state checks that confirm this requirement is satisfied. The linked use case explicitly states the need for final reservation linkage, but there are no prior steps that specifically address or validate this aspect, indicating a clear gap in the validation process.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].bodyMarkdownPreview",
+            "priorStepEvidence"
+          ],
+          "gaps": [
+            "No evidence of final reservation linkage to order/fulfillment."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add deterministic evidence contract for reservation linkage",
+              "endpoint": "/api/v1/reservation-linkage-validation",
+              "assertion": "Define concrete endpoint calls and assertions that directly verify final reservation linkage to order/fulfillment."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "a7f4a81c-65b6-4016-9c2f-9c2ba3f1c9dd",
+          "timestamp": "2026-03-01T10:52:42.341Z"
+        }
+      },
+      "at": "2026-03-01T10:52:42.342Z"
+    }
+  ]
+}

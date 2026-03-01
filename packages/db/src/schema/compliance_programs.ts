@@ -10,7 +10,10 @@ import {
   varchar,
 } from "drizzle-orm/pg-core";
 import { idRef, idWithTag, withAuditRefs } from "./_common";
+import { actionRequests } from "./action_backbone";
 import { bizes } from "./bizes";
+import { debugSnapshots } from "./projections";
+import { domainEvents } from "./domain_events";
 import {
   complianceCheckStatusEnum,
   complianceControlStatusEnum,
@@ -24,6 +27,7 @@ import { tenantComplianceProfiles } from "./governance";
 import { locations } from "./locations";
 import { subjects } from "./subjects";
 import { users } from "./users";
+import { workflowInstances } from "./workflows";
 
 /**
  * compliance_program_enrollments
@@ -371,6 +375,16 @@ export const complianceControlEvidence = pgTable(
     /** Structured detail payload. */
     payload: jsonb("payload").default({}).notNull(),
 
+    /**
+     * Optional canonical traceability links.
+     *
+     * ELI5:
+     * Compliance evidence is much easier to trust when we can point at the
+     * business event or debug snapshot that produced it.
+     */
+    domainEventId: idRef("domain_event_id").references(() => domainEvents.id),
+    debugSnapshotId: idRef("debug_snapshot_id").references(() => debugSnapshots.id),
+
     /** Extensible payload. */
     metadata: jsonb("metadata").default({}),
 
@@ -385,6 +399,11 @@ export const complianceControlEvidence = pgTable(
     complianceControlEvidenceBizStatusCapturedIdx: index(
       "compliance_control_evidence_biz_status_captured_idx",
     ).on(table.bizId, table.status, table.capturedAt),
+
+    /** Useful when evidence is tied to one canonical business event. */
+    complianceControlEvidenceDomainEventIdx: index(
+      "compliance_control_evidence_domain_event_idx",
+    ).on(table.domainEventId),
 
     /** Tenant-safe FK to parent control implementation. */
     complianceControlEvidenceBizControlFk: foreignKey({
@@ -459,6 +478,23 @@ export const complianceControlChecks = pgTable(
     /** Source class (system, integration, agent, manual). */
     runSource: varchar("run_source", { length: 80 }).default("system").notNull(),
 
+    /**
+     * Optional canonical request/event/workflow breadcrumbs.
+     *
+     * ELI5:
+     * These make compliance checks explainable instead of opaque:
+     * - which action triggered the check?
+     * - which event caused it?
+     * - which workflow was responsible?
+     */
+    actionRequestId: idRef("action_request_id").references(() => actionRequests.id),
+    triggeringDomainEventId: idRef("triggering_domain_event_id").references(
+      () => domainEvents.id,
+    ),
+    workflowInstanceId: idRef("workflow_instance_id").references(
+      () => workflowInstances.id,
+    ),
+
     /** Start/end timestamps. */
     startedAt: timestamp("started_at", { withTimezone: true }),
     completedAt: timestamp("completed_at", { withTimezone: true }),
@@ -471,6 +507,9 @@ export const complianceControlChecks = pgTable(
 
     /** Optional error summary for failed/error runs. */
     errorSummary: text("error_summary"),
+
+    /** Optional shared debugging artifact for deep failure analysis. */
+    debugSnapshotId: idRef("debug_snapshot_id").references(() => debugSnapshots.id),
 
     /** Extensible payload. */
     metadata: jsonb("metadata").default({}),
@@ -490,6 +529,16 @@ export const complianceControlChecks = pgTable(
     complianceControlChecksBizControlCheckKeyIdx: index(
       "compliance_control_checks_biz_control_check_key_idx",
     ).on(table.bizId, table.complianceControlImplementationId, table.checkKey, table.startedAt),
+
+    /** Trace path from action backbone into compliance checks. */
+    complianceControlChecksActionRequestIdx: index(
+      "compliance_control_checks_action_request_idx",
+    ).on(table.actionRequestId),
+
+    /** Trace path from event backbone into compliance checks. */
+    complianceControlChecksTriggeringDomainEventIdx: index(
+      "compliance_control_checks_triggering_domain_event_idx",
+    ).on(table.triggeringDomainEventId),
 
     /** Tenant-safe FK to parent control. */
     complianceControlChecksBizControlFk: foreignKey({

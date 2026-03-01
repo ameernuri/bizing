@@ -24,11 +24,26 @@ export const bizTypeEnum = pgEnum("biz_type", [
   "enterprise",
 ]);
 
-/** Shared soft-lifecycle for entities that are configurable content. */
+/**
+ * Shared soft-lifecycle for configurable/runtime-managed entities.
+ *
+ * ELI5:
+ * - `draft`: being prepared, not live yet
+ * - `active`: live and usable
+ * - `inactive`: kept around but not currently active
+ * - `suspended`: intentionally paused without deleting/uninstalling it
+ * - `archived`: historical/retired
+ *
+ * Why `suspended` matters:
+ * Some platform controls need a reversible "paused for review" state.
+ * Example: an extension install can stay installed while one grant or config is
+ * suspended pending security review.
+ */
 export const lifecycleStatusEnum = pgEnum("lifecycle_status", [
   "draft",
   "active",
   "inactive",
+  "suspended",
   "archived",
 ]);
 

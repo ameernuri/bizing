@@ -1,0 +1,45 @@
+{
+  "stepKey": "uc-need-validate-9",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AKN4JBLsNDVY1WEIjPF4qOqSQM/steps/uc-need-validate-9/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the requirement of alerting a supervisor upon a failed inspection. While the linked use case describes a scenario where a supervisor is alerted, there is no concrete evidence provided that confirms this alerting mechanism is functioning as required. Specifically, the evidence does not include any API reads or persisted state checks that demonstrate the alert was successfully sent to the supervisor, leading to a clear gap in validation.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].bodyMarkdownPreview"
+          ],
+          "gaps": [
+            "No evidence confirming that a failed inspection triggers an alert to the supervisor."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Verify alerting mechanism for failed inspections",
+              "endpoint": "/api/v1/alerts",
+              "assertion": "Check if an alert is sent to the supervisor when an inspection fails."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "46f79c39-48e1-4b5b-981a-5e73c684aa16",
+          "timestamp": "2026-03-01T03:52:38.482Z"
+        }
+      },
+      "at": "2026-03-01T03:52:38.483Z"
+    }
+  ]
+}

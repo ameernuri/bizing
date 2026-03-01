@@ -1,0 +1,45 @@
+{
+  "stepKey": "uc-need-validate-9",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AK6p1lgVBPxqjZ7tVekywyrZqM/steps/uc-need-validate-9/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the requirement for payment terms (Net-15, Net-30, upon completion). However, the evidence provided does not include any concrete API reads or persisted state checks that confirm these payment terms are being enforced or tracked within the system. The only related information is that a payment is scheduled for Net-15, but this does not constitute sufficient evidence of requirement coverage as it lacks the necessary validation checks.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].needs"
+          ],
+          "gaps": [
+            "No evidence of payment terms (Net-15, Net-30, upon completion) being implemented or validated."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add deterministic evidence for payment terms validation",
+              "endpoint": "/api/v1/payments",
+              "assertion": "Define concrete endpoint calls and assertions that directly verify the implementation of payment terms."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "7f3b1de8-2819-4fca-8825-712ae61c13b5",
+          "timestamp": "2026-03-01T01:38:59.377Z"
+        }
+      },
+      "at": "2026-03-01T01:38:59.378Z"
+    }
+  ]
+}

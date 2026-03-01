@@ -1,0 +1,45 @@
+{
+  "stepKey": "uc-need-validate-2",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AKcge4GMR71nowkGr2budCmJRu/steps/uc-need-validate-2/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the requirement of having a primary admission path for default UX routing, with secondary paths still active. However, the evidence indicates a failure in the previous step (uc-need-validate-1) due to an HTTP 500 error when attempting to set admission modes, which suggests that the primary admission path could not be established. This failure directly impacts the ability to confirm that the requirement is met, resulting in a gap.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "priorStepEvidence[uc-need-validate-1].failureMessage"
+          ],
+          "gaps": [
+            "Primary admission path for default UX routing could not be established due to a duplicate key error."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Retry setting admission modes",
+              "endpoint": "/api/v1/bizes/3AKcgnNaukyp9kqgoX7IQOGaUyX/offers/offer_3AKch1SUITvsoJXvtLO0rMxiwpf/versions/offer_version_3AKch16WBj4tICWRiF2TtZkK7ub/admission-modes",
+              "assertion": "Ensure that the primary admission path can be set without violating unique constraints."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "64b6a441-dbc6-41c3-8c56-0c3130abb352",
+          "timestamp": "2026-03-01T06:00:26.506Z"
+        }
+      },
+      "at": "2026-03-01T06:00:26.507Z"
+    }
+  ]
+}

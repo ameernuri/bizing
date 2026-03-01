@@ -17,6 +17,7 @@ import { locations } from "./locations";
 import { sellables } from "./product_commerce";
 import { products } from "./products";
 import { resources } from "./resources";
+import { scheduleSubjects } from "./schedule_subjects";
 import { serviceProducts } from "./service_products";
 import { services } from "./services";
 import { subjects } from "./subjects";
@@ -242,7 +243,37 @@ export const calendarBindings = pgTable(
       .references(() => calendars.id)
       .notNull(),
 
-    /** Owner discriminator. */
+    /**
+     * Canonical scheduling owner pointer.
+     *
+     * ELI5:
+     * The older typed owner columns below still explain what kind of thing this
+     * binding belongs to. This column is the newer reusable pointer that says:
+     * "regardless of type, which schedule subject does this calendar belong to?"
+     *
+     * Why it matters:
+     * - lets scheduling code query one shared identity layer
+     * - makes plugins/future domains easier to plug into the same calendar model
+     * - helps the schema move away from owner-type branching over time
+     */
+    scheduleSubjectId: idRef("schedule_subject_id").references(() => scheduleSubjects.id),
+
+    /**
+     * Human-readable owner class for this binding.
+     *
+     * ELI5:
+     * `schedule_subject_id` is the canonical "who is being scheduled?" pointer.
+     * `owner_type` remains here as a typed label so humans, admin screens, and
+     * query helpers can still answer simple questions like:
+     * - "is this calendar attached to a resource or a service?"
+     * - "show me all user-owned calendars"
+     *
+     * Design intent:
+     * - `schedule_subject_id` is the long-term reusable backbone
+     * - `owner_type` is the descriptive classifier that keeps the system easy
+     *   to debug and operate while the scheduling model converges on the
+     *   shared schedule-subject abstraction
+     */
     ownerType: calendarOwnerTypeEnum("owner_type").notNull(),
 
     /** Owner payload for resources. */
@@ -365,6 +396,10 @@ export const calendarBindings = pgTable(
       table.bizId,
       table.calendarId,
     ),
+    /** Canonical owner lookup path through the schedule-subject backbone. */
+    calendarBindingsBizScheduleSubjectIdx: index(
+      "calendar_bindings_biz_schedule_subject_idx",
+    ).on(table.bizId, table.scheduleSubjectId),
     /** Common lookup path for extensible custom-subject owners. */
     calendarBindingsBizOwnerRefIdx: index("calendar_bindings_biz_owner_ref_idx").on(
       table.bizId,
@@ -387,6 +422,13 @@ export const calendarBindings = pgTable(
       columns: [table.bizId, table.calendarId],
       foreignColumns: [calendars.bizId, calendars.id],
       name: "calendar_bindings_biz_calendar_fk",
+    }),
+
+    /** Tenant-safe FK to the canonical schedule subject when present. */
+    calendarBindingsBizScheduleSubjectFk: foreignKey({
+      columns: [table.bizId, table.scheduleSubjectId],
+      foreignColumns: [scheduleSubjects.bizId, scheduleSubjects.id],
+      name: "calendar_bindings_biz_schedule_subject_fk",
     }),
 
     /** Tenant-safe FK for resource owners. */
@@ -458,6 +500,7 @@ export const calendarBindings = pgTable(
         AND "offer_id" IS NULL
         AND "offer_version_id" IS NULL
         AND "location_id" IS NULL
+        AND "schedule_subject_id" IS NULL
         AND "owner_user_id" IS NULL
         AND "owner_ref_type" IS NULL
         AND "owner_ref_id" IS NULL
@@ -470,6 +513,7 @@ export const calendarBindings = pgTable(
         AND "offer_id" IS NULL
         AND "offer_version_id" IS NULL
         AND "location_id" IS NULL
+        AND "schedule_subject_id" IS NULL
         AND "owner_user_id" IS NOT NULL
         AND "owner_ref_type" IS NULL
         AND "owner_ref_id" IS NULL
@@ -482,6 +526,7 @@ export const calendarBindings = pgTable(
         AND "offer_id" IS NULL
         AND "offer_version_id" IS NULL
         AND "location_id" IS NULL
+        AND "schedule_subject_id" IS NOT NULL
         AND "owner_user_id" IS NULL
         AND "owner_ref_type" IS NULL
         AND "owner_ref_id" IS NULL
@@ -494,6 +539,7 @@ export const calendarBindings = pgTable(
         AND "offer_id" IS NULL
         AND "offer_version_id" IS NULL
         AND "location_id" IS NULL
+        AND "schedule_subject_id" IS NOT NULL
         AND "owner_user_id" IS NULL
         AND "owner_ref_type" IS NULL
         AND "owner_ref_id" IS NULL
@@ -506,6 +552,7 @@ export const calendarBindings = pgTable(
         AND "offer_id" IS NULL
         AND "offer_version_id" IS NULL
         AND "location_id" IS NULL
+        AND "schedule_subject_id" IS NOT NULL
         AND "owner_user_id" IS NULL
         AND "owner_ref_type" IS NULL
         AND "owner_ref_id" IS NULL
@@ -518,6 +565,7 @@ export const calendarBindings = pgTable(
         AND "offer_id" IS NOT NULL
         AND "offer_version_id" IS NULL
         AND "location_id" IS NULL
+        AND "schedule_subject_id" IS NOT NULL
         AND "owner_user_id" IS NULL
         AND "owner_ref_type" IS NULL
         AND "owner_ref_id" IS NULL
@@ -530,6 +578,7 @@ export const calendarBindings = pgTable(
         AND "offer_id" IS NULL
         AND "offer_version_id" IS NOT NULL
         AND "location_id" IS NULL
+        AND "schedule_subject_id" IS NOT NULL
         AND "owner_user_id" IS NULL
         AND "owner_ref_type" IS NULL
         AND "owner_ref_id" IS NULL
@@ -542,6 +591,7 @@ export const calendarBindings = pgTable(
         AND "offer_id" IS NULL
         AND "offer_version_id" IS NULL
         AND "location_id" IS NOT NULL
+        AND "schedule_subject_id" IS NOT NULL
         AND "owner_user_id" IS NULL
         AND "owner_ref_type" IS NULL
         AND "owner_ref_id" IS NULL
@@ -554,6 +604,7 @@ export const calendarBindings = pgTable(
         AND "offer_id" IS NULL
         AND "offer_version_id" IS NULL
         AND "location_id" IS NULL
+        AND "schedule_subject_id" IS NOT NULL
         AND "owner_user_id" IS NULL
         AND "owner_ref_type" IS NOT NULL
         AND "owner_ref_id" IS NOT NULL
@@ -681,6 +732,22 @@ export const calendarBindings = pgTable(
       .on(table.bizId, table.ownerRefType, table.ownerRefId)
       .where(
         sql`"owner_type" = 'custom_subject' AND "is_primary" = true AND "is_active" = true AND "deleted_at" IS NULL`,
+      ),
+
+    /**
+     * Canonical "one active primary calendar per schedule subject" rule.
+     *
+     * ELI5:
+     * Typed unique indexes above preserve current explicit owner ergonomics.
+     * This index is the new shared rule that future scheduling code should rely
+     * on as the platform pivots toward schedule subjects.
+     */
+    calendarBindingsPrimaryPerScheduleSubjectUnique: uniqueIndex(
+      "calendar_bindings_primary_per_schedule_subject_unique",
+    )
+      .on(table.bizId, table.scheduleSubjectId)
+      .where(
+        sql`"schedule_subject_id" IS NOT NULL AND "is_primary" = true AND "is_active" = true AND "deleted_at" IS NULL`,
       ),
 
   }),

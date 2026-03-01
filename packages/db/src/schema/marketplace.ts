@@ -9,8 +9,11 @@ import {
   varchar,
 } from "drizzle-orm/pg-core";
 import { idRef, idWithTag, withAuditRefs } from "./_common";
+import { actionRequests } from "./action_backbone";
 import { bizes } from "./bizes";
+import { domainEvents } from "./domain_events";
 import { resources } from "./resources";
+import { debugSnapshots, projectionDocuments } from "./projections";
 import { subjects } from "./subjects";
 import { users } from "./users";
 import { bookingOrders } from "./fulfillment";
@@ -328,6 +331,15 @@ export const bids = pgTable(
     /** Optional expiry timestamp for timed offers. */
     expiresAt: timestamp("expires_at", { withTimezone: true }),
 
+    /** Canonical action that created or changed this bid. */
+    actionRequestId: idRef("action_request_id").references(() => actionRequests.id),
+
+    /** Latest auction/bid event that explains this row. */
+    domainEventId: idRef("domain_event_id").references(() => domainEvents.id),
+
+    /** Structured debug payload for bidding/ranking/conflict anomalies. */
+    debugSnapshotId: idRef("debug_snapshot_id").references(() => debugSnapshots.id),
+
     /** Bid metadata (notes/proofs/source context). */
     metadata: jsonb("metadata").default({}),
 
@@ -343,6 +355,10 @@ export const bids = pgTable(
     bidsBizAuctionSubmittedIdx: index("bids_biz_auction_submitted_idx").on(
       table.bizId,
       table.auctionId,
+      table.submittedAt,
+    ),
+    bidsActionRequestSubmittedIdx: index("bids_action_request_submitted_idx").on(
+      table.actionRequestId,
       table.submittedAt,
     ),
 
@@ -413,6 +429,22 @@ export const crossBizContracts = pgTable(
     /** Contract expiry time. */
     expiresAt: timestamp("expires_at", { withTimezone: true }),
 
+    /** Canonical action that created or revised this contract. */
+    actionRequestId: idRef("action_request_id").references(() => actionRequests.id),
+
+    /** Latest contract event emitted for this row. */
+    latestDomainEventId: idRef("latest_domain_event_id").references(
+      () => domainEvents.id,
+    ),
+
+    /** Optional rendered contract summary for admin/partner UI. */
+    projectionDocumentId: idRef("projection_document_id").references(
+      () => projectionDocuments.id,
+    ),
+
+    /** Debug snapshot for governance or settlement mismatches. */
+    debugSnapshotId: idRef("debug_snapshot_id").references(() => debugSnapshots.id),
+
     /** Canonical legal/commercial terms snapshot. */
     terms: jsonb("terms").default({}).notNull(),
 
@@ -436,6 +468,9 @@ export const crossBizContracts = pgTable(
       table.bizId,
       table.status,
     ),
+    crossBizContractsActionRequestIdx: index(
+      "cross_biz_contracts_action_request_idx",
+    ).on(table.actionRequestId),
 
     /** Prevent self-contract rows. */
     crossBizContractsNoSelfCheck: check(
@@ -502,6 +537,22 @@ export const crossBizOrders = pgTable(
     /** Settlement completion timestamp. */
     settledAt: timestamp("settled_at", { withTimezone: true }),
 
+    /** Canonical action that created or progressed this cross-biz order. */
+    actionRequestId: idRef("action_request_id").references(() => actionRequests.id),
+
+    /** Latest event that explains the order's shared lifecycle state. */
+    latestDomainEventId: idRef("latest_domain_event_id").references(
+      () => domainEvents.id,
+    ),
+
+    /** Optional settlement/order projection used by partner-facing UIs. */
+    projectionDocumentId: idRef("projection_document_id").references(
+      () => projectionDocuments.id,
+    ),
+
+    /** Debug payload for settlement, entitlement, or contract failures. */
+    debugSnapshotId: idRef("debug_snapshot_id").references(() => debugSnapshots.id),
+
     /** Extension payload. */
     metadata: jsonb("metadata").default({}),
 
@@ -521,6 +572,9 @@ export const crossBizOrders = pgTable(
       table.status,
       table.settlementDueAt,
     ),
+    crossBizOrdersActionRequestIdx: index(
+      "crossBizOrders_action_request_idx",
+    ).on(table.actionRequestId),
 
     /** Tenant-safe FK to contract. */
     crossBizOrdersBizContractFk: foreignKey({
@@ -766,6 +820,15 @@ export const referralEvents = pgTable(
     /** Event details payload. */
     payload: jsonb("payload").default({}).notNull(),
 
+    /** Canonical action behind this referral progression event. */
+    actionRequestId: idRef("action_request_id").references(() => actionRequests.id),
+
+    /** Shared domain event pointer for referral automations and timelines. */
+    domainEventId: idRef("domain_event_id").references(() => domainEvents.id),
+
+    /** Debug snapshot for referral attribution failures or inconsistencies. */
+    debugSnapshotId: idRef("debug_snapshot_id").references(() => debugSnapshots.id),
+
     /** Full audit metadata. */
     ...withAuditRefs(() => users.id),
   },
@@ -780,6 +843,9 @@ export const referralEvents = pgTable(
     referralEventsBizProgramEventAtIdx: index(
       "referral_events_biz_program_event_at_idx",
     ).on(table.bizId, table.referralProgramId, table.eventAt),
+    referralEventsActionRequestIdx: index(
+      "referral_events_action_request_idx",
+    ).on(table.actionRequestId),
 
     /** Tenant-safe FK to program. */
     referralEventsBizProgramFk: foreignKey({
@@ -857,6 +923,22 @@ export const rewardGrants = pgTable(
     /** Optional external payout reference (Stripe transfer, wallet tx id, etc.). */
     payoutReference: varchar("payout_reference", { length: 140 }),
 
+    /** Canonical action that granted, reversed, or settled this reward. */
+    actionRequestId: idRef("action_request_id").references(() => actionRequests.id),
+
+    /** Latest reward business fact for this row. */
+    latestDomainEventId: idRef("latest_domain_event_id").references(
+      () => domainEvents.id,
+    ),
+
+    /** Optional payout/reward projection surfaced to operators or recipients. */
+    projectionDocumentId: idRef("projection_document_id").references(
+      () => projectionDocuments.id,
+    ),
+
+    /** Debug bundle for grant, payout, or reversal issues. */
+    debugSnapshotId: idRef("debug_snapshot_id").references(() => debugSnapshots.id),
+
     /** Extension payload. */
     metadata: jsonb("metadata").default({}),
 
@@ -873,6 +955,9 @@ export const rewardGrants = pgTable(
       table.bizId,
       table.status,
       table.grantedAt,
+    ),
+    rewardGrantsActionRequestIdx: index("reward_grants_action_request_idx").on(
+      table.actionRequestId,
     ),
 
     /** Tenant-safe FK to referral program. */

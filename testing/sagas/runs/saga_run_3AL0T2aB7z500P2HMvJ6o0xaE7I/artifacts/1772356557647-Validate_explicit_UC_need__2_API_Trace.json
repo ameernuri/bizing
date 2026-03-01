@@ -1,0 +1,43 @@
+{
+  "stepKey": "uc-need-validate-2",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AL0T2aB7z500P2HMvJ6o0xaE7I/steps/uc-need-validate-2/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The evidence provided does not include any checks or confirmations regarding subscriber-to-endpoint ownership, which is a critical requirement for ensuring that notifications are sent only to valid subscriptions and endpoints. The lack of concrete API reads or persisted state checks to confirm this requirement indicates a significant gap in the validation process. Specifically, the exploratory step instruction explicitly calls for validation of this requirement, but no evidence was presented to support its satisfaction.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [],
+          "gaps": [
+            "No evidence confirming subscriber-to-endpoint ownership checks."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add checks for subscriber-to-endpoint ownership",
+              "endpoint": "/api/v1/subscriber-endpoint-checks",
+              "assertion": "Verify that notifications are only sent to valid subscriptions and owner-linked endpoints."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "f44d81ad-6652-4777-bc6c-370a7cdd97eb",
+          "timestamp": "2026-03-01T09:15:57.593Z"
+        }
+      },
+      "at": "2026-03-01T09:15:57.601Z"
+    }
+  ]
+}

@@ -1,0 +1,45 @@
+{
+  "stepKey": "uc-need-validate-2",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AKmejje5TtBSy0qkLOWrGownM9/steps/uc-need-validate-2/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step requires validation of an internal source payload that includes both `source_biz_id` and `calendar_binding_id`. However, the evidence provided does not include a payload that meets these criteria. The `mySources` evidence shows an internal source with a `sourceBizId`, but it lacks the required `calendar_binding_id` in the context of the payload. This indicates a gap in the requirement coverage.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "priorStepEvidence[uc-need-validate-1].mySources"
+          ],
+          "gaps": [
+            "Missing internal source payload with both `source_biz_id` and `calendar_binding_id`."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add deterministic evidence contract",
+              "endpoint": null,
+              "assertion": "Define concrete endpoint calls and assertions that directly verify this requirement."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "c23c880a-ba48-4719-9c19-798e16a819d1",
+          "timestamp": "2026-03-01T07:22:29.216Z"
+        }
+      },
+      "at": "2026-03-01T07:22:29.217Z"
+    }
+  ]
+}

@@ -1,0 +1,46 @@
+{
+  "stepKey": "uc-need-validate-2",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AKnDgMaITU1p9Laha1KTEYmvwN/steps/uc-need-validate-2/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The requirement to validate the overbooking algorithm (book 105% of capacity) is not supported by the provided evidence. While the linked use case describes the overbooking scenario, there are no concrete API reads or persisted state checks that demonstrate the algorithm's implementation or effectiveness. The evidence does not confirm that the system is capable of booking beyond capacity as required, leading to a clear gap in validation.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].bodyMarkdownPreview",
+            "exploratoryStep.expectedResult"
+          ],
+          "gaps": [
+            "No evidence of the overbooking algorithm being implemented or validated."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add validation for overbooking algorithm",
+              "endpoint": "/api/v1/overbooking/validate",
+              "assertion": "Verify that the system can book 105% of capacity based on historical no-show rates."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "8cd52ef2-13bf-4d3c-84dc-e4d88507f12d",
+          "timestamp": "2026-03-01T07:27:00.672Z"
+        }
+      },
+      "at": "2026-03-01T07:27:00.675Z"
+    }
+  ]
+}

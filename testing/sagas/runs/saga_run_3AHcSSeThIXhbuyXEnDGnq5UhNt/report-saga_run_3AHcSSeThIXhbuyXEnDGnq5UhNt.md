@@ -1,7 +1,0 @@
-# Auto Saga Report
-
-- sagaKey: `uc-113-the-consultant-with-multiple-clients-ale`
-- runId: `saga_run_3AHcSSeThIXhbuyXEnDGnq5UhNt`
-- generatedAt: `2026-02-28T04:30:06.136Z`
-
-All lifecycle steps were executed by the API-only auto runner.

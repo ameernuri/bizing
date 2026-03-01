@@ -1,0 +1,45 @@
+{
+  "stepKey": "uc-need-validate-11",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AK6p1lgVBPxqjZ7tVekywyrZqM/steps/uc-need-validate-11/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the requirement for 'License and certification expiration tracking'. However, while the linked use case mentions that the system tracks the contractor's license expiration and sends a renewal reminder, there is no concrete evidence of API reads or persisted state checks that confirm this functionality is operational. The evidence does not provide sufficient detail to assert that the requirement is fully covered, leading to a gap in validation.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].needs"
+          ],
+          "gaps": [
+            "No concrete evidence of API reads or checks confirming the operational status of license and certification expiration tracking."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add deterministic evidence for license tracking",
+              "endpoint": "/api/v1/licenses",
+              "assertion": "Define concrete endpoint calls and assertions that directly verify license and certification expiration tracking."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "6a5a6dfe-0104-4982-9879-5dbb9fe5c01e",
+          "timestamp": "2026-03-01T01:39:08.503Z"
+        }
+      },
+      "at": "2026-03-01T01:39:08.504Z"
+    }
+  ]
+}

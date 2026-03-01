@@ -1,0 +1,45 @@
+{
+  "stepKey": "uc-need-validate-11",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AJjVYxdlJy7dPTwEkpM1wRT3zJ/steps/uc-need-validate-11/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate a specific onboarding sequence for new customers, which includes a series of emails sent on designated days. However, the evidence provided does not include any concrete API reads or persisted state checks that confirm these emails were sent or scheduled as required. This leads to a clear gap in the requirement coverage, as the expected onboarding sequence is not evidenced in the current state.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].bodyMarkdownPreview"
+          ],
+          "gaps": [
+            "No evidence of the onboarding emails being sent on Day 0, Day 3, Day 7, Day 14, and Day 30."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add evidence for onboarding email sequence",
+              "endpoint": "/api/v1/onboarding-emails",
+              "assertion": "Verify that the system sends the onboarding emails as per the defined schedule."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "0d80fbb8-4130-415c-87a4-1e91826bc969",
+          "timestamp": "2026-02-28T22:27:32.498Z"
+        }
+      },
+      "at": "2026-02-28T22:27:32.548Z"
+    }
+  ]
+}

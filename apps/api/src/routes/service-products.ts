@@ -15,10 +15,14 @@ import { and, asc, desc, eq, ilike, sql } from "drizzle-orm";
 import { z } from "zod";
 import dbPackage from "@bizing/db";
 import {
+  getCurrentAuthCredentialId,
+  getCurrentAuthSource,
+  getCurrentUser,
   requireAclPermission,
   requireAuth,
   requireBizAccess,
 } from "../middleware/auth.js";
+import { persistCanonicalAction } from "../services/action-runtime.js";
 import { fail, ok, parsePositiveInt } from "./_api.js";
 
 const {
@@ -89,6 +93,24 @@ const createBindingBodySchema = z
     message: "Provide exactly one of serviceId or serviceGroupId.",
     path: ["serviceId"],
   });
+
+async function executeBizAction(c: Parameters<typeof getCurrentUser>[0], bizId: string, actionKey: string, payload: Record<string, unknown>) {
+  const user = getCurrentUser(c);
+  if (!user) throw new Error("Authentication required.");
+  return persistCanonicalAction({
+    bizId,
+    input: { actionKey, payload, metadata: {} },
+    intentMode: "execute",
+    context: {
+      bizId,
+      user,
+      authSource: getCurrentAuthSource(c),
+      authCredentialId: getCurrentAuthCredentialId(c),
+      requestId: c.get("requestId"),
+      accessMode: "biz",
+    },
+  });
+}
 
 export const serviceProductRoutes = new Hono();
 
@@ -165,33 +187,12 @@ serviceProductRoutes.post(
       return fail(c, "VALIDATION_ERROR", "Invalid request body.", 400, parsed.error.flatten());
     }
 
-    const [created] = await db
-      .insert(serviceProducts)
-      .values({
-        bizId,
-        productId: parsed.data.productId,
-        name: parsed.data.name,
-        slug: parsed.data.slug,
-        description: parsed.data.description,
-        kind: parsed.data.kind,
-        kindConfigValueId: parsed.data.kindConfigValueId,
-        durationMode: parsed.data.durationMode,
-        durationModeConfigValueId: parsed.data.durationModeConfigValueId,
-        defaultDurationMinutes: parsed.data.defaultDurationMinutes,
-        minDurationMinutes: parsed.data.minDurationMinutes ?? null,
-        maxDurationMinutes: parsed.data.maxDurationMinutes ?? null,
-        durationStepMinutes: parsed.data.durationStepMinutes,
-        timezone: parsed.data.timezone,
-        basePriceAmountMinorUnits: parsed.data.basePriceAmountMinorUnits,
-        currency: parsed.data.currency,
-        pricingPolicy: parsed.data.pricingPolicy ?? {},
-        availabilityPolicy: parsed.data.availabilityPolicy ?? {},
-        isPublished: parsed.data.isPublished,
-        status: parsed.data.status,
-        statusConfigValueId: parsed.data.statusConfigValueId,
-        metadata: parsed.data.metadata ?? {},
-      })
-      .returning();
+    const action = await executeBizAction(c, bizId, "service_product.create", parsed.data);
+    const createdId = (action.actionRequest as { outputPayload?: Record<string, unknown> }).outputPayload?.serviceProductId;
+    const created = await db.query.serviceProducts.findFirst({
+      where: and(eq(serviceProducts.bizId, bizId), eq(serviceProducts.id, String(createdId))),
+    });
+    if (!created) return fail(c, "INTERNAL_ERROR", "Service product action succeeded but row could not be reloaded.", 500);
 
     return ok(c, created, 201);
   },
@@ -231,13 +232,15 @@ serviceProductRoutes.patch(
     });
     if (!existing) return fail(c, "NOT_FOUND", "Service product not found.", 404);
 
-    const [updated] = await db
-      .update(serviceProducts)
-      .set({
-        ...parsed.data,
-      })
-      .where(and(eq(serviceProducts.bizId, bizId), eq(serviceProducts.id, serviceProductId)))
-      .returning();
+    const action = await executeBizAction(c, bizId, "service_product.update", {
+      serviceProductId,
+      ...parsed.data,
+    });
+    const updatedId = (action.actionRequest as { outputPayload?: Record<string, unknown> }).outputPayload?.serviceProductId;
+    const updated = await db.query.serviceProducts.findFirst({
+      where: and(eq(serviceProducts.bizId, bizId), eq(serviceProducts.id, String(updatedId))),
+    });
+    if (!updated) return fail(c, "INTERNAL_ERROR", "Service product action succeeded but row could not be reloaded.", 500);
 
     return ok(c, updated);
   },
@@ -256,14 +259,12 @@ serviceProductRoutes.delete(
     });
     if (!existing) return fail(c, "NOT_FOUND", "Service product not found.", 404);
 
-    const [updated] = await db
-      .update(serviceProducts)
-      .set({
-        status: "archived",
-        isPublished: false,
-      })
-      .where(and(eq(serviceProducts.bizId, bizId), eq(serviceProducts.id, serviceProductId)))
-      .returning();
+    const action = await executeBizAction(c, bizId, "service_product.archive", { serviceProductId });
+    const updatedId = (action.actionRequest as { outputPayload?: Record<string, unknown> }).outputPayload?.serviceProductId;
+    const updated = await db.query.serviceProducts.findFirst({
+      where: and(eq(serviceProducts.bizId, bizId), eq(serviceProducts.id, String(updatedId))),
+    });
+    if (!updated) return fail(c, "INTERNAL_ERROR", "Service product action succeeded but row could not be reloaded.", 500);
 
     return ok(c, updated);
   },

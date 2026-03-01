@@ -60,6 +60,105 @@ Implementation:
 - `/Users/ameer/bizing/code/apps/api/src/routes/mcp.ts`
 - `/Users/ameer/bizing/code/apps/api/src/code-mode/README.md`
 
+### Canonical Action API
+
+This is the new write backbone for important business operations.
+
+ELI5:
+- instead of only calling table-shaped mutation routes
+- callers can say "preview" or "execute" one named business action
+- the platform records:
+  - the request
+  - the execution phase
+  - any failure/debug evidence
+  - idempotency/retry context
+
+Routes:
+- `GET /api/v1/bizes/:bizId/actions`
+- `GET /api/v1/bizes/:bizId/actions/:actionRequestId`
+- `POST /api/v1/bizes/:bizId/actions/preview`
+- `POST /api/v1/bizes/:bizId/actions/execute`
+
+Current first-class action adapters:
+- `booking.create`
+- `booking.cancel`
+- `offer.create`
+- `offer.update`
+- `offer.archive`
+- `offer.publish`
+- `resource.create`
+- `resource.update`
+- `resource.delete`
+- `service_group.create`
+- `service_group.update`
+- `service_group.archive`
+- `service.create`
+- `service.update`
+- `service.archive`
+- `service_product.create`
+- `service_product.update`
+- `service_product.archive`
+- `service_product.publish`
+- `calendar.create`
+- `calendar.update`
+- `calendar.archive`
+- `member.offboard`
+- `calendar.block`
+
+Canonical success side effects:
+- successful action execution now emits one canonical `domain_event`
+- successful action execution now writes one `action_activity` projection document
+- action failures continue to write shared `debug_snapshots`
+
+Current first-class projection/debug reads:
+- `GET /api/v1/bizes/:bizId/projections`
+- `GET /api/v1/bizes/:bizId/projections/:projectionId/documents`
+- `GET /api/v1/bizes/:bizId/projection-documents/:documentId`
+- `GET /api/v1/bizes/:bizId/debug-snapshots`
+- `GET /api/v1/bizes/:bizId/events`
+- `GET /api/v1/bizes/:bizId/events/:domainEventId`
+
+Public-safe action surface:
+- `POST /api/v1/public/bizes/:bizId/actions/preview`
+- `POST /api/v1/public/bizes/:bizId/actions/execute`
+
+ELI5:
+- internal staff/admin surfaces use `/api/v1/bizes/:bizId/actions/*`
+- customer/public surfaces can use `/api/v1/public/bizes/:bizId/actions/*`
+- the public surface is allowlisted and currently only exposes `booking.create`
+- this lets customer/session flows use the same action backbone without forcing
+  them to be biz members
+
+Security model:
+- route-level ACL protects the action/projection surface itself
+- action-specific ACL is evaluated again inside the action runtime
+- idempotency collisions with mismatched payloads return conflict instead of replaying unsafe writes
+- public actions do not bypass the backbone; they only use a narrower action allowlist
+
+Implementation:
+- `/Users/ameer/projects/bizing/apps/api/src/routes/actions.ts`
+- `/Users/ameer/projects/bizing/apps/api/src/services/action-runtime.ts`
+- `/Users/ameer/projects/bizing/apps/api/src/services/booking-lifecycle-messages.ts`
+- `/Users/ameer/projects/bizing/apps/api/src/code-mode/tools.ts`
+
+### Direct CRUD Writes That Now Flow Through Canonical Actions
+
+ELI5:
+- some routes still look like ordinary CRUD because that is convenient for app
+  developers and admin UIs
+- but the write itself now goes through the same action runtime as the explicit
+  `/actions/execute` API
+- that means one shared path for idempotency, execution records, events, and
+  debugging
+
+Current delegated write route families:
+- resources
+- calendars
+- offers
+- service groups
+- services
+- service products
+
 ### Saga Lifecycle API
 
 - Specs: `/api/v1/sagas/specs/*`
@@ -67,6 +166,13 @@ Implementation:
 - Step reporting: `/api/v1/sagas/runs/:runId/steps/:stepKey/result`
 - Artifacts: snapshots/traces/report endpoints under `/api/v1/sagas/runs/:runId/*`
 - Test-mode helpers: `/api/v1/sagas/test-mode/*`
+- Bulk validation workflow:
+  - `bun run --cwd /Users/ameer/projects/bizing/apps/api sagas:rerun`
+  - `bun run --cwd /Users/ameer/projects/bizing/apps/api sagas:collect`
+  - `sagas:collect` keeps running after failures, groups blockers by domain/endpoint, and writes the latest report to:
+    - `/Users/ameer/projects/bizing/apps/api/.tmp/saga-reports/blockers-latest.json`
+    - `/Users/ameer/projects/bizing/apps/api/.tmp/saga-reports/blockers-latest.md`
+  - Use `sagas:collect` to find cluster-level API gaps first, then use targeted reruns to validate the fixes.
 - Library entities:
   - Use cases: `/api/v1/sagas/use-cases*` and `/api/v1/sagas/use-cases/:ucKey/versions`
   - Personas: `/api/v1/sagas/personas*` and `/api/v1/sagas/personas/:personaKey/versions`
@@ -91,6 +197,55 @@ Implementation:
 - `/Users/ameer/bizing/code/testing/sagas/README.md`
 - `/Users/ameer/bizing/code/testing/sagas/docs/API_CONTRACT.md`
 
+Admin explorer UI:
+- `/sagas` now acts as a route-based explorer shell instead of one large dashboard component.
+- Primary views are:
+  - `/sagas` for current health and recent failures
+  - `/sagas/use-cases` and `/sagas/use-cases/:ucKey`
+  - `/sagas/personas` and `/sagas/personas/:personaKey`
+  - `/sagas/definitions` and `/sagas/definitions/:sagaKey`
+  - `/sagas/runs` and `/sagas/runs/:runId`
+- The intent is simple: every loop object gets its own detail page, and links between use cases, personas, definitions, and runs stay clickable instead of being buried in one stateful screen.
+- The explorer shell now keeps a trigger in the main content rail too, so the sidebar can always be reopened after being hidden.
+- Saga run cards, recent-run rows, and attention-queue cards now include a low-opacity segmented step-progress backdrop again, so pass/fail/pending state is visible at a glance before opening a run.
+- Saga run detail step cards now use the same low-noise status backdrop treatment, so the timeline carries visual pass/fail/running cues without needing to read every badge first.
+- Phase accordion rows in the step timeline now also show aggregated segmented progress, so collapsed phases still communicate their health at a glance.
+- The shared sidebar primitive now reserves desktop layout width with an explicit gap rail, so inset sidebars no longer render on top of page content.
+- Run detail pages defensively treat schema coverage as optional data, because some older or partial runs do not have a full coverage payload attached yet.
+- Saga validation hardening now includes concrete proof handlers for: quiet-hour enforcement, annual waiver reuse, SMS confirmation/reminder examples, rich onboarding/preparation email examples, postal reminder/legal-notice examples, and membership freeze/proration/retry phrasing variants.
+- Recent ergonomics fixes for the saga-heavy API surfaces:
+  - policy templates can now be created without forcing the caller to precompute a slug
+  - communication consent writes now behave like upserts on the canonical subject/channel/purpose tuple
+  - membership plans default `entitlementType` to `custom` so simple plans do not need fake entitlement values
+  - instrument-run creation auto-registers missing assignee subjects instead of failing on subject-graph FKs
+
+### Workflow + Review Read API
+
+These routes expose the long-running process layer that sits above actions and
+events.
+
+ELI5:
+- actions answer "what was requested?"
+- events answer "what fact happened?"
+- workflows answer "what process is now running because of that?"
+- review queues answer "what is waiting for a human/operator?"
+
+Routes:
+- `GET /api/v1/bizes/:bizId/review-queues`
+- `GET /api/v1/bizes/:bizId/review-queue-items`
+- `GET /api/v1/bizes/:bizId/review-queue-items/:reviewQueueItemId`
+- `GET /api/v1/bizes/:bizId/workflows`
+- `GET /api/v1/bizes/:bizId/workflows/:workflowInstanceId`
+- `GET /api/v1/bizes/:bizId/workflows/:workflowInstanceId/steps`
+- `GET /api/v1/bizes/:bizId/workflows/:workflowInstanceId/decisions`
+- `GET /api/v1/bizes/:bizId/async-deliverables`
+- `GET /api/v1/bizes/:bizId/async-deliverables/:asyncDeliverableId`
+
+The agent surface now exposes matching tools for:
+- review queue list/detail
+- workflow list/detail/steps/decisions
+- async deliverable list/detail
+
 ### Domain APIs (current v0 core)
 
 - Bizes: `apps/api/src/routes/bizes.ts`
@@ -109,6 +264,31 @@ Implementation:
 - Demand pricing: `apps/api/src/routes/demand-pricing.ts`
 - Compliance: `apps/api/src/routes/compliance.ts`
 - Dispatch: `apps/api/src/routes/dispatch.ts`
+
+Design note:
+- these domain routes still exist and remain useful
+- but the redesign direction is:
+  - important writes move toward the canonical actions API
+  - fast/readable consumer views move toward projection documents
+  - failures become inspectable through debug snapshots instead of ad-hoc route-local logging
+- the saga runner has started moving to this direction now:
+  - offer publishing uses `offer.publish`
+  - customer booking uses public `booking.create`
+  - member offboarding validation uses `member.offboard`
+
+### Saga library + migration baseline
+
+- Saga library can be regenerated/reseeded from canonical markdown sources with:
+  - `bun run --cwd /Users/ameer/bizing/code/apps/api sagas:generate -- --sync=true`
+- The canonical loop library is also reseedable through the authenticated API:
+  - `POST /api/v1/sagas/library/reset-reseed`
+  - `POST /api/v1/sagas/library/sync-docs`
+- The DB migration stack has been hard-cut to one fresh v0 baseline:
+  - `/Users/ameer/bizing/code/packages/db/migrations/0000_luxuriant_goblin_queen.sql`
+
+ELI5:
+- saga definitions now come from the docs + generated spec files again
+- the database migration story is now "one clean canonical baseline", not "keep dragging legacy rename history forever"
 
 ### Lifecycle Evidence Surfaces
 
@@ -172,13 +352,94 @@ These are the backbone routes the saga runner now uses to prove:
   - `POST /api/v1/bizes/:bizId/booking-orders/:bookingOrderId/participants/:participantId/events`
 - Operations:
   - `GET /api/v1/bizes/:bizId/operations/location-overview`
+  - `GET /api/v1/bizes/:bizId/analytics/overview`
+- Calendar timeline read model:
+  - `GET /api/v1/bizes/:bizId/calendars/:calendarId/timeline`
 - Public location discovery:
   - `GET /api/v1/public/bizes/:bizId/locations`
+- Authz admin surfaces exposed to agents:
+  - `GET /api/v1/bizes/:bizId/members`
+  - `POST /api/v1/bizes/:bizId/members`
+  - `PATCH /api/v1/bizes/:bizId/members/:memberId`
+  - `DELETE /api/v1/bizes/:bizId/members/:memberId`
+  - `POST /api/v1/bizes/:bizId/members/:memberId/offboard`
+  - `GET /api/v1/bizes/:bizId/invitations`
+  - `POST /api/v1/bizes/:bizId/invitations`
+  - `DELETE /api/v1/bizes/:bizId/invitations/:invitationId`
 
 These exist primarily so saga validation can prove multi-location operations, participant-level group
-flows, and governance controls through API-only evidence instead of exploratory guesses.
+flows, governance controls, owner revenue sanity, and calendar-review behavior through API-only
+evidence instead of exploratory guesses.
+
+### Why The New Read Models Exist
+
+`GET /api/v1/bizes/:bizId/analytics/overview`
+- ELI5:
+  this is the "owner dashboard sanity payload".
+- It answers the common questions a saga or admin UI keeps asking:
+  - how many bookings exist
+  - how much revenue is represented
+  - which statuses dominate
+  - which locations/offers/service-products are doing the most work
+- It is a read model, not a second source of truth.
+
+`GET /api/v1/bizes/:bizId/calendars/:calendarId/timeline`
+- ELI5:
+  this is the "tell me the full story of this calendar" payload.
+- It returns the calendar plus:
+  - bindings
+  - active or historical rules in a window
+  - holds in that window
+  - bookings that match the bound owners/subjects
+- This keeps saga calendar review and future operator UIs from having to
+  manually fan out across bindings/rules/holds/bookings and guess how they fit
+  together.
 
 ## Non-Negotiable Rule
+
+### 2026-03-01 Saga Hardening Additions
+
+- Added and mounted new API route surfaces used by saga lifecycle coverage:
+  - gift delivery:
+    - `GET /api/v1/bizes/:bizId/gift-instruments`
+    - `POST /api/v1/bizes/:bizId/gift-instruments`
+    - `GET /api/v1/bizes/:bizId/gift-delivery-schedules`
+    - `POST /api/v1/bizes/:bizId/gift-delivery-schedules`
+    - `PATCH /api/v1/bizes/:bizId/gift-delivery-schedules/:scheduleId`
+    - `GET /api/v1/bizes/:bizId/gift-delivery-schedules/:scheduleId/attempts`
+    - `POST /api/v1/bizes/:bizId/gift-delivery-schedules/:scheduleId/attempts`
+  - marketing performance:
+    - `GET /api/v1/bizes/:bizId/marketing/audience-segments`
+    - `POST /api/v1/bizes/:bizId/marketing/audience-segments`
+    - `GET /api/v1/bizes/:bizId/marketing/audience-segments/:segmentId/memberships`
+    - `POST /api/v1/bizes/:bizId/marketing/audience-segments/:segmentId/memberships`
+    - `GET /api/v1/bizes/:bizId/marketing/audience-sync-runs`
+    - `POST /api/v1/bizes/:bizId/marketing/audience-sync-runs`
+    - `GET /api/v1/bizes/:bizId/ad-spend-daily-facts`
+    - `POST /api/v1/bizes/:bizId/ad-spend-daily-facts`
+    - `GET /api/v1/bizes/:bizId/offline-conversion-pushes`
+    - `POST /api/v1/bizes/:bizId/offline-conversion-pushes`
+    - `GET /api/v1/bizes/:bizId/marketing/overview`
+  - supply/AR extensions:
+    - `GET /api/v1/bizes/:bizId/production-batches`
+    - `POST /api/v1/bizes/:bizId/production-batches`
+    - `PATCH /api/v1/bizes/:bizId/production-batches/:batchId`
+    - `GET /api/v1/bizes/:bizId/production-batches/:batchId/reservations`
+    - `POST /api/v1/bizes/:bizId/production-batches/:batchId/reservations`
+    - `PATCH /api/v1/bizes/:bizId/production-batches/:batchId/reservations/:reservationId`
+    - `GET /api/v1/bizes/:bizId/billing-account-autopay-rules`
+    - `POST /api/v1/bizes/:bizId/billing-account-autopay-rules`
+    - `GET /api/v1/bizes/:bizId/autocollection-attempts`
+    - `POST /api/v1/bizes/:bizId/autocollection-attempts`
+- Expanded CRM surfaces used by lifecycle sagas:
+  - `GET /api/v1/bizes/:bizId/crm/pipelines`
+  - `POST /api/v1/bizes/:bizId/crm/pipelines`
+  - `GET /api/v1/bizes/:bizId/crm/pipelines/:pipelineId/stages`
+  - `POST /api/v1/bizes/:bizId/crm/pipelines/:pipelineId/stages`
+  - `PATCH /api/v1/bizes/:bizId/crm/leads/:leadId`
+  - `POST /api/v1/bizes/:bizId/crm/lead-intake`
+  - `GET /api/v1/bizes/:bizId/crm/contacts/:contactId/summary`
+- Saga validator behavior now favors deterministic API contract probes over exploratory-only LLM verdicts for UC ranges with known route surfaces.
 
 External actors (humans, third-party apps, testing agents) must use API contracts only.
 No direct database access is part of public behavior validation.

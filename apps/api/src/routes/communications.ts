@@ -16,7 +16,7 @@ import { and, asc, desc, eq, sql } from 'drizzle-orm'
 import { z } from 'zod'
 import dbPackage from '@bizing/db'
 import { requireAclPermission, requireAuth, requireBizAccess } from '../middleware/auth.js'
-import { sanitizeUnknown } from '../lib/sanitize.js'
+import { sanitizePlainText, sanitizeUnknown } from '../lib/sanitize.js'
 import { fail, ok, parsePositiveInt } from './_api.js'
 
 const {
@@ -25,6 +25,11 @@ const {
   outboundMessageEvents,
   communicationConsents,
   quietHourPolicies,
+  messageTemplates,
+  messageTemplateBindings,
+  marketingCampaigns,
+  marketingCampaignSteps,
+  marketingCampaignEnrollments,
 } = dbPackage
 
 const listOutboundMessagesQuerySchema = z.object({
@@ -145,6 +150,74 @@ const createQuietPolicyBodySchema = z.object({
 })
 
 const updateQuietPolicyBodySchema = createQuietPolicyBodySchema.partial()
+const createMessageTemplateBodySchema = z.object({
+  channel: z.enum(['sms', 'email', 'push', 'whatsapp', 'postal', 'voice', 'webhook']),
+  purpose: z.enum(['transactional', 'marketing', 'operational', 'legal']),
+  name: z.string().min(1).max(220),
+  slug: z.string().min(1).max(140),
+  version: z.number().int().positive().default(1),
+  status: z.enum(['draft', 'active', 'inactive', 'archived']).default('draft'),
+  isCurrent: z.boolean().default(false),
+  locale: z.string().min(1).max(20).default('en-US'),
+  subjectTemplate: z.string().max(600).optional().nullable(),
+  bodyTemplate: z.string().min(1).max(50000),
+  structuredTemplate: z.record(z.unknown()).optional(),
+  variableSchema: z.record(z.unknown()).optional(),
+  renderPolicy: z.record(z.unknown()).optional(),
+  metadata: z.record(z.unknown()).optional(),
+})
+const patchMessageTemplateBodySchema = createMessageTemplateBodySchema.partial()
+const createMessageTemplateBindingBodySchema = z.object({
+  messageTemplateId: z.string().min(1),
+  eventPattern: z.string().min(1).max(200),
+  targetType: z
+    .enum(['biz', 'location', 'user', 'group_account', 'resource', 'service', 'service_product', 'offer', 'offer_version', 'product', 'sellable', 'booking_order', 'booking_order_line', 'fulfillment_unit', 'payment_intent', 'queue_entry', 'trip', 'custom'])
+    .optional()
+    .nullable(),
+  priority: z.number().int().min(0).default(100),
+  isActive: z.boolean().default(true),
+  conditionExpr: z.record(z.unknown()).optional(),
+  metadata: z.record(z.unknown()).optional(),
+})
+const createMarketingCampaignBodySchema = z.object({
+  name: z.string().min(1).max(220),
+  slug: z.string().min(1).max(140),
+  status: z.enum(['draft', 'active', 'paused', 'completed', 'archived']).default('draft'),
+  description: z.string().max(5000).optional().nullable(),
+  startsAt: z.string().datetime().optional().nullable(),
+  endsAt: z.string().datetime().optional().nullable(),
+  entryPolicy: z.record(z.unknown()).optional(),
+  exitPolicy: z.record(z.unknown()).optional(),
+  metadata: z.record(z.unknown()).optional(),
+})
+const patchMarketingCampaignBodySchema = createMarketingCampaignBodySchema.partial()
+const createMarketingCampaignStepBodySchema = z.object({
+  marketingCampaignId: z.string().min(1),
+  stepKey: z.string().min(1).max(120),
+  stepType: z.enum(['delay', 'message', 'condition', 'exit']),
+  name: z.string().max(220).optional().nullable(),
+  sortOrder: z.number().int().min(0).default(100),
+  channel: z.enum(['sms', 'email', 'push', 'whatsapp', 'postal', 'voice', 'webhook']).optional().nullable(),
+  messageTemplateId: z.string().min(1).optional().nullable(),
+  delayMinutes: z.number().int().min(0).optional().nullable(),
+  conditionExpr: z.record(z.unknown()).optional(),
+  nextStepKey: z.string().max(120).optional().nullable(),
+  onTrueStepKey: z.string().max(120).optional().nullable(),
+  onFalseStepKey: z.string().max(120).optional().nullable(),
+  status: z.enum(['draft', 'active', 'inactive', 'archived']).default('active'),
+  metadata: z.record(z.unknown()).optional(),
+})
+const createMarketingCampaignEnrollmentBodySchema = z.object({
+  marketingCampaignId: z.string().min(1),
+  subjectType: z.enum(['biz', 'location', 'user', 'group_account', 'resource', 'service', 'service_product', 'offer', 'offer_version', 'product', 'sellable', 'booking_order', 'booking_order_line', 'fulfillment_unit', 'payment_intent', 'queue_entry', 'trip', 'custom']),
+  subjectRefId: z.string().min(1).max(140),
+  subjectUserId: z.string().optional().nullable(),
+  subjectGroupAccountId: z.string().optional().nullable(),
+  status: z.enum(['active', 'paused', 'completed', 'exited', 'failed']).default('active'),
+  currentStepKey: z.string().max(120).optional().nullable(),
+  exitReason: z.string().max(240).optional().nullable(),
+  metadata: z.record(z.unknown()).optional(),
+})
 const createOutboundMessageEventBodySchema = z.object({
   eventType: z.enum(['queued', 'sent', 'delivered', 'failed', 'bounced', 'opened', 'clicked', 'replied', 'complained', 'unsubscribed', 'other']),
   providerEventRef: z.string().max(240).optional(),
@@ -421,23 +494,46 @@ communicationRoutes.post(
       return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
     }
 
+    const existing = await db.query.communicationConsents.findFirst({
+      where: and(
+        eq(communicationConsents.bizId, bizId),
+        eq(communicationConsents.subjectType, parsed.data.subjectType as never),
+        eq(communicationConsents.subjectRefId, parsed.data.subjectRefId),
+        eq(communicationConsents.channel, parsed.data.channel),
+        eq(communicationConsents.purpose, parsed.data.purpose),
+      ),
+    })
+
+    const payload = {
+      subjectType: parsed.data.subjectType as never,
+      subjectRefId: parsed.data.subjectRefId,
+      subjectUserId: parsed.data.subjectUserId,
+      subjectGroupAccountId: parsed.data.subjectGroupAccountId,
+      channel: parsed.data.channel,
+      purpose: parsed.data.purpose,
+      status: parsed.data.status,
+      source: parsed.data.source,
+      legalBasis: parsed.data.legalBasis,
+      capturedAt: parsed.data.capturedAt ? new Date(parsed.data.capturedAt) : new Date(),
+      expiresAt: parsed.data.expiresAt ? new Date(parsed.data.expiresAt) : null,
+      revokedAt: parsed.data.revokedAt ? new Date(parsed.data.revokedAt) : null,
+      metadata: cleanMetadata(parsed.data.metadata),
+    }
+
+    if (existing) {
+      const [updated] = await db
+        .update(communicationConsents)
+        .set(payload)
+        .where(and(eq(communicationConsents.bizId, bizId), eq(communicationConsents.id, existing.id)))
+        .returning()
+      return ok(c, updated, 201, { reused: true })
+    }
+
     const [created] = await db
       .insert(communicationConsents)
       .values({
         bizId,
-        subjectType: parsed.data.subjectType as never,
-        subjectRefId: parsed.data.subjectRefId,
-        subjectUserId: parsed.data.subjectUserId,
-        subjectGroupAccountId: parsed.data.subjectGroupAccountId,
-        channel: parsed.data.channel,
-        purpose: parsed.data.purpose,
-        status: parsed.data.status,
-        source: parsed.data.source,
-        legalBasis: parsed.data.legalBasis,
-        capturedAt: parsed.data.capturedAt ? new Date(parsed.data.capturedAt) : new Date(),
-        expiresAt: parsed.data.expiresAt ? new Date(parsed.data.expiresAt) : null,
-        revokedAt: parsed.data.revokedAt ? new Date(parsed.data.revokedAt) : null,
-        metadata: cleanMetadata(parsed.data.metadata),
+        ...payload,
       })
       .returning()
 
@@ -606,5 +702,285 @@ communicationRoutes.patch(
       .returning()
 
     return ok(c, updated)
+  },
+)
+
+communicationRoutes.get(
+  '/bizes/:bizId/message-templates',
+  requireAuth,
+  requireBizAccess('bizId'),
+  requireAclPermission('communications.read', { bizIdParam: 'bizId' }),
+  async (c) => {
+    const bizId = c.req.param('bizId')
+    const rows = await db.query.messageTemplates.findMany({
+      where: eq(messageTemplates.bizId, bizId),
+      orderBy: [asc(messageTemplates.channel), asc(messageTemplates.slug), desc(messageTemplates.version)],
+    })
+    return ok(c, rows)
+  },
+)
+
+communicationRoutes.post(
+  '/bizes/:bizId/message-templates',
+  requireAuth,
+  requireBizAccess('bizId'),
+  requireAclPermission('communications.write', { bizIdParam: 'bizId' }),
+  async (c) => {
+    const bizId = c.req.param('bizId')
+    const parsed = createMessageTemplateBodySchema.safeParse(await c.req.json().catch(() => null))
+    if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
+
+    const [created] = await db.insert(messageTemplates).values({
+      bizId,
+      channel: parsed.data.channel,
+      purpose: parsed.data.purpose,
+      name: sanitizePlainText(parsed.data.name),
+      slug: sanitizePlainText(parsed.data.slug),
+      version: parsed.data.version,
+      status: parsed.data.status,
+      isCurrent: parsed.data.isCurrent,
+      locale: sanitizePlainText(parsed.data.locale),
+      subjectTemplate: parsed.data.subjectTemplate ? sanitizePlainText(parsed.data.subjectTemplate) : null,
+      bodyTemplate: sanitizePlainText(parsed.data.bodyTemplate),
+      structuredTemplate: cleanMetadata(parsed.data.structuredTemplate),
+      variableSchema: cleanMetadata(parsed.data.variableSchema),
+      renderPolicy: cleanMetadata(parsed.data.renderPolicy),
+      metadata: cleanMetadata(parsed.data.metadata),
+    }).returning()
+
+    return ok(c, created, 201)
+  },
+)
+
+communicationRoutes.patch(
+  '/bizes/:bizId/message-templates/:templateId',
+  requireAuth,
+  requireBizAccess('bizId'),
+  requireAclPermission('communications.write', { bizIdParam: 'bizId' }),
+  async (c) => {
+    const { bizId, templateId } = c.req.param()
+    const parsed = patchMessageTemplateBodySchema.safeParse(await c.req.json().catch(() => null))
+    if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
+
+    const [updated] = await db.update(messageTemplates).set({
+      channel: parsed.data.channel,
+      purpose: parsed.data.purpose,
+      name: parsed.data.name !== undefined ? sanitizePlainText(parsed.data.name) : undefined,
+      slug: parsed.data.slug !== undefined ? sanitizePlainText(parsed.data.slug) : undefined,
+      version: parsed.data.version,
+      status: parsed.data.status,
+      isCurrent: parsed.data.isCurrent,
+      locale: parsed.data.locale !== undefined ? sanitizePlainText(parsed.data.locale) : undefined,
+      subjectTemplate:
+        parsed.data.subjectTemplate === undefined ? undefined : parsed.data.subjectTemplate ? sanitizePlainText(parsed.data.subjectTemplate) : null,
+      bodyTemplate: parsed.data.bodyTemplate !== undefined ? sanitizePlainText(parsed.data.bodyTemplate) : undefined,
+      structuredTemplate: parsed.data.structuredTemplate === undefined ? undefined : cleanMetadata(parsed.data.structuredTemplate),
+      variableSchema: parsed.data.variableSchema === undefined ? undefined : cleanMetadata(parsed.data.variableSchema),
+      renderPolicy: parsed.data.renderPolicy === undefined ? undefined : cleanMetadata(parsed.data.renderPolicy),
+      metadata: parsed.data.metadata === undefined ? undefined : cleanMetadata(parsed.data.metadata),
+    }).where(and(eq(messageTemplates.bizId, bizId), eq(messageTemplates.id, templateId))).returning()
+
+    if (!updated) return fail(c, 'NOT_FOUND', 'Message template not found.', 404)
+    return ok(c, updated)
+  },
+)
+
+communicationRoutes.get(
+  '/bizes/:bizId/message-template-bindings',
+  requireAuth,
+  requireBizAccess('bizId'),
+  requireAclPermission('communications.read', { bizIdParam: 'bizId' }),
+  async (c) => {
+    const bizId = c.req.param('bizId')
+    const rows = await db.query.messageTemplateBindings.findMany({
+      where: eq(messageTemplateBindings.bizId, bizId),
+      orderBy: [asc(messageTemplateBindings.eventPattern), asc(messageTemplateBindings.priority)],
+    })
+    return ok(c, rows)
+  },
+)
+
+communicationRoutes.post(
+  '/bizes/:bizId/message-template-bindings',
+  requireAuth,
+  requireBizAccess('bizId'),
+  requireAclPermission('communications.write', { bizIdParam: 'bizId' }),
+  async (c) => {
+    const bizId = c.req.param('bizId')
+    const parsed = createMessageTemplateBindingBodySchema.safeParse(await c.req.json().catch(() => null))
+    if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
+
+    const [created] = await db.insert(messageTemplateBindings).values({
+      bizId,
+      messageTemplateId: parsed.data.messageTemplateId,
+      eventPattern: sanitizePlainText(parsed.data.eventPattern),
+      targetType: parsed.data.targetType ?? null,
+      priority: parsed.data.priority,
+      isActive: parsed.data.isActive,
+      conditionExpr: cleanMetadata(parsed.data.conditionExpr),
+      metadata: cleanMetadata(parsed.data.metadata),
+    }).returning()
+
+    return ok(c, created, 201)
+  },
+)
+
+communicationRoutes.get(
+  '/bizes/:bizId/marketing-campaigns',
+  requireAuth,
+  requireBizAccess('bizId'),
+  requireAclPermission('communications.read', { bizIdParam: 'bizId' }),
+  async (c) => {
+    const bizId = c.req.param('bizId')
+    const rows = await db.query.marketingCampaigns.findMany({
+      where: eq(marketingCampaigns.bizId, bizId),
+      orderBy: [asc(marketingCampaigns.status), asc(marketingCampaigns.slug)],
+    })
+    return ok(c, rows)
+  },
+)
+
+communicationRoutes.post(
+  '/bizes/:bizId/marketing-campaigns',
+  requireAuth,
+  requireBizAccess('bizId'),
+  requireAclPermission('communications.write', { bizIdParam: 'bizId' }),
+  async (c) => {
+    const bizId = c.req.param('bizId')
+    const parsed = createMarketingCampaignBodySchema.safeParse(await c.req.json().catch(() => null))
+    if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
+
+    const [created] = await db.insert(marketingCampaigns).values({
+      bizId,
+      name: sanitizePlainText(parsed.data.name),
+      slug: sanitizePlainText(parsed.data.slug),
+      status: parsed.data.status,
+      description: parsed.data.description ? sanitizePlainText(parsed.data.description) : null,
+      startsAt: parsed.data.startsAt ? new Date(parsed.data.startsAt) : null,
+      endsAt: parsed.data.endsAt ? new Date(parsed.data.endsAt) : null,
+      entryPolicy: cleanMetadata(parsed.data.entryPolicy),
+      exitPolicy: cleanMetadata(parsed.data.exitPolicy),
+      metadata: cleanMetadata(parsed.data.metadata),
+    }).returning()
+
+    return ok(c, created, 201)
+  },
+)
+
+communicationRoutes.patch(
+  '/bizes/:bizId/marketing-campaigns/:campaignId',
+  requireAuth,
+  requireBizAccess('bizId'),
+  requireAclPermission('communications.write', { bizIdParam: 'bizId' }),
+  async (c) => {
+    const { bizId, campaignId } = c.req.param()
+    const parsed = patchMarketingCampaignBodySchema.safeParse(await c.req.json().catch(() => null))
+    if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
+
+    const [updated] = await db.update(marketingCampaigns).set({
+      name: parsed.data.name !== undefined ? sanitizePlainText(parsed.data.name) : undefined,
+      slug: parsed.data.slug !== undefined ? sanitizePlainText(parsed.data.slug) : undefined,
+      status: parsed.data.status,
+      description: parsed.data.description === undefined ? undefined : parsed.data.description ? sanitizePlainText(parsed.data.description) : null,
+      startsAt: parsed.data.startsAt === undefined ? undefined : parsed.data.startsAt ? new Date(parsed.data.startsAt) : null,
+      endsAt: parsed.data.endsAt === undefined ? undefined : parsed.data.endsAt ? new Date(parsed.data.endsAt) : null,
+      entryPolicy: parsed.data.entryPolicy === undefined ? undefined : cleanMetadata(parsed.data.entryPolicy),
+      exitPolicy: parsed.data.exitPolicy === undefined ? undefined : cleanMetadata(parsed.data.exitPolicy),
+      metadata: parsed.data.metadata === undefined ? undefined : cleanMetadata(parsed.data.metadata),
+    }).where(and(eq(marketingCampaigns.bizId, bizId), eq(marketingCampaigns.id, campaignId))).returning()
+
+    if (!updated) return fail(c, 'NOT_FOUND', 'Marketing campaign not found.', 404)
+    return ok(c, updated)
+  },
+)
+
+communicationRoutes.get(
+  '/bizes/:bizId/marketing-campaign-steps',
+  requireAuth,
+  requireBizAccess('bizId'),
+  requireAclPermission('communications.read', { bizIdParam: 'bizId' }),
+  async (c) => {
+    const bizId = c.req.param('bizId')
+    const campaignId = c.req.query('marketingCampaignId')
+    const rows = await db.query.marketingCampaignSteps.findMany({
+      where: and(eq(marketingCampaignSteps.bizId, bizId), campaignId ? eq(marketingCampaignSteps.marketingCampaignId, campaignId) : undefined),
+      orderBy: [asc(marketingCampaignSteps.sortOrder), asc(marketingCampaignSteps.stepKey)],
+    })
+    return ok(c, rows)
+  },
+)
+
+communicationRoutes.post(
+  '/bizes/:bizId/marketing-campaign-steps',
+  requireAuth,
+  requireBizAccess('bizId'),
+  requireAclPermission('communications.write', { bizIdParam: 'bizId' }),
+  async (c) => {
+    const bizId = c.req.param('bizId')
+    const parsed = createMarketingCampaignStepBodySchema.safeParse(await c.req.json().catch(() => null))
+    if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
+
+    const [created] = await db.insert(marketingCampaignSteps).values({
+      bizId,
+      marketingCampaignId: parsed.data.marketingCampaignId,
+      stepKey: sanitizePlainText(parsed.data.stepKey),
+      stepType: parsed.data.stepType,
+      name: parsed.data.name ? sanitizePlainText(parsed.data.name) : null,
+      sortOrder: parsed.data.sortOrder,
+      channel: parsed.data.channel ?? null,
+      messageTemplateId: parsed.data.messageTemplateId ?? null,
+      delayMinutes: parsed.data.delayMinutes ?? null,
+      conditionExpr: cleanMetadata(parsed.data.conditionExpr),
+      nextStepKey: parsed.data.nextStepKey ?? null,
+      onTrueStepKey: parsed.data.onTrueStepKey ?? null,
+      onFalseStepKey: parsed.data.onFalseStepKey ?? null,
+      status: parsed.data.status,
+      metadata: cleanMetadata(parsed.data.metadata),
+    }).returning()
+
+    return ok(c, created, 201)
+  },
+)
+
+communicationRoutes.get(
+  '/bizes/:bizId/marketing-campaign-enrollments',
+  requireAuth,
+  requireBizAccess('bizId'),
+  requireAclPermission('communications.read', { bizIdParam: 'bizId' }),
+  async (c) => {
+    const bizId = c.req.param('bizId')
+    const campaignId = c.req.query('marketingCampaignId')
+    const rows = await db.query.marketingCampaignEnrollments.findMany({
+      where: and(eq(marketingCampaignEnrollments.bizId, bizId), campaignId ? eq(marketingCampaignEnrollments.marketingCampaignId, campaignId) : undefined),
+      orderBy: [desc(marketingCampaignEnrollments.enteredAt)],
+    })
+    return ok(c, rows)
+  },
+)
+
+communicationRoutes.post(
+  '/bizes/:bizId/marketing-campaign-enrollments',
+  requireAuth,
+  requireBizAccess('bizId'),
+  requireAclPermission('communications.write', { bizIdParam: 'bizId' }),
+  async (c) => {
+    const bizId = c.req.param('bizId')
+    const parsed = createMarketingCampaignEnrollmentBodySchema.safeParse(await c.req.json().catch(() => null))
+    if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
+
+    const [created] = await db.insert(marketingCampaignEnrollments).values({
+      bizId,
+      marketingCampaignId: parsed.data.marketingCampaignId,
+      subjectType: parsed.data.subjectType,
+      subjectRefId: parsed.data.subjectRefId,
+      subjectUserId: parsed.data.subjectUserId ?? null,
+      subjectGroupAccountId: parsed.data.subjectGroupAccountId ?? null,
+      status: parsed.data.status,
+      currentStepKey: parsed.data.currentStepKey ?? null,
+      exitReason: parsed.data.exitReason ?? null,
+      metadata: cleanMetadata(parsed.data.metadata),
+    }).returning()
+
+    return ok(c, created, 201)
   },
 )

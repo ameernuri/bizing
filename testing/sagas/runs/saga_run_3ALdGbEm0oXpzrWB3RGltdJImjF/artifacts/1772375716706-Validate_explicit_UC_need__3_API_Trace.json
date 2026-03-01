@@ -1,0 +1,46 @@
+{
+  "stepKey": "uc-need-validate-3",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3ALdGbEm0oXpzrWB3RGltdJImjF/steps/uc-need-validate-3/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the requirement of different pricing per mode, specifically that virtual sessions are cheaper than in-person sessions. While the evidence indicates that the virtual portion is billed at $100 and the in-person portion at $150, it does not confirm that the system enforces this pricing structure based on the mode selected. The lack of explicit evidence showing that the pricing is dynamically applied based on the mode of booking constitutes a gap in the evidence provided.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].needs",
+            "linkedUseCases[0].bodyMarkdownPreview"
+          ],
+          "gaps": [
+            "No evidence confirming that the system dynamically applies different pricing based on the selected mode."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add deterministic evidence contract for pricing validation",
+              "endpoint": "/api/v1/pricing/validate",
+              "assertion": "Define concrete endpoint calls and assertions that verify the pricing structure based on mode selection."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "32b67a3c-3f8b-4589-8b0a-f71627edf6e8",
+          "timestamp": "2026-03-01T14:35:16.589Z"
+        }
+      },
+      "at": "2026-03-01T14:35:16.591Z"
+    }
+  ]
+}

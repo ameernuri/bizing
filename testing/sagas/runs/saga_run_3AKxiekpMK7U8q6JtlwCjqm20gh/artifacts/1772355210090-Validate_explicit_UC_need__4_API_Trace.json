@@ -1,0 +1,45 @@
+{
+  "stepKey": "uc-need-validate-4",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AKxiekpMK7U8q6JtlwCjqm20gh/steps/uc-need-validate-4/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the requirement of 'Anti-fraud constraints (max transfer count, lock windows)', but there is no evidence provided that confirms the implementation of these constraints. The linked use case mentions the need for a maximum transfer count and lock windows, yet the prior steps do not demonstrate any API interactions or state checks that would validate this requirement. Therefore, there is a clear gap in the evidence supporting this requirement's coverage.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].bodyMarkdownPreview"
+          ],
+          "gaps": [
+            "No evidence of anti-fraud constraints such as max transfer count and lock windows."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Define anti-fraud constraints API",
+              "endpoint": "/api/v1/anti-fraud/constraints",
+              "assertion": "Verify that the API enforces max transfer count and lock windows."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "4467f5a4-7481-4faa-8169-d71f8bb97d0f",
+          "timestamp": "2026-03-01T08:53:30.064Z"
+        }
+      },
+      "at": "2026-03-01T08:53:30.065Z"
+    }
+  ]
+}

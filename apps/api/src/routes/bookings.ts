@@ -13,9 +13,18 @@ import {
   requireBizAccess,
 } from '../middleware/auth.js'
 import { sanitizeUnknown } from '../lib/sanitize.js'
+import { createBookingLifecycleMessage } from '../services/booking-lifecycle-messages.js'
 import { fail, ok, parsePositiveInt } from './_api.js'
 
-const { db, bookingOrders, offers, offerVersions, outboundMessages, outboundMessageEvents, users } = dbPackage
+const {
+  db,
+  bookingOrders,
+  bookingOrderLines,
+  bookingOrderLineSellables,
+  offers,
+  offerVersions,
+  users,
+} = dbPackage
 
 const bookingStatusSchema = z.enum([
   'draft',
@@ -130,74 +139,6 @@ function locationMetadataFilter(locationId?: string) {
 }
 
 export const bookingRoutes = new Hono()
-
-/**
- * Persist one simulated transactional message as part of booking lifecycle.
- *
- * ELI5:
- * We are not sending a real email here. We are recording the exact message the
- * system would have sent so the API can prove booking confirmations and
- * cancellations exist as first-class lifecycle outputs.
- */
-async function createBookingLifecycleMessage(input: {
-  bizId: string
-  recipientUserId?: string | null
-  recipientRef: string
-  bookingOrderId: string
-  subject: string
-  body: string
-  templateSlug: string
-  eventType: 'booking.confirmed' | 'booking.cancelled'
-}) {
-  const [message] = await db
-    .insert(outboundMessages)
-    .values({
-      bizId: input.bizId,
-      channel: 'email',
-      purpose: 'transactional',
-      recipientUserId: input.recipientUserId ?? null,
-      recipientRef: input.recipientRef,
-      status: 'delivered',
-      scheduledFor: new Date(),
-      sentAt: new Date(),
-      deliveredAt: new Date(),
-      providerKey: 'simulated_email',
-      providerMessageRef: `${input.templateSlug}-${input.bookingOrderId}`,
-      payload: {
-        subject: input.subject,
-        body: input.body,
-      },
-      metadata: {
-        bookingOrderId: input.bookingOrderId,
-        eventType: input.eventType,
-        templateSlug: input.templateSlug,
-      },
-    })
-    .returning()
-
-  await db.insert(outboundMessageEvents).values([
-    {
-      bizId: input.bizId,
-      outboundMessageId: message.id,
-      eventType: 'queued',
-      payload: { templateSlug: input.templateSlug },
-    },
-    {
-      bizId: input.bizId,
-      outboundMessageId: message.id,
-      eventType: 'sent',
-      payload: { providerKey: 'simulated_email' },
-    },
-    {
-      bizId: input.bizId,
-      outboundMessageId: message.id,
-      eventType: 'delivered',
-      payload: { recipientRef: input.recipientRef },
-    },
-  ])
-
-  return message
-}
 
 /**
  * Public booking surface for authenticated customers.
@@ -511,6 +452,45 @@ bookingRoutes.get(
 
     if (!row) return fail(c, 'NOT_FOUND', 'Booking order not found.', 404)
     return ok(c, row)
+  },
+)
+
+bookingRoutes.get(
+  '/bizes/:bizId/booking-orders/:bookingOrderId/lines',
+  requireAuth,
+  requireBizAccess('bizId'),
+  requireAclPermission('booking_orders.read', { bizIdParam: 'bizId' }),
+  async (c) => {
+    const { bizId, bookingOrderId } = c.req.param()
+    const booking = await db.query.bookingOrders.findFirst({
+      where: and(eq(bookingOrders.bizId, bizId), eq(bookingOrders.id, bookingOrderId)),
+    })
+    if (!booking) return fail(c, 'NOT_FOUND', 'Booking order not found.', 404)
+
+    const [lines, attributions] = await Promise.all([
+      db.query.bookingOrderLines.findMany({
+        where: and(eq(bookingOrderLines.bizId, bizId), eq(bookingOrderLines.bookingOrderId, bookingOrderId)),
+        orderBy: [asc(bookingOrderLines.id)],
+      }),
+      db.query.bookingOrderLineSellables.findMany({
+        where: eq(bookingOrderLineSellables.bizId, bizId),
+        orderBy: [asc(bookingOrderLineSellables.id)],
+      }),
+    ])
+
+    const lineIds = new Set(lines.map((line) => line.id))
+    const attributionByLineId = new Map<string, Array<typeof attributions[number]>>()
+    for (const row of attributions) {
+      if (!lineIds.has(row.bookingOrderLineId)) continue
+      const bucket = attributionByLineId.get(row.bookingOrderLineId) ?? []
+      bucket.push(row)
+      attributionByLineId.set(row.bookingOrderLineId, bucket)
+    }
+
+    return ok(c, lines.map((line) => ({
+      ...line,
+      sellables: attributionByLineId.get(line.id) ?? [],
+    })))
   },
 )
 

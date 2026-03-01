@@ -9,7 +9,9 @@ import {
   varchar,
 } from "drizzle-orm/pg-core";
 import { idRef, idWithTag, withAuditRefs } from "./_common";
+import { actionRequests } from "./action_backbone";
 import { bizes } from "./bizes";
+import { domainEvents } from "./domain_events";
 import {
   checkoutChannelEnum,
   checkoutEventTypeEnum,
@@ -21,6 +23,7 @@ import {
 import { bookingOrders } from "./fulfillment";
 import { groupAccounts } from "./group_accounts";
 import { locations } from "./locations";
+import { debugSnapshots, projectionDocuments } from "./projections";
 import { discountCampaigns } from "./promotions";
 import { sellables } from "./product_commerce";
 import { subjects } from "./subjects";
@@ -115,6 +118,16 @@ export const checkoutSessions = pgTable(
     /** Optional booking-order created from this session. */
     bookingOrderId: idRef("booking_order_id").references(() => bookingOrders.id),
 
+    /** Optional canonical action/event/debug breadcrumbs for this checkout lifecycle. */
+    actionRequestId: idRef("action_request_id").references(() => actionRequests.id),
+    latestDomainEventId: idRef("latest_domain_event_id").references(
+      () => domainEvents.id,
+    ),
+    projectionDocumentId: idRef("projection_document_id").references(
+      () => projectionDocuments.id,
+    ),
+    debugSnapshotId: idRef("debug_snapshot_id").references(() => debugSnapshots.id),
+
     /** Optional pointer to a previous abandoned session that was recovered. */
     recoveredFromCheckoutSessionId: idRef("recovered_from_checkout_session_id"),
 
@@ -150,6 +163,11 @@ export const checkoutSessions = pgTable(
       table.bizId,
       table.ownerUserId,
       table.startedAt,
+    ),
+
+    /** Trace path from action backbone into checkout lifecycles. */
+    checkoutSessionsActionRequestIdx: index("checkout_sessions_action_request_idx").on(
+      table.actionRequestId,
     ),
 
     /** Recovery chain traversal path. */

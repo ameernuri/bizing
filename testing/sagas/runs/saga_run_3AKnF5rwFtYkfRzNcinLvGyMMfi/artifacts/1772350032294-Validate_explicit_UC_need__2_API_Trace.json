@@ -1,0 +1,46 @@
+{
+  "stepKey": "uc-need-validate-2",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AKnF5rwFtYkfRzNcinLvGyMMfi/steps/uc-need-validate-2/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Insufficient evidence to validate age restrictions.",
+          "assessment": "The exploratory step requires validation of age restrictions (21+ for certain services), but the evidence provided does not include any checks or confirmations regarding the age of customers or whether they meet the specified age requirement. The linked use case mentions age restrictions but lacks concrete evidence that this requirement was satisfied, leading to an inconclusive result. The absence of specific API reads or persisted state checks related to age verification indicates a gap in the validation process.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases[0].bodyMarkdownPreview",
+            "exploratoryStep.instruction"
+          ],
+          "gaps": [
+            "No evidence confirming that age restrictions were validated for customers."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add age verification checks",
+              "endpoint": "/api/v1/customers/{customerId}/age-verification",
+              "assertion": "Verify that the customer's age meets the required restrictions for booking."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "f32fac32-3cc6-4fab-a598-d373f0f5f2a6",
+          "timestamp": "2026-03-01T07:27:12.196Z"
+        }
+      },
+      "at": "2026-03-01T07:27:12.196Z"
+    }
+  ]
+}

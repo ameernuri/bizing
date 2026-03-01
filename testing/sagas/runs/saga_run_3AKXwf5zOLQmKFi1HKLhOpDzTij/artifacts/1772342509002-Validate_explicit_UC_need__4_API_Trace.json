@@ -1,0 +1,46 @@
+{
+  "stepKey": "uc-need-validate-4",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AKXwf5zOLQmKFi1HKLhOpDzTij/steps/uc-need-validate-4/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step requires validation of a customer-facing ticket that includes their number, estimated wait, position in line, and a QR code for status tracking. However, the evidence does not provide any API responses or state checks that confirm the existence or functionality of such a ticket. The linked use case mentions the need for this ticket, but without concrete evidence of its implementation, there is a clear gap in meeting the requirement.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "exploratoryStep.instruction",
+            "linkedUseCases[0].needs"
+          ],
+          "gaps": [
+            "No evidence of a customer-facing ticket containing their number, estimated wait, position in line, or QR code."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add API response validation for customer-facing ticket",
+              "endpoint": "/api/v1/tickets",
+              "assertion": "Verify that the API returns a ticket with the required fields: number, estimated wait, position in line, and QR code."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "cf887e6e-b194-4249-851f-74942ae9bbf9",
+          "timestamp": "2026-03-01T05:21:48.939Z"
+        }
+      },
+      "at": "2026-03-01T05:21:48.940Z"
+    }
+  ]
+}

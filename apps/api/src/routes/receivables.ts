@@ -23,9 +23,13 @@ import { fail, ok } from './_api.js'
 const {
   db,
   arInvoices,
+  autocollectionAttempts,
   billingAccounts,
+  billingAccountAutopayRules,
   invoiceEvents,
   purchaseOrders,
+  installmentPlans,
+  installmentScheduleItems,
 } = dbPackage
 
 const billingAccountBodySchema = z.object({
@@ -66,6 +70,7 @@ const invoiceBodySchema = z.object({
   invoiceNumber: z.string().min(1).max(120),
   status: z.enum(['draft', 'issued', 'partially_paid', 'paid', 'overdue', 'voided', 'in_dispute', 'written_off']).default('issued'),
   currency: z.string().regex(/^[A-Z]{3}$/).default('USD'),
+  paymentTermsDays: z.number().int().min(0).optional(),
   subtotalMinor: z.number().int().min(0),
   taxMinor: z.number().int().min(0).default(0),
   feeMinor: z.number().int().min(0).default(0),
@@ -87,6 +92,87 @@ const invoiceEventBodySchema = z.object({
   amountMinor: z.number().int().min(0).optional(),
   happenedAt: z.string().datetime().optional(),
   note: z.string().max(1000).optional(),
+  metadata: z.record(z.unknown()).optional(),
+})
+
+const installmentPlanBodySchema = z.object({
+  arInvoiceId: z.string().min(1),
+  version: z.number().int().min(1).optional(),
+  isCurrent: z.boolean().optional(),
+  status: z.string().max(40).optional(),
+  statusConfigValueId: z.string().optional().nullable(),
+  planKind: z.string().max(40).optional(),
+  currency: z.string().regex(/^[A-Z]{3}$/).optional(),
+  totalPlannedMinor: z.number().int().min(0).optional(),
+  totalPaidMinor: z.number().int().min(0).optional(),
+  totalWaivedMinor: z.number().int().min(0).optional(),
+  totalFailedMinor: z.number().int().min(0).optional(),
+  installmentCount: z.number().int().min(1).optional(),
+  startsAt: z.string().datetime().optional().nullable(),
+  endsAt: z.string().datetime().optional().nullable(),
+  nextDueAt: z.string().datetime().optional().nullable(),
+  autoAdvance: z.boolean().optional(),
+  policySnapshot: z.record(z.unknown()).optional(),
+  metadata: z.record(z.unknown()).optional(),
+})
+
+const installmentItemBodySchema = z.object({
+  sequenceNo: z.number().int().min(1),
+  dueAt: z.string().datetime(),
+  status: z.string().max(40).optional(),
+  statusConfigValueId: z.string().optional().nullable(),
+  amountMinor: z.number().int().min(0),
+  paidMinor: z.number().int().min(0).optional(),
+  waivedMinor: z.number().int().min(0).optional(),
+  failedMinor: z.number().int().min(0).optional(),
+  lateFeeMinor: z.number().int().min(0).optional(),
+  currency: z.string().regex(/^[A-Z]{3}$/).optional(),
+  attemptCount: z.number().int().min(0).optional(),
+  lastAttemptAt: z.string().datetime().optional().nullable(),
+  paidAt: z.string().datetime().optional().nullable(),
+  delinquentAt: z.string().datetime().optional().nullable(),
+  paymentIntentId: z.string().optional().nullable(),
+  paymentTransactionId: z.string().optional().nullable(),
+  notes: z.string().max(4000).optional().nullable(),
+  metadata: z.record(z.unknown()).optional(),
+})
+
+const autopayRuleBodySchema = z.object({
+  billingAccountId: z.string().min(1),
+  status: z.enum(['draft', 'active', 'inactive', 'archived']).default('active'),
+  name: z.string().min(1).max(220),
+  priority: z.number().int().min(0).default(100),
+  isDefault: z.boolean().default(false),
+  paymentMethodId: z.string().optional().nullable(),
+  targetScope: z.enum(['invoice', 'installment', 'both']).default('both'),
+  runOffsetDays: z.number().int().min(-90).max(90).default(0),
+  maxAttemptsPerItem: z.number().int().min(1).default(3),
+  retryIntervalHours: z.number().int().min(1).default(24),
+  minimumAmountMinor: z.number().int().min(0).default(0),
+  maximumAmountMinor: z.number().int().min(0).optional().nullable(),
+  allowPartialCollection: z.boolean().default(false),
+  collectionPolicy: z.record(z.unknown()).optional(),
+  metadata: z.record(z.unknown()).optional(),
+})
+
+const autocollectionAttemptBodySchema = z.object({
+  billingAccountAutopayRuleId: z.string().min(1),
+  billingAccountId: z.string().min(1),
+  arInvoiceId: z.string().optional().nullable(),
+  installmentScheduleItemId: z.string().optional().nullable(),
+  status: z.string().max(40).default('queued'),
+  statusConfigValueId: z.string().optional().nullable(),
+  attemptNumber: z.number().int().min(1).default(1),
+  scheduledFor: z.string().datetime(),
+  startedAt: z.string().datetime().optional().nullable(),
+  finishedAt: z.string().datetime().optional().nullable(),
+  paymentIntentId: z.string().optional().nullable(),
+  paymentTransactionId: z.string().optional().nullable(),
+  attemptedAmountMinor: z.number().int().min(0).default(0),
+  currency: z.string().regex(/^[A-Z]{3}$/).default('USD'),
+  failureCode: z.string().max(120).optional().nullable(),
+  failureMessage: z.string().max(4000).optional().nullable(),
+  idempotencyKey: z.string().max(160).optional().nullable(),
   metadata: z.record(z.unknown()).optional(),
 })
 
@@ -235,6 +321,15 @@ receivableRoutes.post(
       }
     }
 
+    const issuedAt = parsed.data.issuedAt ? new Date(parsed.data.issuedAt) : new Date()
+    const paymentTermsDays = parsed.data.paymentTermsDays ?? billingAccount.paymentTermsDays ?? 0
+    const dueAt =
+      parsed.data.dueAt
+        ? new Date(parsed.data.dueAt)
+        : paymentTermsDays > 0
+          ? new Date(issuedAt.getTime() + paymentTermsDays * 24 * 60 * 60 * 1000)
+          : null
+
     const [created] = await db.insert(arInvoices).values({
       bizId,
       billingAccountId: parsed.data.billingAccountId,
@@ -248,12 +343,15 @@ receivableRoutes.post(
       discountMinor: parsed.data.discountMinor,
       totalMinor,
       outstandingMinor,
-      issuedAt: parsed.data.issuedAt ? new Date(parsed.data.issuedAt) : null,
-      dueAt: parsed.data.dueAt ? new Date(parsed.data.dueAt) : null,
+      issuedAt,
+      dueAt,
       paidAt: parsed.data.paidAt ? new Date(parsed.data.paidAt) : null,
       voidedAt: parsed.data.voidedAt ? new Date(parsed.data.voidedAt) : null,
       notes: parsed.data.notes ? sanitizePlainText(parsed.data.notes) : null,
-      metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
+      metadata: sanitizeUnknown({
+        ...(parsed.data.metadata ?? {}),
+        paymentTermsDays,
+      }),
     }).returning()
 
     await db.insert(invoiceEvents).values({
@@ -380,6 +478,231 @@ receivableRoutes.post(
       metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
     }).returning()
 
+    return ok(c, created, 201)
+  },
+)
+
+receivableRoutes.get(
+  '/bizes/:bizId/installment-plans',
+  requireAuth,
+  requireBizAccess('bizId'),
+  requireAclPermission('bizes.read', { bizIdParam: 'bizId' }),
+  async (c) => {
+    const bizId = c.req.param('bizId')
+    const arInvoiceId = c.req.query('arInvoiceId')
+    const rows = await db.query.installmentPlans.findMany({
+      where: and(
+        eq(installmentPlans.bizId, bizId),
+        arInvoiceId ? eq(installmentPlans.arInvoiceId, arInvoiceId) : undefined,
+      ),
+      orderBy: [desc(installmentPlans.startsAt), desc(installmentPlans.version)],
+    })
+    return ok(c, rows)
+  },
+)
+
+receivableRoutes.post(
+  '/bizes/:bizId/installment-plans',
+  requireAuth,
+  requireBizAccess('bizId'),
+  requireAclPermission('bizes.update', { bizIdParam: 'bizId' }),
+  async (c) => {
+    const bizId = c.req.param('bizId')
+    const parsed = installmentPlanBodySchema.safeParse(await c.req.json().catch(() => null))
+    if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid installment plan body.', 400, parsed.error.flatten())
+
+    const invoice = await db.query.arInvoices.findFirst({
+      where: and(eq(arInvoices.bizId, bizId), eq(arInvoices.id, parsed.data.arInvoiceId)),
+      columns: { id: true, currency: true, totalMinor: true },
+    })
+    if (!invoice) return fail(c, 'NOT_FOUND', 'Invoice not found.', 404)
+
+    const [created] = await db.insert(installmentPlans).values({
+      bizId,
+      arInvoiceId: parsed.data.arInvoiceId,
+      version: parsed.data.version ?? 1,
+      isCurrent: parsed.data.isCurrent ?? true,
+      status: parsed.data.status ?? 'draft',
+      statusConfigValueId: parsed.data.statusConfigValueId ?? null,
+      planKind: parsed.data.planKind ?? 'custom_schedule',
+      currency: parsed.data.currency ?? invoice.currency,
+      totalPlannedMinor: parsed.data.totalPlannedMinor ?? invoice.totalMinor,
+      totalPaidMinor: parsed.data.totalPaidMinor ?? 0,
+      totalWaivedMinor: parsed.data.totalWaivedMinor ?? 0,
+      totalFailedMinor: parsed.data.totalFailedMinor ?? 0,
+      installmentCount: parsed.data.installmentCount ?? 1,
+      startsAt: parsed.data.startsAt ? new Date(parsed.data.startsAt) : null,
+      endsAt: parsed.data.endsAt ? new Date(parsed.data.endsAt) : null,
+      nextDueAt: parsed.data.nextDueAt ? new Date(parsed.data.nextDueAt) : null,
+      autoAdvance: parsed.data.autoAdvance ?? true,
+      policySnapshot: sanitizeUnknown(parsed.data.policySnapshot ?? {}),
+      metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
+    }).returning()
+
+    return ok(c, created, 201)
+  },
+)
+
+receivableRoutes.get(
+  '/bizes/:bizId/installment-plans/:planId/items',
+  requireAuth,
+  requireBizAccess('bizId'),
+  requireAclPermission('bizes.read', { bizIdParam: 'bizId' }),
+  async (c) => {
+    const { bizId, planId } = c.req.param()
+    const rows = await db.query.installmentScheduleItems.findMany({
+      where: and(eq(installmentScheduleItems.bizId, bizId), eq(installmentScheduleItems.installmentPlanId, planId)),
+      orderBy: [asc(installmentScheduleItems.sequenceNo)],
+    })
+    return ok(c, rows)
+  },
+)
+
+receivableRoutes.post(
+  '/bizes/:bizId/installment-plans/:planId/items',
+  requireAuth,
+  requireBizAccess('bizId'),
+  requireAclPermission('bizes.update', { bizIdParam: 'bizId' }),
+  async (c) => {
+    const { bizId, planId } = c.req.param()
+    const parsed = installmentItemBodySchema.safeParse(await c.req.json().catch(() => null))
+    if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid installment item body.', 400, parsed.error.flatten())
+
+    const plan = await db.query.installmentPlans.findFirst({
+      where: and(eq(installmentPlans.bizId, bizId), eq(installmentPlans.id, planId)),
+      columns: { id: true, currency: true },
+    })
+    if (!plan) return fail(c, 'NOT_FOUND', 'Installment plan not found.', 404)
+
+    const [created] = await db.insert(installmentScheduleItems).values({
+      bizId,
+      installmentPlanId: planId,
+      sequenceNo: parsed.data.sequenceNo,
+      dueAt: new Date(parsed.data.dueAt),
+      status: parsed.data.status ?? 'pending',
+      statusConfigValueId: parsed.data.statusConfigValueId ?? null,
+      amountMinor: parsed.data.amountMinor,
+      paidMinor: parsed.data.paidMinor ?? 0,
+      waivedMinor: parsed.data.waivedMinor ?? 0,
+      failedMinor: parsed.data.failedMinor ?? 0,
+      lateFeeMinor: parsed.data.lateFeeMinor ?? 0,
+      currency: parsed.data.currency ?? plan.currency,
+      attemptCount: parsed.data.attemptCount ?? 0,
+      lastAttemptAt: parsed.data.lastAttemptAt ? new Date(parsed.data.lastAttemptAt) : null,
+      paidAt: parsed.data.paidAt ? new Date(parsed.data.paidAt) : null,
+      paymentIntentId: parsed.data.paymentIntentId ?? null,
+      paymentTransactionId: parsed.data.paymentTransactionId ?? null,
+      notes: parsed.data.notes ? sanitizePlainText(parsed.data.notes) : null,
+      metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
+    }).returning()
+
+    return ok(c, created, 201)
+  },
+)
+
+receivableRoutes.get(
+  '/bizes/:bizId/billing-account-autopay-rules',
+  requireAuth,
+  requireBizAccess('bizId'),
+  requireAclPermission('bizes.read', { bizIdParam: 'bizId' }),
+  async (c) => {
+    const bizId = c.req.param('bizId')
+    const billingAccountId = c.req.query('billingAccountId')
+    const rows = await db.query.billingAccountAutopayRules.findMany({
+      where: and(
+        eq(billingAccountAutopayRules.bizId, bizId),
+        billingAccountId ? eq(billingAccountAutopayRules.billingAccountId, billingAccountId) : undefined,
+      ),
+      orderBy: [asc(billingAccountAutopayRules.billingAccountId), asc(billingAccountAutopayRules.priority)],
+    })
+    return ok(c, rows)
+  },
+)
+
+receivableRoutes.post(
+  '/bizes/:bizId/billing-account-autopay-rules',
+  requireAuth,
+  requireBizAccess('bizId'),
+  requireAclPermission('bizes.update', { bizIdParam: 'bizId' }),
+  async (c) => {
+    const bizId = c.req.param('bizId')
+    const parsed = autopayRuleBodySchema.safeParse(await c.req.json().catch(() => null))
+    if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid autopay rule body.', 400, parsed.error.flatten())
+
+    const [created] = await db.insert(billingAccountAutopayRules).values({
+      bizId,
+      billingAccountId: parsed.data.billingAccountId,
+      status: parsed.data.status,
+      name: sanitizePlainText(parsed.data.name),
+      priority: parsed.data.priority,
+      isDefault: parsed.data.isDefault,
+      paymentMethodId: parsed.data.paymentMethodId ?? null,
+      targetScope: parsed.data.targetScope,
+      runOffsetDays: parsed.data.runOffsetDays,
+      maxAttemptsPerItem: parsed.data.maxAttemptsPerItem,
+      retryIntervalHours: parsed.data.retryIntervalHours,
+      minimumAmountMinor: parsed.data.minimumAmountMinor,
+      maximumAmountMinor: parsed.data.maximumAmountMinor ?? null,
+      allowPartialCollection: parsed.data.allowPartialCollection,
+      collectionPolicy: sanitizeUnknown(parsed.data.collectionPolicy ?? {}),
+      metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
+    }).returning()
+    return ok(c, created, 201)
+  },
+)
+
+receivableRoutes.get(
+  '/bizes/:bizId/autocollection-attempts',
+  requireAuth,
+  requireBizAccess('bizId'),
+  requireAclPermission('bizes.read', { bizIdParam: 'bizId' }),
+  async (c) => {
+    const bizId = c.req.param('bizId')
+    const billingAccountId = c.req.query('billingAccountId')
+    const arInvoiceId = c.req.query('arInvoiceId')
+    const rows = await db.query.autocollectionAttempts.findMany({
+      where: and(
+        eq(autocollectionAttempts.bizId, bizId),
+        billingAccountId ? eq(autocollectionAttempts.billingAccountId, billingAccountId) : undefined,
+        arInvoiceId ? eq(autocollectionAttempts.arInvoiceId, arInvoiceId) : undefined,
+      ),
+      orderBy: [desc(autocollectionAttempts.scheduledFor), desc(autocollectionAttempts.attemptNumber)],
+    })
+    return ok(c, rows)
+  },
+)
+
+receivableRoutes.post(
+  '/bizes/:bizId/autocollection-attempts',
+  requireAuth,
+  requireBizAccess('bizId'),
+  requireAclPermission('bizes.update', { bizIdParam: 'bizId' }),
+  async (c) => {
+    const bizId = c.req.param('bizId')
+    const parsed = autocollectionAttemptBodySchema.safeParse(await c.req.json().catch(() => null))
+    if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid autocollection attempt body.', 400, parsed.error.flatten())
+
+    const [created] = await db.insert(autocollectionAttempts).values({
+      bizId,
+      billingAccountAutopayRuleId: parsed.data.billingAccountAutopayRuleId,
+      billingAccountId: parsed.data.billingAccountId,
+      arInvoiceId: parsed.data.arInvoiceId ?? null,
+      installmentScheduleItemId: parsed.data.installmentScheduleItemId ?? null,
+      status: sanitizePlainText(parsed.data.status),
+      statusConfigValueId: parsed.data.statusConfigValueId ?? null,
+      attemptNumber: parsed.data.attemptNumber,
+      scheduledFor: new Date(parsed.data.scheduledFor),
+      startedAt: parsed.data.startedAt ? new Date(parsed.data.startedAt) : null,
+      finishedAt: parsed.data.finishedAt ? new Date(parsed.data.finishedAt) : null,
+      paymentIntentId: parsed.data.paymentIntentId ?? null,
+      paymentTransactionId: parsed.data.paymentTransactionId ?? null,
+      attemptedAmountMinor: parsed.data.attemptedAmountMinor,
+      currency: parsed.data.currency,
+      failureCode: parsed.data.failureCode ?? null,
+      failureMessage: parsed.data.failureMessage ? sanitizePlainText(parsed.data.failureMessage) : null,
+      idempotencyKey: parsed.data.idempotencyKey ?? null,
+      metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
+    }).returning()
     return ok(c, created, 201)
   },
 )

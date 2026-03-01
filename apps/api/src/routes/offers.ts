@@ -8,14 +8,20 @@ import { and, asc, desc, eq, ilike, sql } from 'drizzle-orm'
 import { z } from 'zod'
 import dbPackage from '@bizing/db'
 import {
+  getCurrentAuthCredentialId,
+  getCurrentAuthSource,
   getCurrentUser,
   requireAclPermission,
   requireAuth,
   requireBizAccess,
 } from '../middleware/auth.js'
+import {
+  ensureCanonicalSellableForOfferVersion,
+  persistCanonicalAction,
+} from '../services/action-runtime.js'
 import { fail, ok, parsePositiveInt } from './_api.js'
 
-const { db, bizes, offers, offerVersions, bookingOrders } = dbPackage
+const { db, bizes, offers, offerVersions, offerVersionAdmissionModes, bookingOrders } = dbPackage
 
 const listOffersQuerySchema = z.object({
   page: z.string().optional(),
@@ -82,9 +88,40 @@ const createOfferVersionBodySchema = z.object({
   metadata: z.record(z.unknown()).optional(),
 })
 
+const admissionModeBodySchema = z.object({
+  mode: z.enum(['slot', 'queue', 'request', 'auction', 'async', 'route_trip', 'open_access', 'itinerary']),
+  modeConfigValueId: z.string().optional().nullable(),
+  status: z.enum(['draft', 'active', 'inactive', 'suspended', 'archived']).default('active'),
+  isPrimary: z.boolean().default(false),
+  isCustomerVisible: z.boolean().default(true),
+  priority: z.number().int().min(0).default(100),
+  effectiveStartAt: z.string().datetime().optional().nullable(),
+  effectiveEndAt: z.string().datetime().optional().nullable(),
+  policy: z.record(z.unknown()).optional(),
+  metadata: z.record(z.unknown()).optional(),
+})
+
 const updateOfferVersionBodySchema = createOfferVersionBodySchema
   .omit({ version: true })
   .partial()
+
+async function executeBizAction(c: Parameters<typeof getCurrentUser>[0], bizId: string, actionKey: string, payload: Record<string, unknown>) {
+  const user = getCurrentUser(c)
+  if (!user) throw new Error('Authentication required.')
+  return persistCanonicalAction({
+    bizId,
+    input: { actionKey, payload, metadata: {} },
+    intentMode: 'execute',
+    context: {
+      bizId,
+      user,
+      authSource: getCurrentAuthSource(c),
+      authCredentialId: getCurrentAuthCredentialId(c),
+      requestId: c.get('requestId'),
+      accessMode: 'biz',
+    },
+  })
+}
 
 type WeekdayKey = 'sun' | 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat'
 
@@ -678,7 +715,6 @@ offerRoutes.post(
   requireAclPermission('offers.create', { bizIdParam: 'bizId' }),
   async (c) => {
     const bizId = c.req.param('bizId')
-    const _user = getCurrentUser(c)
 
     const body = await c.req.json().catch(() => null)
     const parsed = createOfferBodySchema.safeParse(body)
@@ -686,20 +722,12 @@ offerRoutes.post(
       return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
     }
 
-    const [created] = await db
-      .insert(offers)
-      .values({
-        bizId,
-        name: parsed.data.name,
-        slug: parsed.data.slug,
-        description: parsed.data.description,
-        executionMode: parsed.data.executionMode,
-        status: parsed.data.status,
-        isPublished: parsed.data.isPublished,
-        timezone: parsed.data.timezone,
-        metadata: parsed.data.metadata ?? {},
-      })
-      .returning()
+    const action = await executeBizAction(c, bizId, 'offer.create', parsed.data)
+    const createdId = (action.actionRequest as { outputPayload?: Record<string, unknown> }).outputPayload?.offerId
+    const created = await db.query.offers.findFirst({
+      where: and(eq(offers.bizId, bizId), eq(offers.id, String(createdId))),
+    })
+    if (!created) return fail(c, 'INTERNAL_ERROR', 'Offer action succeeded but row could not be reloaded.', 500)
 
     return ok(c, created, 201)
   },
@@ -783,7 +811,6 @@ offerRoutes.patch(
   requireAclPermission('offers.update', { bizIdParam: 'bizId' }),
   async (c) => {
     const { bizId, offerId } = c.req.param()
-    const _user = getCurrentUser(c)
 
     const body = await c.req.json().catch(() => null)
     const parsed = updateOfferBodySchema.safeParse(body)
@@ -796,13 +823,15 @@ offerRoutes.patch(
     })
     if (!existing) return fail(c, 'NOT_FOUND', 'Offer not found.', 404)
 
-    const [updated] = await db
-      .update(offers)
-      .set({
-        ...parsed.data,
-      })
-      .where(and(eq(offers.bizId, bizId), eq(offers.id, offerId)))
-      .returning()
+    const action = await executeBizAction(c, bizId, 'offer.update', {
+      offerId,
+      ...parsed.data,
+    })
+    const updatedId = (action.actionRequest as { outputPayload?: Record<string, unknown> }).outputPayload?.offerId
+    const updated = await db.query.offers.findFirst({
+      where: and(eq(offers.bizId, bizId), eq(offers.id, String(updatedId))),
+    })
+    if (!updated) return fail(c, 'INTERNAL_ERROR', 'Offer action succeeded but row could not be reloaded.', 500)
 
     return ok(c, updated)
   },
@@ -815,19 +844,13 @@ offerRoutes.delete(
   requireAclPermission('offers.archive', { bizIdParam: 'bizId' }),
   async (c) => {
     const { bizId, offerId } = c.req.param()
-    const _user = getCurrentUser(c)
 
     const existing = await db.query.offers.findFirst({
       where: and(eq(offers.bizId, bizId), eq(offers.id, offerId)),
     })
     if (!existing) return fail(c, 'NOT_FOUND', 'Offer not found.', 404)
 
-    await db
-      .update(offers)
-      .set({
-        status: 'archived',
-      })
-      .where(and(eq(offers.bizId, bizId), eq(offers.id, offerId)))
+    await executeBizAction(c, bizId, 'offer.archive', { offerId })
 
     return ok(c, { id: offerId })
   },
@@ -847,6 +870,88 @@ offerRoutes.get(
     })
 
     return ok(c, rows)
+  },
+)
+
+offerRoutes.get(
+  '/bizes/:bizId/offers/:offerId/versions/:offerVersionId/admission-modes',
+  requireAuth,
+  requireBizAccess('bizId'),
+  requireAclPermission('offers.read', { bizIdParam: 'bizId' }),
+  async (c) => {
+    const { bizId, offerId, offerVersionId } = c.req.param()
+    const version = await db.query.offerVersions.findFirst({
+      where: and(eq(offerVersions.bizId, bizId), eq(offerVersions.offerId, offerId), eq(offerVersions.id, offerVersionId)),
+      columns: { id: true },
+    })
+    if (!version) return fail(c, 'NOT_FOUND', 'Offer version not found.', 404)
+    const rows = await db.query.offerVersionAdmissionModes.findMany({
+      where: and(eq(offerVersionAdmissionModes.bizId, bizId), eq(offerVersionAdmissionModes.offerVersionId, offerVersionId)),
+      orderBy: [asc(offerVersionAdmissionModes.priority), desc(offerVersionAdmissionModes.isPrimary)],
+    })
+    return ok(c, rows)
+  },
+)
+
+offerRoutes.post(
+  '/bizes/:bizId/offers/:offerId/versions/:offerVersionId/admission-modes',
+  requireAuth,
+  requireBizAccess('bizId'),
+  requireAclPermission('offers.update', { bizIdParam: 'bizId' }),
+  async (c) => {
+    const { bizId, offerId, offerVersionId } = c.req.param()
+    const parsed = admissionModeBodySchema.safeParse(await c.req.json().catch(() => null))
+    if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
+
+    const version = await db.query.offerVersions.findFirst({
+      where: and(eq(offerVersions.bizId, bizId), eq(offerVersions.offerId, offerId), eq(offerVersions.id, offerVersionId)),
+      columns: { id: true },
+    })
+    if (!version) return fail(c, 'NOT_FOUND', 'Offer version not found.', 404)
+
+    const existing = await db.query.offerVersionAdmissionModes.findFirst({
+      where: and(
+        eq(offerVersionAdmissionModes.bizId, bizId),
+        eq(offerVersionAdmissionModes.offerVersionId, offerVersionId),
+        eq(offerVersionAdmissionModes.mode, parsed.data.mode),
+      ),
+    })
+
+    if (parsed.data.isPrimary) {
+      await db.update(offerVersionAdmissionModes).set({ isPrimary: false }).where(
+        and(eq(offerVersionAdmissionModes.bizId, bizId), eq(offerVersionAdmissionModes.offerVersionId, offerVersionId)),
+      )
+    }
+
+    const values = {
+      modeConfigValueId: parsed.data.modeConfigValueId ?? null,
+      status: parsed.data.status,
+      isPrimary: parsed.data.isPrimary,
+      isCustomerVisible: parsed.data.isCustomerVisible,
+      priority: parsed.data.priority,
+      effectiveStartAt: parsed.data.effectiveStartAt ? new Date(parsed.data.effectiveStartAt) : null,
+      effectiveEndAt: parsed.data.effectiveEndAt ? new Date(parsed.data.effectiveEndAt) : null,
+      policy: parsed.data.policy ?? {},
+      metadata: parsed.data.metadata ?? {},
+    }
+
+    const [saved] = existing
+      ? await db
+          .update(offerVersionAdmissionModes)
+          .set(values)
+          .where(and(eq(offerVersionAdmissionModes.bizId, bizId), eq(offerVersionAdmissionModes.id, existing.id)))
+          .returning()
+      : await db
+          .insert(offerVersionAdmissionModes)
+          .values({
+            bizId,
+            offerVersionId,
+            mode: parsed.data.mode,
+            ...values,
+          })
+          .returning()
+
+    return ok(c, saved, 201)
   },
 )
 
@@ -893,6 +998,15 @@ offerRoutes.post(
         metadata: parsed.data.metadata ?? {},
       })
       .returning()
+
+    await ensureCanonicalSellableForOfferVersion({
+      bizId,
+      offerVersionId: created.id,
+      displayName: `${parent.name} v${created.version}`,
+      slug: `${parent.slug}-v${created.version}`,
+      currency: created.currency,
+      status: created.status,
+    })
 
     return ok(c, created, 201)
   },

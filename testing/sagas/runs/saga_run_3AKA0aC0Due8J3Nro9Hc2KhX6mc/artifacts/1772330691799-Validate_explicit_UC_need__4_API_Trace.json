@@ -1,0 +1,46 @@
+{
+  "stepKey": "uc-need-validate-4",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AKA0aC0Due8J3Nro9Hc2KhX6mc/steps/uc-need-validate-4/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the invoicing requirement, but the evidence does not confirm that the payment process involves invoicing rather than immediate charges. The prior steps indicate that bookings were made with a total amount of 15000 minor currency units, but there is no explicit evidence of invoicing being utilized in the payment process. This indicates a clear gap in the requirement coverage, as the expected result of confirming requirement satisfaction is not met.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "priorStepEvidence[5].evidence",
+            "priorStepEvidence[6].evidence"
+          ],
+          "gaps": [
+            "No evidence of invoicing process being implemented for payments."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add invoicing verification endpoint",
+              "endpoint": "/api/v1/invoices",
+              "assertion": "Verify that the payment process uses invoicing instead of immediate charges."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "5a4deca8-19b7-449e-80a8-a2064520a319",
+          "timestamp": "2026-03-01T02:04:51.730Z"
+        }
+      },
+      "at": "2026-03-01T02:04:51.731Z"
+    }
+  ]
+}

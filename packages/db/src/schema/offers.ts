@@ -10,8 +10,11 @@ import {
   varchar,
 } from "drizzle-orm/pg-core";
 import { idRef, idWithTag, withAuditRefs } from "./_common";
+import { actionRequests } from "./action_backbone";
 import { bizes } from "./bizes";
+import { domainEvents } from "./domain_events";
 import { locations } from "./locations";
+import { debugSnapshots, projectionDocuments } from "./projections";
 import { resources } from "./resources";
 import { subjects } from "./subjects";
 import { users } from "./users";
@@ -117,6 +120,22 @@ export const offers = pgTable(
      */
     metadata: jsonb("metadata").default({}),
 
+    /** Canonical action that created or last materially changed this offer shell. */
+    actionRequestId: idRef("action_request_id").references(() => actionRequests.id),
+
+    /** Latest business fact that explains this offer's current state. */
+    latestDomainEventId: idRef("latest_domain_event_id").references(
+      () => domainEvents.id,
+    ),
+
+    /** Optional storefront/admin projection for this offer shell. */
+    projectionDocumentId: idRef("projection_document_id").references(
+      () => projectionDocuments.id,
+    ),
+
+    /** Debug snapshot for publishing, rollout, or execution-mode anomalies. */
+    debugSnapshotId: idRef("debug_snapshot_id").references(() => debugSnapshots.id),
+
     /** Standard full audit metadata (who + when + soft delete). */
     ...withAuditRefs(() => users.id),
   },
@@ -144,6 +163,9 @@ export const offers = pgTable(
     offersBizExecutionModeIdx: index("offers_biz_execution_mode_idx").on(
       table.bizId,
       table.executionMode,
+    ),
+    offersActionRequestIdx: index("offers_action_request_idx").on(
+      table.actionRequestId,
     ),
     offersBizExecutionModeConfigIdx: index(
       "offers_biz_execution_mode_config_idx",
@@ -271,6 +293,22 @@ export const offerVersions = pgTable(
     /** Optional immutable recipe hash for external verification/debugging. */
     revisionHash: varchar("revision_hash", { length: 128 }),
 
+    /** Canonical action that produced or revised this frozen commercial recipe. */
+    actionRequestId: idRef("action_request_id").references(() => actionRequests.id),
+
+    /** Latest shared domain event for this immutable version snapshot. */
+    latestDomainEventId: idRef("latest_domain_event_id").references(
+      () => domainEvents.id,
+    ),
+
+    /** Optional storefront/quote/read-model document for this version. */
+    projectionDocumentId: idRef("projection_document_id").references(
+      () => projectionDocuments.id,
+    ),
+
+    /** Debug snapshot for pricing, rollout, or validation failures. */
+    debugSnapshotId: idRef("debug_snapshot_id").references(() => debugSnapshots.id),
+
     /** Non-indexed extension area for implementation-specific attributes. */
     metadata: jsonb("metadata").default({}),
 
@@ -299,6 +337,9 @@ export const offerVersions = pgTable(
     offerVersionsBizStatusIdx: index("offer_versions_biz_status_idx").on(
       table.bizId,
       table.status,
+    ),
+    offerVersionsActionRequestIdx: index("offer_versions_action_request_idx").on(
+      table.actionRequestId,
     ),
     offerVersionsBizStatusConfigIdx: index(
       "offer_versions_biz_status_config_idx",

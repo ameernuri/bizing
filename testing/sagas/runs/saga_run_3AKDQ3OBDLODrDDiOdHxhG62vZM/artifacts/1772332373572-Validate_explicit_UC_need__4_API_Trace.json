@@ -1,0 +1,45 @@
+{
+  "stepKey": "uc-need-validate-4",
+  "callCount": 1,
+  "calls": [
+    {
+      "method": "POST",
+      "path": "/api/v1/sagas/runs/saga_run_3AKDQ3OBDLODrDDiOdHxhG62vZM/steps/uc-need-validate-4/exploratory-evaluate",
+      "status": 200,
+      "requestBody": {
+        "stepFamily": "uc-need-validation"
+      },
+      "responseBody": {
+        "success": true,
+        "data": {
+          "status": "blocked",
+          "verdict": "inconclusive",
+          "confidence": 0,
+          "summary": "Exploratory evidence is insufficient to assert a hard requirement failure.",
+          "assessment": "The exploratory step aimed to validate the tiered rewards structure, specifically the conditions for rewards based on referrals. However, the evidence does not confirm that the system implements the tiered rewards as specified (3 referrals = $10, 10 = $50, 25 = VIP status). The linked use case describes a referral program but lacks concrete evidence of the tiered reward mechanics being operational, leading to a clear gap in the requirement coverage.",
+          "reasonCode": "INSUFFICIENT_EVIDENCE",
+          "evidencePointers": [
+            "linkedUseCases"
+          ],
+          "gaps": [
+            "No evidence of the implementation of tiered rewards based on the specified referral counts."
+          ],
+          "deterministicFollowUps": [
+            {
+              "title": "Add verification for tiered rewards",
+              "endpoint": "/api/v1/referrals/rewards",
+              "assertion": "Verify that the system correctly applies tiered rewards based on the number of referrals."
+            }
+          ],
+          "evaluator": "openai",
+          "model": "gpt-4o-mini"
+        },
+        "meta": {
+          "requestId": "f633497a-3023-4634-aa4c-56ac26b45754",
+          "timestamp": "2026-03-01T02:32:53.509Z"
+        }
+      },
+      "at": "2026-03-01T02:32:53.511Z"
+    }
+  ]
+}
