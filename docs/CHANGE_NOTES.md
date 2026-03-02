@@ -13,6 +13,197 @@ Concise, high-signal notes for meaningful architecture or behavior changes.
 
 ## 2026-03-01
 
+### Saga generation upgraded to higher-fidelity lifecycle simulation
+
+- Updated `/Users/ameer/bizing/code/apps/api/src/services/sagas.ts` generator logic
+  so generated `saga.v1` specs are more realistic and deterministic:
+  - UC-keyword extensions now inject richer explicit lifecycle steps for:
+    - call-fee pricing
+    - demand/surge pricing
+    - queue/waitlist flow
+    - advanced payments
+    - external integrations
+    - compliance checks
+    - route/dispatch operations
+    - analytics/kpi closeout checks
+  - Communication-heavy UCs now include explicit actor-message proof steps:
+    - `demo-send-email-message`
+    - `demo-send-sms-message`
+    - `demo-verify-comms-messages`
+  - Core lifecycle steps now include virtual clock/scheduler delays (`fixed` and
+    `until_condition`) so timeline behavior better represents real-world pacing.
+- Regenerated specs from canonical docs and synced definitions:
+  - command: `bun run --cwd /Users/ameer/bizing/code/apps/api sagas:generate -- --overwrite=true --sync=true`
+  - generated: `279`
+  - synced definitions: `282`
+- Smoke validation after generation:
+  - `SAGA_LIMIT=20 bun run --cwd /Users/ameer/bizing/code/apps/api sagas:collect`
+  - result: `20/20 passed`
+
+### Deterministic saga message-demo step handlers
+
+- Added explicit runner handlers in `/Users/ameer/bizing/code/apps/api/src/scripts/rerun-sagas.ts`:
+  - `demo-send-email-message`
+  - `demo-send-sms-message`
+  - `demo-verify-comms-messages`
+- Purpose:
+  - let teams create tiny comms-focused saga definitions that always generate
+    visible run actor-message evidence (SMS + email) in UI and API.
+- Verified with a new demo definition/run:
+  - run produced 2 actor messages (`1 email`, `1 sms`) and passed.
+
+### OODA loop detail UX simplified (no explicit phase jargon)
+
+- Refactored `/Users/ameer/bizing/code/apps/admin/src/components/sagas/explorer/loop-detail-page.tsx`
+  to remove explicit `Observe/Orient/Decide/Act` framing from operator UX.
+- Replaced phase-board layout with principle-driven lanes:
+  - `Signals & Gaps`
+  - `Decisions & Plans`
+  - `Execution Outcomes`
+- Removed phase controls from loop edit + entry creation dialogs.
+- Loop-entry writes now auto-map backend phase from entry type so the schema/API
+  remain canonical while the UX stays simple and practical.
+- Removed redundant client-side run execution/linking calls from loop detail.
+  The loop-run API is now the single source of truth for execute + link behavior.
+- Loop-entry UI now auto-fills contract-required evidence fields:
+  - adds `evidence.reportNote` from body/title
+  - infers `owningLayer` from selected `gapType`
+  This keeps add-entry UX simple while satisfying backend quality constraints.
+- Mission-first copy pass:
+  - loop list/detail/navigation copy now uses "missions" as the primary UX term
+  - removed remaining explicit phase jargon from list/detail headlines
+  - mission cards now show `last signal` instead of internal `currentPhase`
+
+### OODA loop-run linkage and execution stabilization
+
+- Fixed `/api/v1/ooda/loops/:loopId/saga-runs` so loop-launched runs are always
+  linked canonically, not just in JSON payloads:
+  - now always upserts `ooda_loop_links` with `targetType='saga_run'`,
+    `relationRole='output'`
+  - now writes `ooda_loop_actions.linkedSagaRunId` from the created run id
+- Added `autoExecute` support on loop-run creation (default `true`):
+  - when session cookie exists, run executes immediately server-side
+  - when cookie is missing, action is marked failed with an explicit reason
+  - route now returns refreshed run detail after execution attempt
+- Added OODA loop self-heal on loop-detail reads:
+  - backfills missing run links from action payloads when possible
+  - marks stale actions as failed when referenced runs no longer exist
+    (common after hard reset/reseed cycles)
+- Fixed hard-reset drift:
+  - `resetSagaLoopData()` now truncates OODA tables too, preventing stale loop
+    journals from pointing at deleted saga runs.
+
+### OODA workflow-contract tightening (gate + gap ownership + evidence quality)
+
+- Aligned OODA schema/API to the v3 workflow contract:
+  - Added explicit loop-gate API fields in `/Users/ameer/bizing/code/apps/api/src/routes/ooda.ts`:
+    - `designGateStatus` (`pending|passed|failed`)
+    - `behaviorGateStatus` (`pending|passed|failed`)
+  - Gate statuses are persisted in `ooda_loops.metadata.workflowContract` so no DB hard migration is required for the tighten pass.
+  - Gap owner is now required at API level (`owningLayer`) and persisted as `evidence.owningLayer` on OODA entries.
+- Tightened API request validation in `/Users/ameer/bizing/code/apps/api/src/routes/ooda.ts`:
+  - gap entries must include `owningLayer`
+  - meaningful entries (`signal|result|postmortem`) require evidence anchors
+  - resolved `result` entries must include API trace evidence refs
+- Updated canonical docs:
+  - `/Users/ameer/bizing/code/docs/API.md`
+  - `/Users/ameer/bizing/code/docs/SCHEMA_BIBLE.md`
+
+### Saga rerun fast mode added for quick validation loops
+
+- Added first-class fast mode controls to `/Users/ameer/bizing/code/apps/api/src/scripts/rerun-sagas.ts`:
+  - `SAGA_FAST_MODE=1` now defaults to:
+    - keep per-step `pending -> in_progress -> terminal` lifecycle transitions
+    - keep API trace artifact persistence (required for step pass-state validation)
+    - no snapshot artifact persistence
+    - no coverage persistence on final refresh
+  - full-mode behavior remains unchanged when `SAGA_FAST_MODE` is not enabled.
+- Added granular overrides for mixed runs:
+  - `SAGA_ATTACH_API_TRACES`
+  - `SAGA_ATTACH_SNAPSHOTS`
+  - `SAGA_STEP_TRANSITION_IN_PROGRESS`
+  - `SAGA_RECOMPUTE_INTEGRITY`
+  - `SAGA_PERSIST_COVERAGE`
+- Added script alias in `/Users/ameer/bizing/code/apps/api/package.json`:
+  - `sagas:rerun:fast`
+- Updated canonical API docs with fast-mode usage and override semantics:
+  - `/Users/ameer/bizing/code/docs/API.md`
+
+### Saga runtime hard-cut to `saga.v1` simulation model
+
+- Upgraded canonical saga spec contract to `saga.v1` in:
+  - `/Users/ameer/projects/bizing/apps/api/src/sagas/spec-schema.ts`
+  - `/Users/ameer/projects/bizing/testing/sagas/SAGA_SPEC.md`
+- Added first-class simulation config to spec:
+  - `simulation.clock` (virtual/realtime, timezone, autoAdvance)
+  - `simulation.scheduler` (deterministic/realtime, poll/timeout/tick defaults)
+- Migrated file-based saga specs to `saga.v1` with simulation defaults:
+  - `/Users/ameer/projects/bizing/testing/sagas/specs/*.json`
+- Added DB-native simulation primitives:
+  - `saga_run_simulation_clocks`
+  - `saga_run_scheduler_jobs`
+  - plus new enums in `/Users/ameer/projects/bizing/packages/db/src/schema/enums.ts`
+- Saga run creation now seeds normalized simulation context and a run clock row.
+- Saga run detail/test-mode responses now include:
+  - `simulationClock`
+  - `schedulerJobs`
+- Added simulation control API endpoints:
+  - `GET /api/v1/sagas/runs/:runId/clock`
+  - `POST /api/v1/sagas/runs/:runId/clock/advance`
+  - `GET /api/v1/sagas/runs/:runId/scheduler/jobs`
+  - `POST /api/v1/sagas/runs/:runId/scheduler/jobs`
+  - `PATCH /api/v1/sagas/runs/:runId/scheduler/jobs/:jobId`
+- Added matching agent/code-mode tools for the new saga simulation APIs in:
+  - `/Users/ameer/projects/bizing/apps/api/src/code-mode/tools.ts`
+- Reworked runner delay semantics in:
+  - `/Users/ameer/projects/bizing/apps/api/src/scripts/rerun-sagas.ts`
+  - fixed/condition delays now use virtual clock + scheduler jobs instead of wall-clock sleeps.
+
+### OODA dashboard backbone added (schema + API + admin explorer)
+
+- Added a new canonical schema module:
+  - `/Users/ameer/projects/bizing/packages/db/src/schema/ooda.ts`
+  - `ooda_loops`
+  - `ooda_loop_links`
+  - `ooda_loop_entries`
+  - `ooda_loop_actions`
+- Wired OODA schema into DB package exports and drizzle schema config:
+  - `/Users/ameer/projects/bizing/packages/db/src/index.ts`
+  - `/Users/ameer/projects/bizing/packages/db/drizzle.config.ts`
+- Added OODA API routes:
+  - `/Users/ameer/projects/bizing/apps/api/src/routes/ooda.ts`
+  - mounted through `/Users/ameer/projects/bizing/apps/api/src/routes/core-api.ts`
+- OODA mutations now emit live refresh events over the shared
+  `/api/v1/ws/sagas` websocket transport, so loop list/detail pages update in
+  near realtime across clients.
+- Added OODA-aware admin client and realtime helper:
+  - `/Users/ameer/projects/bizing/apps/admin/src/lib/ooda-api.ts`
+  - `/Users/ameer/projects/bizing/apps/admin/src/lib/use-saga-realtime.ts`
+- Added route-based OODA explorer pages:
+  - `/Users/ameer/projects/bizing/apps/admin/src/app/sagas/loops/page.tsx`
+  - `/Users/ameer/projects/bizing/apps/admin/src/app/sagas/loops/[loopId]/page.tsx`
+  - `/Users/ameer/projects/bizing/apps/admin/src/components/sagas/explorer/loops-page.tsx`
+  - `/Users/ameer/projects/bizing/apps/admin/src/components/sagas/explorer/loop-detail-page.tsx`
+- Added `/ooda` route alias to the saga explorer shell:
+  - `/Users/ameer/projects/bizing/apps/admin/src/app/ooda/page.tsx`
+  - `/Users/ameer/projects/bizing/apps/admin/src/app/ooda/[...slug]/page.tsx`
+- Added create flows to list pages so use-cases/personas/definitions are
+  crudable directly from the dashboard surface.
+- Visual QA pass captured and reviewed screenshots under:
+  - `/Users/ameer/projects/bizing/.tmp/ooda-screens/`
+
+### Saga library CRUD completed in detail pages
+
+- Added full dashboard CRUD controls for:
+  - use cases (`/sagas/use-cases/:ucKey`): edit definition, create new version, archive/delete
+  - personas (`/sagas/personas/:personaKey`): edit definition, create new version, archive/delete
+  - saga definitions (`/sagas/definitions/:sagaKey`): inspect JSON spec, edit/save spec, create explicit revision, archive/delete
+- Extended admin client API methods in:
+  - `/Users/ameer/projects/bizing/apps/admin/src/lib/sagas-api.ts`
+- Added scrollable editor dialogs for long markdown/json content so editing remains usable on large specs.
+- Visual validation screenshots for new CRUD dialogs were captured under:
+  - `/Users/ameer/projects/bizing/.tmp/ooda-screens/`
+
 ### Saga batch hardening: batch 1 green, batch 2 validator cluster tightened
 
 - Batch 1 (`OFFSET=0 LIMIT=28`) now reruns cleanly: `28/28 passed`.
@@ -516,3 +707,101 @@ Validation:
   - `279/279 passed`
   - run mode: `sagas:collect`
   - blocker report: no failures in final pass.
+
+## Saga run pending-state fix (dashboard execution flow)
+
+- Fixed a real run-start gap where dashboard flows created saga runs but did not consistently execute them, leaving runs indefinitely in `pending` (`started_at = null`, all steps pending).
+- Updated run-start UX flows to call execute immediately after create:
+  - `/Users/ameer/projects/bizing/apps/admin/src/components/sagas/explorer/definition-detail-page.tsx`
+  - `/Users/ameer/projects/bizing/apps/admin/src/components/sagas/explorer/loop-detail-page.tsx`
+- Added explicit execution control + guarded auto-execution fallback on run detail:
+  - `/Users/ameer/projects/bizing/apps/admin/src/components/sagas/explorer/run-detail-page.tsx`
+- Updated API docs to clarify saga run lifecycle:
+  - create endpoint creates `pending`
+  - execute endpoint starts deterministic runner
+  - dashboard now does both in sequence
+
+## Saga dashboard realtime UX stabilization
+
+- Fixed visual refresh/flicker while sagas are running by switching websocket-triggered reloads to background refresh mode (no loading skeleton reset).
+- Added in-flight guards and debounced realtime reload behavior on explorer pages:
+  - `/Users/ameer/projects/bizing/apps/admin/src/components/sagas/explorer/dashboard-page.tsx`
+  - `/Users/ameer/projects/bizing/apps/admin/src/components/sagas/explorer/runs-page.tsx`
+  - `/Users/ameer/projects/bizing/apps/admin/src/components/sagas/explorer/loops-page.tsx`
+  - `/Users/ameer/projects/bizing/apps/admin/src/components/sagas/explorer/loop-detail-page.tsx`
+  - `/Users/ameer/projects/bizing/apps/admin/src/components/sagas/explorer/run-detail-page.tsx`
+- Result: realtime data still updates, but the UI remains stable while steps/events stream in.
+
+## OODash loop cockpit redesign (intuitive + debuggable)
+
+- Reworked `/sagas/loops/:loopId` into an operator-first cockpit instead of a raw log view.
+- New interaction model in `/Users/ameer/projects/bizing/apps/admin/src/components/sagas/explorer/loop-detail-page.tsx`:
+  - **Current state panel** with phase/priority/health/open+blocked entry counts and linked-run pass rate.
+  - **Execution control panel** for starting saga runs directly from loop context.
+  - **Scope map** with resolved labels and direct navigation for linked use cases/personas/definitions/runs.
+  - **Inline link management**: add and remove links from the same screen.
+  - **Action log inspector** with request/result payload JSON inspection for visual debugging.
+  - **Phase board** rendered as 4 OODA columns with unresolved filter and inline entry status transitions.
+  - **Linked runs panel** with progress backdrops and quick drilldown into run evidence.
+  - **Loop edit dialog** (title/objective/status/phase/priority/health/next-review) and expanded entry creation dialog.
+- Outcome: OODash now maps more directly to the architecture (loop scope -> signals -> decisions -> actions -> run evidence) and supports full-loop debugging without context switching.
+
+## Saga runner reliability hardening (2026-03-01)
+
+- Hardened `/Users/ameer/projects/bizing/apps/api/src/scripts/rerun-sagas.ts` for large-batch stability:
+  - default `SAGA_CONCURRENCY` lowered from `8` to `4`
+  - default `SAGA_HTTP_TIMEOUT_MS` increased from `15000` to `45000`
+  - new retry knobs:
+    - `SAGA_HTTP_RETRY_COUNT` (default `2`)
+    - `SAGA_HTTP_RETRY_DELAY_MS` (default `250`)
+- `requestJson` now retries transient timeout/network/HTTP (`429`, `5xx`) failures with exponential backoff.
+- Step status reporting now tolerates stale transition races (`passed -> in_progress`) so already-completed steps do not falsely fail.
+- Validation:
+  - reran previously failing sagas (`uc-72`, `uc-73`, `uc-74`, `uc-75`, `uc-76`, `uc-77`, `uc-79`) successfully.
+  - full suite rerun result: `279/279 passed`.
+
+## New comprehensive saga.v1 specs (2026-03-01)
+
+- Added three new high-coverage saga definitions under `/Users/ameer/projects/bizing/code/testing/sagas/specs`:
+  - `uc-280-the-omnichannel-comms-orchestrator-lisa.json`
+  - `uc-281-the-event-workflow-control-tower-marcus.json`
+  - `uc-282-the-substitute-dispatch-automation-jake.json`
+- These are comprehensive `saga.v1` specs with:
+  - full lifecycle phases (owner setup -> customer flow -> abuse checks -> operations/reporting)
+  - explicit workflow/notification-heavy UC requirements
+  - virtual-time simulation config (`clock` + `scheduler`)
+  - step-level delay coverage (`fixed` + `until_condition`) to exercise scheduler/clock APIs
+  - SMS/email/push/in-app focused coverage targets in metadata.
+- Validation run results (single-saga reruns):
+  - `uc-280`: passed
+  - `uc-281`: passed
+  - `uc-282`: passed
+
+## Saga library hard cut to new v1 set (2026-03-01)
+
+- Replaced the previous saga spec corpus with the new comprehensive v1 set only:
+  - `uc-280-the-omnichannel-comms-orchestrator-lisa`
+  - `uc-281-the-event-workflow-control-tower-marcus`
+  - `uc-282-the-substitute-dispatch-automation-jake`
+- Removed all older JSON specs from `/Users/ameer/projects/bizing/code/testing/sagas/specs`.
+- Deleted all filesystem run artifacts:
+  - `/Users/ameer/projects/bizing/code/testing/sagas/runs/*`
+  - `/Users/ameer/projects/bizing/code/testing/sagas/reports/*`
+- Purged DB run-state and run-derived coverage rows; detached OODA FK references to preserve loop journals.
+- Pruned DB saga definitions/revisions to match the new 3-key corpus.
+- Post-cut validation:
+  - `bun run --cwd /Users/ameer/projects/bizing/apps/api sagas:rerun`
+  - result: `3/3 passed`.
+
+## Saga corpus restoration on v1 standard (2026-03-01)
+
+- Restored the legacy saga definition corpus after the hard-cut reset.
+- Ran generator from canonical docs with sync:
+  - `bun run --cwd /Users/ameer/projects/bizing/apps/api sagas:generate -- --sync=true`
+- Outcome:
+  - regenerated `279` UC-derived saga specs from docs
+  - retained the new comprehensive specs (`uc-280`, `uc-281`, `uc-282`)
+  - total spec files: `282`
+  - DB definitions synced: `282`
+  - all specs verified on `schemaVersion = saga.v1`
+  - run-state remains clean (`saga_runs = 0`).

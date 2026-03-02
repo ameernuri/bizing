@@ -1,5 +1,18 @@
 {
-  "schemaVersion": "saga.v0",
+  "schemaVersion": "saga.v1",
+  "simulation": {
+    "clock": {
+      "mode": "virtual",
+      "timezone": "UTC",
+      "autoAdvance": true
+    },
+    "scheduler": {
+      "mode": "deterministic",
+      "defaultPollMs": 1000,
+      "defaultTimeoutMs": 30000,
+      "maxTicksPerStep": 500
+    }
+  },
   "sagaKey": "uc-240-the-solo-entrepreneur-sarah",
   "title": "UC-240 • The Scheduled Gift Delivery (Date + Message + Recipient Channel) • The Solo Entrepreneur (Sarah)",
   "description": "Comprehensive lifecycle saga derived from UC-240 and persona P-1. Needs summary: Gift delivery schedule timestamp; Recipient contact + channel (email/SMS/link); Message template/payload with edit window; Delivery event timeline and retry visibility",
@@ -19,7 +32,7 @@
     "personaRef": "P-1",
     "useCaseFile": "/Users/ameer/bizing/mind/workspace/documentation/use-cases-comprehensive.md",
     "personaFile": "/Users/ameer/bizing/mind/workspace/documentation/tester-personas.md",
-    "generatedAt": "2026-02-28T22:02:52.692Z"
+    "generatedAt": "2026-03-02T05:41:33.634Z"
   },
   "objectives": [
     "Validate UC-240 lifecycle end-to-end using persona The Solo Entrepreneur (Sarah).",
@@ -143,8 +156,10 @@
             "setup"
           ],
           "delay": {
-            "mode": "none",
-            "jitterMs": 0
+            "mode": "fixed",
+            "delayMs": 300000,
+            "jitterMs": 0,
+            "note": "Simulate business owner taking a few minutes to name/configure the business."
           }
         },
         {
@@ -184,8 +199,10 @@
             "setup"
           ],
           "delay": {
-            "mode": "none",
-            "jitterMs": 0
+            "mode": "fixed",
+            "delayMs": 120000,
+            "jitterMs": 0,
+            "note": "Simulate setup pause between business and location creation."
           }
         }
       ]
@@ -231,8 +248,10 @@
             "policy"
           ],
           "delay": {
-            "mode": "none",
-            "jitterMs": 0
+            "mode": "fixed",
+            "delayMs": 600000,
+            "jitterMs": 0,
+            "note": "Simulate owner editing weekly hours and lead-time settings."
           }
         },
         {
@@ -269,8 +288,10 @@
             "pricing"
           ],
           "delay": {
-            "mode": "none",
-            "jitterMs": 0
+            "mode": "fixed",
+            "delayMs": 600000,
+            "jitterMs": 0,
+            "note": "Simulate pricing review and confirmation time."
           }
         }
       ]
@@ -488,8 +509,12 @@
             "publish"
           ],
           "delay": {
-            "mode": "none",
-            "jitterMs": 0
+            "mode": "until_condition",
+            "conditionKey": "step_done:owner-create-offer-version",
+            "timeoutMs": 30000,
+            "pollMs": 1000,
+            "jitterMs": 0,
+            "note": "Publish only after offer-version creation is confirmed in run state."
           }
         }
       ]
@@ -578,8 +603,10 @@
             "checkout"
           ],
           "delay": {
-            "mode": "none",
-            "jitterMs": 0
+            "mode": "fixed",
+            "delayMs": 900000,
+            "jitterMs": 0,
+            "note": "Simulate customer browsing and checkout latency."
           }
         },
         {
@@ -619,8 +646,10 @@
             "booking"
           ],
           "delay": {
-            "mode": "none",
-            "jitterMs": 0
+            "mode": "fixed",
+            "delayMs": 60000,
+            "jitterMs": 0,
+            "note": "Simulate near-concurrent demand attempting overlapping inventory."
           }
         },
         {
@@ -800,8 +829,12 @@
             "acl"
           ],
           "delay": {
-            "mode": "none",
-            "jitterMs": 0
+            "mode": "until_condition",
+            "conditionKey": "step_done:customer-book-primary",
+            "timeoutMs": 30000,
+            "pollMs": 1000,
+            "jitterMs": 0,
+            "note": "Wait until a customer booking exists before member operations review."
           }
         },
         {
@@ -839,8 +872,138 @@
             "validation"
           ],
           "delay": {
+            "mode": "until_condition",
+            "conditionKey": "step_done:member-review-bookings",
+            "timeoutMs": 30000,
+            "pollMs": 1000,
+            "jitterMs": 0,
+            "note": "Review calendar after operations updates are persisted."
+          }
+        },
+        {
+          "stepKey": "demo-send-email-message",
+          "order": 19,
+          "title": "Send transactional email message",
+          "actorKey": "biz_member",
+          "intent": "Verify delivery evidence for email notifications.",
+          "instruction": "Send an email lifecycle message for a real run actor and persist delivery evidence.",
+          "expectedResult": "Run message feed includes at least one delivered email for this lifecycle.",
+          "toolHints": [],
+          "assertions": [
+            {
+              "kind": "api_response",
+              "description": "API call returns success and includes stable ids for created entities."
+            },
+            {
+              "kind": "acl_guard",
+              "description": "Actor permissions are honored for this step context."
+            }
+          ],
+          "evidenceRequired": [
+            {
+              "kind": "api_trace",
+              "label": "Request/response trace for this step"
+            },
+            {
+              "kind": "snapshot",
+              "label": "Structured snapshot.v1 screen blocks (what user saw) with real API-backed data"
+            }
+          ],
+          "guardrails": [],
+          "tags": [
+            "uc-specific",
+            "communications",
+            "email"
+          ],
+          "delay": {
+            "mode": "fixed",
+            "delayMs": 300000,
+            "jitterMs": 0,
+            "note": "Simulate short post-booking notification delay."
+          }
+        },
+        {
+          "stepKey": "demo-send-sms-message",
+          "order": 20,
+          "title": "Send transactional SMS message",
+          "actorKey": "biz_member",
+          "intent": "Verify delivery evidence for SMS notifications.",
+          "instruction": "Send an SMS lifecycle message for a real run actor and persist delivery evidence.",
+          "expectedResult": "Run message feed includes at least one delivered SMS for this lifecycle.",
+          "toolHints": [],
+          "assertions": [
+            {
+              "kind": "api_response",
+              "description": "API call returns success and includes stable ids for created entities."
+            },
+            {
+              "kind": "acl_guard",
+              "description": "Actor permissions are honored for this step context."
+            }
+          ],
+          "evidenceRequired": [
+            {
+              "kind": "api_trace",
+              "label": "Request/response trace for this step"
+            },
+            {
+              "kind": "snapshot",
+              "label": "Structured snapshot.v1 screen blocks (what user saw) with real API-backed data"
+            }
+          ],
+          "guardrails": [],
+          "tags": [
+            "uc-specific",
+            "communications",
+            "sms"
+          ],
+          "delay": {
             "mode": "none",
             "jitterMs": 0
+          }
+        },
+        {
+          "stepKey": "demo-verify-comms-messages",
+          "order": 21,
+          "title": "Verify omnichannel message evidence",
+          "actorKey": "biz_owner",
+          "intent": "Prove both SMS and email are visible and queryable in run timeline evidence.",
+          "instruction": "Verify the run stores at least one delivered SMS and one delivered email artifact tied to lifecycle actors.",
+          "expectedResult": "Message evidence is present for both channels and can be inspected from saga run detail.",
+          "toolHints": [],
+          "assertions": [
+            {
+              "kind": "api_response",
+              "description": "API call returns success and includes stable ids for created entities."
+            },
+            {
+              "kind": "acl_guard",
+              "description": "Actor permissions are honored for this step context."
+            }
+          ],
+          "evidenceRequired": [
+            {
+              "kind": "api_trace",
+              "label": "Request/response trace for this step"
+            },
+            {
+              "kind": "snapshot",
+              "label": "Structured snapshot.v1 screen blocks (what user saw) with real API-backed data"
+            }
+          ],
+          "guardrails": [],
+          "tags": [
+            "uc-specific",
+            "communications",
+            "evidence"
+          ],
+          "delay": {
+            "mode": "until_condition",
+            "conditionKey": "message_for:customer_1",
+            "timeoutMs": 45000,
+            "pollMs": 1000,
+            "jitterMs": 0,
+            "note": "Wait until message evidence exists for customer_1 before verification."
           }
         }
       ]
@@ -853,7 +1016,7 @@
       "steps": [
         {
           "stepKey": "owner-revenue-sanity",
-          "order": 19,
+          "order": 22,
           "title": "Owner validates financial/reporting outputs",
           "actorKey": "biz_owner",
           "intent": "Ensure lifecycle creates coherent business metrics.",
@@ -886,13 +1049,15 @@
             "reconciliation"
           ],
           "delay": {
-            "mode": "none",
-            "jitterMs": 0
+            "mode": "fixed",
+            "delayMs": 3600000,
+            "jitterMs": 0,
+            "note": "Simulate closeout/reporting lag after operations complete."
           }
         },
         {
           "stepKey": "uc-need-validate-1",
-          "order": 20,
+          "order": 23,
           "title": "Validate explicit UC need #1",
           "actorKey": "biz_owner",
           "intent": "Prove this lifecycle covers explicit requirement: Gift delivery schedule timestamp",
@@ -932,7 +1097,7 @@
         },
         {
           "stepKey": "uc-need-validate-2",
-          "order": 21,
+          "order": 24,
           "title": "Validate explicit UC need #2",
           "actorKey": "biz_owner",
           "intent": "Prove this lifecycle covers explicit requirement: Recipient contact + channel (email/SMS/link)",
@@ -972,7 +1137,7 @@
         },
         {
           "stepKey": "uc-need-validate-3",
-          "order": 22,
+          "order": 25,
           "title": "Validate explicit UC need #3",
           "actorKey": "biz_owner",
           "intent": "Prove this lifecycle covers explicit requirement: Message template/payload with edit window",
@@ -1012,7 +1177,7 @@
         },
         {
           "stepKey": "uc-need-validate-4",
-          "order": 23,
+          "order": 26,
           "title": "Validate explicit UC need #4",
           "actorKey": "biz_owner",
           "intent": "Prove this lifecycle covers explicit requirement: Delivery event timeline and retry visibility",
@@ -1052,7 +1217,7 @@
         },
         {
           "stepKey": "persona-scenario-validate-1",
-          "order": 24,
+          "order": 27,
           "title": "Validate persona scenario #1",
           "actorKey": "customer_1",
           "intent": "Exercise persona-specific behavior: First-time setup flow completion time",
@@ -1092,7 +1257,7 @@
         },
         {
           "stepKey": "persona-scenario-validate-2",
-          "order": 25,
+          "order": 28,
           "title": "Validate persona scenario #2",
           "actorKey": "customer_1",
           "intent": "Exercise persona-specific behavior: Accidentally deletes availability rule, panics",
@@ -1132,7 +1297,7 @@
         },
         {
           "stepKey": "persona-scenario-validate-3",
-          "order": 26,
+          "order": 29,
           "title": "Validate persona scenario #3",
           "actorKey": "customer_1",
           "intent": "Exercise persona-specific behavior: Tries to book herself to test the flow",
@@ -1172,7 +1337,7 @@
         },
         {
           "stepKey": "persona-scenario-validate-4",
-          "order": 27,
+          "order": 30,
           "title": "Validate persona scenario #4",
           "actorKey": "customer_1",
           "intent": "Exercise persona-specific behavior: Forgets to set buffer time between appointments",
@@ -1212,7 +1377,7 @@
         },
         {
           "stepKey": "runner-submit-artifacts",
-          "order": 28,
+          "order": 31,
           "title": "Runner submits snapshots and final report",
           "actorKey": "biz_owner",
           "intent": "Close loop with machine-readable evidence and human-readable findings.",
@@ -1245,8 +1410,12 @@
             "closeout"
           ],
           "delay": {
-            "mode": "none",
-            "jitterMs": 0
+            "mode": "until_condition",
+            "conditionKey": "step_done:owner-revenue-sanity",
+            "timeoutMs": 30000,
+            "pollMs": 1000,
+            "jitterMs": 0,
+            "note": "Submit artifacts only after lifecycle reporting checks finish."
           }
         }
       ]
@@ -1263,7 +1432,10 @@
       "Forgets to set buffer time between appointments"
     ],
     "coverageTargets": [
-      "customer-advanced-payment-flow"
+      "customer-advanced-payment-flow",
+      "demo-send-email-message",
+      "demo-send-sms-message",
+      "demo-verify-comms-messages"
     ]
   }
 }

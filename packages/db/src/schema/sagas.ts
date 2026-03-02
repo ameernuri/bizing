@@ -12,7 +12,11 @@ import {
   sagaActorMessageChannelEnum,
   sagaActorMessageStatusEnum,
   sagaDefinitionStatusEnum,
+  sagaRunClockModeEnum,
+  sagaRunClockStatusEnum,
   sagaRunModeEnum,
+  sagaSchedulerJobStatusEnum,
+  sagaSchedulerJobTypeEnum,
   sagaRunStatusEnum,
   sagaRunStepStatusEnum,
 } from "./enums";
@@ -67,7 +71,7 @@ export const sagaDefinitions = pgTable(
     sourcePersonaFile: varchar("source_persona_file", { length: 600 }),
 
     /** Version label declared by the saga JSON spec schema. */
-    specVersion: varchar("spec_version", { length: 40 }).default("v0").notNull(),
+    specVersion: varchar("spec_version", { length: 40 }).default("saga.v1").notNull(),
 
     /**
      * Repo-local path to the canonical JSON saga spec file.
@@ -217,6 +221,193 @@ export const sagaRuns = pgTable(
 );
 
 /**
+ * saga_run_simulation_clocks
+ *
+ * ELI5:
+ * One row stores the "current time cursor" for one run simulation.
+ * This lets tests advance time instantly (virtual mode) instead of sleeping.
+ */
+export const sagaRunSimulationClocks = pgTable(
+  "saga_run_simulation_clocks",
+  {
+    /** Stable primary key for one run clock controller. */
+    id: idWithTag("saga_run_clock"),
+
+    /** Parent run; one clock row per run. */
+    sagaRunId: idRef("saga_run_id")
+      .references(() => sagaRuns.id, { onDelete: "cascade" })
+      .notNull(),
+
+    /**
+     * Clock mode for this run.
+     *
+     * - virtual: deterministic clock jumps
+     * - realtime: wall clock
+     */
+    mode: sagaRunClockModeEnum("mode").default("virtual").notNull(),
+
+    /** Current lifecycle state of the clock. */
+    status: sagaRunClockStatusEnum("status").default("idle").notNull(),
+
+    /**
+     * Current "now" used by the scheduler for this run.
+     *
+     * In virtual mode this is explicitly advanced by API/runner actions.
+     */
+    currentTimeAt: timestamp("current_time_at", { withTimezone: true }).notNull(),
+
+    /** Optional timezone label used for rendering/explanations. */
+    timezone: varchar("timezone", { length: 80 }).default("UTC").notNull(),
+
+    /** Whether the runner is allowed to auto-advance virtual time. */
+    autoAdvance: boolean("auto_advance").default(true).notNull(),
+
+    /** Lifecycle timestamps of the clock controller. */
+    startedAt: timestamp("started_at", { withTimezone: true }),
+    completedAt: timestamp("completed_at", { withTimezone: true }),
+    lastAdvancedAt: timestamp("last_advanced_at", { withTimezone: true }),
+
+    /** Number of successful advance operations. */
+    advanceCount: integer("advance_count").default(0).notNull(),
+
+    /** Total milliseconds advanced virtually by this clock. */
+    totalAdvancedMs: integer("total_advanced_ms").default(0).notNull(),
+
+    /** Extensible metadata (reasoning hints, simulation knobs, etc.). */
+    metadata: jsonb("metadata").default({}).notNull(),
+
+    /** Full audit columns. */
+    ...withAuditRefs(() => users.id),
+  },
+  (table) => ({
+    sagaRunSimulationClocksRunUnique: uniqueIndex("saga_run_simulation_clocks_run_unique").on(
+      table.sagaRunId,
+    ),
+    sagaRunSimulationClocksStatusIdx: index("saga_run_simulation_clocks_status_idx").on(
+      table.status,
+      table.lastAdvancedAt,
+    ),
+    sagaRunSimulationClocksNonNegativeCheck: check(
+      "saga_run_simulation_clocks_non_negative_check",
+      sql`
+      "advance_count" >= 0
+      AND "total_advanced_ms" >= 0
+      `,
+    ),
+    sagaRunSimulationClocksTimelineCheck: check(
+      "saga_run_simulation_clocks_timeline_check",
+      sql`
+      ("started_at" IS NULL OR "completed_at" IS NULL OR "completed_at" >= "started_at")
+      `,
+    ),
+  }),
+);
+
+/**
+ * saga_run_scheduler_jobs
+ *
+ * ELI5:
+ * This table is the queue of simulated waiting work in one run.
+ * Example jobs:
+ * - wait 10 virtual minutes
+ * - poll until message exists
+ * - simulated delivery lag
+ */
+export const sagaRunSchedulerJobs = pgTable(
+  "saga_run_scheduler_jobs",
+  {
+    /** Stable primary key for one scheduled job row. */
+    id: idWithTag("saga_sched_job"),
+
+    /** Parent run this job belongs to. */
+    sagaRunId: idRef("saga_run_id")
+      .references(() => sagaRuns.id, { onDelete: "cascade" })
+      .notNull(),
+
+    /**
+     * Optional owning step id.
+     *
+     * We keep this as a plain id (no FK) because this table is declared before
+     * `saga_run_steps` in this module and we avoid forward-reference bootstrap
+     * coupling in Drizzle schema initialization.
+     */
+    sagaRunStepId: idRef("saga_run_step_id"),
+
+    /** Denormalized step key for easy filtering/debugging. */
+    stepKey: varchar("step_key", { length: 180 }),
+
+    /** Scheduler domain category. */
+    jobType: sagaSchedulerJobTypeEnum("job_type").default("step_delay").notNull(),
+
+    /** Current status in scheduler lifecycle. */
+    status: sagaSchedulerJobStatusEnum("status").default("pending").notNull(),
+
+    /**
+     * Virtual due-time of this job.
+     *
+     * Scheduler compares this to `saga_run_simulation_clocks.current_time_at`.
+     */
+    dueAt: timestamp("due_at", { withTimezone: true }).notNull(),
+
+    /** Optional condition expression key for conditional waits. */
+    conditionKey: varchar("condition_key", { length: 240 }),
+
+    /** Optional deadline for condition-based waits. */
+    timeoutAt: timestamp("timeout_at", { withTimezone: true }),
+
+    /** Optional poll cadence in milliseconds for condition checks. */
+    pollEveryMs: integer("poll_every_ms"),
+
+    /** Number of execution/evaluation attempts. */
+    attemptCount: integer("attempt_count").default(0).notNull(),
+
+    /** Runtime timestamps for queue observability. */
+    enqueuedAt: timestamp("enqueued_at", { withTimezone: true }).defaultNow().notNull(),
+    startedAt: timestamp("started_at", { withTimezone: true }),
+    completedAt: timestamp("completed_at", { withTimezone: true }),
+    lastEvaluatedAt: timestamp("last_evaluated_at", { withTimezone: true }),
+
+    /** Structured error text when job fails/expires. */
+    failureMessage: text("failure_message"),
+
+    /** Structured output and scheduling internals. */
+    resultPayload: jsonb("result_payload").default({}).notNull(),
+    metadata: jsonb("metadata").default({}).notNull(),
+
+    /** Full audit columns. */
+    ...withAuditRefs(() => users.id),
+  },
+  (table) => ({
+    sagaRunSchedulerJobsRunStatusDueIdx: index("saga_run_scheduler_jobs_run_status_due_idx").on(
+      table.sagaRunId,
+      table.status,
+      table.dueAt,
+    ),
+    sagaRunSchedulerJobsRunStepIdx: index("saga_run_scheduler_jobs_run_step_idx").on(
+      table.sagaRunStepId,
+    ),
+    sagaRunSchedulerJobsStepKeyIdx: index("saga_run_scheduler_jobs_step_key_idx").on(
+      table.sagaRunId,
+      table.stepKey,
+    ),
+    sagaRunSchedulerJobsNonNegativeCheck: check(
+      "saga_run_scheduler_jobs_non_negative_check",
+      sql`
+      "attempt_count" >= 0
+      AND ("poll_every_ms" IS NULL OR "poll_every_ms" > 0)
+      `,
+    ),
+    sagaRunSchedulerJobsTimelineCheck: check(
+      "saga_run_scheduler_jobs_timeline_check",
+      sql`
+      ("started_at" IS NULL OR "completed_at" IS NULL OR "completed_at" >= "started_at")
+      AND ("timeout_at" IS NULL OR "timeout_at" >= "due_at")
+      `,
+    ),
+  }),
+);
+
+/**
  * saga_definition_revisions
  *
  * ELI5:
@@ -238,7 +429,7 @@ export const sagaDefinitionRevisions = pgTable(
     revisionNumber: integer("revision_number").notNull(),
 
     /** Spec schema version snapshot. */
-    specVersion: varchar("spec_version", { length: 40 }).default("v0").notNull(),
+    specVersion: varchar("spec_version", { length: 40 }).default("saga.v1").notNull(),
 
     /** Spec content checksum snapshot. */
     specChecksum: varchar("spec_checksum", { length: 128 }).notNull(),

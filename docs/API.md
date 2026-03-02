@@ -162,13 +162,42 @@ Current delegated write route families:
 ### Saga Lifecycle API
 
 - Specs: `/api/v1/sagas/specs/*`
+- Spec contract: `testing/sagas/SAGA_SPEC.md` now canonical on `saga.v1`
+  with first-class `simulation.clock` + `simulation.scheduler`.
 - Runs: `/api/v1/sagas/runs*`
+- Execute a created run: `POST /api/v1/sagas/runs/:runId/execute`
+- Run simulation clock:
+  - `GET /api/v1/sagas/runs/:runId/clock`
+  - `POST /api/v1/sagas/runs/:runId/clock/advance`
+- Run scheduler jobs:
+  - `GET /api/v1/sagas/runs/:runId/scheduler/jobs`
+  - `POST /api/v1/sagas/runs/:runId/scheduler/jobs`
+  - `PATCH /api/v1/sagas/runs/:runId/scheduler/jobs/:jobId`
 - Step reporting: `/api/v1/sagas/runs/:runId/steps/:stepKey/result`
 - Artifacts: snapshots/traces/report endpoints under `/api/v1/sagas/runs/:runId/*`
 - Test-mode helpers: `/api/v1/sagas/test-mode/*`
 - Bulk validation workflow:
   - `bun run --cwd /Users/ameer/projects/bizing/apps/api sagas:rerun`
+  - `bun run --cwd /Users/ameer/projects/bizing/apps/api sagas:rerun:fast`
   - `bun run --cwd /Users/ameer/projects/bizing/apps/api sagas:collect`
+  - Runner defaults are tuned for stability under large batches:
+    - `SAGA_CONCURRENCY=4`
+    - `SAGA_HTTP_TIMEOUT_MS=45000`
+    - `SAGA_HTTP_RETRY_COUNT=2`
+    - `SAGA_HTTP_RETRY_DELAY_MS=250`
+  - Fast mode (`SAGA_FAST_MODE=1`) is for quick validation loops:
+    - keeps API trace artifact writes on by default (required for pass-state integrity checks)
+    - skips snapshot artifact writes by default
+    - skips coverage persistence on final run refresh by default
+    - keeps `pending -> in_progress -> terminal` step lifecycle transitions on by default
+    - keeps deterministic step pass/fail execution through the same API calls
+  - Fast-mode defaults are overrideable with explicit flags:
+    - `SAGA_ATTACH_API_TRACES=1|0`
+    - `SAGA_ATTACH_SNAPSHOTS=1|0`
+    - `SAGA_STEP_TRANSITION_IN_PROGRESS=1|0`
+    - `SAGA_PERSIST_COVERAGE=1|0`
+    - `SAGA_RECOMPUTE_INTEGRITY=1|0`
+  - You can still override these with env vars per run.
   - `sagas:collect` keeps running after failures, groups blockers by domain/endpoint, and writes the latest report to:
     - `/Users/ameer/projects/bizing/apps/api/.tmp/saga-reports/blockers-latest.json`
     - `/Users/ameer/projects/bizing/apps/api/.tmp/saga-reports/blockers-latest.md`
@@ -192,20 +221,124 @@ Notes:
   - channel integration sync state
   - payment intent detail + processor account routing
 
+Run lifecycle note (important):
+- `POST /api/v1/sagas/runs` creates a run in `pending` state.
+- Execution begins when `/api/v1/sagas/runs/:runId/execute` is called.
+- Dashboard run-start flows now call both endpoints (`create` then `execute`) so new runs do not stay pending by accident.
+- Delay/wait behavior now runs through scheduler jobs and simulation clock
+  advancement, so test flows can model time passage deterministically without
+  wall-clock sleeping.
+- Runner reporting now tolerates stale `passed -> in_progress` race windows on
+  step status updates, so completed steps are not falsely marked failed during
+  transient retries.
+- Deterministic message demo step keys are now available in saga runner:
+  - `demo-send-email-message`
+  - `demo-send-sms-message`
+  - `demo-verify-comms-messages`
+  These are useful for proving actor-message UI/API plumbing end-to-end.
+
 Implementation:
 - `/Users/ameer/bizing/code/apps/api/src/routes/sagas.ts`
 - `/Users/ameer/bizing/code/testing/sagas/README.md`
 - `/Users/ameer/bizing/code/testing/sagas/docs/API_CONTRACT.md`
 
+### OODA Loop API
+
+The saga explorer is now also the OODA dashboard backbone:
+- Observe -> Orient -> Decide -> Act loops are first-class API objects.
+- Loops link to use cases/personas/definitions/runs so debugging and planning
+  are one connected flow.
+
+Routes:
+- `GET /api/v1/ooda/overview`
+- `GET /api/v1/ooda/loops`
+- `POST /api/v1/ooda/loops`
+- `GET /api/v1/ooda/loops/:loopId`
+- `PATCH /api/v1/ooda/loops/:loopId`
+- `DELETE /api/v1/ooda/loops/:loopId` (soft archive)
+- `GET /api/v1/ooda/loops/:loopId/links`
+- `POST /api/v1/ooda/loops/:loopId/links`
+- `DELETE /api/v1/ooda/loops/:loopId/links/:linkId`
+- `GET /api/v1/ooda/loops/:loopId/entries`
+- `POST /api/v1/ooda/loops/:loopId/entries`
+- `PATCH /api/v1/ooda/loops/:loopId/entries/:entryId`
+- `GET /api/v1/ooda/loops/:loopId/actions`
+- `POST /api/v1/ooda/loops/:loopId/actions`
+- `PATCH /api/v1/ooda/loops/:loopId/actions/:actionId`
+- `POST /api/v1/ooda/loops/:loopId/saga-runs`
+- `POST /api/v1/ooda/generate/draft` (LLM-assisted draft payloads)
+
+Loop-run creation behavior (`POST /api/v1/ooda/loops/:loopId/saga-runs`):
+- always creates a canonical `ooda_loop_links` output link for the new run id
+- writes an OODA action row with the linked run id (no payload-only linkage)
+- supports `autoExecute` (default `true`)
+  - when session cookie is present, the run is executed immediately server-side
+  - when cookie is missing, the run is created but action is marked failed with an explicit reason
+- returns refreshed run state after execution attempt so the dashboard does not stay on stale `pending` payloads
+
+Legacy data self-heal:
+- `GET /api/v1/ooda/loops/:loopId` now runs lightweight linkage reconciliation:
+  - backfills missing `linkedSagaRunId` from `resultPayload.runId` when valid
+  - backfills missing `saga_run` output links
+  - marks impossible stale action rows as failed (for example: run id was pruned during reset)
+
+Realtime behavior:
+- OODA mutations publish dashboard-refresh events through the existing
+  `/api/v1/ws/sagas` websocket channel (shared transport, OODA payload marker).
+- This keeps loop list/detail pages live-updating without introducing a second
+  websocket protocol.
+
+ELI5:
+- `loops` are your high-level improvement missions.
+- `entries` are timeline observations/decisions/results.
+- `actions` are what you actually executed.
+- `links` connect each loop to the exact UC/persona/saga/run evidence.
+
+Contract tightenings (workflow alignment):
+- Loop gates are now explicit API fields on loop create/update and are persisted
+  under `metadata.workflowContract`:
+  - `designGateStatus`: `pending | passed | failed`
+  - `behaviorGateStatus`: `pending | passed | failed`
+- Gap entries must include both:
+  - `gapType` (canonical taxonomy)
+  - `owningLayer` (one primary owner, persisted in entry `evidence.owningLayer`)
+- Meaningful entries (`signal`, `result`, `postmortem`) require at least one
+  evidence anchor in `evidence`:
+  - `apiTraceRef(s)`, `snapshotRef(s)`, `eventRef(s)`, `auditRef(s)`, or `reportNote`
+- `result` entries marked `resolved` must include API trace evidence
+  (`apiTraceRef` or `apiTraceRefs`) so closure is proof-backed.
+
+Implementation:
+- `/Users/ameer/bizing/code/apps/api/src/routes/ooda.ts`
+
 Admin explorer UI:
 - `/sagas` now acts as a route-based explorer shell instead of one large dashboard component.
 - Primary views are:
   - `/sagas` for current health and recent failures
+  - `/sagas/loops` and `/sagas/loops/:loopId`
   - `/sagas/use-cases` and `/sagas/use-cases/:ucKey`
   - `/sagas/personas` and `/sagas/personas/:personaKey`
   - `/sagas/definitions` and `/sagas/definitions/:sagaKey`
   - `/sagas/runs` and `/sagas/runs/:runId`
 - The intent is simple: every loop object gets its own detail page, and links between use cases, personas, definitions, and runs stay clickable instead of being buried in one stateful screen.
+- Use-case/persona/definition detail pages now expose full CRUD operations:
+  - edit core definition fields
+  - create new version rows
+  - archive/delete definition rows
+  - for saga definitions specifically: inspect/edit full spec JSON and create explicit revisions from the dashboard
+- `/ooda` and `/ooda/*` are aliases that redirect to the route-based explorer.
+- Loop pages are now presented as **missions** in UI copy:
+  - `/sagas/loops` -> mission list
+  - `/sagas/loops/:loopId` -> mission control page
+  (route names and API contract remain unchanged for compatibility).
+- Loop detail UI now hides explicit `observe/orient/decide/act` controls and
+  phase-board terminology in favor of operator-native lanes:
+  - `Signals & Gaps`
+  - `Decisions & Plans`
+  - `Execution Outcomes`
+- New loop-entry writes still preserve canonical backend phase values, but the
+  UI maps them automatically from entry type so operators do not need to reason
+  about phase taxonomy during normal use.
 - The explorer shell now keeps a trigger in the main content rail too, so the sidebar can always be reopened after being hidden.
 - Saga run cards, recent-run rows, and attention-queue cards now include a low-opacity segmented step-progress backdrop again, so pass/fail/pending state is visible at a glance before opening a run.
 - Saga run detail step cards now use the same low-noise status backdrop treatment, so the timeline carries visual pass/fail/running cues without needing to read every badge first.
@@ -280,9 +413,21 @@ Design note:
 
 - Saga library can be regenerated/reseeded from canonical markdown sources with:
   - `bun run --cwd /Users/ameer/bizing/code/apps/api sagas:generate -- --sync=true`
+- Saga spec generation is now higher-fidelity by default:
+  - adds deterministic UC-keyword-driven extension steps (demand pricing, call-fee,
+    waitlist/queue, advanced payments, external integrations, compliance checks,
+    dispatch/route review, analytics verification)
+  - adds communication-proof steps for comms-heavy UCs:
+    - `demo-send-email-message`
+    - `demo-send-sms-message`
+    - `demo-verify-comms-messages`
+  - adds realistic virtual-time delays/waits on core lifecycle transitions so run
+    timelines simulate real passage-of-time without wall-clock sleeps
 - The canonical loop library is also reseedable through the authenticated API:
   - `POST /api/v1/sagas/library/reset-reseed`
   - `POST /api/v1/sagas/library/sync-docs`
+- Reset/reseed now truncates OODA loop tables too (`ooda_loops`, links, entries, actions)
+  so stale loop journals do not survive saga run hard resets.
 - The DB migration stack has been hard-cut to one fresh v0 baseline:
   - `/Users/ameer/bizing/code/packages/db/migrations/0000_luxuriant_goblin_queen.sql`
 

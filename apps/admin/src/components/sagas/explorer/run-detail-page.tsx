@@ -1,9 +1,9 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import dynamic from 'next/dynamic'
-import { ArrowLeft, ChevronDown, ChevronRight, FileJson2, MessageSquareText, UserCircle2 } from 'lucide-react'
+import { ArrowLeft, ChevronDown, ChevronRight, FileJson2, Loader2, MessageSquareText, PlayCircle, UserCircle2 } from 'lucide-react'
 import { sagaApi, type SagaArtifact, type SagaArtifactContent, type SagaCoverageDetail, type SagaDefinitionLinksDetail, type SagaRunDetail, type SagaRunStep } from '@/lib/sagas-api'
 import { SnapshotRenderer, type SnapshotDocument } from '@/components/sagas/snapshot-renderer'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
@@ -14,6 +14,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
 import { cn } from '@/lib/utils'
 import { EmptyState, LoadError, LoadingGrid, PageIntro, RunStatusBadge } from './common'
+import { useSagaRealtime } from '@/lib/use-saga-realtime'
 
 const ReactJson = dynamic(() => import('react-json-view'), { ssr: false })
 
@@ -87,11 +88,20 @@ export function SagaRunDetailPage({ runId }: { runId: string }) {
   const [artifactContent, setArtifactContent] = useState<SagaArtifactContent | null>(null)
   const [artifactOpen, setArtifactOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
+  const [isExecuting, setIsExecuting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const realtimeRefreshRef = useRef<number | null>(null)
+  const autoExecuteRunRef = useRef<string | null>(null)
+  const loadInFlightRef = useRef(false)
 
-  async function load() {
-    setIsLoading(true)
-    setError(null)
+  async function load(options?: { background?: boolean }) {
+    const background = options?.background === true
+    if (loadInFlightRef.current) return
+    loadInFlightRef.current = true
+    if (!background) {
+      setIsLoading(true)
+      setError(null)
+    }
     try {
       const nextDetail = await sagaApi.fetchRunDetail(runId)
       const [nextCoverage, nextLinks] = await Promise.all([
@@ -102,15 +112,58 @@ export function SagaRunDetailPage({ runId }: { runId: string }) {
       setCoverage(nextCoverage)
       setLinks(nextLinks)
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Failed to load saga run detail.')
+      if (!background || !detail) {
+        setError(cause instanceof Error ? cause.message : 'Failed to load saga run detail.')
+      }
     } finally {
-      setIsLoading(false)
+      loadInFlightRef.current = false
+      if (!background) setIsLoading(false)
     }
   }
 
   useEffect(() => {
     void load()
   }, [runId])
+
+  useSagaRealtime({
+    runId,
+    onEvent: () => {
+      if (realtimeRefreshRef.current !== null) window.clearTimeout(realtimeRefreshRef.current)
+      realtimeRefreshRef.current = window.setTimeout(() => void load({ background: true }), 250)
+    },
+  })
+
+  useEffect(() => {
+    return () => {
+      if (realtimeRefreshRef.current !== null) window.clearTimeout(realtimeRefreshRef.current)
+    }
+  }, [])
+
+  async function executeRun(options?: { silent?: boolean }) {
+    if (!detail || isExecuting) return
+    const silent = options?.silent === true
+    if (!silent) setError(null)
+    setIsExecuting(true)
+    try {
+      await sagaApi.executeRun(detail.run.id)
+      await load()
+    } catch (cause) {
+      if (!silent) {
+        setError(cause instanceof Error ? cause.message : 'Failed to execute saga run.')
+      }
+    } finally {
+      setIsExecuting(false)
+    }
+  }
+
+  useEffect(() => {
+    if (!detail) return
+    const run = detail.run
+    if (run.status !== 'pending' || run.startedAt) return
+    if (autoExecuteRunRef.current === run.id) return
+    autoExecuteRunRef.current = run.id
+    void executeRun({ silent: true })
+  }, [detail, isExecuting])
 
   async function openArtifact(artifact: SagaArtifact) {
     if (!detail) return
@@ -150,6 +203,12 @@ export function SagaRunDetailPage({ runId }: { runId: string }) {
         description={detail?.definition ? `${detail.run.sagaKey} · ${detail.run.mode} run` : 'Run detail view for one concrete lifecycle execution.'}
         actions={
           <div className="flex items-center gap-2">
+            {detail?.run.status === 'pending' ? (
+              <Button onClick={() => void executeRun()} disabled={isExecuting}>
+                {isExecuting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlayCircle className="mr-2 h-4 w-4" />}
+                {isExecuting ? 'Executing' : 'Execute run'}
+              </Button>
+            ) : null}
             {detail?.definition?.sagaKey ? (
               <Button variant="outline" asChild>
                 <Link href={`/sagas/definitions/${encodeURIComponent(detail.definition.sagaKey)}`}>Open definition</Link>

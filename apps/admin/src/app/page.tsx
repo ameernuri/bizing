@@ -143,9 +143,9 @@ export default function HomePage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-base">
                   <FlaskConical className="h-4 w-4" />
-                  Saga Runs
+                  OODA Dashboard
                 </CardTitle>
-                <CardDescription>Lifecycle testing sessions and pseudoshot artifacts.</CardDescription>
+                <CardDescription>Use cases, personas, loops, saga definitions, runs, and evidence in one evolution dashboard.</CardDescription>
               </CardHeader>
             </Card>
           </Link>

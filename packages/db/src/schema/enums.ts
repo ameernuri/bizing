@@ -4824,3 +4824,49 @@ export const sagaActorMessageStatusEnum = pgEnum("saga_actor_message_status", [
   "failed",
   "cancelled",
 ]);
+
+/**
+ * Clock strategy for one saga run.
+ *
+ * ELI5:
+ * - `virtual`: tests move time explicitly, no real waiting.
+ * - `realtime`: tests follow wall-clock waiting behavior.
+ */
+export const sagaRunClockModeEnum = pgEnum("saga_run_clock_mode", [
+  "virtual",
+  "realtime",
+]);
+
+/**
+ * Lifecycle state for one run clock controller.
+ */
+export const sagaRunClockStatusEnum = pgEnum("saga_run_clock_status", [
+  "idle",
+  "running",
+  "paused",
+  "completed",
+  "cancelled",
+]);
+
+/**
+ * Scheduler job category for saga runtime orchestration.
+ */
+export const sagaSchedulerJobTypeEnum = pgEnum("saga_scheduler_job_type", [
+  "step_delay",
+  "condition_wait",
+  "message_delivery",
+  "custom",
+]);
+
+/**
+ * Scheduler job runtime status.
+ */
+export const sagaSchedulerJobStatusEnum = pgEnum("saga_scheduler_job_status", [
+  "pending",
+  "ready",
+  "running",
+  "completed",
+  "failed",
+  "cancelled",
+  "expired",
+]);

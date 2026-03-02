@@ -3,13 +3,14 @@
 import Link from 'next/link'
 import { useMemo } from 'react'
 import { usePathname } from 'next/navigation'
-import { BookOpen, FileStack, Gauge, PlayCircle, UserCircle2 } from 'lucide-react'
+import { BookOpen, FileStack, Gauge, Orbit, PlayCircle, UserCircle2 } from 'lucide-react'
 import { RequireRole } from '@/components/RequireRole'
 import { SidebarProvider, Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarInset, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarTrigger } from '@/components/ui/sidebar'
 import { cn } from '@/lib/utils'
 
 const navItems = [
-  { href: '/sagas', label: 'Dashboard', icon: Gauge },
+  { href: '/sagas', label: 'OODA Dashboard', icon: Gauge },
+  { href: '/sagas/loops', label: 'Missions', icon: Orbit },
   { href: '/sagas/use-cases', label: 'Use Cases', icon: BookOpen },
   { href: '/sagas/personas', label: 'Personas', icon: UserCircle2 },
   { href: '/sagas/definitions', label: 'Definitions', icon: FileStack },
@@ -32,8 +33,8 @@ export function SagasShell({ children }: { children: React.ReactNode }) {
           <SidebarHeader className="border-b px-3 py-3">
             <div className="flex items-center justify-between gap-2">
               <div>
-                <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Saga Explorer</p>
-                <p className="text-sm font-medium">Loop control center</p>
+                <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">OODA Dashboard</p>
+                <p className="text-sm font-medium">Evolution control center</p>
               </div>
               <SidebarTrigger />
             </div>
@@ -67,8 +68,8 @@ export function SagasShell({ children }: { children: React.ReactNode }) {
             <div className="sticky top-0 z-10 flex items-center gap-2 border-b bg-background/95 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/70">
               <SidebarTrigger />
               <div>
-                <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Saga Explorer</p>
-                <p className="text-sm font-medium">Loop control center</p>
+                <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">OODA Dashboard</p>
+                <p className="text-sm font-medium">Evolution control center</p>
               </div>
             </div>
             {children}

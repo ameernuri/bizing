@@ -3,7 +3,7 @@ import { promises as fs } from 'node:fs'
 import path from 'node:path'
 import { and, asc, desc, eq, inArray, sql } from 'drizzle-orm'
 import dbPackage from '@bizing/db'
-import { sagaSpecSchema, type SagaSpec } from '../sagas/spec-schema.js'
+import { normalizeSagaSpec, sagaSpecSchema, type SagaSpec } from '../sagas/spec-schema.js'
 import type { SnapshotDocument } from '../sagas/snapshot-schema.js'
 import { publishSagaRuntimeEvent } from './saga-events.js'
 
@@ -11,6 +11,8 @@ const { db } = dbPackage
 const sagaDefinitions = dbPackage.sagaDefinitions
 const sagaDefinitionRevisions = dbPackage.sagaDefinitionRevisions
 const sagaRuns = dbPackage.sagaRuns
+const sagaRunSimulationClocks = dbPackage.sagaRunSimulationClocks
+const sagaRunSchedulerJobs = dbPackage.sagaRunSchedulerJobs
 const sagaRunSteps = dbPackage.sagaRunSteps
 const sagaRunArtifacts = dbPackage.sagaRunArtifacts
 const sagaRunActorProfiles = dbPackage.sagaRunActorProfiles
@@ -179,6 +181,8 @@ type CreateSagaRunInput = {
   runnerLabel?: string
   runContext?: Record<string, unknown>
 }
+
+type SagaSimulationConfig = SagaSpec["simulation"]
 
 type UpdateSagaStepInput = {
   status: 'pending' | 'in_progress' | 'passed' | 'failed' | 'skipped' | 'blocked'
@@ -1081,6 +1085,22 @@ type SagaStepDraft = {
   toolHints?: string[]
   guardrails?: string[]
   tags?: string[]
+  /**
+   * Optional simulated wait before this step executes.
+   *
+   * ELI5:
+   * Real businesses do not do everything at once. This lets generated sagas
+   * model "time passes" in a deterministic way without sleeping wall-clock time.
+   */
+  delay?: {
+    mode: 'none' | 'fixed' | 'until_condition'
+    delayMs?: number
+    conditionKey?: string
+    timeoutMs?: number
+    pollMs?: number
+    jitterMs?: number
+    note?: string
+  }
 }
 
 type UcSpecificStepExtensions = {
@@ -1120,6 +1140,16 @@ function buildUcSpecificStepExtensions(uc: UseCaseDocEntry): UcSpecificStepExten
     targetKey: string,
     draft: Omit<SagaStepDraft, 'stepKey'>,
   ) => {
+    /**
+     * Step keys map directly to deterministic runner handlers.
+     *
+     * Important:
+     * - Do NOT auto-suffix duplicate keys (`_2`, `_3`) because the runner
+     *   cannot execute unknown suffixed variants.
+     * - If the same target is requested twice by overlapping UC keywords,
+     *   keep only the first canonical insertion.
+     */
+    if (coverageTargets.has(targetKey)) return
     let stepKey = targetKey
     let index = 1
     while (usedKeys.has(stepKey)) {
@@ -1250,6 +1280,55 @@ function buildUcSpecificStepExtensions(uc: UseCaseDocEntry): UcSpecificStepExten
     })
   }
 
+  /**
+   * Communication-heavy UCs should prove real channel artifacts (email + SMS)
+   * are visible in run evidence, not just "notification was sent" prose.
+   */
+  if (/(sms|email|notification|reminder|push|in[\s-]?app|twilio|message|quiet hours?)/i.test(text)) {
+    addStep('operationsFollowUp', 'demo-send-email-message', {
+      title: 'Send transactional email message',
+      actorKey: 'biz_member',
+      intent: 'Verify delivery evidence for email notifications.',
+      instruction:
+        'Send an email lifecycle message for a real run actor and persist delivery evidence.',
+      expectedResult: 'Run message feed includes at least one delivered email for this lifecycle.',
+      tags: ['communications', 'email'],
+      delay: {
+        mode: 'fixed',
+        delayMs: 5 * 60 * 1000,
+        jitterMs: 0,
+        note: 'Simulate short post-booking notification delay.',
+      },
+    })
+    addStep('operationsFollowUp', 'demo-send-sms-message', {
+      title: 'Send transactional SMS message',
+      actorKey: 'biz_member',
+      intent: 'Verify delivery evidence for SMS notifications.',
+      instruction:
+        'Send an SMS lifecycle message for a real run actor and persist delivery evidence.',
+      expectedResult: 'Run message feed includes at least one delivered SMS for this lifecycle.',
+      tags: ['communications', 'sms'],
+    })
+    addStep('operationsFollowUp', 'demo-verify-comms-messages', {
+      title: 'Verify omnichannel message evidence',
+      actorKey: 'biz_owner',
+      intent: 'Prove both SMS and email are visible and queryable in run timeline evidence.',
+      instruction:
+        'Verify the run stores at least one delivered SMS and one delivered email artifact tied to lifecycle actors.',
+      expectedResult:
+        'Message evidence is present for both channels and can be inspected from saga run detail.',
+      tags: ['communications', 'evidence'],
+      delay: {
+        mode: 'until_condition',
+        conditionKey: 'message_for:customer_1',
+        timeoutMs: 45_000,
+        pollMs: 1000,
+        jitterMs: 0,
+        note: 'Wait until message evidence exists for customer_1 before verification.',
+      },
+    })
+  }
+
   extension.coverageTargets = Array.from(coverageTargets)
   return extension
 }
@@ -1358,6 +1437,7 @@ function buildSagaSpec(uc: UseCaseDocEntry, persona: PersonaDocEntry): SagaSpec 
       toolHints?: string[]
       guardrails?: string[]
       tags?: string[]
+      delay?: SagaStepDraft['delay']
     }>,
   ) => ({
     phaseKey,
@@ -1390,11 +1470,15 @@ function buildSagaSpec(uc: UseCaseDocEntry, persona: PersonaDocEntry): SagaSpec 
       ],
       guardrails: step.guardrails ?? [],
       tags: step.tags ?? [],
+      delay: step.delay ?? {
+        mode: 'none',
+        jitterMs: 0,
+      },
     })),
   })
 
   return sagaSpecSchema.parse({
-    schemaVersion: 'saga.v0',
+    schemaVersion: 'saga.v1',
     sagaKey,
     title: `${uc.ucRef} • ${uc.title} • ${persona.name}`,
     description: `Comprehensive lifecycle saga derived from ${uc.ucRef} and persona ${persona.personaRef}. Needs summary: ${needsSummary}`,
@@ -1411,6 +1495,19 @@ function buildSagaSpec(uc: UseCaseDocEntry, persona: PersonaDocEntry): SagaSpec 
     defaults: {
       runMode: 'dry_run',
       continueOnFailure: false,
+    },
+    simulation: {
+      clock: {
+        mode: 'virtual',
+        timezone: 'UTC',
+        autoAdvance: true,
+      },
+      scheduler: {
+        mode: 'deterministic',
+        defaultPollMs: 1000,
+        defaultTimeoutMs: 30000,
+        maxTicksPerStep: 500,
+      },
     },
     phases: [
       phase(
@@ -1441,6 +1538,12 @@ function buildSagaSpec(uc: UseCaseDocEntry, persona: PersonaDocEntry): SagaSpec 
               'Biz is created, owner is auto-added as member with owner role, and biz id is captured.',
             toolHints: ['bizing.bizes.create'],
             tags: ['biz', 'setup'],
+            delay: {
+              mode: 'fixed',
+              delayMs: 5 * 60 * 1000,
+              jitterMs: 0,
+              note: 'Simulate business owner taking a few minutes to name/configure the business.',
+            },
           },
           {
             stepKey: 'owner-create-location',
@@ -1452,6 +1555,12 @@ function buildSagaSpec(uc: UseCaseDocEntry, persona: PersonaDocEntry): SagaSpec 
             expectedResult: 'Location exists and is associated with the new biz.',
             toolHints: ['bizing.locations.create'],
             tags: ['location', 'setup'],
+            delay: {
+              mode: 'fixed',
+              delayMs: 2 * 60 * 1000,
+              jitterMs: 0,
+              note: 'Simulate setup pause between business and location creation.',
+            },
           },
         ],
       ),
@@ -1471,6 +1580,12 @@ function buildSagaSpec(uc: UseCaseDocEntry, persona: PersonaDocEntry): SagaSpec 
             expectedResult:
               'Availability defaults and rules are stored and can be referenced by calendars.',
             tags: ['availability', 'policy'],
+            delay: {
+              mode: 'fixed',
+              delayMs: 10 * 60 * 1000,
+              jitterMs: 0,
+              note: 'Simulate owner editing weekly hours and lead-time settings.',
+            },
           },
           {
             stepKey: 'owner-configure-pricing',
@@ -1482,6 +1597,12 @@ function buildSagaSpec(uc: UseCaseDocEntry, persona: PersonaDocEntry): SagaSpec 
             expectedResult:
               'Pricing model persists and future bookings can calculate totals deterministically.',
             tags: ['pricing'],
+            delay: {
+              mode: 'fixed',
+              delayMs: 10 * 60 * 1000,
+              jitterMs: 0,
+              note: 'Simulate pricing review and confirmation time.',
+            },
           },
           ...ucExtensions.businessConfiguration,
         ],
@@ -1554,6 +1675,14 @@ function buildSagaSpec(uc: UseCaseDocEntry, persona: PersonaDocEntry): SagaSpec 
               'Offer appears as published/active and can be returned in customer-facing list queries.',
             toolHints: ['bizing.offers.create', 'bizing.offers.list'],
             tags: ['catalog', 'publish'],
+            delay: {
+              mode: 'until_condition',
+              conditionKey: 'step_done:owner-create-offer-version',
+              timeoutMs: 30_000,
+              pollMs: 1000,
+              jitterMs: 0,
+              note: 'Publish only after offer-version creation is confirmed in run state.',
+            },
           },
           ...ucExtensions.catalogPublish,
         ],
@@ -1586,6 +1715,12 @@ function buildSagaSpec(uc: UseCaseDocEntry, persona: PersonaDocEntry): SagaSpec 
               'Booking order is created and linked to offer/offer version with coherent totals.',
             toolHints: ['bizing.bookingOrders.create'],
             tags: ['booking', 'checkout'],
+            delay: {
+              mode: 'fixed',
+              delayMs: 15 * 60 * 1000,
+              jitterMs: 0,
+              note: 'Simulate customer browsing and checkout latency.',
+            },
           },
           {
             stepKey: 'customer-two-concurrent',
@@ -1598,6 +1733,12 @@ function buildSagaSpec(uc: UseCaseDocEntry, persona: PersonaDocEntry): SagaSpec 
               'System either books correctly under capacity rules or rejects with deterministic conflict response.',
             toolHints: ['bizing.bookingOrders.create'],
             tags: ['concurrency', 'booking'],
+            delay: {
+              mode: 'fixed',
+              delayMs: 60 * 1000,
+              jitterMs: 0,
+              note: 'Simulate near-concurrent demand attempting overlapping inventory.',
+            },
           },
           ...ucExtensions.customerLifecycle,
         ],
@@ -1650,6 +1791,14 @@ function buildSagaSpec(uc: UseCaseDocEntry, persona: PersonaDocEntry): SagaSpec 
               'Authorized role can update status while preserving auditability and lifecycle consistency.',
             toolHints: ['bizing.bookingOrders.list', 'bizing.bookingOrders.updateStatus'],
             tags: ['operations', 'acl'],
+            delay: {
+              mode: 'until_condition',
+              conditionKey: 'step_done:customer-book-primary',
+              timeoutMs: 30_000,
+              pollMs: 1000,
+              jitterMs: 0,
+              note: 'Wait until a customer booking exists before member operations review.',
+            },
           },
           {
             stepKey: 'owner-calendar-review',
@@ -1661,6 +1810,14 @@ function buildSagaSpec(uc: UseCaseDocEntry, persona: PersonaDocEntry): SagaSpec 
             expectedResult:
               'Calendar state reflects booked slots, blocks, and any conflict outcomes from previous steps.',
             tags: ['calendar', 'validation'],
+            delay: {
+              mode: 'until_condition',
+              conditionKey: 'step_done:member-review-bookings',
+              timeoutMs: 30_000,
+              pollMs: 1000,
+              jitterMs: 0,
+              note: 'Review calendar after operations updates are persisted.',
+            },
           },
           ...ucExtensions.operationsFollowUp,
         ],
@@ -1681,6 +1838,12 @@ function buildSagaSpec(uc: UseCaseDocEntry, persona: PersonaDocEntry): SagaSpec 
             expectedResult:
               'Reported metrics match booking actions and highlight any discrepancies for schema/API iteration.',
             tags: ['reporting', 'reconciliation'],
+            delay: {
+              mode: 'fixed',
+              delayMs: 60 * 60 * 1000,
+              jitterMs: 0,
+              note: 'Simulate closeout/reporting lag after operations complete.',
+            },
           },
           ...ucNeedValidationSteps,
           ...personaScenarioValidationSteps,
@@ -1694,6 +1857,14 @@ function buildSagaSpec(uc: UseCaseDocEntry, persona: PersonaDocEntry): SagaSpec 
             expectedResult:
               'Run has persisted report + snapshots in project directory and indexed metadata in DB.',
             tags: ['evidence', 'closeout'],
+            delay: {
+              mode: 'until_condition',
+              conditionKey: 'step_done:owner-revenue-sanity',
+              timeoutMs: 30_000,
+              pollMs: 1000,
+              jitterMs: 0,
+              note: 'Submit artifacts only after lifecycle reporting checks finish.',
+            },
           },
           ...ucExtensions.reportingCloseout,
         ],
@@ -1787,7 +1958,7 @@ async function readSagaSpecFromDiskByRelativePath(specRelativePath: string): Pro
   const absPath = fromProjectRelative(specRelativePath)
   const payload = await fs.readFile(absPath, 'utf8')
   const parsed = JSON.parse(payload) as unknown
-  return sagaSpecSchema.parse(parsed)
+  return normalizeSagaSpec(parsed)
 }
 
 async function readSagaSpecFromDefinition(definition: { id: string; specFilePath: string }) {
@@ -1801,7 +1972,7 @@ async function readSagaSpecFromDefinition(definition: { id: string; specFilePath
     })
 
     if (revision?.specJson) {
-      return sagaSpecSchema.parse(revision.specJson as unknown)
+      return normalizeSagaSpec(revision.specJson as unknown)
     }
   } catch (error) {
     if (!isMissingRelationError(error)) throw error
@@ -1836,7 +2007,7 @@ export async function syncSagaDefinitionsFromDisk(actorUserId?: string) {
 
   for (const file of files) {
     const raw = await fs.readFile(file.absPath, 'utf8')
-    const parsed = sagaSpecSchema.parse(JSON.parse(raw))
+    const parsed = normalizeSagaSpec(JSON.parse(raw))
     const specChecksum = checksum(raw)
 
     const [definition] = await db
@@ -2130,7 +2301,7 @@ export async function upsertSagaDefinitionSpec(input: {
   forceRevision?: boolean
   revisionMetadata?: Record<string, unknown>
 }) {
-  const parsed = sagaSpecSchema.parse(input.spec)
+  const parsed = normalizeSagaSpec(input.spec)
   if (input.sagaKey && input.sagaKey !== parsed.sagaKey) {
     throw new Error(`sagaKey mismatch: path=${input.sagaKey} body=${parsed.sagaKey}`)
   }
@@ -2630,6 +2801,345 @@ export async function createSagaPersonaVersion(input: {
   return version
 }
 
+function defaultSimulationConfig(): SagaSimulationConfig {
+  return {
+    clock: {
+      mode: "virtual",
+      timezone: "UTC",
+      autoAdvance: true,
+    },
+    scheduler: {
+      mode: "deterministic",
+      defaultPollMs: 1000,
+      defaultTimeoutMs: 30000,
+      maxTicksPerStep: 500,
+    },
+  }
+}
+
+function simulationFromRunContext(runContext: unknown): SagaSimulationConfig {
+  const defaults = defaultSimulationConfig()
+  if (!runContext || typeof runContext !== "object") return defaults
+  const value = runContext as Record<string, unknown>
+  const simulation = value.simulation
+  if (!simulation || typeof simulation !== "object") return defaults
+  const sim = simulation as Record<string, unknown>
+  const clockRaw = sim.clock && typeof sim.clock === "object" ? (sim.clock as Record<string, unknown>) : {}
+  const schedulerRaw =
+    sim.scheduler && typeof sim.scheduler === "object"
+      ? (sim.scheduler as Record<string, unknown>)
+      : {}
+
+  return {
+    clock: {
+      mode: clockRaw.mode === "realtime" ? "realtime" : "virtual",
+      startAt: typeof clockRaw.startAt === "string" ? clockRaw.startAt : undefined,
+      timezone:
+        typeof clockRaw.timezone === "string" && clockRaw.timezone.trim().length > 0
+          ? clockRaw.timezone
+          : "UTC",
+      autoAdvance:
+        typeof clockRaw.autoAdvance === "boolean" ? clockRaw.autoAdvance : defaults.clock.autoAdvance,
+    },
+    scheduler: {
+      mode: schedulerRaw.mode === "realtime" ? "realtime" : "deterministic",
+      defaultPollMs:
+        typeof schedulerRaw.defaultPollMs === "number" && schedulerRaw.defaultPollMs > 0
+          ? Math.floor(schedulerRaw.defaultPollMs)
+          : defaults.scheduler.defaultPollMs,
+      defaultTimeoutMs:
+        typeof schedulerRaw.defaultTimeoutMs === "number" && schedulerRaw.defaultTimeoutMs > 0
+          ? Math.floor(schedulerRaw.defaultTimeoutMs)
+          : defaults.scheduler.defaultTimeoutMs,
+      maxTicksPerStep:
+        typeof schedulerRaw.maxTicksPerStep === "number" && schedulerRaw.maxTicksPerStep > 0
+          ? Math.floor(schedulerRaw.maxTicksPerStep)
+          : defaults.scheduler.maxTicksPerStep,
+    },
+  }
+}
+
+async function ensureSagaRunSimulationClock(runId: string) {
+  const existing = await db.query.sagaRunSimulationClocks.findFirst({
+    where: eq(sagaRunSimulationClocks.sagaRunId, runId),
+  })
+  if (existing) return existing
+
+  const run = await db.query.sagaRuns.findFirst({
+    where: eq(sagaRuns.id, runId),
+  })
+  if (!run) throw new Error(`Saga run not found: ${runId}`)
+
+  const simulation = simulationFromRunContext(run.runContext)
+  const startAtCandidate = simulation.clock.startAt
+    ? new Date(simulation.clock.startAt)
+    : run.startedAt ?? new Date()
+  const currentTimeAt = Number.isNaN(startAtCandidate.getTime())
+    ? (run.startedAt ?? new Date())
+    : startAtCandidate
+
+  const [created] = await db
+    .insert(sagaRunSimulationClocks)
+    .values({
+      sagaRunId: run.id,
+      mode: simulation.clock.mode,
+      status: "idle",
+      currentTimeAt,
+      timezone: simulation.clock.timezone,
+      autoAdvance: simulation.clock.autoAdvance,
+      metadata: {
+        scheduler: simulation.scheduler,
+        initializedBy: "ensureSagaRunSimulationClock",
+      },
+    })
+    .returning()
+
+  return created
+}
+
+/**
+ * Fetch (or lazily create) one run's simulation clock state.
+ */
+export async function getSagaRunSimulationClock(runId: string) {
+  return ensureSagaRunSimulationClock(runId)
+}
+
+/**
+ * Advance one run's simulation clock by a deterministic delta.
+ */
+export async function advanceSagaRunSimulationClock(input: {
+  runId: string
+  actorUserId: string
+  byMs?: number
+  setToIso?: string
+  reason?: string
+  touchStatus?: "idle" | "running" | "paused" | "completed" | "cancelled"
+}) {
+  const clock = await ensureSagaRunSimulationClock(input.runId)
+  const now = new Date()
+
+  let nextCurrentTimeAt = clock.currentTimeAt
+  let deltaMs = 0
+
+  if (input.setToIso) {
+    const candidate = new Date(input.setToIso)
+    if (Number.isNaN(candidate.getTime())) {
+      throw new Error(`Invalid setToIso timestamp: ${input.setToIso}`)
+    }
+    deltaMs = Math.max(0, candidate.getTime() - clock.currentTimeAt.getTime())
+    nextCurrentTimeAt = candidate
+  } else {
+    const byMs = Math.max(0, Math.floor(Number(input.byMs ?? 0)))
+    deltaMs = byMs
+    nextCurrentTimeAt = new Date(clock.currentTimeAt.getTime() + byMs)
+  }
+
+  const [updated] = await db
+    .update(sagaRunSimulationClocks)
+    .set({
+      currentTimeAt: nextCurrentTimeAt,
+      status: input.touchStatus ?? clock.status,
+      lastAdvancedAt: now,
+      advanceCount: sql<number>`${sagaRunSimulationClocks.advanceCount} + 1`,
+      totalAdvancedMs: sql<number>`${sagaRunSimulationClocks.totalAdvancedMs} + ${deltaMs}`,
+      metadata: {
+        ...(clock.metadata && typeof clock.metadata === "object"
+          ? (clock.metadata as Record<string, unknown>)
+          : {}),
+        lastAdvanceReason: input.reason ?? null,
+        lastAdvanceByMs: deltaMs,
+        lastAdvanceAt: now.toISOString(),
+      },
+    })
+    .where(eq(sagaRunSimulationClocks.id, clock.id))
+    .returning()
+
+  publishSagaRuntimeEvent({
+    eventType: "run.updated",
+    runId: input.runId,
+    status: undefined,
+    payload: {
+      simulation: {
+        clockId: updated.id,
+        currentTimeAt: updated.currentTimeAt.toISOString(),
+        status: updated.status,
+        deltaMs,
+        reason: input.reason ?? null,
+      },
+    },
+  })
+
+  return updated
+}
+
+/**
+ * List scheduler jobs for one run.
+ */
+export async function listSagaRunSchedulerJobs(input: {
+  runId: string
+  status?: "pending" | "ready" | "running" | "completed" | "failed" | "cancelled" | "expired"
+  stepKey?: string
+  limit?: number
+}) {
+  const limit = Math.min(Math.max(input.limit ?? 300, 1), 5000)
+  return db.query.sagaRunSchedulerJobs.findMany({
+    where: and(
+      eq(sagaRunSchedulerJobs.sagaRunId, input.runId),
+      input.status ? eq(sagaRunSchedulerJobs.status, input.status) : undefined,
+      input.stepKey ? eq(sagaRunSchedulerJobs.stepKey, input.stepKey) : undefined,
+    ),
+    orderBy: [asc(sagaRunSchedulerJobs.dueAt), asc(sagaRunSchedulerJobs.enqueuedAt)],
+    limit,
+  })
+}
+
+/**
+ * Create one scheduler job row for a run.
+ */
+export async function createSagaRunSchedulerJob(input: {
+  runId: string
+  actorUserId: string
+  stepKey?: string
+  jobType?: "step_delay" | "condition_wait" | "message_delivery" | "custom"
+  status?: "pending" | "ready" | "running" | "completed" | "failed" | "cancelled" | "expired"
+  dueAtIso?: string
+  delayMs?: number
+  conditionKey?: string | null
+  timeoutAtIso?: string | null
+  pollEveryMs?: number | null
+  metadata?: Record<string, unknown>
+}) {
+  const clock = await ensureSagaRunSimulationClock(input.runId)
+  const now = new Date()
+  const step = input.stepKey
+    ? await db.query.sagaRunSteps.findFirst({
+        where: and(eq(sagaRunSteps.sagaRunId, input.runId), eq(sagaRunSteps.stepKey, input.stepKey)),
+      })
+    : null
+
+  const dueAt = input.dueAtIso
+    ? new Date(input.dueAtIso)
+    : new Date(clock.currentTimeAt.getTime() + Math.max(0, Math.floor(input.delayMs ?? 0)))
+  if (Number.isNaN(dueAt.getTime())) {
+    throw new Error(`Invalid dueAtIso timestamp: ${input.dueAtIso}`)
+  }
+
+  const timeoutAt = input.timeoutAtIso ? new Date(input.timeoutAtIso) : null
+  if (timeoutAt && Number.isNaN(timeoutAt.getTime())) {
+    throw new Error(`Invalid timeoutAtIso timestamp: ${input.timeoutAtIso}`)
+  }
+
+  const [created] = await db
+    .insert(sagaRunSchedulerJobs)
+    .values({
+      sagaRunId: input.runId,
+      sagaRunStepId: step?.id ?? null,
+      stepKey: input.stepKey ?? null,
+      jobType: input.jobType ?? "step_delay",
+      status: input.status ?? "pending",
+      dueAt,
+      conditionKey: input.conditionKey ?? null,
+      timeoutAt,
+      pollEveryMs:
+        typeof input.pollEveryMs === "number" && input.pollEveryMs > 0
+          ? Math.floor(input.pollEveryMs)
+          : null,
+      enqueuedAt: now,
+      metadata: input.metadata ?? {},
+    })
+    .returning()
+
+  publishSagaRuntimeEvent({
+    eventType: "run.updated",
+    runId: input.runId,
+    payload: {
+      simulation: {
+        scheduler: {
+          jobId: created.id,
+          status: created.status,
+          stepKey: created.stepKey,
+          jobType: created.jobType,
+          dueAt: created.dueAt.toISOString(),
+        },
+      },
+    },
+  })
+
+  return created
+}
+
+/**
+ * Update one scheduler job row.
+ */
+export async function updateSagaRunSchedulerJob(input: {
+  runId: string
+  jobId: string
+  actorUserId: string
+  status?: "pending" | "ready" | "running" | "completed" | "failed" | "cancelled" | "expired"
+  startedAt?: Date | null
+  completedAt?: Date | null
+  lastEvaluatedAt?: Date | null
+  failureMessage?: string | null
+  resultPayload?: Record<string, unknown>
+  metadataPatch?: Record<string, unknown>
+  bumpAttempt?: boolean
+}) {
+  const row = await db.query.sagaRunSchedulerJobs.findFirst({
+    where: and(eq(sagaRunSchedulerJobs.id, input.jobId), eq(sagaRunSchedulerJobs.sagaRunId, input.runId)),
+  })
+  if (!row) {
+    throw new Error(`Saga scheduler job not found: ${input.runId}/${input.jobId}`)
+  }
+
+  const [updated] = await db
+    .update(sagaRunSchedulerJobs)
+    .set({
+      status: input.status ?? row.status,
+      startedAt:
+        input.startedAt === undefined
+          ? row.startedAt
+          : input.startedAt,
+      completedAt:
+        input.completedAt === undefined
+          ? row.completedAt
+          : input.completedAt,
+      lastEvaluatedAt:
+        input.lastEvaluatedAt === undefined
+          ? row.lastEvaluatedAt
+          : input.lastEvaluatedAt,
+      failureMessage:
+        input.failureMessage === undefined ? row.failureMessage : input.failureMessage,
+      resultPayload:
+        input.resultPayload === undefined ? row.resultPayload : input.resultPayload,
+      metadata: {
+        ...(row.metadata && typeof row.metadata === "object" ? (row.metadata as Record<string, unknown>) : {}),
+        ...(input.metadataPatch ?? {}),
+      },
+      attemptCount: input.bumpAttempt
+        ? sql<number>`${sagaRunSchedulerJobs.attemptCount} + 1`
+        : row.attemptCount,
+    })
+    .where(eq(sagaRunSchedulerJobs.id, row.id))
+    .returning()
+
+  publishSagaRuntimeEvent({
+    eventType: "run.updated",
+    runId: input.runId,
+    payload: {
+      simulation: {
+        scheduler: {
+          jobId: updated.id,
+          status: updated.status,
+          stepKey: updated.stepKey,
+          failureMessage: updated.failureMessage ?? null,
+        },
+      },
+    },
+  })
+
+  return updated
+}
+
 /**
  * List run actor virtual identities for one run.
  */
@@ -2931,6 +3441,10 @@ export async function getSagaCoverageReportDetail(reportId: string) {
 export async function resetSagaLoopData() {
   await db.execute(sql`
     TRUNCATE TABLE
+      "ooda_loop_actions",
+      "ooda_loop_entries",
+      "ooda_loop_links",
+      "ooda_loops",
       "saga_run_actor_messages",
       "saga_run_actor_profiles",
       "saga_run_artifacts",
@@ -3271,6 +3785,18 @@ export async function createSagaRun(input: CreateSagaRunInput) {
     })),
   )
 
+  const simulation: SagaSimulationConfig = spec.simulation
+  const clockStartAtCandidate = simulation.clock.startAt
+    ? new Date(simulation.clock.startAt)
+    : new Date()
+  const clockStartAt = Number.isNaN(clockStartAtCandidate.getTime())
+    ? new Date()
+    : clockStartAtCandidate
+  const runContext = {
+    ...(input.runContext ?? {}),
+    simulation,
+  }
+
   const [createdRun] = await db
     .insert(sagaRuns)
     .values({
@@ -3286,14 +3812,28 @@ export async function createSagaRun(input: CreateSagaRunInput) {
       passedSteps: 0,
       failedSteps: 0,
       skippedSteps: 0,
-      runContext: input.runContext ?? {},
+      runContext,
       runSummary: {},
       metadata: {
         title: spec.title,
         tags: spec.tags,
+        schemaVersion: spec.schemaVersion,
       },
     })
     .returning()
+
+  await db.insert(sagaRunSimulationClocks).values({
+    sagaRunId: createdRun.id,
+    mode: simulation.clock.mode,
+    status: "idle",
+    currentTimeAt: clockStartAt,
+    timezone: simulation.clock.timezone,
+    autoAdvance: simulation.clock.autoAdvance,
+    metadata: {
+      scheduler: simulation.scheduler,
+      initializedBy: "createSagaRun",
+    },
+  })
 
   if (steps.length > 0) {
     await db.insert(sagaRunSteps).values(
@@ -4013,6 +4553,32 @@ export async function refreshSagaRunStatus(
     })
     .where(eq(sagaRuns.id, runId))
 
+  try {
+    const clock = await ensureSagaRunSimulationClock(runId)
+    const clockStatus =
+      nextStatus === "pending"
+        ? "idle"
+        : nextStatus === "running"
+          ? "running"
+          : nextStatus === "cancelled"
+            ? "cancelled"
+            : "completed"
+    await db
+      .update(sagaRunSimulationClocks)
+      .set({
+        status: clockStatus,
+        startedAt:
+          clock.startedAt ?? (nextStatus === "running" ? (run.startedAt ?? now) : null),
+        completedAt:
+          nextStatus === "passed" || nextStatus === "failed" || nextStatus === "cancelled"
+            ? now
+            : null,
+      })
+      .where(eq(sagaRunSimulationClocks.id, clock.id))
+  } catch (error) {
+    if (!isMissingRelationError(error)) throw error
+  }
+
   if (options.persistCoverage ?? shouldRecomputeIntegrity) {
     try {
       await upsertCoverageForRun({
@@ -4415,7 +4981,8 @@ export async function getSagaRunDetail(runId: string) {
   })
   if (!run) return null
 
-  const [definition, steps, artifacts, actorProfiles, actorMessages] = await Promise.all([
+  const [definition, steps, artifacts, actorProfiles, actorMessages, simulationClock, schedulerJobs] =
+    await Promise.all([
     db.query.sagaDefinitions.findFirst({
       where: eq(sagaDefinitions.id, run.sagaDefinitionId),
     }),
@@ -4435,6 +5002,8 @@ export async function getSagaRunDetail(runId: string) {
       where: eq(sagaRunActorMessages.sagaRunId, run.id),
       orderBy: [asc(sagaRunActorMessages.queuedAt)],
     }),
+    ensureSagaRunSimulationClock(run.id),
+    listSagaRunSchedulerJobs({ runId: run.id, limit: 1000 }),
   ])
 
   const spec = definition
@@ -4481,6 +5050,8 @@ export async function getSagaRunDetail(runId: string) {
     artifacts,
     actorProfiles,
     actorMessages,
+    simulationClock,
+    schedulerJobs,
   }
 }
 
@@ -4511,6 +5082,8 @@ export async function getSagaTestModeState(runId: string) {
     },
     steps: detail.steps,
     artifacts: detail.artifacts,
+    simulationClock: detail.simulationClock,
+    schedulerJobs: detail.schedulerJobs,
     spec: detail.spec,
   }
 }

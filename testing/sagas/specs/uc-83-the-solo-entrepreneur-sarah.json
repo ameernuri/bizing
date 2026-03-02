@@ -1,5 +1,18 @@
 {
-  "schemaVersion": "saga.v0",
+  "schemaVersion": "saga.v1",
+  "simulation": {
+    "clock": {
+      "mode": "virtual",
+      "timezone": "UTC",
+      "autoAdvance": true
+    },
+    "scheduler": {
+      "mode": "deterministic",
+      "defaultPollMs": 1000,
+      "defaultTimeoutMs": 30000,
+      "maxTicksPerStep": 500
+    }
+  },
   "sagaKey": "uc-83-the-solo-entrepreneur-sarah",
   "title": "UC-83 • The On-Demand Shuttle (Zone-Based Pickup) • The Solo Entrepreneur (Sarah)",
   "description": "Comprehensive lifecycle saga derived from UC-83 and persona P-1. Needs summary: Zone-based service area (map-defined); Request-triggered routing (nearest available vehicle); Estimated pickup time (5-12 minutes); Real-time ETA updates; Multiple passenger pooling (shared ride); Capacity tracking (standing room vs seated only); Priority levels (executive vs standard); Recurring ride requests (daily commute pickup)",
@@ -19,7 +32,7 @@
     "personaRef": "P-1",
     "useCaseFile": "/Users/ameer/bizing/mind/workspace/documentation/use-cases-comprehensive.md",
     "personaFile": "/Users/ameer/bizing/mind/workspace/documentation/tester-personas.md",
-    "generatedAt": "2026-02-28T22:02:52.584Z"
+    "generatedAt": "2026-03-02T05:41:32.516Z"
   },
   "objectives": [
     "Validate UC-83 lifecycle end-to-end using persona The Solo Entrepreneur (Sarah).",
@@ -143,8 +156,10 @@
             "setup"
           ],
           "delay": {
-            "mode": "none",
-            "jitterMs": 0
+            "mode": "fixed",
+            "delayMs": 300000,
+            "jitterMs": 0,
+            "note": "Simulate business owner taking a few minutes to name/configure the business."
           }
         },
         {
@@ -184,8 +199,10 @@
             "setup"
           ],
           "delay": {
-            "mode": "none",
-            "jitterMs": 0
+            "mode": "fixed",
+            "delayMs": 120000,
+            "jitterMs": 0,
+            "note": "Simulate setup pause between business and location creation."
           }
         }
       ]
@@ -231,8 +248,10 @@
             "policy"
           ],
           "delay": {
-            "mode": "none",
-            "jitterMs": 0
+            "mode": "fixed",
+            "delayMs": 600000,
+            "jitterMs": 0,
+            "note": "Simulate owner editing weekly hours and lead-time settings."
           }
         },
         {
@@ -269,8 +288,10 @@
             "pricing"
           ],
           "delay": {
-            "mode": "none",
-            "jitterMs": 0
+            "mode": "fixed",
+            "delayMs": 600000,
+            "jitterMs": 0,
+            "note": "Simulate pricing review and confirmation time."
           }
         }
       ]
@@ -488,8 +509,12 @@
             "publish"
           ],
           "delay": {
-            "mode": "none",
-            "jitterMs": 0
+            "mode": "until_condition",
+            "conditionKey": "step_done:owner-create-offer-version",
+            "timeoutMs": 30000,
+            "pollMs": 1000,
+            "jitterMs": 0,
+            "note": "Publish only after offer-version creation is confirmed in run state."
           }
         }
       ]
@@ -578,8 +603,10 @@
             "checkout"
           ],
           "delay": {
-            "mode": "none",
-            "jitterMs": 0
+            "mode": "fixed",
+            "delayMs": 900000,
+            "jitterMs": 0,
+            "note": "Simulate customer browsing and checkout latency."
           }
         },
         {
@@ -619,8 +646,10 @@
             "booking"
           ],
           "delay": {
-            "mode": "none",
-            "jitterMs": 0
+            "mode": "fixed",
+            "delayMs": 60000,
+            "jitterMs": 0,
+            "note": "Simulate near-concurrent demand attempting overlapping inventory."
           }
         },
         {
@@ -800,8 +829,12 @@
             "acl"
           ],
           "delay": {
-            "mode": "none",
-            "jitterMs": 0
+            "mode": "until_condition",
+            "conditionKey": "step_done:customer-book-primary",
+            "timeoutMs": 30000,
+            "pollMs": 1000,
+            "jitterMs": 0,
+            "note": "Wait until a customer booking exists before member operations review."
           }
         },
         {
@@ -839,8 +872,12 @@
             "validation"
           ],
           "delay": {
-            "mode": "none",
-            "jitterMs": 0
+            "mode": "until_condition",
+            "conditionKey": "step_done:member-review-bookings",
+            "timeoutMs": 30000,
+            "pollMs": 1000,
+            "jitterMs": 0,
+            "note": "Review calendar after operations updates are persisted."
           }
         },
         {
@@ -926,8 +963,10 @@
             "reconciliation"
           ],
           "delay": {
-            "mode": "none",
-            "jitterMs": 0
+            "mode": "fixed",
+            "delayMs": 3600000,
+            "jitterMs": 0,
+            "note": "Simulate closeout/reporting lag after operations complete."
           }
         },
         {
@@ -1445,8 +1484,12 @@
             "closeout"
           ],
           "delay": {
-            "mode": "none",
-            "jitterMs": 0
+            "mode": "until_condition",
+            "conditionKey": "step_done:owner-revenue-sanity",
+            "timeoutMs": 30000,
+            "pollMs": 1000,
+            "jitterMs": 0,
+            "note": "Submit artifacts only after lifecycle reporting checks finish."
           }
         }
       ]

@@ -1,5 +1,18 @@
 {
-  "schemaVersion": "saga.v0",
+  "schemaVersion": "saga.v1",
+  "simulation": {
+    "clock": {
+      "mode": "virtual",
+      "timezone": "UTC",
+      "autoAdvance": true
+    },
+    "scheduler": {
+      "mode": "deterministic",
+      "defaultPollMs": 1000,
+      "defaultTimeoutMs": 30000,
+      "maxTicksPerStep": 500
+    }
+  },
   "sagaKey": "uc-141-the-solo-entrepreneur-sarah",
   "title": "UC-141 • The Employee Timesheet with Clock-In/Clock-Out • The Solo Entrepreneur (Sarah)",
   "description": "Comprehensive lifecycle saga derived from UC-141 and persona P-1. Needs summary: Mobile clock-in/clock-out with GPS location capture; Geofencing (must be within X feet of job site to clock in); Photo verification (optional selfie for attendance proof); Automatic break deduction or explicit break tracking; Job code/task selection (which project/client); Shift notes (what was accomplished); Overtime calculation rules (after 8hrs daily, 40hrs weekly); Approval workflow (supervisor review and approval); Edit requests with reason (forgot to clock out); Multiple clock-ins per day (split shifts); Integration with payroll systems; Time-off and PTO tracking; Biometric integration (fingerprint, face scan for high-security); **Landscaping Crew:** Workers clock in at 7am via mobile app - GPS confirms at Client Site A. Select job code \"Lawn Maintenance - Oakwood Subdivision.\" Work until 12pm, clock out for lunch. Clock back in at 12:30pm, GPS now at Client Site B. Add note: \"Completed mulching at Oakwood, started hedge trimming at Riverside.\" 10-hour day = 2 hours overtime auto-calculated. Supervisor approves timesheet Friday with one-click, data flows to Gusto payroll.; **Retail Shift:** Employee clocks in via tablet at store - face recognition confirms identity. 15-min break auto-deducted. Clock out at end of shift. Manager gets alert if employee tries to clock in from parking lot (outside geofence).; **Forgot Clock-Out:** Employee realizes next morning they forgot to clock out. Submits edit request: \"Left at 5pm, forgot to clock out.\" Supervisor reviews GPS data showing they left site at 5:03pm, approves correction.",
@@ -19,7 +32,7 @@
     "personaRef": "P-1",
     "useCaseFile": "/Users/ameer/bizing/mind/workspace/documentation/use-cases-comprehensive.md",
     "personaFile": "/Users/ameer/bizing/mind/workspace/documentation/tester-personas.md",
-    "generatedAt": "2026-02-28T22:02:52.623Z"
+    "generatedAt": "2026-03-02T05:41:32.973Z"
   },
   "objectives": [
     "Validate UC-141 lifecycle end-to-end using persona The Solo Entrepreneur (Sarah).",
@@ -143,8 +156,10 @@
             "setup"
           ],
           "delay": {
-            "mode": "none",
-            "jitterMs": 0
+            "mode": "fixed",
+            "delayMs": 300000,
+            "jitterMs": 0,
+            "note": "Simulate business owner taking a few minutes to name/configure the business."
           }
         },
         {
@@ -184,8 +199,10 @@
             "setup"
           ],
           "delay": {
-            "mode": "none",
-            "jitterMs": 0
+            "mode": "fixed",
+            "delayMs": 120000,
+            "jitterMs": 0,
+            "note": "Simulate setup pause between business and location creation."
           }
         }
       ]
@@ -231,8 +248,10 @@
             "policy"
           ],
           "delay": {
-            "mode": "none",
-            "jitterMs": 0
+            "mode": "fixed",
+            "delayMs": 600000,
+            "jitterMs": 0,
+            "note": "Simulate owner editing weekly hours and lead-time settings."
           }
         },
         {
@@ -269,8 +288,10 @@
             "pricing"
           ],
           "delay": {
-            "mode": "none",
-            "jitterMs": 0
+            "mode": "fixed",
+            "delayMs": 600000,
+            "jitterMs": 0,
+            "note": "Simulate pricing review and confirmation time."
           }
         }
       ]
@@ -488,8 +509,12 @@
             "publish"
           ],
           "delay": {
-            "mode": "none",
-            "jitterMs": 0
+            "mode": "until_condition",
+            "conditionKey": "step_done:owner-create-offer-version",
+            "timeoutMs": 30000,
+            "pollMs": 1000,
+            "jitterMs": 0,
+            "note": "Publish only after offer-version creation is confirmed in run state."
           }
         }
       ]
@@ -578,8 +603,10 @@
             "checkout"
           ],
           "delay": {
-            "mode": "none",
-            "jitterMs": 0
+            "mode": "fixed",
+            "delayMs": 900000,
+            "jitterMs": 0,
+            "note": "Simulate customer browsing and checkout latency."
           }
         },
         {
@@ -619,8 +646,10 @@
             "booking"
           ],
           "delay": {
-            "mode": "none",
-            "jitterMs": 0
+            "mode": "fixed",
+            "delayMs": 60000,
+            "jitterMs": 0,
+            "note": "Simulate near-concurrent demand attempting overlapping inventory."
           }
         },
         {
@@ -800,8 +829,12 @@
             "acl"
           ],
           "delay": {
-            "mode": "none",
-            "jitterMs": 0
+            "mode": "until_condition",
+            "conditionKey": "step_done:customer-book-primary",
+            "timeoutMs": 30000,
+            "pollMs": 1000,
+            "jitterMs": 0,
+            "note": "Wait until a customer booking exists before member operations review."
           }
         },
         {
@@ -839,8 +872,12 @@
             "validation"
           ],
           "delay": {
-            "mode": "none",
-            "jitterMs": 0
+            "mode": "until_condition",
+            "conditionKey": "step_done:member-review-bookings",
+            "timeoutMs": 30000,
+            "pollMs": 1000,
+            "jitterMs": 0,
+            "note": "Review calendar after operations updates are persisted."
           }
         },
         {
@@ -966,8 +1003,10 @@
             "reconciliation"
           ],
           "delay": {
-            "mode": "none",
-            "jitterMs": 0
+            "mode": "fixed",
+            "delayMs": 3600000,
+            "jitterMs": 0,
+            "note": "Simulate closeout/reporting lag after operations complete."
           }
         },
         {
@@ -1645,8 +1684,12 @@
             "closeout"
           ],
           "delay": {
-            "mode": "none",
-            "jitterMs": 0
+            "mode": "until_condition",
+            "conditionKey": "step_done:owner-revenue-sanity",
+            "timeoutMs": 30000,
+            "pollMs": 1000,
+            "jitterMs": 0,
+            "note": "Submit artifacts only after lifecycle reporting checks finish."
           }
         }
       ]

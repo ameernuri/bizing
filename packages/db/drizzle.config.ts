@@ -97,6 +97,7 @@ export default defineConfig({
     "./src/schema/marketing_performance.ts",
     "./src/schema/crm.ts",
     "./src/schema/supply_batches.ts",
+    "./src/schema/ooda.ts",
     "./src/schema/sagas.ts",
   ],
   out: "./migrations",

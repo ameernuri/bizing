@@ -52,6 +52,11 @@ import {
   listSagaRunActorProfiles,
   listSagaRunActorMessages,
   createSagaRunActorMessage,
+  getSagaRunSimulationClock,
+  advanceSagaRunSimulationClock,
+  listSagaRunSchedulerJobs,
+  createSagaRunSchedulerJob,
+  updateSagaRunSchedulerJob,
   syncSagaDefinitionsFromDisk,
   upsertSagaDefinitionSpec,
   updateSagaRunStep,
@@ -62,7 +67,7 @@ import {
   type ExploratoryStepFamily,
 } from '../services/saga-exploratory-evaluator.js'
 import { executeExistingSagaRun } from '../scripts/rerun-sagas.js'
-import { sagaSpecSchema } from '../sagas/spec-schema.js'
+import { normalizeSagaSpec, sagaSpecInputSchema } from '../sagas/spec-schema.js'
 import { normalizeSnapshotInput, pseudoShotInputSchema } from '../sagas/snapshot-schema.js'
 
 const { db } = dbPackage
@@ -290,6 +295,52 @@ const createRunMessageBodySchema = z.object({
   metadata: z.record(z.unknown()).optional(),
 })
 
+const advanceRunClockBodySchema = z
+  .object({
+    byMs: z.number().int().nonnegative().optional(),
+    setToIso: z.string().datetime().optional(),
+    reason: z.string().max(240).optional(),
+    touchStatus: z.enum(["idle", "running", "paused", "completed", "cancelled"]).optional(),
+  })
+  .refine((value) => value.byMs !== undefined || value.setToIso !== undefined, {
+    message: "Provide either byMs or setToIso.",
+  })
+
+const listSchedulerJobsQuerySchema = z.object({
+  status: z
+    .enum(["pending", "ready", "running", "completed", "failed", "cancelled", "expired"])
+    .optional(),
+  stepKey: z.string().optional(),
+  limit: z.string().optional(),
+})
+
+const createSchedulerJobBodySchema = z.object({
+  stepKey: z.string().optional(),
+  jobType: z.enum(["step_delay", "condition_wait", "message_delivery", "custom"]).optional(),
+  status: z
+    .enum(["pending", "ready", "running", "completed", "failed", "cancelled", "expired"])
+    .optional(),
+  dueAtIso: z.string().datetime().optional(),
+  delayMs: z.number().int().nonnegative().optional(),
+  conditionKey: z.string().max(240).optional().nullable(),
+  timeoutAtIso: z.string().datetime().optional().nullable(),
+  pollEveryMs: z.number().int().positive().optional().nullable(),
+  metadata: z.record(z.unknown()).optional(),
+})
+
+const updateSchedulerJobBodySchema = z.object({
+  status: z
+    .enum(["pending", "ready", "running", "completed", "failed", "cancelled", "expired"])
+    .optional(),
+  startedAt: z.string().datetime().optional().nullable(),
+  completedAt: z.string().datetime().optional().nullable(),
+  lastEvaluatedAt: z.string().datetime().optional().nullable(),
+  failureMessage: z.string().optional().nullable(),
+  resultPayload: z.record(z.unknown()).optional(),
+  metadataPatch: z.record(z.unknown()).optional(),
+  bumpAttempt: z.boolean().optional(),
+})
+
 const exploratoryEvaluateBodySchema = z.object({
   stepFamily: z.enum(['uc-need-validation', 'persona-scenario-validation']).optional(),
 })
@@ -344,6 +395,8 @@ sagaRoutes.get('/sagas/docs', requireAuth, async (c) => {
       'Archive runs with POST /api/v1/sagas/runs/:runId/archive or /api/v1/sagas/runs/archive.',
       'Use agents tools and report each step via /steps/:stepKey/result.',
       'Attach snapshots and final report to complete evidence trail.',
+      'Control simulation clock via /sagas/runs/:runId/clock* for virtual-time tests.',
+      'Inspect/update scheduler jobs via /sagas/runs/:runId/scheduler/jobs*.',
       'Use /api/v1/sagas/test-mode/next for agent-driven next-step execution.',
     ],
     realtime: {
@@ -942,7 +995,7 @@ sagaRoutes.post('/sagas/specs', requireAuth, async (c) => {
     return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
   }
 
-  const specParsed = sagaSpecSchema.safeParse(parsed.data.spec)
+  const specParsed = sagaSpecInputSchema.safeParse(parsed.data.spec)
   if (!specParsed.success) {
     return fail(c, 'VALIDATION_ERROR', 'Invalid saga spec payload.', 400, specParsed.error.flatten())
   }
@@ -953,7 +1006,7 @@ sagaRoutes.post('/sagas/specs', requireAuth, async (c) => {
   }
 
   const saved = await upsertSagaDefinitionSpec({
-    spec: specParsed.data,
+    spec: normalizeSagaSpec(specParsed.data),
     actorUserId: user.id,
     bizId: parsed.data.bizId ?? null,
     status: parsed.data.status,
@@ -1025,14 +1078,14 @@ sagaRoutes.put('/sagas/specs/:sagaKey', requireAuth, async (c) => {
     return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
   }
 
-  const specParsed = sagaSpecSchema.safeParse(parsed.data.spec)
+  const specParsed = sagaSpecInputSchema.safeParse(parsed.data.spec)
   if (!specParsed.success) {
     return fail(c, 'VALIDATION_ERROR', 'Invalid saga spec payload.', 400, specParsed.error.flatten())
   }
 
   const saved = await upsertSagaDefinitionSpec({
     sagaKey,
-    spec: specParsed.data,
+    spec: normalizeSagaSpec(specParsed.data),
     actorUserId: user.id,
     bizId: parsed.data.bizId ?? existing.bizId ?? null,
     status: parsed.data.status ?? existing.status,
@@ -1062,14 +1115,14 @@ sagaRoutes.post('/sagas/specs/:sagaKey/revisions', requireAuth, async (c) => {
     return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
   }
 
-  const specParsed = sagaSpecSchema.safeParse(parsed.data.spec)
+  const specParsed = sagaSpecInputSchema.safeParse(parsed.data.spec)
   if (!specParsed.success) {
     return fail(c, 'VALIDATION_ERROR', 'Invalid saga spec payload.', 400, specParsed.error.flatten())
   }
 
   const saved = await upsertSagaDefinitionSpec({
     sagaKey,
-    spec: specParsed.data,
+    spec: normalizeSagaSpec(specParsed.data),
     actorUserId: user.id,
     bizId: parsed.data.bizId ?? existing.bizId ?? null,
     status: parsed.data.status ?? existing.status,
@@ -1325,6 +1378,169 @@ sagaRoutes.post('/sagas/runs/:runId/execute', requireAuth, async (c) => {
     failures: execution.failures,
     run: refreshed.run,
   })
+})
+
+sagaRoutes.get('/sagas/runs/:runId/clock', requireAuth, async (c) => {
+  const user = getCurrentUser(c)
+  if (!user) return fail(c, 'UNAUTHORIZED', 'Authentication required.', 401)
+
+  const runId = c.req.param('runId')
+  const access = await canAccessRun(user, runId)
+  if (!access.allowed) {
+    return fail(
+      c,
+      access.code ?? 'FORBIDDEN',
+      access.reason ?? 'Forbidden',
+      access.code === 'NOT_FOUND' ? 404 : 403,
+    )
+  }
+
+  const clock = await getSagaRunSimulationClock(runId)
+  return ok(c, clock)
+})
+
+sagaRoutes.post('/sagas/runs/:runId/clock/advance', requireAuth, async (c) => {
+  const user = getCurrentUser(c)
+  if (!user) return fail(c, 'UNAUTHORIZED', 'Authentication required.', 401)
+
+  const runId = c.req.param('runId')
+  const access = await canAccessRun(user, runId)
+  if (!access.allowed) {
+    return fail(
+      c,
+      access.code ?? 'FORBIDDEN',
+      access.reason ?? 'Forbidden',
+      access.code === 'NOT_FOUND' ? 404 : 403,
+    )
+  }
+
+  const body = await c.req.json().catch(() => null)
+  const parsed = advanceRunClockBodySchema.safeParse(body)
+  if (!parsed.success) {
+    return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
+  }
+
+  const clock = await advanceSagaRunSimulationClock({
+    runId,
+    actorUserId: user.id,
+    byMs: parsed.data.byMs,
+    setToIso: parsed.data.setToIso,
+    reason: parsed.data.reason,
+    touchStatus: parsed.data.touchStatus,
+  })
+  return ok(c, clock)
+})
+
+sagaRoutes.get('/sagas/runs/:runId/scheduler/jobs', requireAuth, async (c) => {
+  const user = getCurrentUser(c)
+  if (!user) return fail(c, 'UNAUTHORIZED', 'Authentication required.', 401)
+
+  const runId = c.req.param('runId')
+  const access = await canAccessRun(user, runId)
+  if (!access.allowed) {
+    return fail(
+      c,
+      access.code ?? 'FORBIDDEN',
+      access.reason ?? 'Forbidden',
+      access.code === 'NOT_FOUND' ? 404 : 403,
+    )
+  }
+
+  const parsed = listSchedulerJobsQuerySchema.safeParse(c.req.query())
+  if (!parsed.success) {
+    return fail(c, 'VALIDATION_ERROR', 'Invalid query parameters.', 400, parsed.error.flatten())
+  }
+
+  const jobs = await listSagaRunSchedulerJobs({
+    runId,
+    status: parsed.data.status,
+    stepKey: parsed.data.stepKey,
+    limit: Math.min(parsePositiveInt(parsed.data.limit, 300), 5000),
+  })
+  return ok(c, jobs)
+})
+
+sagaRoutes.post('/sagas/runs/:runId/scheduler/jobs', requireAuth, async (c) => {
+  const user = getCurrentUser(c)
+  if (!user) return fail(c, 'UNAUTHORIZED', 'Authentication required.', 401)
+
+  const runId = c.req.param('runId')
+  const access = await canAccessRun(user, runId)
+  if (!access.allowed) {
+    return fail(
+      c,
+      access.code ?? 'FORBIDDEN',
+      access.reason ?? 'Forbidden',
+      access.code === 'NOT_FOUND' ? 404 : 403,
+    )
+  }
+
+  const body = await c.req.json().catch(() => null)
+  const parsed = createSchedulerJobBodySchema.safeParse(body)
+  if (!parsed.success) {
+    return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
+  }
+
+  const job = await createSagaRunSchedulerJob({
+    runId,
+    actorUserId: user.id,
+    ...parsed.data,
+  })
+  return ok(c, job, 201)
+})
+
+sagaRoutes.patch('/sagas/runs/:runId/scheduler/jobs/:jobId', requireAuth, async (c) => {
+  const user = getCurrentUser(c)
+  if (!user) return fail(c, 'UNAUTHORIZED', 'Authentication required.', 401)
+
+  const runId = c.req.param('runId')
+  const jobId = c.req.param('jobId')
+  const access = await canAccessRun(user, runId)
+  if (!access.allowed) {
+    return fail(
+      c,
+      access.code ?? 'FORBIDDEN',
+      access.reason ?? 'Forbidden',
+      access.code === 'NOT_FOUND' ? 404 : 403,
+    )
+  }
+
+  const body = await c.req.json().catch(() => null)
+  const parsed = updateSchedulerJobBodySchema.safeParse(body)
+  if (!parsed.success) {
+    return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
+  }
+
+  const job = await updateSagaRunSchedulerJob({
+    runId,
+    jobId,
+    actorUserId: user.id,
+    status: parsed.data.status,
+    startedAt:
+      parsed.data.startedAt === undefined
+        ? undefined
+        : parsed.data.startedAt
+          ? new Date(parsed.data.startedAt)
+          : null,
+    completedAt:
+      parsed.data.completedAt === undefined
+        ? undefined
+        : parsed.data.completedAt
+          ? new Date(parsed.data.completedAt)
+          : null,
+    lastEvaluatedAt:
+      parsed.data.lastEvaluatedAt === undefined
+        ? undefined
+        : parsed.data.lastEvaluatedAt
+          ? new Date(parsed.data.lastEvaluatedAt)
+          : null,
+    failureMessage: parsed.data.failureMessage,
+    resultPayload: parsed.data.resultPayload,
+    metadataPatch: parsed.data.metadataPatch,
+    bumpAttempt: parsed.data.bumpAttempt,
+  })
+
+  return ok(c, job)
 })
 
 sagaRoutes.get('/sagas/runs/:runId/actors', requireAuth, async (c) => {

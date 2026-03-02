@@ -406,14 +406,26 @@ type ApiTraceEntry = {
  */
 const stepTraceStore = new AsyncLocalStorage<ApiTraceEntry[]>()
 
+function envBool(name: string, defaultValue: boolean): boolean {
+  const raw = process.env[name]
+  if (raw === undefined) return defaultValue
+  const normalized = raw.trim().toLowerCase()
+  return ['1', 'true', 'yes', 'on'].includes(normalized)
+}
+
 const API_BASE_URL = (process.env.API_BASE_URL || 'http://localhost:6129').replace(/\/+$/, '')
 const TRUSTED_ORIGIN = process.env.ADMIN_APP_ORIGIN || 'http://localhost:9000'
 const MAX_SAGAS = Number(process.env.SAGA_LIMIT || '0')
 const SAGA_OFFSET = Math.max(0, Number(process.env.SAGA_OFFSET || '0'))
 const ONLY_SAGA_KEY = process.env.SAGA_KEY || ''
 const SESSION_PASSWORD = process.env.SAGA_TEST_PASSWORD || 'pass123456'
-const SAGA_CONCURRENCY = Math.max(1, Number(process.env.SAGA_CONCURRENCY || '8'))
-const HTTP_TIMEOUT_MS = Math.max(1_000, Number(process.env.SAGA_HTTP_TIMEOUT_MS || '15000'))
+const SAGA_CONCURRENCY = Math.max(1, Number(process.env.SAGA_CONCURRENCY || '4'))
+const HTTP_TIMEOUT_MS = Math.max(1_000, Number(process.env.SAGA_HTTP_TIMEOUT_MS || '45000'))
+const HTTP_RETRY_COUNT = Math.max(0, Number(process.env.SAGA_HTTP_RETRY_COUNT || '2'))
+const HTTP_RETRY_BASE_DELAY_MS = Math.max(
+  50,
+  Number(process.env.SAGA_HTTP_RETRY_DELAY_MS || '250'),
+)
 const SAGA_STRICT_EXIT =
   process.env.SAGA_STRICT_EXIT === '0' || process.env.SAGA_STRICT_EXIT === 'false'
     ? false
@@ -426,6 +438,19 @@ const SAGA_STRICT_EXPLORATORY =
     : true
 const SAGA_REPORT_DIR =
   process.env.SAGA_REPORT_DIR || '/Users/ameer/projects/bizing/apps/api/.tmp/saga-reports'
+const SAGA_FAST_MODE = envBool('SAGA_FAST_MODE', false)
+const SAGA_ATTACH_API_TRACES = envBool('SAGA_ATTACH_API_TRACES', true)
+const SAGA_ATTACH_SNAPSHOTS = envBool('SAGA_ATTACH_SNAPSHOTS', !SAGA_FAST_MODE)
+const SAGA_STEP_TRANSITION_IN_PROGRESS = envBool(
+  'SAGA_STEP_TRANSITION_IN_PROGRESS',
+  true,
+)
+const SAGA_RECOMPUTE_INTEGRITY = envBool('SAGA_RECOMPUTE_INTEGRITY', true)
+const SAGA_PERSIST_COVERAGE = envBool('SAGA_PERSIST_COVERAGE', !SAGA_FAST_MODE)
+
+function waitMs(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
 
 function classifyFailureDomain(endpoint: string | null, stepKey: string): string {
   if (endpoint) {
@@ -660,51 +685,65 @@ async function requestJson<T = unknown>(
   if (options.apiKey) headers['x-api-key'] = options.apiKey
   if (options.bizIdHeader) headers['x-biz-id'] = options.bizIdHeader
 
-  let response: Response
-  try {
-    response = await fetch(`${API_BASE_URL}${path}`, {
-      method,
-      headers,
-      body: options.body === undefined ? undefined : JSON.stringify(options.body),
-      signal: AbortSignal.timeout(HTTP_TIMEOUT_MS),
-    })
-  } catch (error) {
-    const message =
-      error instanceof Error && error.name === 'TimeoutError'
-        ? `HTTP timeout after ${HTTP_TIMEOUT_MS}ms for ${method} ${path}`
-        : error instanceof Error
-          ? `${error.name}: ${error.message}`
-          : String(error)
-    throw new Error(message)
-  }
-
-  const payload = (await response.json().catch(() => null)) as T
-  const activeApiTrace = stepTraceStore.getStore()
-  if (activeApiTrace) {
-    activeApiTrace.push({
-      method,
-      path,
-      status: response.status,
-      requestBody: options.body === undefined ? undefined : traceValue(options.body),
-      responseBody: traceValue(payload),
-      at: nowIso(),
-    })
-  }
   const accepted = options.acceptStatuses ?? [200, 201]
-  if (!accepted.includes(response.status)) {
-    throw new Error(
-      `HTTP ${response.status} for ${method} ${path}: ${JSON.stringify(payload ?? {})}`,
-    )
-  }
 
-  if (!options.raw && payload && typeof payload === 'object' && 'success' in (payload as JsonObject)) {
-    const asRecord = payload as JsonObject
-    if (asRecord.success === false) {
-      throw new Error(`API failure for ${method} ${path}: ${JSON.stringify(payload)}`)
+  for (let attempt = 0; attempt <= HTTP_RETRY_COUNT; attempt += 1) {
+    let response: Response
+    let payload: T
+    try {
+      response = await fetch(`${API_BASE_URL}${path}`, {
+        method,
+        headers,
+        body: options.body === undefined ? undefined : JSON.stringify(options.body),
+        signal: AbortSignal.timeout(HTTP_TIMEOUT_MS),
+      })
+      payload = (await response.json().catch(() => null)) as T
+    } catch (error) {
+      const message =
+        error instanceof Error && error.name === 'TimeoutError'
+          ? `HTTP timeout after ${HTTP_TIMEOUT_MS}ms for ${method} ${path}`
+          : error instanceof Error
+            ? `${error.name}: ${error.message}`
+            : String(error)
+      if (attempt < HTTP_RETRY_COUNT) {
+        await waitMs(HTTP_RETRY_BASE_DELAY_MS * (2 ** attempt))
+        continue
+      }
+      throw new Error(message)
     }
+
+    const activeApiTrace = stepTraceStore.getStore()
+    if (activeApiTrace) {
+      activeApiTrace.push({
+        method,
+        path,
+        status: response.status,
+        requestBody: options.body === undefined ? undefined : traceValue(options.body),
+        responseBody: traceValue(payload),
+        at: nowIso(),
+      })
+    }
+
+    if (!accepted.includes(response.status)) {
+      const retriableStatus = [429, 500, 502, 503, 504].includes(response.status)
+      if (retriableStatus && attempt < HTTP_RETRY_COUNT) {
+        await waitMs(HTTP_RETRY_BASE_DELAY_MS * (2 ** attempt))
+        continue
+      }
+      throw new Error(`HTTP ${response.status} for ${method} ${path}: ${JSON.stringify(payload ?? {})}`)
+    }
+
+    if (!options.raw && payload && typeof payload === 'object' && 'success' in (payload as JsonObject)) {
+      const asRecord = payload as JsonObject
+      if (asRecord.success === false) {
+        throw new Error(`API failure for ${method} ${path}: ${JSON.stringify(payload)}`)
+      }
+    }
+
+    return { status: response.status, payload }
   }
 
-  return { status: response.status, payload }
+  throw new Error(`HTTP request failed after retries for ${method} ${path}`)
 }
 
 async function createAuthSession(label: string): Promise<AuthSession> {
@@ -777,14 +816,110 @@ function getApiData<T>(payload: unknown): T {
   return envelope.data
 }
 
-function sleep(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms))
-}
-
 function applyPositiveJitter(baseMs: number, jitterMs: number) {
   if (jitterMs <= 0) return baseMs
   const delta = Math.floor(Math.random() * (jitterMs + 1))
   return baseMs + delta
+}
+
+type SagaRunClock = {
+  id: string
+  mode: 'virtual' | 'realtime'
+  status: 'idle' | 'running' | 'paused' | 'completed' | 'cancelled'
+  currentTimeAt: string
+  timezone: string
+  autoAdvance: boolean
+  metadata?: Record<string, unknown>
+}
+
+type SagaSchedulerJob = {
+  id: string
+  status: 'pending' | 'ready' | 'running' | 'completed' | 'failed' | 'cancelled' | 'expired'
+  jobType: 'step_delay' | 'condition_wait' | 'message_delivery' | 'custom'
+  dueAt: string
+  stepKey?: string | null
+}
+
+async function getSagaRunClock(ctx: RunContext): Promise<SagaRunClock> {
+  const response = await requestJson<{ success: true; data: SagaRunClock }>(
+    `/api/v1/sagas/runs/${ctx.runId}/clock`,
+    {
+      cookie: ctx.owner.cookie,
+      acceptStatuses: [200],
+    },
+  )
+  return getApiData<SagaRunClock>(response.payload)
+}
+
+async function advanceSagaRunClock(
+  ctx: RunContext,
+  params: { byMs?: number; setToIso?: string; reason: string; touchStatus?: SagaRunClock['status'] },
+): Promise<SagaRunClock> {
+  const response = await requestJson<{ success: true; data: SagaRunClock }>(
+    `/api/v1/sagas/runs/${ctx.runId}/clock/advance`,
+    {
+      method: 'POST',
+      cookie: ctx.owner.cookie,
+      body: {
+        byMs: params.byMs,
+        setToIso: params.setToIso,
+        reason: params.reason,
+        touchStatus: params.touchStatus,
+      },
+      acceptStatuses: [200],
+    },
+  )
+  return getApiData<SagaRunClock>(response.payload)
+}
+
+async function createSagaSchedulerJob(
+  ctx: RunContext,
+  params: {
+    stepKey: string
+    jobType: SagaSchedulerJob['jobType']
+    status?: SagaSchedulerJob['status']
+    delayMs?: number
+    dueAtIso?: string
+    conditionKey?: string | null
+    timeoutAtIso?: string | null
+    pollEveryMs?: number | null
+    metadata?: Record<string, unknown>
+  },
+): Promise<SagaSchedulerJob> {
+  const response = await requestJson<{ success: true; data: SagaSchedulerJob }>(
+    `/api/v1/sagas/runs/${ctx.runId}/scheduler/jobs`,
+    {
+      method: 'POST',
+      cookie: ctx.owner.cookie,
+      body: {
+        ...params,
+      },
+      acceptStatuses: [201],
+    },
+  )
+  return getApiData<SagaSchedulerJob>(response.payload)
+}
+
+async function updateSagaSchedulerJob(
+  ctx: RunContext,
+  jobId: string,
+  patch: {
+    status?: SagaSchedulerJob['status']
+    startedAt?: string | null
+    completedAt?: string | null
+    lastEvaluatedAt?: string | null
+    failureMessage?: string | null
+    resultPayload?: Record<string, unknown>
+    metadataPatch?: Record<string, unknown>
+    bumpAttempt?: boolean
+  },
+) {
+  await requestJson(`/api/v1/sagas/runs/${ctx.runId}/scheduler/jobs/${jobId}`, {
+    method: 'PATCH',
+    cookie: ctx.owner.cookie,
+    body: patch,
+    acceptStatuses: [200],
+  })
 }
 
 async function evaluateDelayCondition(ctx: RunContext, conditionKey: string): Promise<boolean> {
@@ -822,10 +957,46 @@ async function evaluateDelayCondition(ctx: RunContext, conditionKey: string): Pr
   )
 }
 
+async function postSagaRunActorMessage(
+  ctx: RunContext,
+  input: {
+    stepKey: string
+    toActorKey: string
+    channel: 'email' | 'sms' | 'push' | 'in_app'
+    subject?: string | null
+    bodyText: string
+    status?: 'queued' | 'sent' | 'delivered' | 'read' | 'failed' | 'cancelled'
+    metadata?: Record<string, unknown>
+  },
+) {
+  const response = await requestJson<{ success: true; data: { id: string } }>(
+    `/api/v1/sagas/runs/${ctx.runId}/messages`,
+    {
+      method: 'POST',
+      cookie: ctx.owner.cookie,
+      body: {
+        stepKey: input.stepKey,
+        fromActorKey: 'biz_owner',
+        toActorKey: input.toActorKey,
+        channel: input.channel,
+        subject: input.subject ?? null,
+        bodyText: input.bodyText,
+        status: input.status ?? 'delivered',
+        metadata: input.metadata ?? {},
+      },
+      acceptStatuses: [201],
+    },
+  )
+  return getApiData<{ id: string }>(response.payload)
+}
+
 async function executeStepDelay(ctx: RunContext, step: SagaRunStep) {
   const mode = step.delayMode ?? 'none'
   const jitter = Math.max(0, Number(step.delayJitterMs ?? 0))
   if (mode === 'none') return
+
+  const nowIso = () => new Date().toISOString()
+  const clock = await getSagaRunClock(ctx)
 
   if (mode === 'fixed') {
     const baseMs = Number(step.delayMs ?? 0)
@@ -835,7 +1006,37 @@ async function executeStepDelay(ctx: RunContext, step: SagaRunStep) {
         delayMs: step.delayMs ?? null,
       })
     }
-    await sleep(applyPositiveJitter(baseMs, jitter))
+    const effectiveDelayMs = applyPositiveJitter(baseMs, jitter)
+    const job = await createSagaSchedulerJob(ctx, {
+      stepKey: step.stepKey,
+      jobType: 'step_delay',
+      delayMs: effectiveDelayMs,
+      metadata: {
+        mode: 'fixed',
+        baseDelayMs: baseMs,
+        jitterMs: jitter,
+      },
+    })
+    await updateSagaSchedulerJob(ctx, job.id, {
+      status: 'running',
+      startedAt: nowIso(),
+      bumpAttempt: true,
+    })
+    const advancedClock = await advanceSagaRunClock(ctx, {
+      byMs: effectiveDelayMs,
+      reason: `step_delay:${step.stepKey}`,
+      touchStatus: 'running',
+    })
+    await updateSagaSchedulerJob(ctx, job.id, {
+      status: 'completed',
+      completedAt: nowIso(),
+      lastEvaluatedAt: nowIso(),
+      resultPayload: {
+        effectiveDelayMs,
+        fromTimeAt: clock.currentTimeAt,
+        toTimeAt: advancedClock.currentTimeAt,
+      },
+    })
     return
   }
 
@@ -847,15 +1048,93 @@ async function executeStepDelay(ctx: RunContext, step: SagaRunStep) {
         `Missing delayConditionKey for until_condition step ${step.stepKey}.`,
       )
     }
-    const timeoutMs = Math.max(1000, Number(step.delayTimeoutMs ?? 30000))
-    const pollMs = Math.max(250, Number(step.delayPollMs ?? 1000))
-    const startedAt = Date.now()
+    const schedulerDefaults =
+      clock.metadata && typeof clock.metadata === 'object'
+        ? ((clock.metadata.scheduler as Record<string, unknown> | undefined) ?? {})
+        : {}
+    const timeoutDefault =
+      typeof schedulerDefaults.defaultTimeoutMs === 'number' && schedulerDefaults.defaultTimeoutMs > 0
+        ? Math.floor(schedulerDefaults.defaultTimeoutMs)
+        : 30000
+    const pollDefault =
+      typeof schedulerDefaults.defaultPollMs === 'number' && schedulerDefaults.defaultPollMs > 0
+        ? Math.floor(schedulerDefaults.defaultPollMs)
+        : 1000
+    const maxTicksDefault =
+      typeof schedulerDefaults.maxTicksPerStep === 'number' && schedulerDefaults.maxTicksPerStep > 0
+        ? Math.floor(schedulerDefaults.maxTicksPerStep)
+        : 500
 
-    while (Date.now() - startedAt <= timeoutMs) {
+    const timeoutMs = Math.max(1000, Number(step.delayTimeoutMs ?? timeoutDefault))
+    const pollMs = Math.max(250, Number(step.delayPollMs ?? pollDefault))
+    const maxTicks = Math.max(1, Math.min(maxTicksDefault, Math.ceil(timeoutMs / pollMs)))
+    const timeoutAtIso = new Date(new Date(clock.currentTimeAt).getTime() + timeoutMs).toISOString()
+
+    const job = await createSagaSchedulerJob(ctx, {
+      stepKey: step.stepKey,
+      jobType: 'condition_wait',
+      status: 'running',
+      dueAtIso: clock.currentTimeAt,
+      conditionKey,
+      timeoutAtIso,
+      pollEveryMs: pollMs,
+      metadata: {
+        mode: 'until_condition',
+        timeoutMs,
+        pollMs,
+        jitterMs: jitter,
+        maxTicks,
+      },
+    })
+
+    let elapsedMs = 0
+    let tickCount = 0
+    while (elapsedMs <= timeoutMs && tickCount < maxTicks) {
+      await updateSagaSchedulerJob(ctx, job.id, {
+        status: 'running',
+        startedAt: tickCount === 0 ? nowIso() : undefined,
+        lastEvaluatedAt: nowIso(),
+        bumpAttempt: true,
+      })
       const conditionMet = await evaluateDelayCondition(ctx, conditionKey)
-      if (conditionMet) return
-      await sleep(applyPositiveJitter(pollMs, jitter))
+      if (conditionMet) {
+        await updateSagaSchedulerJob(ctx, job.id, {
+          status: 'completed',
+          completedAt: nowIso(),
+          lastEvaluatedAt: nowIso(),
+          resultPayload: {
+            conditionMet: true,
+            conditionKey,
+            elapsedMs,
+            tickCount,
+          },
+        })
+        return
+      }
+
+      const intervalMs = applyPositiveJitter(pollMs, jitter)
+      await advanceSagaRunClock(ctx, {
+        byMs: intervalMs,
+        reason: `condition_wait:${step.stepKey}:${conditionKey}`,
+        touchStatus: 'running',
+      })
+      elapsedMs += intervalMs
+      tickCount += 1
     }
+
+    await updateSagaSchedulerJob(ctx, job.id, {
+      status: 'expired',
+      completedAt: nowIso(),
+      failureMessage: `Timed out waiting for condition: ${conditionKey}`,
+      resultPayload: {
+        conditionMet: false,
+        conditionKey,
+        elapsedMs,
+        timeoutMs,
+        pollMs,
+        tickCount,
+      },
+    })
 
     throw new StepExecutionError(
       'failed',
@@ -864,6 +1143,7 @@ async function executeStepDelay(ctx: RunContext, step: SagaRunStep) {
         conditionKey,
         timeoutMs,
         pollMs,
+        mode: 'virtual_clock',
       },
     )
   }
@@ -892,9 +1172,10 @@ async function createSagaRun(owner: AuthSession, sagaKey: string) {
     body: {
       sagaKey,
       mode: process.env.SAGA_MODE === 'live' ? 'live' : 'dry_run',
-      runnerLabel: 'codex-rerun-all',
+      runnerLabel: SAGA_FAST_MODE ? 'codex-rerun-fast' : 'codex-rerun-all',
       runContext: {
         createdBy: 'apps/api/src/scripts/rerun-sagas.ts',
+        fastMode: SAGA_FAST_MODE,
       },
     },
     acceptStatuses: [201],
@@ -925,21 +1206,33 @@ async function reportStep(
    * We always transition via `in_progress` first so step state progression
    * matches production-like lifecycle semantics.
    */
-  await requestJson(`/api/v1/sagas/runs/${ctx.runId}/steps/${stepKey}/result`, {
-    method: 'POST',
-    cookie: ctx.owner.cookie,
-    body: {
-      status: 'in_progress',
-      startedAt,
-      resultPayload: {
-        note: `Started ${stepKey}`,
-      },
-      assertionSummary: {
-        status: 'in_progress',
-      },
-    },
-    acceptStatuses: [200],
-  })
+  if (SAGA_STEP_TRANSITION_IN_PROGRESS) {
+    try {
+      await requestJson(`/api/v1/sagas/runs/${ctx.runId}/steps/${stepKey}/result`, {
+        method: 'POST',
+        cookie: ctx.owner.cookie,
+        body: {
+          status: 'in_progress',
+          startedAt,
+          resultPayload: {
+            note: `Started ${stepKey}`,
+          },
+          assertionSummary: {
+            status: 'in_progress',
+          },
+        },
+        acceptStatuses: [200],
+      })
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error)
+      const staleTransition =
+        message.includes('Invalid step status transition') &&
+        message.includes('passed -> in_progress')
+      if (!staleTransition) {
+        throw error
+      }
+    }
+  }
 
   await requestJson(`/api/v1/sagas/runs/${ctx.runId}/steps/${stepKey}/result`, {
     method: 'POST',
@@ -35420,6 +35713,67 @@ async function runStep(ctx: RunContext, step: SagaRunStep): Promise<StepResultPa
         evidence: { ownerUserId: ctx.owner.userId, ownerEmail: ctx.owner.email },
       }
 
+    case 'demo-send-email-message': {
+      const sent = await postSagaRunActorMessage(ctx, {
+        stepKey,
+        toActorKey: 'customer_1',
+        channel: 'email',
+        subject: 'Demo booking confirmation',
+        bodyText: 'Hello! Your booking was confirmed. This is a demo email message.',
+        status: 'delivered',
+        metadata: {
+          demo: true,
+          source: 'rerun-sagas',
+        },
+      })
+      return {
+        note: 'Demo email message recorded for customer_1.',
+        evidence: { messageId: sent.id, channel: 'email', toActorKey: 'customer_1' },
+      }
+    }
+
+    case 'demo-send-sms-message': {
+      const sent = await postSagaRunActorMessage(ctx, {
+        stepKey,
+        toActorKey: 'customer_1',
+        channel: 'sms',
+        bodyText: 'Hi! This is your demo SMS reminder.',
+        status: 'delivered',
+        metadata: {
+          demo: true,
+          source: 'rerun-sagas',
+        },
+      })
+      return {
+        note: 'Demo SMS message recorded for customer_1.',
+        evidence: { messageId: sent.id, channel: 'sms', toActorKey: 'customer_1' },
+      }
+    }
+
+    case 'demo-verify-comms-messages': {
+      const response = await requestJson<{ success: true; data: Array<{ channel: string; id: string }> }>(
+        `/api/v1/sagas/runs/${ctx.runId}/messages`,
+        {
+          cookie: ctx.owner.cookie,
+          acceptStatuses: [200],
+        },
+      )
+      const rows = getApiData<Array<{ channel: string; id: string }>>(response.payload)
+      const smsCount = rows.filter((row) => row.channel === 'sms').length
+      const emailCount = rows.filter((row) => row.channel === 'email').length
+      if (smsCount < 1 || emailCount < 1) {
+        blockStep(stepKey, 'Expected at least one SMS and one email actor message in this run.', {
+          smsCount,
+          emailCount,
+          total: rows.length,
+        })
+      }
+      return {
+        note: 'Run contains both SMS and email actor messages.',
+        evidence: { smsCount, emailCount, total: rows.length },
+      }
+    }
+
     case 'owner-create-biz': {
       const biz = await createBiz(ctx)
       return { note: 'Biz created.', evidence: biz }
@@ -36330,7 +36684,9 @@ async function executeRun(ctx: RunContext): Promise<{ ok: boolean; failures: str
           },
         )
       }
-      await attachApiTrace(ctx, stepKey, stepTitle, stepApiTrace)
+      if (SAGA_ATTACH_API_TRACES) {
+        await attachApiTrace(ctx, stepKey, stepTitle, stepApiTrace)
+      }
       await reportStep(
         ctx,
         stepKey,
@@ -36348,17 +36704,19 @@ async function executeRun(ctx: RunContext): Promise<{ ok: boolean; failures: str
             }
           : undefined,
       )
-      try {
-        await attachSnapshot(ctx, stepKey, stepTitle, 'passed', resultPayload, {
-          stepKey,
-          resultPayload,
-          apiCalls: stepApiTrace,
-          contract: contractSummary ?? null,
-        })
-      } catch (snapshotError) {
-        const message =
-          snapshotError instanceof Error ? snapshotError.message : String(snapshotError)
-        failures.push(`${stepKey}: post-pass snapshot failed (${message})`)
+      if (SAGA_ATTACH_SNAPSHOTS) {
+        try {
+          await attachSnapshot(ctx, stepKey, stepTitle, 'passed', resultPayload, {
+            stepKey,
+            resultPayload,
+            apiCalls: stepApiTrace,
+            contract: contractSummary ?? null,
+          })
+        } catch (snapshotError) {
+          const message =
+            snapshotError instanceof Error ? snapshotError.message : String(snapshotError)
+          failures.push(`${stepKey}: post-pass snapshot failed (${message})`)
+        }
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error)
@@ -36399,51 +36757,57 @@ async function executeRun(ctx: RunContext): Promise<{ ok: boolean; failures: str
         continue
       }
 
-      try {
-        await attachApiTrace(ctx, stepKey, stepTitle, stepApiTrace)
-      } catch (traceError) {
-        const traceMessage = traceError instanceof Error ? traceError.message : String(traceError)
-        failures.push(`${stepKey}: could not attach api trace (${traceMessage})`)
+      if (SAGA_ATTACH_API_TRACES) {
+        try {
+          await attachApiTrace(ctx, stepKey, stepTitle, stepApiTrace)
+        } catch (traceError) {
+          const traceMessage = traceError instanceof Error ? traceError.message : String(traceError)
+          failures.push(`${stepKey}: could not attach api trace (${traceMessage})`)
+        }
       }
 
-      try {
-        await attachSnapshot(ctx, stepKey, stepTitle, status, failurePayload, {
-          stepKey,
-          error: message,
-          resultPayload: failurePayload,
-          apiCalls: stepApiTrace,
-        })
-      } catch (snapshotError) {
-        const snapshotMessage =
-          snapshotError instanceof Error ? snapshotError.message : String(snapshotError)
-        failures.push(`${stepKey}: could not attach snapshot (${snapshotMessage})`)
+      if (SAGA_ATTACH_SNAPSHOTS) {
+        try {
+          await attachSnapshot(ctx, stepKey, stepTitle, status, failurePayload, {
+            stepKey,
+            error: message,
+            resultPayload: failurePayload,
+            apiCalls: stepApiTrace,
+          })
+        } catch (snapshotError) {
+          const snapshotMessage =
+            snapshotError instanceof Error ? snapshotError.message : String(snapshotError)
+          failures.push(`${stepKey}: could not attach snapshot (${snapshotMessage})`)
+        }
       }
     }
   }
 
-  try {
-    /**
-     * Final integrity recompute happens once, after all step traces and
-     * snapshots have been attached.
-     *
-     * Why now instead of every step:
-     * - per-step full recompute was turning the runner into an O(n^2) loop
-     * - some "hangs" were just the saga service repeatedly reloading the full
-     *   run detail + artifacts + spec on every single step transition
-     * - final recompute still gives us truthful coverage and evidence checks
-     */
-    await requestJson(`/api/v1/sagas/runs/${ctx.runId}/refresh`, {
-      method: 'POST',
-      cookie: ctx.owner.cookie,
-      body: {
-        recomputeIntegrity: true,
-        persistCoverage: true,
-      },
-      acceptStatuses: [200],
-    })
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error)
-    failures.push(`run-finalize: ${message}`)
+  if (SAGA_RECOMPUTE_INTEGRITY || SAGA_PERSIST_COVERAGE) {
+    try {
+      /**
+       * Final integrity recompute happens once, after all step traces and
+       * snapshots have been attached.
+       *
+       * Why now instead of every step:
+       * - per-step full recompute was turning the runner into an O(n^2) loop
+       * - some "hangs" were just the saga service repeatedly reloading the full
+       *   run detail + artifacts + spec on every single step transition
+       * - final recompute still gives us truthful coverage and evidence checks
+       */
+      await requestJson(`/api/v1/sagas/runs/${ctx.runId}/refresh`, {
+        method: 'POST',
+        cookie: ctx.owner.cookie,
+        body: {
+          recomputeIntegrity: SAGA_RECOMPUTE_INTEGRITY,
+          persistCoverage: SAGA_PERSIST_COVERAGE,
+        },
+        acceptStatuses: [200],
+      })
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error)
+      failures.push(`run-finalize: ${message}`)
+    }
   }
 
   const finalDetail = await getSagaRun(ctx.owner, ctx.runId)
@@ -36487,6 +36851,11 @@ async function main() {
   }
 
   console.log(`Running ${toRun.length} saga(s) against ${API_BASE_URL}...`)
+  if (SAGA_FAST_MODE) {
+    console.log(
+      `Fast mode enabled (traces=${SAGA_ATTACH_API_TRACES ? 'on' : 'off'}, snapshots=${SAGA_ATTACH_SNAPSHOTS ? 'on' : 'off'}, in_progress=${SAGA_STEP_TRANSITION_IN_PROGRESS ? 'on' : 'off'}, coverage=${SAGA_PERSIST_COVERAGE ? 'on' : 'off'}).`,
+    )
+  }
   const start = Date.now()
 
   let passed = 0

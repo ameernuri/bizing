@@ -66,6 +66,15 @@ tables". It is being treated as an operating system for selling and managing:
 - `projections.ts`
   - formal rebuildable read models
   - structured debug snapshots for "what did the system see?" analysis
+- `ooda.ts`
+  - Observe/Orient/Decide/Act loops as first-class records
+  - links, entries, and actions to connect UC coverage, saga evidence, and
+    execution history in one canonical timeline
+  - loop rows keep workflow-gate state in `metadata.workflowContract`:
+    - `designGateStatus`
+    - `behaviorGateStatus`
+  - loop-entry rows keep primary owner in evidence:
+    - `evidence.owningLayer` paired with `gap_type` by API contract validation
 
 ### Canonical Consolidation Guardrail
 
@@ -114,6 +123,7 @@ The redesign now applies the same expectation to:
 - external installations + customer identity resolution
 - bizings
 - checkout, booking, payments, and entitlements
+- ooda loops (observe/orient/decide/act) and their linked saga evidence
 
 ## Terminology Guardrails
 
@@ -241,3 +251,20 @@ To keep fresh databases truthful, `packages/db/scripts/repair-canonical-indexes.
 Current known v0 rule:
 - for fresh local environments, treat `db:migrate` and `db:push` as the same bootstrap contract: apply schema with Drizzle push, then repair canonical partial indexes.
 - the giant baseline SQL migration file is still under active redesign and is not yet the trustworthy empty-db bootstrap path on this machine.
+
+## Saga Runtime Simulation Backbone (v1)
+
+Saga simulations now have first-class runtime state in schema, not only step rows.
+
+New canonical tables:
+- `saga_run_simulation_clocks`
+  - one row per run
+  - stores simulation `current_time_at`, mode (`virtual`/`realtime`), and advance counters
+- `saga_run_scheduler_jobs`
+  - explicit queue of delayed/conditional runtime jobs per run/step
+  - stores due time, condition key, poll cadence, attempts, status, and result payload
+
+Why this matters:
+- delay behavior is observable and debuggable in DB
+- test runs can simulate time passage without wall-clock sleeps
+- OODash and agents can inspect "what was waiting, why, and when it resolved"

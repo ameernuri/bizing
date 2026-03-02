@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { ArrowRight, BookOpen, FileStack, PlayCircle, UserCircle2 } from 'lucide-react'
+import { ArrowRight, BookOpen, FileStack, Orbit, PlayCircle, UserCircle2 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -217,9 +217,17 @@ export function ExplorerLinkCards({
     personas: number
     definitions: number
     runs: number
+    loops?: number
   }
 }) {
   const items = [
+    {
+      href: '/sagas/loops',
+      label: 'Missions',
+      value: counts.loops ?? 0,
+      description: 'Active objectives currently being tracked and validated.',
+      icon: Orbit,
+    },
     {
       href: '/sagas/use-cases',
       label: 'Use Cases',

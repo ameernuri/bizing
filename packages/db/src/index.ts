@@ -44,6 +44,7 @@ export * from './schema/receivables'
 export * from './schema/gift_delivery'
 export * from './schema/marketing_performance'
 export * from './schema/supply_batches'
+export * from './schema/ooda'
 /**
  * Canonical booking architecture.
  *
@@ -93,6 +94,7 @@ import * as receivablesSchema from './schema/receivables'
 import * as giftDeliverySchema from './schema/gift_delivery'
 import * as marketingPerformanceSchema from './schema/marketing_performance'
 import * as supplyBatchesSchema from './schema/supply_batches'
+import * as oodaSchema from './schema/ooda'
 import * as canonicalSchemaModules from './schema/canonical'
 
 /**
@@ -137,6 +139,7 @@ const schemaCore = {
   ...giftDeliverySchema,
   ...marketingPerformanceSchema,
   ...supplyBatchesSchema,
+  ...oodaSchema,
 }
 
 /**
@@ -326,6 +329,8 @@ const dbPackage = {
   sagaDefinitions: sagasSchema.sagaDefinitions,
   sagaDefinitionRevisions: sagasSchema.sagaDefinitionRevisions,
   sagaRuns: sagasSchema.sagaRuns,
+  sagaRunSimulationClocks: sagasSchema.sagaRunSimulationClocks,
+  sagaRunSchedulerJobs: sagasSchema.sagaRunSchedulerJobs,
   sagaRunSteps: sagasSchema.sagaRunSteps,
   sagaRunArtifacts: sagasSchema.sagaRunArtifacts,
   sagaRunActorProfiles: sagasSchema.sagaRunActorProfiles,
@@ -339,6 +344,10 @@ const dbPackage = {
   sagaCoverageItems: sagasSchema.sagaCoverageItems,
   sagaTags: sagasSchema.sagaTags,
   sagaTagBindings: sagasSchema.sagaTagBindings,
+  oodaLoops: oodaSchema.oodaLoops,
+  oodaLoopLinks: oodaSchema.oodaLoopLinks,
+  oodaLoopEntries: oodaSchema.oodaLoopEntries,
+  oodaLoopActions: oodaSchema.oodaLoopActions,
   policyTemplates: canonicalSchemaModules.policyTemplates,
   policyRules: canonicalSchemaModules.policyRules,
   policyBindings: canonicalSchemaModules.policyBindings,

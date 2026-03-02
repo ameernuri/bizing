@@ -1,4 +1,4 @@
-# Saga API Contract (v0)
+# Saga API Contract (v1)
 
 All endpoints are under `/api/v1/sagas`.
 
@@ -18,9 +18,18 @@ All endpoints are under `/api/v1/sagas`.
 - `POST /sagas/runs`
 - `GET /sagas/runs`
 - `GET /sagas/runs/:runId`
+- `POST /sagas/runs/:runId/execute`
 - `GET /sagas/runs/:runId/coverage`
 - `POST /sagas/runs/:runId/archive`
 - `POST /sagas/runs/archive`
+
+## Simulation runtime (virtual clock + scheduler)
+
+- `GET /sagas/runs/:runId/clock`
+- `POST /sagas/runs/:runId/clock/advance`
+- `GET /sagas/runs/:runId/scheduler/jobs`
+- `POST /sagas/runs/:runId/scheduler/jobs`
+- `PATCH /sagas/runs/:runId/scheduler/jobs/:jobId`
 
 ## Step reporting
 

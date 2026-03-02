@@ -95,6 +95,7 @@ export type SagaDefinitionSummary = {
   description?: string | null
   status: SagaLifecycleStatus
   bizId?: string | null
+  specFilePath?: string | null
   specVersion: string
   sourceUseCaseRef?: string | null
   sourcePersonaRef?: string | null
@@ -308,9 +309,85 @@ export const sagaApi = {
   fetchUseCases: () => fetchApi<SagaUseCaseDefinition[]>('/api/v1/sagas/use-cases?limit=5000'),
   fetchUseCaseDetail: (ucKey: string) =>
     fetchApi<SagaUseCaseDetail>(`/api/v1/sagas/use-cases/${encodeURIComponent(ucKey)}`),
+  updateUseCase: (
+    ucKey: string,
+    patch: Partial<{
+      title: string
+      status: SagaLifecycleStatus
+      summary: string | null
+      sourceFilePath: string | null
+      sourceRef: string | null
+    }>,
+  ) =>
+    fetchApi<SagaUseCaseDefinition>(`/api/v1/sagas/use-cases/${encodeURIComponent(ucKey)}`, {
+      method: 'PATCH',
+      body: JSON.stringify(patch),
+    }),
+  createUseCaseVersion: (
+    ucKey: string,
+    input: {
+      title?: string
+      summary?: string | null
+      bodyMarkdown: string
+      extractedNeeds?: unknown[]
+      extractedScenario?: string | null
+      isCurrent?: boolean
+    },
+  ) =>
+    fetchApi<SagaUseCaseVersion>(
+      `/api/v1/sagas/use-cases/${encodeURIComponent(ucKey)}/versions`,
+      {
+        method: 'POST',
+        body: JSON.stringify(input),
+      },
+    ),
+  deleteUseCase: (ucKey: string) =>
+    fetchApi<{ deleted: true }>(`/api/v1/sagas/use-cases/${encodeURIComponent(ucKey)}`, {
+      method: 'DELETE',
+    }),
   fetchPersonas: () => fetchApi<SagaPersonaDefinition[]>('/api/v1/sagas/personas?limit=5000'),
   fetchPersonaDetail: (personaKey: string) =>
     fetchApi<SagaPersonaDetail>(`/api/v1/sagas/personas/${encodeURIComponent(personaKey)}`),
+  updatePersona: (
+    personaKey: string,
+    patch: Partial<{
+      name: string
+      status: SagaLifecycleStatus
+      profileSummary: string | null
+      sourceFilePath: string | null
+      sourceRef: string | null
+    }>,
+  ) =>
+    fetchApi<SagaPersonaDefinition>(
+      `/api/v1/sagas/personas/${encodeURIComponent(personaKey)}`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify(patch),
+      },
+    ),
+  createPersonaVersion: (
+    personaKey: string,
+    input: {
+      name?: string
+      profile?: string | null
+      goals?: string | null
+      painPoints?: string | null
+      testScenarios?: unknown[]
+      bodyMarkdown: string
+      isCurrent?: boolean
+    },
+  ) =>
+    fetchApi<SagaPersonaVersion>(
+      `/api/v1/sagas/personas/${encodeURIComponent(personaKey)}/versions`,
+      {
+        method: 'POST',
+        body: JSON.stringify(input),
+      },
+    ),
+  deletePersona: (personaKey: string) =>
+    fetchApi<{ deleted: true }>(`/api/v1/sagas/personas/${encodeURIComponent(personaKey)}`, {
+      method: 'DELETE',
+    }),
   fetchDefinitions: () => fetchApi<SagaDefinitionSummary[]>('/api/v1/sagas/specs?limit=5000'),
   fetchDefinitionDetail: (sagaKey: string) =>
     fetchApi<SagaDefinitionDetail>(`/api/v1/sagas/specs/${encodeURIComponent(sagaKey)}`),
@@ -322,6 +399,44 @@ export const sagaApi = {
     fetchApi<SagaLibraryRelations>(
       `/api/v1/sagas/library/related?kind=${encodeURIComponent(kind)}&key=${encodeURIComponent(key)}`,
     ),
+  updateDefinitionSpec: (
+    sagaKey: string,
+    input: {
+      spec: unknown
+      status?: SagaLifecycleStatus
+      bizId?: string | null
+      metadata?: Record<string, unknown>
+      sourceFilePath?: string | null
+      forceRevision?: boolean
+      revisionMetadata?: Record<string, unknown>
+    },
+  ) =>
+    fetchApi<SagaDefinitionDetail>(`/api/v1/sagas/specs/${encodeURIComponent(sagaKey)}`, {
+      method: 'PUT',
+      body: JSON.stringify(input),
+    }),
+  createDefinitionRevision: (
+    sagaKey: string,
+    input: {
+      spec: unknown
+      status?: SagaLifecycleStatus
+      bizId?: string | null
+      metadata?: Record<string, unknown>
+      sourceFilePath?: string | null
+      revisionMetadata?: Record<string, unknown>
+    },
+  ) =>
+    fetchApi<SagaDefinitionDetail>(
+      `/api/v1/sagas/specs/${encodeURIComponent(sagaKey)}/revisions`,
+      {
+        method: 'POST',
+        body: JSON.stringify(input),
+      },
+    ),
+  deleteDefinition: (sagaKey: string) =>
+    fetchApi<{ archived: true }>(`/api/v1/sagas/specs/${encodeURIComponent(sagaKey)}`, {
+      method: 'DELETE',
+    }),
   fetchRuns: (params?: { sagaKey?: string; limit?: number; includeArchived?: boolean; mineOnly?: boolean }) => {
     const search = new URLSearchParams()
     if (params?.sagaKey) search.set('sagaKey', params.sagaKey)

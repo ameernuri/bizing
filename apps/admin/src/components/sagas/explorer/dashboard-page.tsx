@@ -1,13 +1,15 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { ArrowRight, BookOpenCheck, FileSearch, PlayCircle } from 'lucide-react'
 import { PlatformHealthCards } from '@/components/sagas/platform-health-cards'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { sagaApi, type SagaLibraryOverview, type SagaRunSummary, type SchemaCoverageReport } from '@/lib/sagas-api'
+import { oodaApi, type OodaOverview } from '@/lib/ooda-api'
+import { useSagaRealtime } from '@/lib/use-saga-realtime'
 import { ExplorerLinkCards, LoadError, PageIntro, RunProgressBackdrop, RunStatusBadge, SmallRunList, summarizeRuns } from './common'
 
 function buildGroupSummary(runs: SagaRunSummary[]) {
@@ -33,33 +35,60 @@ function buildGroupSummary(runs: SagaRunSummary[]) {
 }
 
 export function SagaDashboardPage() {
+  const [oodaOverview, setOodaOverview] = useState<OodaOverview | null>(null)
   const [libraryOverview, setLibraryOverview] = useState<SagaLibraryOverview | null>(null)
   const [runs, setRuns] = useState<SagaRunSummary[]>([])
   const [schemaReports, setSchemaReports] = useState<SchemaCoverageReport[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const realtimeRefreshRef = useRef<number | null>(null)
+  const loadInFlightRef = useRef(false)
 
-  async function load() {
-    setIsLoading(true)
-    setError(null)
+  async function load(options?: { background?: boolean }) {
+    const background = options?.background === true
+    if (loadInFlightRef.current) return
+    loadInFlightRef.current = true
+    if (!background) {
+      setIsLoading(true)
+      setError(null)
+    }
     try {
-      const [overview, allRuns, reports] = await Promise.all([
+      const [overview, ooda, reports] = await Promise.all([
         sagaApi.fetchLibraryOverview(),
-        sagaApi.fetchRuns({ limit: 5000, mineOnly: false, includeArchived: true }),
+        oodaApi.fetchOverview(),
         sagaApi.fetchSchemaCoverageReports(),
       ])
       setLibraryOverview(overview)
-      setRuns(allRuns)
+      setOodaOverview(ooda)
+      setRuns(ooda.recentRuns)
       setSchemaReports(reports)
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Failed to load saga dashboard.')
+      if (!background || !libraryOverview) {
+        setError(cause instanceof Error ? cause.message : 'Failed to load saga dashboard.')
+      }
     } finally {
-      setIsLoading(false)
+      loadInFlightRef.current = false
+      if (!background) setIsLoading(false)
     }
   }
 
   useEffect(() => {
     void load()
+  }, [])
+
+  const realtime = useSagaRealtime({
+    onEvent: () => {
+      if (realtimeRefreshRef.current !== null) window.clearTimeout(realtimeRefreshRef.current)
+      realtimeRefreshRef.current = window.setTimeout(() => {
+        void load({ background: true })
+      }, 300)
+    },
+  })
+
+  useEffect(() => {
+    return () => {
+      if (realtimeRefreshRef.current !== null) window.clearTimeout(realtimeRefreshRef.current)
+    }
   }, [])
 
   const runSummary = useMemo(() => summarizeRuns(runs), [runs])
@@ -77,14 +106,17 @@ export function SagaDashboardPage() {
   return (
     <div className="flex flex-1 flex-col">
       <PageIntro
-        eyebrow="Saga Loop"
-        title="Schema and API validation control center"
-        description="Use the explorer to inspect use cases, personas, saga definitions, and run history as separate first-class views. The dashboard answers one question quickly: what is healthy right now and where is the next failure cluster?"
+        eyebrow="OODA Dashboard"
+        title="Evolution control center"
+        description="Mission health, schema/API evidence, current failure clusters, and direct drilldowns into use cases, personas, definitions, and runs."
         actions={
           <>
+            <div className="rounded-md border px-2 py-1 text-xs text-muted-foreground">
+              Realtime: {realtime.connected ? 'connected' : 'disconnected'}
+            </div>
             <Button variant="outline" asChild>
-              <Link href="/sagas/definitions">
-                Definition library
+              <Link href="/sagas/loops">
+                Active missions
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>
@@ -140,15 +172,17 @@ export function SagaDashboardPage() {
                 historicalPassed: runSummary.passed,
                 historicalTotal: runSummary.total,
               }}
-              libraryOverview={{ counts: { useCases: libraryOverview?.counts.useCases ?? 0, personas: libraryOverview?.counts.personas ?? 0 } }}
+              libraryOverview={{ counts: { useCases: oodaOverview?.library.useCases ?? libraryOverview?.counts.useCases ?? 0, personas: oodaOverview?.library.personas ?? libraryOverview?.counts.personas ?? 0 } }}
             />
 
             <ExplorerLinkCards
               counts={{
-                useCases: libraryOverview?.counts.useCases ?? 0,
-                personas: libraryOverview?.counts.personas ?? 0,
-                definitions: libraryOverview?.counts.sagaDefinitions ?? 0,
-                runs: libraryOverview?.counts.sagaRuns ?? 0,
+                loops: oodaOverview?.health.totalLoops ?? 0,
+                useCases: oodaOverview?.library.useCases ?? libraryOverview?.counts.useCases ?? 0,
+                personas: oodaOverview?.library.personas ?? libraryOverview?.counts.personas ?? 0,
+                definitions:
+                  oodaOverview?.library.definitions ?? libraryOverview?.counts.sagaDefinitions ?? 0,
+                runs: oodaOverview?.library.runs ?? libraryOverview?.counts.sagaRuns ?? 0,
               }}
             />
 
@@ -169,7 +203,7 @@ export function SagaDashboardPage() {
                           <p className="text-sm text-muted-foreground">{latestCoverage.summary ?? 'No summary attached.'}</p>
                         </div>
                         <Button variant="outline" size="sm" asChild>
-                          <Link href="/sagas/definitions">
+                          <Link href="/sagas/loops">
                             Inspect library
                             <ArrowRight className="ml-2 h-4 w-4" />
                           </Link>
@@ -180,19 +214,27 @@ export function SagaDashboardPage() {
                           <CardHeader className="pb-2">
                             <CardTitle className="text-sm">Use cases</CardTitle>
                           </CardHeader>
-                          <CardContent className="text-2xl font-semibold">{libraryOverview?.counts.useCases ?? 0}</CardContent>
+                          <CardContent className="text-2xl font-semibold">
+                            {oodaOverview?.library.useCases ?? libraryOverview?.counts.useCases ?? 0}
+                          </CardContent>
                         </Card>
                         <Card>
                           <CardHeader className="pb-2">
                             <CardTitle className="text-sm">Definitions</CardTitle>
                           </CardHeader>
-                          <CardContent className="text-2xl font-semibold">{libraryOverview?.counts.sagaDefinitions ?? 0}</CardContent>
+                          <CardContent className="text-2xl font-semibold">
+                            {oodaOverview?.library.definitions ??
+                              libraryOverview?.counts.sagaDefinitions ??
+                              0}
+                          </CardContent>
                         </Card>
                         <Card>
                           <CardHeader className="pb-2">
                             <CardTitle className="text-sm">Runs recorded</CardTitle>
                           </CardHeader>
-                          <CardContent className="text-2xl font-semibold">{libraryOverview?.counts.sagaRuns ?? 0}</CardContent>
+                          <CardContent className="text-2xl font-semibold">
+                            {oodaOverview?.library.runs ?? libraryOverview?.counts.sagaRuns ?? 0}
+                          </CardContent>
                         </Card>
                       </div>
                     </div>
@@ -247,22 +289,49 @@ export function SagaDashboardPage() {
 
               <Card>
                 <CardHeader>
-                  <CardTitle>What this workspace is for</CardTitle>
-                  <CardDescription>The explorer separates the loop into durable layers so you can inspect one thing at a time without losing the connections.</CardDescription>
+                  <CardTitle>Current OODA focus loops</CardTitle>
+                  <CardDescription>Loops represent what matters now. Open one to track phase-by-phase signals, decisions, actions, and linked runs.</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4 text-sm text-muted-foreground">
-                  <div className="flex items-start gap-3">
-                    <BookOpenCheck className="mt-0.5 h-4 w-4 shrink-0" />
-                    <p><span className="font-medium text-foreground">Use cases</span> explain what reality the product is meant to support.</p>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <FileSearch className="mt-0.5 h-4 w-4 shrink-0" />
-                    <p><span className="font-medium text-foreground">Saga definitions</span> translate those needs into concrete lifecycle scripts.</p>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <PlayCircle className="mt-0.5 h-4 w-4 shrink-0" />
-                    <p><span className="font-medium text-foreground">Runs</span> show what actually happened, who saw what, and where the API or schema broke.</p>
-                  </div>
+                <CardContent className="space-y-3">
+                  {(oodaOverview?.activeLoops ?? []).slice(0, 6).map((loop) => (
+                    <Link
+                      key={loop.id}
+                      href={`/sagas/loops/${loop.id}`}
+                      className="block rounded-lg border p-3 transition-colors hover:border-primary/40 hover:bg-muted/30"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="space-y-1">
+                          <p className="font-medium">{loop.title}</p>
+                          <p className="text-xs text-muted-foreground uppercase">
+                            {loop.currentPhase} · priority {loop.priority}
+                          </p>
+                          <p className="text-sm text-muted-foreground line-clamp-2">
+                            {loop.objective ?? 'No objective set.'}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-xs text-muted-foreground">open items</p>
+                          <p className="text-lg font-semibold">{loop.openItems}</p>
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                  {(oodaOverview?.activeLoops?.length ?? 0) === 0 ? (
+                    <div className="space-y-4 text-sm text-muted-foreground">
+                      <div className="flex items-start gap-3">
+                        <BookOpenCheck className="mt-0.5 h-4 w-4 shrink-0" />
+                        <p><span className="font-medium text-foreground">Use cases</span> explain what reality the product is meant to support.</p>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <FileSearch className="mt-0.5 h-4 w-4 shrink-0" />
+                        <p><span className="font-medium text-foreground">Saga definitions</span> translate those needs into concrete lifecycle scripts.</p>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <PlayCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                        <p><span className="font-medium text-foreground">Runs</span> show what actually happened, who saw what, and where the API or schema broke.</p>
+                      </div>
+                    </div>
+                  ) : null}
                 </CardContent>
               </Card>
             </div>

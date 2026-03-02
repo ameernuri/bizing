@@ -7,6 +7,10 @@ import { z } from 'zod'
  * - Gives humans a readable JSON contract for lifecycle simulations.
  * - Gives agents a deterministic shape for execution instructions.
  * - Keeps run generation stable as API/schema evolve.
+ *
+ * v1 change summary:
+ * - Adds first-class simulation controls (virtual clock + scheduler defaults).
+ * - Keeps backward parsing for `saga.v0` so existing specs can be normalized.
  */
 
 /** Assertion contract for one saga step. */
@@ -53,8 +57,8 @@ export const sagaActorSchema = z.object({
  *
  * ELI5:
  * Some real workflows need time to pass:
- * - fixed wait (sleep N ms),
- * - wait-until (poll for condition up to timeout).
+ * - fixed wait (advance clock by N ms),
+ * - wait-until (poll condition until timeout).
  */
 export const sagaStepDelaySchema = z
   .object({
@@ -116,26 +120,133 @@ export const sagaSourceSchema = z.object({
   generatedAt: z.string().datetime().optional(),
 })
 
-/** Top-level saga spec contract used by file and API. */
-export const sagaSpecSchema = z.object({
-  schemaVersion: z.literal('saga.v0'),
+/** Shared default behavior for run creation. */
+const sagaDefaultsSchema = z
+  .object({
+    runMode: z.enum(['dry_run', 'live']).default('dry_run'),
+    continueOnFailure: z.boolean().default(false),
+  })
+  .default({ runMode: 'dry_run', continueOnFailure: false })
+
+/**
+ * Clock simulation config.
+ *
+ * ELI5:
+ * - `virtual`: tests move time intentionally without waiting in real time.
+ * - `realtime`: tests use wall clock (mainly for integration parity checks).
+ */
+export const sagaSimulationClockSchema = z
+  .object({
+    mode: z.enum(['virtual', 'realtime']).default('virtual'),
+    startAt: z.string().datetime().optional(),
+    timezone: z.string().min(1).default('UTC'),
+    autoAdvance: z.boolean().default(true),
+  })
+  .default({ mode: 'virtual', timezone: 'UTC', autoAdvance: true })
+
+/**
+ * Scheduler simulation config.
+ *
+ * ELI5:
+ * This controls how condition waits are checked.
+ */
+export const sagaSimulationSchedulerSchema = z
+  .object({
+    mode: z.enum(['deterministic', 'realtime']).default('deterministic'),
+    defaultPollMs: z.number().int().positive().default(1000),
+    defaultTimeoutMs: z.number().int().positive().default(30000),
+    maxTicksPerStep: z.number().int().positive().default(500),
+  })
+  .default({
+    mode: 'deterministic',
+    defaultPollMs: 1000,
+    defaultTimeoutMs: 30000,
+    maxTicksPerStep: 500,
+  })
+
+/**
+ * Top-level simulation settings for run orchestration.
+ */
+export const sagaSimulationSchema = z
+  .object({
+    clock: sagaSimulationClockSchema,
+    scheduler: sagaSimulationSchedulerSchema,
+  })
+  .default({
+    clock: { mode: 'virtual', timezone: 'UTC', autoAdvance: true },
+    scheduler: {
+      mode: 'deterministic',
+      defaultPollMs: 1000,
+      defaultTimeoutMs: 30000,
+      maxTicksPerStep: 500,
+    },
+  })
+
+const sagaSpecCommonShape = {
   sagaKey: z.string().min(1),
   title: z.string().min(1),
   description: z.string().min(1),
   tags: z.array(z.string().min(1)).default([]),
-  defaults: z
-    .object({
-      runMode: z.enum(['dry_run', 'live']).default('dry_run'),
-      continueOnFailure: z.boolean().default(false),
-    })
-    .default({ runMode: 'dry_run', continueOnFailure: false }),
+  defaults: sagaDefaultsSchema,
   source: sagaSourceSchema.default({}),
   objectives: z.array(z.string().min(1)).default([]),
   actors: z.array(sagaActorSchema).min(1),
   phases: z.array(sagaPhaseSchema).min(1),
   metadata: z.record(z.unknown()).default({}),
+} as const
+
+/** Legacy v0 parser (kept to normalize old specs). */
+const sagaSpecV0Schema = z.object({
+  schemaVersion: z.literal('saga.v0'),
+  ...sagaSpecCommonShape,
 })
 
+/** Canonical v1 schema. */
+const sagaSpecV1Schema = z.object({
+  schemaVersion: z.literal('saga.v1'),
+  simulation: sagaSimulationSchema,
+  ...sagaSpecCommonShape,
+})
+
+/** Accept both versions at API boundary and normalize to v1 internally. */
+export const sagaSpecInputSchema = z.union([sagaSpecV1Schema, sagaSpecV0Schema])
+
+/** Canonical internal saga shape used by services/runtime. */
+export const sagaSpecSchema = sagaSpecV1Schema
+
+function v1SimulationDefaults() {
+  return {
+    clock: {
+      mode: 'virtual' as const,
+      timezone: 'UTC',
+      autoAdvance: true,
+    },
+    scheduler: {
+      mode: 'deterministic' as const,
+      defaultPollMs: 1000,
+      defaultTimeoutMs: 30000,
+      maxTicksPerStep: 500,
+    },
+  }
+}
+
+/**
+ * Parse unknown input and return canonical `saga.v1` shape.
+ */
+export function normalizeSagaSpec(input: unknown): SagaSpec {
+  const parsed = sagaSpecInputSchema.parse(input)
+  if (parsed.schemaVersion === 'saga.v1') {
+    return parsed
+  }
+
+  return {
+    ...parsed,
+    schemaVersion: 'saga.v1',
+    simulation: v1SimulationDefaults(),
+  }
+}
+
 export type SagaSpec = z.infer<typeof sagaSpecSchema>
+export type SagaSpecInput = z.infer<typeof sagaSpecInputSchema>
 export type SagaPhase = z.infer<typeof sagaPhaseSchema>
 export type SagaStep = z.infer<typeof sagaStepSchema>

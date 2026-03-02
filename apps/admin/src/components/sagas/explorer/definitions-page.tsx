@@ -1,7 +1,14 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import { Plus } from 'lucide-react'
 import { sagaApi, type SagaDefinitionSummary, type SagaRunSummary } from '@/lib/sagas-api'
+import { oodaApi } from '@/lib/ooda-api'
+import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
 import { EntitySummaryCard, getLatestRun, LifecycleBadge, LoadError, LoadingGrid, PageIntro, RunStatusBadge, SearchToolbar, summarizeRuns } from './common'
 
 export function SagaDefinitionsPage() {
@@ -10,6 +17,13 @@ export function SagaDefinitionsPage() {
   const [query, setQuery] = useState('')
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [createOpen, setCreateOpen] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
+  const [form, setForm] = useState({
+    sagaKey: '',
+    title: '',
+    description: '',
+  })
 
   async function load() {
     setIsLoading(true)
@@ -40,12 +54,38 @@ export function SagaDefinitionsPage() {
     )
   }, [definitions, query])
 
+  async function createDefinition() {
+    if (!form.sagaKey.trim() || !form.title.trim() || !form.description.trim()) return
+    setIsSaving(true)
+    try {
+      await oodaApi.createDefinitionFromDraft({
+        sagaKey: form.sagaKey.trim(),
+        title: form.title.trim(),
+        description: form.description.trim(),
+        status: 'draft',
+      })
+      setCreateOpen(false)
+      setForm({ sagaKey: '', title: '', description: '' })
+      await load()
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Failed to create saga definition.')
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
   return (
     <div className="flex flex-1 flex-col">
       <PageIntro
         eyebrow="Saga Library"
         title="Saga definitions"
         description="Definitions are the executable bridge between use cases and personas. Open one to see the canonical spec, linked library items, revision history, and run evidence."
+        actions={
+          <Button onClick={() => setCreateOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            New definition
+          </Button>
+        }
       />
       <SearchToolbar value={query} onChange={setQuery} placeholder="Search definitions by key, title, description, use case, or persona" meta={`${filtered.length} of ${definitions.length} definitions`} />
       <div className="flex-1 p-6">
@@ -78,6 +118,53 @@ export function SagaDefinitionsPage() {
           </div>
         )}
       </div>
+
+      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Create saga definition</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-2">
+              <Label htmlFor="saga-key">Saga Key</Label>
+              <Input
+                id="saga-key"
+                value={form.sagaKey}
+                onChange={(event) => setForm((prev) => ({ ...prev, sagaKey: event.target.value }))}
+                placeholder="uc-280-the-solo-entrepreneur-sarah"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="saga-title">Title</Label>
+              <Input
+                id="saga-title"
+                value={form.title}
+                onChange={(event) => setForm((prev) => ({ ...prev, title: event.target.value }))}
+                placeholder="UC-280 • Example"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="saga-desc">Description</Label>
+              <Textarea
+                id="saga-desc"
+                value={form.description}
+                onChange={(event) =>
+                  setForm((prev) => ({ ...prev, description: event.target.value }))
+                }
+                rows={4}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCreateOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={() => void createDefinition()} disabled={isSaving || !form.sagaKey.trim() || !form.title.trim() || !form.description.trim()}>
+              {isSaving ? 'Creating...' : 'Create'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

@@ -1,8 +1,9 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { sagaApi, type SagaDefinitionSummary, type SagaRunSummary } from '@/lib/sagas-api'
+import { useSagaRealtime } from '@/lib/use-saga-realtime'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { EmptyState, LoadError, LoadingGrid, PageIntro, RunProgressBackdrop, RunStatusBadge, SearchToolbar, summarizeRuns } from './common'
@@ -35,10 +36,17 @@ export function SagaRunsPage() {
   const [query, setQuery] = useState('')
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const realtimeRefreshRef = useRef<number | null>(null)
+  const loadInFlightRef = useRef(false)
 
-  async function load() {
-    setIsLoading(true)
-    setError(null)
+  async function load(options?: { background?: boolean }) {
+    const background = options?.background === true
+    if (loadInFlightRef.current) return
+    loadInFlightRef.current = true
+    if (!background) {
+      setIsLoading(true)
+      setError(null)
+    }
     try {
       const [nextRuns, nextDefinitions] = await Promise.all([
         sagaApi.fetchRuns({ limit: 5000, mineOnly: false, includeArchived: true }),
@@ -47,14 +55,30 @@ export function SagaRunsPage() {
       setRuns(nextRuns)
       setDefinitions(nextDefinitions)
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Failed to load saga runs.')
+      if (!background || runs.length === 0) {
+        setError(cause instanceof Error ? cause.message : 'Failed to load saga runs.')
+      }
     } finally {
-      setIsLoading(false)
+      loadInFlightRef.current = false
+      if (!background) setIsLoading(false)
     }
   }
 
   useEffect(() => {
     void load()
+  }, [])
+
+  useSagaRealtime({
+    onEvent: () => {
+      if (realtimeRefreshRef.current !== null) window.clearTimeout(realtimeRefreshRef.current)
+      realtimeRefreshRef.current = window.setTimeout(() => void load({ background: true }), 250)
+    },
+  })
+
+  useEffect(() => {
+    return () => {
+      if (realtimeRefreshRef.current !== null) window.clearTimeout(realtimeRefreshRef.current)
+    }
   }, [])
 
   const grouped = useMemo(() => groupRuns(runs, definitions), [runs, definitions])
@@ -69,7 +93,7 @@ export function SagaRunsPage() {
   return (
     <div className="flex flex-1 flex-col">
       <PageIntro
-        eyebrow="Execution History"
+        eyebrow="Execution History (Realtime)"
         title="Saga runs"
         description="Runs are grouped by saga definition so you can inspect current health first, then drill into the exact attempt that failed or passed."
       />

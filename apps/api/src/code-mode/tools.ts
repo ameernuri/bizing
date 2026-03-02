@@ -2809,6 +2809,111 @@ export const apiTools: ApiToolDefinition[] = [
     },
   },
   {
+    name: 'bizing.sagas.runs.clock.get',
+    description: 'Get virtual/realtime simulation clock state for one saga run.',
+    method: 'GET',
+    path: '/api/v1/sagas/runs/{runId}/clock',
+    tags: ['sagas', 'runs', 'clock'],
+    parameters: {
+      type: 'object',
+      properties: {
+        runId: { type: 'string' },
+      },
+      required: ['runId'],
+    },
+  },
+  {
+    name: 'bizing.sagas.runs.clock.advance',
+    description:
+      'Advance one saga run simulation clock (virtual time) by milliseconds or set absolute timestamp.',
+    method: 'POST',
+    path: '/api/v1/sagas/runs/{runId}/clock/advance',
+    tags: ['sagas', 'runs', 'clock'],
+    parameters: {
+      type: 'object',
+      properties: {
+        runId: { type: 'string' },
+        byMs: { type: 'number' },
+        setToIso: { type: 'string' },
+        reason: { type: 'string' },
+        touchStatus: { type: 'string', enum: ['idle', 'running', 'paused', 'completed', 'cancelled'] },
+      },
+      required: ['runId'],
+    },
+  },
+  {
+    name: 'bizing.sagas.runs.schedulerJobs.list',
+    description: 'List scheduler jobs for one saga run.',
+    method: 'GET',
+    path: '/api/v1/sagas/runs/{runId}/scheduler/jobs',
+    tags: ['sagas', 'runs', 'scheduler'],
+    parameters: {
+      type: 'object',
+      properties: {
+        runId: { type: 'string' },
+        status: {
+          type: 'string',
+          enum: ['pending', 'ready', 'running', 'completed', 'failed', 'cancelled', 'expired'],
+        },
+        stepKey: { type: 'string' },
+        limit: { type: 'number', default: 300 },
+      },
+      required: ['runId'],
+    },
+  },
+  {
+    name: 'bizing.sagas.runs.schedulerJobs.create',
+    description: 'Create one scheduler job row for a saga run.',
+    method: 'POST',
+    path: '/api/v1/sagas/runs/{runId}/scheduler/jobs',
+    tags: ['sagas', 'runs', 'scheduler'],
+    parameters: {
+      type: 'object',
+      properties: {
+        runId: { type: 'string' },
+        stepKey: { type: 'string' },
+        jobType: { type: 'string', enum: ['step_delay', 'condition_wait', 'message_delivery', 'custom'] },
+        status: {
+          type: 'string',
+          enum: ['pending', 'ready', 'running', 'completed', 'failed', 'cancelled', 'expired'],
+        },
+        dueAtIso: { type: 'string' },
+        delayMs: { type: 'number' },
+        conditionKey: { type: 'string' },
+        timeoutAtIso: { type: 'string' },
+        pollEveryMs: { type: 'number' },
+        metadata: { type: 'object' },
+      },
+      required: ['runId'],
+    },
+  },
+  {
+    name: 'bizing.sagas.runs.schedulerJobs.update',
+    description: 'Update one scheduler job status/result for a saga run.',
+    method: 'PATCH',
+    path: '/api/v1/sagas/runs/{runId}/scheduler/jobs/{jobId}',
+    tags: ['sagas', 'runs', 'scheduler'],
+    parameters: {
+      type: 'object',
+      properties: {
+        runId: { type: 'string' },
+        jobId: { type: 'string' },
+        status: {
+          type: 'string',
+          enum: ['pending', 'ready', 'running', 'completed', 'failed', 'cancelled', 'expired'],
+        },
+        startedAt: { type: 'string' },
+        completedAt: { type: 'string' },
+        lastEvaluatedAt: { type: 'string' },
+        failureMessage: { type: 'string' },
+        resultPayload: { type: 'object' },
+        metadataPatch: { type: 'object' },
+        bumpAttempt: { type: 'boolean' },
+      },
+      required: ['runId', 'jobId'],
+    },
+  },
+  {
     name: 'bizing.sagas.runs.coverage',
     description:
       'Get server coverage verdict (full/partial/gap), failing step reasons, and missing evidence for one run.',
