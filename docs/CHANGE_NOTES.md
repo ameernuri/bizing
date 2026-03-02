@@ -11,6 +11,308 @@ Concise, high-signal notes for meaningful architecture or behavior changes.
 
 ## 2026-02-28
 
+## 2026-03-02
+
+### Strict proving + CI gate + lifecycle FK canonicalization
+
+- Completed full strict-mode proving run against dedicated strict API instance:
+  - mode: `BIZING_RUNTIME_ASSURANCE_MODE=staging_strict`
+  - command: `sagas:collect` (fast mode)
+  - result: `284/284 passed` after blocker remediation.
+- Added core CI workflow:
+  - file: `/Users/ameer/bizing/code/.github/workflows/ci-core.yml`
+  - gates:
+    - API build (`bun run --cwd apps/api build`)
+    - docs domain check (`bun run docs:check:domains`)
+    - strict saga smoke on ephemeral Postgres:
+      - DB push
+      - API boot in strict assurance mode
+      - generate/sync 1 saga spec
+      - rerun 1 deterministic saga in fast mode
+- Canonicalized missing auth observability schema registration:
+  - added `./src/schema/auth_observability.ts` to Drizzle config:
+    - `/Users/ameer/bizing/code/packages/db/drizzle.config.ts`
+- Made lifecycle delivery FK correction durable in bootstrap repair:
+  - updated `/Users/ameer/bizing/code/packages/db/scripts/repair-canonical-indexes.ts`
+  - now auto-detects legacy `lifecycle_events` FK targets on
+    `lifecycle_event_deliveries`, deletes orphan rows, and rewires constraints
+    to canonical `domain_events`.
+
+### Hard-cut coherence pass: route classes, saga surface, delivery worker, strict assurance
+
+- Route-class matrix now fails closed with no saga-legacy rule:
+  - removed `/api/v1/sagas*` class mapping
+  - unmatched routes now resolve to `internal_only` via `implicit-internal-fallback`
+  - file:
+    - `/Users/ameer/bizing/code/apps/api/src/middleware/route-class-matrix.ts`
+- Removed lifecycle compatibility mirroring to legacy event rows:
+  - action runtime no longer mirror-writes canonical `domain_events` into
+    legacy lifecycle tables
+  - lifecycle test route no longer inserts compatibility lifecycle rows
+  - files:
+    - `/Users/ameer/bizing/code/apps/api/src/services/action-runtime.ts`
+    - `/Users/ameer/bizing/code/apps/api/src/routes/lifecycle-hooks.ts`
+- OODA saga route/docs hard-cut cleanup:
+  - saga docs/help text now references only `/api/v1/ooda/sagas/*` clock/scheduler paths
+  - file:
+    - `/Users/ameer/bizing/code/apps/api/src/routes/sagas.ts`
+- Added real lifecycle delivery worker and control endpoints:
+  - worker service:
+    - `/Users/ameer/bizing/code/apps/api/src/services/lifecycle-delivery-worker.ts`
+  - API endpoints:
+    - `GET /api/v1/bizes/:bizId/lifecycle-event-deliveries/worker-health`
+    - `POST /api/v1/bizes/:bizId/lifecycle-event-deliveries/process`
+    - `POST /api/v1/lifecycle-event-deliveries/process-all`
+  - server startup now launches the worker:
+    - `/Users/ameer/bizing/code/apps/api/src/server.ts`
+- Strict runtime assurance now fail-fast in strict modes:
+  - new assurance mode utility:
+    - `/Users/ameer/bizing/code/apps/api/src/lib/runtime-assurance.ts`
+  - strict startup checks require `auth_access_events`
+  - strict agent-governance checks no longer degrade when observability table is missing
+  - files:
+    - `/Users/ameer/bizing/code/apps/api/src/server.ts`
+    - `/Users/ameer/bizing/code/apps/api/src/routes/mcp.ts`
+- Deterministic saga gating is now explicit:
+  - exploratory UC/persona step evaluation remains advisory evidence only
+  - missing deterministic contracts are reported as `blocked` with
+    `MISSING_DETERMINISTIC_EXECUTOR_CONTRACT`
+  - file:
+    - `/Users/ameer/bizing/code/apps/api/src/scripts/rerun-sagas.ts`
+
+### Canonical CUD migration batch: queue + access-transfer domains
+
+- Added reusable route-to-action bridge:
+  - `/Users/ameer/bizing/code/apps/api/src/services/action-route-bridge.ts`
+  - purpose: keep existing route ACL semantics while forcing route C/U/D
+    through canonical `crud.*` action execution for traceability/idempotency.
+- Migrated queue counter domain writes to canonical action execution:
+  - `/Users/ameer/bizing/code/apps/api/src/routes/queue-counters.ts`
+  - removed direct `db.insert/update/delete` in this route family.
+- Migrated access transfer/resale domain writes to canonical action execution:
+  - `/Users/ameer/bizing/code/apps/api/src/routes/access-transfers.ts`
+  - transfer side-effects (artifact updates + artifact events) now also flow
+    through canonical `crud.*` writes.
+- Migrated most seating domain writes to canonical action execution:
+  - `/Users/ameer/bizing/code/apps/api/src/routes/seating.ts`
+  - single-row seat-map/seat/hold/reservation writes now use the route bridge.
+  - intentional direct-write exception kept for bulk hold expiry endpoint
+    (`.../holds/expire`) because it is a set-based transition.
+- Validation:
+  - `bun run --cwd /Users/ameer/bizing/code/apps/api build` passes.
+
+### Route-class matrix + CUD DSL + OODA-native saga surface
+
+- Added a canonical route-class auth matrix:
+  - `public`
+  - `session_only`
+  - `machine_allowed`
+  - `internal_only`
+- Implemented matrix enforcement in auth middleware so machine/session posture
+  is checked centrally by route class instead of route-by-route drift.
+  - files:
+    - `/Users/ameer/bizing/code/apps/api/src/middleware/route-class-matrix.ts`
+    - `/Users/ameer/bizing/code/apps/api/src/middleware/auth.ts`
+- Added generic CRUD action adapter DSL in canonical action runtime:
+  - action keys starting with `crud.` are now supported
+  - payload allows `tableKey` + `operation` + `data/patch/id`
+  - emits canonical action/event/debug artifacts like other action adapters
+  - file:
+    - `/Users/ameer/bizing/code/apps/api/src/services/action-runtime.ts`
+- Added OODA-native saga API surface by mounting saga routes under:
+  - `/api/v1/ooda/sagas/*`
+  - file:
+    - `/Users/ameer/bizing/code/apps/api/src/routes/core-api.ts`
+- Added docs automation scaffold for per-domain source-of-truth maps:
+  - generator script: `/Users/ameer/bizing/code/scripts/generate-domain-docs.mjs`
+  - commands:
+    - `bun run docs:generate:domains`
+    - `bun run docs:check:domains`
+  - generated output root:
+    - `/Users/ameer/bizing/code/docs/domains`
+- Strengthened fresh-bootstrap reliability checks:
+  - added DB bootstrap verifier script:
+    - `/Users/ameer/bizing/code/packages/db/scripts/verify-bootstrap.ts`
+  - `db:push` / `db:migrate` now run:
+    - schema push
+    - canonical index repair
+    - bootstrap verification
+  - package script updates in:
+    - `/Users/ameer/bizing/code/packages/db/package.json`
+
+### Canonical hard-cut consolidation: memberships/events/ACL/actions/saga-spec/auth defaults
+
+- Removed duplicate membership schema module:
+  - deleted `/Users/ameer/bizing/code/packages/db/src/schema/memberships.ts`
+  - canonical biz membership model is now Better Auth `members` + ACL mappings.
+  - updated exports/config references in:
+    - `/Users/ameer/bizing/code/packages/db/src/index.ts`
+    - `/Users/ameer/bizing/code/packages/db/drizzle.config.ts`
+    - `/Users/ameer/bizing/code/packages/db/src/schema/users.ts`
+- Unified event storage to one canonical rail:
+  - removed duplicate `event_subscriptions` / `event_deliveries` from
+    `/Users/ameer/bizing/code/packages/db/src/schema/domain_events.ts`
+  - removed duplicate `lifecycle_events` table from
+    `/Users/ameer/bizing/code/packages/db/src/schema/extensions.ts`
+  - lifecycle subscriptions/deliveries now reference canonical `domain_events`.
+  - updated dependent FKs:
+    - `/Users/ameer/bizing/code/packages/db/src/schema/communications.ts`
+    - `/Users/ameer/bizing/code/packages/db/src/schema/reporting.ts`
+- Lifecycle API compatibility preserved while storage changed:
+  - `/api/v1/bizes/:bizId/lifecycle-events*` now reads/writes `domain_events`
+    and returns legacy response aliases (`eventName`, `entityType`, `entityId`)
+    to keep saga contracts stable.
+  - write endpoints now require `events.write`.
+  - file: `/Users/ameer/bizing/code/apps/api/src/routes/lifecycle-hooks.ts`
+- Action runtime now executes under one transaction context end-to-end:
+  - added async-local transaction-scoped DB proxy so action adapters and helper
+    writes share the same transaction boundary.
+  - file: `/Users/ameer/bizing/code/apps/api/src/services/action-runtime.ts`
+- ACL runtime is now strict and cohesive:
+  - removed legacy fallback evaluation path.
+  - ACL bootstrap errors are now surfaced instead of silently swallowed.
+  - file: `/Users/ameer/bizing/code/apps/api/src/services/acl.ts`
+- Saga spec contract is now v1-only:
+  - removed `saga.v0` parsing/normalization path.
+  - OODash default draft definition template now emits `saga.v1`.
+  - files:
+    - `/Users/ameer/bizing/code/apps/api/src/sagas/spec-schema.ts`
+    - `/Users/ameer/bizing/code/apps/admin/src/lib/ooda-api.ts`
+- API key auth acceptance widened by default:
+  - `requireAuth` and `optionalAuth` now accept direct API keys by default.
+  - API credential creation defaults to `allowDirectApiKeyAuth: true`.
+  - files:
+    - `/Users/ameer/bizing/code/apps/api/src/middleware/auth.ts`
+    - `/Users/ameer/bizing/code/apps/api/src/services/machine-auth.ts`
+- Validation:
+  - `bun run --cwd apps/api build` passes
+  - `bun run --cwd apps/admin build` passes
+  - `bun run --cwd packages/db build` passes
+  - corrected stale module mapping in
+    `/Users/ameer/bizing/code/packages/db/SCHEMA_BIBLE.md` so docs reflect
+    the canonical post-hard-cut schema file topology.
+
+### Renamed saga explorer route surface to `/ooda` and `OODash` (hard cut)
+
+- Canonical admin explorer route is now `/ooda` (and `/ooda/*`).
+- Removed `/sagas/*` UI routes entirely in v0 (no compatibility redirect layer).
+- Explorer shell naming updated in UI copy from "OODA Dashboard" to `OODash`.
+- Fixed import drift in explorer components after route-surface rename:
+  - `/Users/ameer/bizing/code/apps/admin/src/components/sagas/explorer/loop-detail-page.tsx`
+  - `/Users/ameer/bizing/code/apps/admin/src/components/sagas/explorer/common.tsx`
+- Removed legacy route files under:
+  - `/Users/ameer/bizing/code/apps/admin/src/app/sagas/*`
+- Validation:
+  - `bun run --cwd apps/admin build` passes
+  - `bun run --cwd apps/api build` passes
+
+### Added internal QA Lab UI for endpoint + UC proving
+
+- Added a new operator-focused page at `/sagas/lab`:
+  - route: `/Users/ameer/bizing/code/apps/admin/src/app/sagas/lab/page.tsx`
+  - screen component: `/Users/ameer/bizing/code/apps/admin/src/components/sagas/explorer/lab-page.tsx`
+- QA Lab capabilities:
+  - authenticated endpoint workbench (manual method/path/headers/body + rich response view)
+  - deterministic smoke pack for high-signal baseline checks (`auth`, `sagas`, `ooda`, `agents`)
+  - UC runner panel that launches saga definitions (`createRun` + `executeRun`) and links directly to run evidence pages
+- Wired explorer navigation + dashboard entry points:
+  - added `QA Lab` to saga sidebar in `/Users/ameer/bizing/code/apps/admin/src/components/sagas/explorer/sagas-shell.tsx`
+  - added dashboard quick action button in `/Users/ameer/bizing/code/apps/admin/src/components/sagas/explorer/dashboard-page.tsx`
+- Validation:
+  - `bun run --cwd apps/admin build` passes, including type checks and static page generation.
+
+### Added Operations Studio for full lifecycle endpoint simulation
+
+- Added new route-based operator UI:
+  - route: `/Users/ameer/bizing/code/apps/admin/src/app/sagas/studio/page.tsx`
+  - screen: `/Users/ameer/bizing/code/apps/admin/src/components/sagas/explorer/ops-studio-page.tsx`
+  - client API layer: `/Users/ameer/bizing/code/apps/admin/src/lib/studio-api.ts`
+- Studio capabilities are lifecycle-focused (not generic endpoint exploration):
+  - actor creation + impersonation token switching
+  - biz setup (biz, locations, resources)
+  - catalog setup (service groups/services/offers/offer versions/products/service products)
+  - calendar setup (calendars, bindings, timeline)
+  - customer flow (public offer availability, booking, advanced payment)
+  - comms + payments visibility (outbound sms/email + payment intent details)
+- Added secure platform-admin impersonation helpers in API:
+  - `GET /api/v1/auth/impersonation/users`
+  - `POST /api/v1/auth/impersonation/users`
+  - `POST /api/v1/auth/impersonation/tokens`
+  - implemented in `/Users/ameer/bizing/code/apps/api/src/routes/auth-machine.ts`
+- Explorer navigation updates:
+  - new sidebar item: `Operations Studio`
+  - dashboard quick-link to `/sagas/studio`
+- Validation:
+  - `bun run --cwd apps/api build` passes
+  - `bun run --cwd apps/admin build` passes
+
+### Expanded Operations Studio into multi-domain endpoint exerciser
+
+- Extended `/sagas/studio` beyond setup/catalog/booking to include first-class
+  operational tabs that execute real API flows:
+  - `Queues + Workflows + Dispatch`
+  - `Memberships + Entitlements`
+  - `CRM`
+  - `Channels`
+  - `Compliance`
+- Added client wrappers in `/Users/ameer/bizing/code/apps/admin/src/lib/studio-api.ts`
+  for these route families:
+  - queues
+  - workflows/review queues
+  - dispatch
+  - entitlements/memberships
+  - CRM
+  - channel integrations
+  - compliance controls/gates
+- Extended `/Users/ameer/bizing/code/apps/admin/src/components/sagas/explorer/ops-studio-page.tsx`
+  with create/list/test handlers + payload viewers so operators can validate
+  real lifecycle contracts without dropping into raw endpoint workbench mode.
+- Validation:
+  - `bun run --cwd apps/api build` passes
+  - `bun run --cwd apps/admin build` passes
+
+### Added one-click scenario macros in Operations Studio
+
+- Added a new macro runner panel at the top of `/sagas/studio` with:
+  - `Run full service lifecycle`
+  - `Run ops control tower`
+  - `Run revenue + growth stack`
+  - `Run full suite`
+- Macros execute real endpoint chains and now leave the Studio preloaded with
+  refreshed evidence (bookings, payments/messages, queues/workflows, dispatch,
+  memberships/entitlements, CRM, channels, compliance).
+
+### Upgraded Operations Studio with sandbox isolation, API tracing, and visual calendar lensing
+
+- Added sandbox-loop workflow to `/sagas/studio`:
+  - create new sandbox loop contexts directly in the UI
+  - seed users per sandbox
+  - keep actor/entity visibility scoped to active sandbox via local registry
+  - persist selected biz per sandbox for quick context switching
+- Added context navigator panel:
+  - list and switch sandbox-scoped bizes, locations, resources, services, and offers
+  - one-click selection now updates dependent forms and booking/calendar controls
+- Added API request inspector:
+  - captures method/path/status/duration for every studio API call
+  - renders exact endpoint URL, request JSON, and response JSON
+  - implemented through shared trace listener in
+    `/Users/ameer/bizing/code/apps/admin/src/lib/studio-api.ts`
+- Added visual calendar rendering:
+  - timeline lens controls (`all`, `location`, `resource`, `service`, `offer`)
+  - rendered booking/hold event stream with status + references
+  - retained raw timeline JSON panel for deep inspection
+- Form UX improvement:
+  - key setup forms now use visible field titles with inline explainer tooltips
+    instead of placeholder-only inputs
+- Validation:
+  - `bun run --cwd apps/admin build` passes
+  - `bun run --cwd apps/api build` passes
+- Added step-by-step macro execution logs in UI so operators can see exactly
+  which lifecycle steps completed and where failures occurred.
+- Validation:
+  - `bun run --cwd apps/api build` passes
+  - `bun run --cwd apps/admin build` passes
+
 ## 2026-03-01
 
 ### Saga generation upgraded to higher-fidelity lifecycle simulation
@@ -132,17 +434,17 @@ Concise, high-signal notes for meaningful architecture or behavior changes.
 ### Saga runtime hard-cut to `saga.v1` simulation model
 
 - Upgraded canonical saga spec contract to `saga.v1` in:
-  - `/Users/ameer/projects/bizing/apps/api/src/sagas/spec-schema.ts`
-  - `/Users/ameer/projects/bizing/testing/sagas/SAGA_SPEC.md`
+  - `/Users/ameer/bizing/code/apps/api/src/sagas/spec-schema.ts`
+  - `/Users/ameer/bizing/code/testing/sagas/SAGA_SPEC.md`
 - Added first-class simulation config to spec:
   - `simulation.clock` (virtual/realtime, timezone, autoAdvance)
   - `simulation.scheduler` (deterministic/realtime, poll/timeout/tick defaults)
 - Migrated file-based saga specs to `saga.v1` with simulation defaults:
-  - `/Users/ameer/projects/bizing/testing/sagas/specs/*.json`
+  - `/Users/ameer/bizing/code/testing/sagas/specs/*.json`
 - Added DB-native simulation primitives:
   - `saga_run_simulation_clocks`
   - `saga_run_scheduler_jobs`
-  - plus new enums in `/Users/ameer/projects/bizing/packages/db/src/schema/enums.ts`
+  - plus new enums in `/Users/ameer/bizing/code/packages/db/src/schema/enums.ts`
 - Saga run creation now seeds normalized simulation context and a run clock row.
 - Saga run detail/test-mode responses now include:
   - `simulationClock`
@@ -154,43 +456,43 @@ Concise, high-signal notes for meaningful architecture or behavior changes.
   - `POST /api/v1/sagas/runs/:runId/scheduler/jobs`
   - `PATCH /api/v1/sagas/runs/:runId/scheduler/jobs/:jobId`
 - Added matching agent/code-mode tools for the new saga simulation APIs in:
-  - `/Users/ameer/projects/bizing/apps/api/src/code-mode/tools.ts`
+  - `/Users/ameer/bizing/code/apps/api/src/code-mode/tools.ts`
 - Reworked runner delay semantics in:
-  - `/Users/ameer/projects/bizing/apps/api/src/scripts/rerun-sagas.ts`
+  - `/Users/ameer/bizing/code/apps/api/src/scripts/rerun-sagas.ts`
   - fixed/condition delays now use virtual clock + scheduler jobs instead of wall-clock sleeps.
 
 ### OODA dashboard backbone added (schema + API + admin explorer)
 
 - Added a new canonical schema module:
-  - `/Users/ameer/projects/bizing/packages/db/src/schema/ooda.ts`
+  - `/Users/ameer/bizing/code/packages/db/src/schema/ooda.ts`
   - `ooda_loops`
   - `ooda_loop_links`
   - `ooda_loop_entries`
   - `ooda_loop_actions`
 - Wired OODA schema into DB package exports and drizzle schema config:
-  - `/Users/ameer/projects/bizing/packages/db/src/index.ts`
-  - `/Users/ameer/projects/bizing/packages/db/drizzle.config.ts`
+  - `/Users/ameer/bizing/code/packages/db/src/index.ts`
+  - `/Users/ameer/bizing/code/packages/db/drizzle.config.ts`
 - Added OODA API routes:
-  - `/Users/ameer/projects/bizing/apps/api/src/routes/ooda.ts`
-  - mounted through `/Users/ameer/projects/bizing/apps/api/src/routes/core-api.ts`
+  - `/Users/ameer/bizing/code/apps/api/src/routes/ooda.ts`
+  - mounted through `/Users/ameer/bizing/code/apps/api/src/routes/core-api.ts`
 - OODA mutations now emit live refresh events over the shared
   `/api/v1/ws/sagas` websocket transport, so loop list/detail pages update in
   near realtime across clients.
 - Added OODA-aware admin client and realtime helper:
-  - `/Users/ameer/projects/bizing/apps/admin/src/lib/ooda-api.ts`
-  - `/Users/ameer/projects/bizing/apps/admin/src/lib/use-saga-realtime.ts`
+  - `/Users/ameer/bizing/code/apps/admin/src/lib/ooda-api.ts`
+  - `/Users/ameer/bizing/code/apps/admin/src/lib/use-saga-realtime.ts`
 - Added route-based OODA explorer pages:
-  - `/Users/ameer/projects/bizing/apps/admin/src/app/sagas/loops/page.tsx`
-  - `/Users/ameer/projects/bizing/apps/admin/src/app/sagas/loops/[loopId]/page.tsx`
-  - `/Users/ameer/projects/bizing/apps/admin/src/components/sagas/explorer/loops-page.tsx`
-  - `/Users/ameer/projects/bizing/apps/admin/src/components/sagas/explorer/loop-detail-page.tsx`
+  - `/Users/ameer/bizing/code/apps/admin/src/app/sagas/loops/page.tsx`
+  - `/Users/ameer/bizing/code/apps/admin/src/app/sagas/loops/[loopId]/page.tsx`
+  - `/Users/ameer/bizing/code/apps/admin/src/components/sagas/explorer/loops-page.tsx`
+  - `/Users/ameer/bizing/code/apps/admin/src/components/sagas/explorer/loop-detail-page.tsx`
 - Added `/ooda` route alias to the saga explorer shell:
-  - `/Users/ameer/projects/bizing/apps/admin/src/app/ooda/page.tsx`
-  - `/Users/ameer/projects/bizing/apps/admin/src/app/ooda/[...slug]/page.tsx`
+  - `/Users/ameer/bizing/code/apps/admin/src/app/ooda/page.tsx`
+  - `/Users/ameer/bizing/code/apps/admin/src/app/ooda/[...slug]/page.tsx`
 - Added create flows to list pages so use-cases/personas/definitions are
   crudable directly from the dashboard surface.
 - Visual QA pass captured and reviewed screenshots under:
-  - `/Users/ameer/projects/bizing/.tmp/ooda-screens/`
+  - `/Users/ameer/bizing/code/.tmp/ooda-screens/`
 
 ### Saga library CRUD completed in detail pages
 
@@ -199,10 +501,10 @@ Concise, high-signal notes for meaningful architecture or behavior changes.
   - personas (`/sagas/personas/:personaKey`): edit definition, create new version, archive/delete
   - saga definitions (`/sagas/definitions/:sagaKey`): inspect JSON spec, edit/save spec, create explicit revision, archive/delete
 - Extended admin client API methods in:
-  - `/Users/ameer/projects/bizing/apps/admin/src/lib/sagas-api.ts`
+  - `/Users/ameer/bizing/code/apps/admin/src/lib/sagas-api.ts`
 - Added scrollable editor dialogs for long markdown/json content so editing remains usable on large specs.
 - Visual validation screenshots for new CRUD dialogs were captured under:
-  - `/Users/ameer/projects/bizing/.tmp/ooda-screens/`
+  - `/Users/ameer/bizing/code/.tmp/ooda-screens/`
 
 ### Saga batch hardening: batch 1 green, batch 2 validator cluster tightened
 
@@ -224,7 +526,7 @@ Concise, high-signal notes for meaningful architecture or behavior changes.
   - personas
   - saga definitions
   - saga runs
-- Added shared admin client data helpers in `/Users/ameer/projects/bizing/apps/admin/src/lib/sagas-api.ts` for saga detail pages, including revision reads, artifact content reads, and run creation.
+- Added shared admin client data helpers in `/Users/ameer/bizing/code/apps/admin/src/lib/sagas-api.ts` for saga detail pages, including revision reads, artifact content reads, and run creation.
 - Added detail flows so each entity page can open its connected objects directly:
   - use case -> linked definitions -> connected runs
   - persona -> linked definitions -> connected runs
@@ -266,7 +568,7 @@ Concise, high-signal notes for meaningful architecture or behavior changes.
 
 ### Canonical action API expanded into real event-backed runtime
 
-- Extended `/Users/ameer/projects/bizing/apps/api/src/services/action-runtime.ts` with new first-class actions:
+- Extended `/Users/ameer/bizing/code/apps/api/src/services/action-runtime.ts` with new first-class actions:
   - `service_product.publish`
   - `member.offboard`
   - `calendar.block`
@@ -283,7 +585,7 @@ Concise, high-signal notes for meaningful architecture or behavior changes.
 
 ### Saga runtime moved closer to the canonical write path
 
-- `/Users/ameer/projects/bizing/apps/api/src/scripts/rerun-sagas.ts` now uses the actions API for:
+- `/Users/ameer/bizing/code/apps/api/src/scripts/rerun-sagas.ts` now uses the actions API for:
   - offer publishing
   - public booking creation
   - member offboarding validation
@@ -291,13 +593,13 @@ Concise, high-signal notes for meaningful architecture or behavior changes.
 
 ### Shared booking lifecycle side effects extracted
 
-- Added `/Users/ameer/projects/bizing/apps/api/src/services/booking-lifecycle-messages.ts`
+- Added `/Users/ameer/bizing/code/apps/api/src/services/booking-lifecycle-messages.ts`
 - Direct booking routes and action-backed booking execution now share the same message persistence logic.
 - This keeps confirmation/cancellation proof artifacts consistent across both paths.
 
 ### Route and ACL cleanup
 
-- Removed the duplicated `/bizes/:bizId/members/:memberId/offboard` definition from `/Users/ameer/projects/bizing/apps/api/src/routes/authz.ts`
+- Removed the duplicated `/bizes/:bizId/members/:memberId/offboard` definition from `/Users/ameer/bizing/code/apps/api/src/routes/authz.ts`
 - Added `events.read` ACL seed and role defaults for manager/staff/host.
 - Added agent tools for:
   - public action execution
@@ -684,7 +986,7 @@ Validation:
   - Updated `packages/db` bootstrap scripts so `db:push` and the current v0 `db:migrate` path both apply the schema then repair canonical indexes.
   - Removed the misleading broken `packages/db/scripts/migrate.ts` path.
   - Rebuilt the local DB from zero, re-synced the saga library/coverage, and re-ran the first 20 sagas cleanly: `20/20 passed`.
-- 2026-03-01: Added saga blocker collection mode in `/Users/ameer/projects/bizing/apps/api/src/scripts/rerun-sagas.ts` plus `bun run --cwd /Users/ameer/projects/bizing/apps/api sagas:collect`. It writes grouped blocker reports under `/Users/ameer/projects/bizing/apps/api/.tmp/saga-reports/` so batch validation can be fixed by domain cluster instead of one saga at a time.
+- 2026-03-01: Added saga blocker collection mode in `/Users/ameer/bizing/code/apps/api/src/scripts/rerun-sagas.ts` plus `bun run --cwd /Users/ameer/bizing/code/apps/api sagas:collect`. It writes grouped blocker reports under `/Users/ameer/bizing/code/apps/api/.tmp/saga-reports/` so batch validation can be fixed by domain cluster instead of one saga at a time.
 - 2026-03-01: Added new API route modules and mounted them in core API:
   - `gift-delivery` (gift instruments, delivery schedules, delivery attempts)
   - `marketing-performance` (audience segments/memberships/sync runs, spend facts, offline conversion pushes, marketing overview)
@@ -712,10 +1014,10 @@ Validation:
 
 - Fixed a real run-start gap where dashboard flows created saga runs but did not consistently execute them, leaving runs indefinitely in `pending` (`started_at = null`, all steps pending).
 - Updated run-start UX flows to call execute immediately after create:
-  - `/Users/ameer/projects/bizing/apps/admin/src/components/sagas/explorer/definition-detail-page.tsx`
-  - `/Users/ameer/projects/bizing/apps/admin/src/components/sagas/explorer/loop-detail-page.tsx`
+  - `/Users/ameer/bizing/code/apps/admin/src/components/sagas/explorer/definition-detail-page.tsx`
+  - `/Users/ameer/bizing/code/apps/admin/src/components/sagas/explorer/loop-detail-page.tsx`
 - Added explicit execution control + guarded auto-execution fallback on run detail:
-  - `/Users/ameer/projects/bizing/apps/admin/src/components/sagas/explorer/run-detail-page.tsx`
+  - `/Users/ameer/bizing/code/apps/admin/src/components/sagas/explorer/run-detail-page.tsx`
 - Updated API docs to clarify saga run lifecycle:
   - create endpoint creates `pending`
   - execute endpoint starts deterministic runner
@@ -725,17 +1027,17 @@ Validation:
 
 - Fixed visual refresh/flicker while sagas are running by switching websocket-triggered reloads to background refresh mode (no loading skeleton reset).
 - Added in-flight guards and debounced realtime reload behavior on explorer pages:
-  - `/Users/ameer/projects/bizing/apps/admin/src/components/sagas/explorer/dashboard-page.tsx`
-  - `/Users/ameer/projects/bizing/apps/admin/src/components/sagas/explorer/runs-page.tsx`
-  - `/Users/ameer/projects/bizing/apps/admin/src/components/sagas/explorer/loops-page.tsx`
-  - `/Users/ameer/projects/bizing/apps/admin/src/components/sagas/explorer/loop-detail-page.tsx`
-  - `/Users/ameer/projects/bizing/apps/admin/src/components/sagas/explorer/run-detail-page.tsx`
+  - `/Users/ameer/bizing/code/apps/admin/src/components/sagas/explorer/dashboard-page.tsx`
+  - `/Users/ameer/bizing/code/apps/admin/src/components/sagas/explorer/runs-page.tsx`
+  - `/Users/ameer/bizing/code/apps/admin/src/components/sagas/explorer/loops-page.tsx`
+  - `/Users/ameer/bizing/code/apps/admin/src/components/sagas/explorer/loop-detail-page.tsx`
+  - `/Users/ameer/bizing/code/apps/admin/src/components/sagas/explorer/run-detail-page.tsx`
 - Result: realtime data still updates, but the UI remains stable while steps/events stream in.
 
 ## OODash loop cockpit redesign (intuitive + debuggable)
 
 - Reworked `/sagas/loops/:loopId` into an operator-first cockpit instead of a raw log view.
-- New interaction model in `/Users/ameer/projects/bizing/apps/admin/src/components/sagas/explorer/loop-detail-page.tsx`:
+- New interaction model in `/Users/ameer/bizing/code/apps/admin/src/components/sagas/explorer/loop-detail-page.tsx`:
   - **Current state panel** with phase/priority/health/open+blocked entry counts and linked-run pass rate.
   - **Execution control panel** for starting saga runs directly from loop context.
   - **Scope map** with resolved labels and direct navigation for linked use cases/personas/definitions/runs.
@@ -748,7 +1050,7 @@ Validation:
 
 ## Saga runner reliability hardening (2026-03-01)
 
-- Hardened `/Users/ameer/projects/bizing/apps/api/src/scripts/rerun-sagas.ts` for large-batch stability:
+- Hardened `/Users/ameer/bizing/code/apps/api/src/scripts/rerun-sagas.ts` for large-batch stability:
   - default `SAGA_CONCURRENCY` lowered from `8` to `4`
   - default `SAGA_HTTP_TIMEOUT_MS` increased from `15000` to `45000`
   - new retry knobs:
@@ -762,7 +1064,7 @@ Validation:
 
 ## New comprehensive saga.v1 specs (2026-03-01)
 
-- Added three new high-coverage saga definitions under `/Users/ameer/projects/bizing/code/testing/sagas/specs`:
+- Added three new high-coverage saga definitions under `/Users/ameer/bizing/code/code/testing/sagas/specs`:
   - `uc-280-the-omnichannel-comms-orchestrator-lisa.json`
   - `uc-281-the-event-workflow-control-tower-marcus.json`
   - `uc-282-the-substitute-dispatch-automation-jake.json`
@@ -783,25 +1085,74 @@ Validation:
   - `uc-280-the-omnichannel-comms-orchestrator-lisa`
   - `uc-281-the-event-workflow-control-tower-marcus`
   - `uc-282-the-substitute-dispatch-automation-jake`
-- Removed all older JSON specs from `/Users/ameer/projects/bizing/code/testing/sagas/specs`.
+- Removed all older JSON specs from `/Users/ameer/bizing/code/code/testing/sagas/specs`.
 - Deleted all filesystem run artifacts:
-  - `/Users/ameer/projects/bizing/code/testing/sagas/runs/*`
-  - `/Users/ameer/projects/bizing/code/testing/sagas/reports/*`
+  - `/Users/ameer/bizing/code/code/testing/sagas/runs/*`
+  - `/Users/ameer/bizing/code/code/testing/sagas/reports/*`
 - Purged DB run-state and run-derived coverage rows; detached OODA FK references to preserve loop journals.
 - Pruned DB saga definitions/revisions to match the new 3-key corpus.
 - Post-cut validation:
-  - `bun run --cwd /Users/ameer/projects/bizing/apps/api sagas:rerun`
+  - `bun run --cwd /Users/ameer/bizing/code/apps/api sagas:rerun`
   - result: `3/3 passed`.
 
 ## Saga corpus restoration on v1 standard (2026-03-01)
 
 - Restored the legacy saga definition corpus after the hard-cut reset.
 - Ran generator from canonical docs with sync:
-  - `bun run --cwd /Users/ameer/projects/bizing/apps/api sagas:generate -- --sync=true`
+  - `bun run --cwd /Users/ameer/bizing/code/apps/api sagas:generate -- --sync=true`
 - Outcome:
   - regenerated `279` UC-derived saga specs from docs
   - retained the new comprehensive specs (`uc-280`, `uc-281`, `uc-282`)
   - total spec files: `282`
   - DB definitions synced: `282`
   - all specs verified on `schemaVersion = saga.v1`
-  - run-state remains clean (`saga_runs = 0`).
+- run-state remains clean (`saga_runs = 0`).
+
+## Canonical route-write migration batch (2026-03-02)
+
+- Expanded route-level canonical action delegation (`crud.*` bridge) across additional high-write families:
+  - `/Users/ameer/bizing/code/apps/api/src/routes/biz-configs.ts`
+  - `/Users/ameer/bizing/code/apps/api/src/routes/commitments.ts`
+  - `/Users/ameer/bizing/code/apps/api/src/routes/supply.ts`
+  - `/Users/ameer/bizing/code/apps/api/src/routes/receivables.ts`
+  - `/Users/ameer/bizing/code/apps/api/src/routes/crm.ts`
+  - `/Users/ameer/bizing/code/apps/api/src/routes/hipaa.ts`
+  - `/Users/ameer/bizing/code/apps/api/src/routes/education.ts`
+- Preserved path-level behavior constraints where needed (for example route-scoped parent checks on commitment child patch routes).
+- Updated canonical API docs to reflect newly delegated route families.
+- Validation:
+  - `bun run --cwd /Users/ameer/bizing/code/apps/api build`
+  - `bun run docs:check:domains`
+- Direct route SQL write inventory moved from `276` to `201` in this batch window.
+
+## Saga batch hardening pass (2026-03-02)
+
+- Completed full 20-batch saga sweep in fast/collect mode and cleared blocker clusters to zero (`284` definitions, final failed count `0`).
+- Hardened canonical action runtime for mixed-domain payloads and table shapes:
+  - broadened temporal coercion support for non-uniform key suffixes and date-only strings.
+  - fixed nullable-biz update/delete predicates to avoid false `CRUD_TARGET_NOT_FOUND` failures on global/shared tables.
+- Added compatibility mirroring for legacy lifecycle-event FK drift:
+  - lifecycle delivery/subscription paths now mirror `domain_events` into legacy `lifecycle_events` rows when needed, preventing FK breakage in mixed-state local DBs.
+- Fixed public checkout recovery actor integrity:
+  - public recovery consume now uses a real system actor row, avoiding action request FK failures.
+- Hardened deterministic customer library rebuild behavior:
+  - replaced soft-delete recreation path with deterministic hard-delete + recreate for owner/projection keys and consistently filtered reads to non-deleted rows.
+- Targeted reruns for previously failing keys (`uc-151`, `uc-201`, `uc-202`, `uc-209`, `uc-212`, `uc-216`, `uc-221`, `uc-222`, `uc-236`, `uc-238`, `uc-25`, `uc-281`, `uc-59`) are now green.
+- Final fast-mode verification rerun after fixes:
+  - `SAGA_FAST_MODE=1 SAGA_COLLECT_MODE=1 SAGA_STRICT_EXIT=0 SAGA_STRICT_EXPLORATORY=0 bun run --cwd /Users/ameer/bizing/code/apps/api sagas:rerun`
+  - result: `284/284 passed`, `0 failed`.
+
+## Saga collector/reporting + customer library reliability fix (2026-03-02)
+
+- `sagas:collect` report freshness fix:
+  - `/Users/ameer/bizing/code/apps/api/src/scripts/rerun-sagas.ts` now writes blocker reports in collect mode even when failed runs = 0.
+  - report payload now always includes run summary totals (`totalDefinitions`, `processed`, `passed`, `failed`, `durationMs`) so downstream dashboards/tools can rely on one canonical shape.
+- Fixed customer library query aliasing failure under strict saga reruns:
+  - `/Users/ameer/bizing/code/apps/api/src/routes/customer-library.ts`
+  - root cause: table-qualified raw SQL reference for `deleted_at` did not survive generated alias contexts in some query plans.
+  - fix: use alias-safe unqualified `deleted_at IS NULL` SQL fragment reused across owner/library reads and rebuild verification paths.
+- Validation:
+  - targeted failed keys rerun green:
+    - `uc-201`, `uc-209`, `uc-222`, `uc-275`, `uc-54`, `uc-9`
+  - full strict collect rerun:
+    - `284/284 passed`, `0 failed`

@@ -76,6 +76,17 @@ tables". It is being treated as an operating system for selling and managing:
   - loop-entry rows keep primary owner in evidence:
     - `evidence.owningLayer` paired with `gap_type` by API contract validation
 
+### Canonical Consolidation Updates (Current)
+
+- Membership identity is now unified on Better Auth `members` (biz membership)
+  plus ACL mappings. The legacy parallel `org_memberships` schema module was removed.
+- Event storage is unified on `domain_events`. Lifecycle hook APIs/tables still
+  exist for subscription/delivery orchestration, but they reference the same
+  canonical event rows instead of a second event table.
+- Canonical event writes are single-rail only:
+  - no mirror-write path back into legacy lifecycle event tables
+  - domain event rows are the source of truth for hooks, reporting, and replay
+
 ### Canonical Consolidation Guardrail
 
 The schema no longer keeps separate parallel families for:
@@ -238,8 +249,8 @@ This keeps the schema robust and explainable without turning every lookup table 
 ## Bootstrap Integrity
 
 The current v0 local bootstrap path is:
-- `bun run --cwd /Users/ameer/projects/bizing/packages/db db:push`
-- `bun run --cwd /Users/ameer/projects/bizing/packages/db db:seed`
+- `bun run --cwd /Users/ameer/bizing/code/packages/db db:push`
+- `bun run --cwd /Users/ameer/bizing/code/packages/db db:seed`
 
 Why this matters:
 - the canonical schema uses partial unique indexes for "only one active/default row under these conditions" rules.

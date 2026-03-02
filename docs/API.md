@@ -46,6 +46,31 @@ Machine auth inputs accepted by protected API routes:
 - `x-api-key: <raw-api-key>` or `Authorization: ApiKey <raw-api-key>`
 - `Authorization: Bearer <raw-api-key>` is also interpreted as API key for UX compatibility.
 
+Auth guard policy:
+- `requireAuth` accepts session, bearer access token, and direct API key by default.
+- `requireSessionAuth` remains the strict human-only guard for interactive security-sensitive flows.
+
+Route-class matrix (canonical auth posture):
+- `public`: no auth required (for example `/api/v1/public/*`, `/api/auth/*`)
+- `session_only`: interactive browser session required
+- `machine_allowed`: session or machine auth allowed
+- `internal_only`: platform-admin interactive session only
+- unmatched routes default to `internal_only` (fail-closed posture)
+
+Implementation:
+- `/Users/ameer/bizing/code/apps/api/src/middleware/route-class-matrix.ts`
+- `/Users/ameer/bizing/code/apps/api/src/middleware/auth.ts`
+
+Platform-admin operator testing helpers:
+- `GET /api/v1/auth/impersonation/users`
+- `POST /api/v1/auth/impersonation/users`
+- `POST /api/v1/auth/impersonation/tokens`
+
+ELI5:
+- these let one admin session mint short-lived bearer tokens for test actors
+  (owner/member/customer) so UI simulations can run side-by-side without
+  repeated sign-out/sign-in cookie switching.
+
 ### Agents API (tool execution surface)
 
 - `GET /api/v1/agents/manifest`
@@ -105,6 +130,22 @@ Current first-class action adapters:
 - `member.offboard`
 - `calendar.block`
 
+Generic CUD adapter/DSL bridge:
+- Action keys starting with `crud.` now route through a canonical generic CUD adapter.
+- This is the scaling bridge for long-tail domain CRUD migration into the action core.
+- Payload contract uses:
+  - `tableKey` (export key from `@bizing/db`)
+  - `operation` (`create` | `update` | `delete`)
+  - `data`/`patch`/`id` depending on operation
+- Generic CUD still emits canonical action execution records, events, and debug snapshots.
+- Generic CUD runtime hardening (batch reliability):
+  - temporal payload coercion now accepts both ISO timestamps and date-only values,
+    and it recognizes additional temporal key suffixes used across domains
+    (`*Until`, `*Since`, `*Start`, `*End`, `*On`, `*Source`).
+  - `bizId` filtering on update/delete now only applies when a request context has
+    a concrete biz scope; nullable-biz tables no longer fail with false
+    `CRUD_TARGET_NOT_FOUND` due to `biz_id = null` predicates.
+
 Canonical success side effects:
 - successful action execution now emits one canonical `domain_event`
 - successful action execution now writes one `action_activity` projection document
@@ -131,15 +172,18 @@ ELI5:
 
 Security model:
 - route-level ACL protects the action/projection surface itself
-- action-specific ACL is evaluated again inside the action runtime
+- explicit `/actions/*` endpoints evaluate action-specific ACL before execution
+- route-delegated writes keep their route ACL contract, then execute through the
+  canonical action runtime for traceability/idempotency/debugging
 - idempotency collisions with mismatched payloads return conflict instead of replaying unsafe writes
 - public actions do not bypass the backbone; they only use a narrower action allowlist
+- ACL no longer has a legacy role-map fallback at runtime; permissions come from seeded ACL definitions/mappings only.
 
 Implementation:
-- `/Users/ameer/projects/bizing/apps/api/src/routes/actions.ts`
-- `/Users/ameer/projects/bizing/apps/api/src/services/action-runtime.ts`
-- `/Users/ameer/projects/bizing/apps/api/src/services/booking-lifecycle-messages.ts`
-- `/Users/ameer/projects/bizing/apps/api/src/code-mode/tools.ts`
+- `/Users/ameer/bizing/code/apps/api/src/routes/actions.ts`
+- `/Users/ameer/bizing/code/apps/api/src/services/action-runtime.ts`
+- `/Users/ameer/bizing/code/apps/api/src/services/booking-lifecycle-messages.ts`
+- `/Users/ameer/bizing/code/apps/api/src/code-mode/tools.ts`
 
 ### Direct CRUD Writes That Now Flow Through Canonical Actions
 
@@ -158,28 +202,50 @@ Current delegated write route families:
 - service groups
 - services
 - service products
+- enterprise relationships / scopes / contract packs / rollouts
+- biz config sets / values / bindings / seed packs / promotions
+- commitments / secured balances / claims
+- supply operations (usage, maintenance, condition, production batches)
+- receivables (billing accounts, invoices/events, installments, autopay/autocollection)
+- CRM (pipelines/stages, contacts, leads/intake, opportunities)
+- HIPAA/PHI controls (policies, access events, reviews, BAAs, disclosures, incidents, breach notifications)
+- education/program lifecycle (programs, cohorts/sessions, enrollments, attendance, certifications)
+- queue counters / assignments / ticket calls
+- access transfer policies / transfers / resale listings
+- access artifact state/event side effects triggered by transfer/resale flows
+- seat maps / seats / holds / reservations (single-row writes)
+
+Delegation bridge implementation:
+- `/Users/ameer/bizing/code/apps/api/src/services/action-route-bridge.ts`
+
+Intentional exception (still direct SQL update):
+- seating hold-expiry bulk mutation endpoint:
+  - `POST /api/v1/bizes/:bizId/seat-maps/:seatMapId/holds/expire`
+  - reason: this endpoint applies one set-based state transition across many rows
+    in one statement, which is currently outside single-row `crud.*` adapter scope.
 
 ### Saga Lifecycle API
 
-- Specs: `/api/v1/sagas/specs/*`
+- Specs: `/api/v1/ooda/sagas/specs/*`
 - Spec contract: `testing/sagas/SAGA_SPEC.md` now canonical on `saga.v1`
   with first-class `simulation.clock` + `simulation.scheduler`.
-- Runs: `/api/v1/sagas/runs*`
-- Execute a created run: `POST /api/v1/sagas/runs/:runId/execute`
+- `saga.v0` is removed; API accepts `saga.v1` only.
+- Runs: `/api/v1/ooda/sagas/runs*`
+- Execute a created run: `POST /api/v1/ooda/sagas/runs/:runId/execute`
 - Run simulation clock:
-  - `GET /api/v1/sagas/runs/:runId/clock`
-  - `POST /api/v1/sagas/runs/:runId/clock/advance`
+  - `GET /api/v1/ooda/sagas/runs/:runId/clock`
+  - `POST /api/v1/ooda/sagas/runs/:runId/clock/advance`
 - Run scheduler jobs:
-  - `GET /api/v1/sagas/runs/:runId/scheduler/jobs`
-  - `POST /api/v1/sagas/runs/:runId/scheduler/jobs`
-  - `PATCH /api/v1/sagas/runs/:runId/scheduler/jobs/:jobId`
-- Step reporting: `/api/v1/sagas/runs/:runId/steps/:stepKey/result`
-- Artifacts: snapshots/traces/report endpoints under `/api/v1/sagas/runs/:runId/*`
-- Test-mode helpers: `/api/v1/sagas/test-mode/*`
+  - `GET /api/v1/ooda/sagas/runs/:runId/scheduler/jobs`
+  - `POST /api/v1/ooda/sagas/runs/:runId/scheduler/jobs`
+  - `PATCH /api/v1/ooda/sagas/runs/:runId/scheduler/jobs/:jobId`
+- Step reporting: `/api/v1/ooda/sagas/runs/:runId/steps/:stepKey/result`
+- Artifacts: snapshots/traces/report endpoints under `/api/v1/ooda/sagas/runs/:runId/*`
+- Test-mode helpers: `/api/v1/ooda/sagas/test-mode/*`
 - Bulk validation workflow:
-  - `bun run --cwd /Users/ameer/projects/bizing/apps/api sagas:rerun`
-  - `bun run --cwd /Users/ameer/projects/bizing/apps/api sagas:rerun:fast`
-  - `bun run --cwd /Users/ameer/projects/bizing/apps/api sagas:collect`
+  - `bun run --cwd /Users/ameer/bizing/code/apps/api sagas:rerun`
+  - `bun run --cwd /Users/ameer/bizing/code/apps/api sagas:rerun:fast`
+  - `bun run --cwd /Users/ameer/bizing/code/apps/api sagas:collect`
   - Runner defaults are tuned for stability under large batches:
     - `SAGA_CONCURRENCY=4`
     - `SAGA_HTTP_TIMEOUT_MS=45000`
@@ -199,22 +265,32 @@ Current delegated write route families:
     - `SAGA_RECOMPUTE_INTEGRITY=1|0`
   - You can still override these with env vars per run.
   - `sagas:collect` keeps running after failures, groups blockers by domain/endpoint, and writes the latest report to:
-    - `/Users/ameer/projects/bizing/apps/api/.tmp/saga-reports/blockers-latest.json`
-    - `/Users/ameer/projects/bizing/apps/api/.tmp/saga-reports/blockers-latest.md`
+    - `/Users/ameer/bizing/code/apps/api/.tmp/saga-reports/blockers-latest.json`
+    - `/Users/ameer/bizing/code/apps/api/.tmp/saga-reports/blockers-latest.md`
+  - `sagas:collect` now always refreshes those files, even when all sagas pass, so dashboard/agent consumers do not read stale blocker snapshots.
+    - latest report now includes run summary fields:
+      - `totalDefinitions`
+      - `processed`
+      - `passed`
+      - `failed`
+      - `durationMs`
   - Use `sagas:collect` to find cluster-level API gaps first, then use targeted reruns to validate the fixes.
 - Library entities:
-  - Use cases: `/api/v1/sagas/use-cases*` and `/api/v1/sagas/use-cases/:ucKey/versions`
-  - Personas: `/api/v1/sagas/personas*` and `/api/v1/sagas/personas/:personaKey/versions`
+  - Use cases: `/api/v1/ooda/sagas/use-cases*` and `/api/v1/ooda/sagas/use-cases/:ucKey/versions`
+  - Personas: `/api/v1/ooda/sagas/personas*` and `/api/v1/ooda/sagas/personas/:personaKey/versions`
 - Coverage (DB-first):
-  - Run assessments: `/api/v1/sagas/run-assessments/reports*`
-  - Schema baseline read: `/api/v1/sagas/schema-coverage/reports*`
-  - Schema baseline write: `POST /api/v1/sagas/schema-coverage/reports`
-  - Markdown import bridge: `POST /api/v1/sagas/schema-coverage/import`
+  - Run assessments: `/api/v1/ooda/sagas/run-assessments/reports*`
+  - Schema baseline read: `/api/v1/ooda/sagas/schema-coverage/reports*`
+  - Schema baseline write: `POST /api/v1/ooda/sagas/schema-coverage/reports`
+  - Markdown import bridge: `POST /api/v1/ooda/sagas/schema-coverage/import`
 
 Notes:
 - Schema coverage is now canonical in DB and powers dashboard reads directly.
 - Import endpoint is a convenience bridge from markdown into DB; it no longer requires platform-admin role.
 - Deterministic validation now prefers concrete API proofs over vague exploratory verdicts for covered flows.
+- Exploratory validation is advisory only:
+  - if a step has no deterministic executable contract, runner reports `blocked`
+  - exploratory LLM output is attached as evidence and never auto-passes a step
   Current first-class proof surfaces include:
   - public offer availability
   - outbound lifecycle messages
@@ -222,8 +298,8 @@ Notes:
   - payment intent detail + processor account routing
 
 Run lifecycle note (important):
-- `POST /api/v1/sagas/runs` creates a run in `pending` state.
-- Execution begins when `/api/v1/sagas/runs/:runId/execute` is called.
+- `POST /api/v1/ooda/sagas/runs` creates a run in `pending` state.
+- Execution begins when `/api/v1/ooda/sagas/runs/:runId/execute` is called.
 - Dashboard run-start flows now call both endpoints (`create` then `execute`) so new runs do not stay pending by accident.
 - Delay/wait behavior now runs through scheduler jobs and simulation clock
   advancement, so test flows can model time passage deterministically without
@@ -237,10 +313,43 @@ Run lifecycle note (important):
   - `demo-verify-comms-messages`
   These are useful for proving actor-message UI/API plumbing end-to-end.
 
+OODA relationship:
+- saga is an execution tool inside the OODA loop, not a separate evolution philosophy.
+- OODA APIs can launch/manage saga runs (`/api/v1/ooda/loops/:loopId/saga-runs`), and saga APIs now also mount under `/api/v1/ooda/sagas/*` for an OODA-native surface.
+
 Implementation:
 - `/Users/ameer/bizing/code/apps/api/src/routes/sagas.ts`
 - `/Users/ameer/bizing/code/testing/sagas/README.md`
 - `/Users/ameer/bizing/code/testing/sagas/docs/API_CONTRACT.md`
+
+### Lifecycle Hook API (Unified Event Rail)
+
+- Lifecycle-event APIs remain at:
+  - `GET/POST /api/v1/bizes/:bizId/lifecycle-events`
+  - `GET/POST/PATCH /api/v1/bizes/:bizId/lifecycle-event-subscriptions*`
+  - `GET/POST/PATCH /api/v1/bizes/:bizId/lifecycle-event-deliveries*`
+- Canonical storage is now one event table: `domain_events`.
+- Response payloads keep legacy lifecycle keys (`eventName`, `entityType`, `entityId`) for compatibility while writing to canonical domain-event fields.
+- Write routes use `events.write`; read routes use `events.read`.
+- Delivery worker control/visibility endpoints:
+  - `GET /api/v1/bizes/:bizId/lifecycle-event-deliveries/worker-health`
+  - `POST /api/v1/bizes/:bizId/lifecycle-event-deliveries/process`
+  - `POST /api/v1/lifecycle-event-deliveries/process-all`
+
+### Runtime Assurance Modes
+
+Runtime assurance mode is controlled by `BIZING_RUNTIME_ASSURANCE_MODE`:
+- `dev_relaxed`
+- `staging_strict`
+- `prod_strict`
+- `compliance_strict`
+
+Behavior:
+- In strict modes, required observability dependencies must exist at startup.
+- In strict modes, missing `auth_access_events` during agent-governance checks
+  is fail-fast (request fails instead of silently degrading).
+- In relaxed mode, missing optional observability tables degrade gracefully for
+  local iteration.
 
 ### OODA Loop API
 
@@ -312,24 +421,57 @@ Implementation:
 - `/Users/ameer/bizing/code/apps/api/src/routes/ooda.ts`
 
 Admin explorer UI:
-- `/sagas` now acts as a route-based explorer shell instead of one large dashboard component.
+- `/ooda` now acts as the canonical route-based explorer shell instead of one large dashboard component.
 - Primary views are:
-  - `/sagas` for current health and recent failures
-  - `/sagas/loops` and `/sagas/loops/:loopId`
-  - `/sagas/use-cases` and `/sagas/use-cases/:ucKey`
-  - `/sagas/personas` and `/sagas/personas/:personaKey`
-  - `/sagas/definitions` and `/sagas/definitions/:sagaKey`
-  - `/sagas/runs` and `/sagas/runs/:runId`
+  - `/ooda` for current health and recent failures
+  - `/ooda/studio` for full lifecycle operations simulation (owner/member/customer)
+  - `/ooda/lab` for operator-grade endpoint + UC proving
+  - `/ooda/loops` and `/ooda/loops/:loopId`
+  - `/ooda/use-cases` and `/ooda/use-cases/:ucKey`
+  - `/ooda/personas` and `/ooda/personas/:personaKey`
+  - `/ooda/definitions` and `/ooda/definitions/:sagaKey`
+  - `/ooda/runs` and `/ooda/runs/:runId`
 - The intent is simple: every loop object gets its own detail page, and links between use cases, personas, definitions, and runs stay clickable instead of being buried in one stateful screen.
+- QA Lab intent:
+  - expose a manual endpoint workbench for authenticated `/api/v1/*` calls
+  - expose a deterministic endpoint smoke pack for fast baseline checks
+  - expose a UC-run launch panel that creates + executes saga runs and links directly to evidence pages
+- Operations Studio intent:
+  - create and switch **sandbox loops** so each test scenario runs in an isolated context
+  - seed sandbox users in one click and scope actor/entity visibility to that sandbox
+  - navigate scoped bizes/locations/resources/services/offers from one context panel
+  - create/impersonate actors (owner/member/customer) via short-lived bearer tokens
+  - configure biz/location/resource/calendar/service/offer/product surfaces with real endpoints
+  - inspect exact API contract shape while testing:
+    - full URL
+    - method + path
+    - request payload
+    - response payload/error
+  - run customer booking + advanced payment flow from public surfaces
+  - inspect outbound sms/email messages and payment intent details in one lifecycle screen
+  - render calendar timelines with lens controls (all/location/resource/service/offer)
+    alongside the raw JSON payload for deeper debugging
+  - exercise queue + waitlist flows (queue create, enqueue, offer-next)
+  - exercise workflow/review flows (review queues/items + workflow runtime reads)
+  - exercise dispatch flows (routes/trips/tasks + dispatch state snapshot)
+  - exercise membership/entitlement flows (plans, memberships, wallets, grants, consume, ledger)
+  - exercise CRM flows (pipelines/stages/contacts/leads/opportunities + contact summary)
+  - exercise channel integration flows (accounts, sync states, entity links, channel insights)
+  - inspect compliance controls and booking compliance gates, and post consent events
+  - run one-click scenario macros that execute deterministic multi-step API lifecycles:
+    - full service lifecycle (owner setup -> offer publish -> customer booking -> payment evidence)
+    - ops control tower (queue/review/dispatch)
+    - revenue + growth stack (memberships/entitlements, CRM, channel sync, compliance controls)
+    - full suite (runs the above macros sequentially)
 - Use-case/persona/definition detail pages now expose full CRUD operations:
   - edit core definition fields
   - create new version rows
   - archive/delete definition rows
   - for saga definitions specifically: inspect/edit full spec JSON and create explicit revisions from the dashboard
-- `/ooda` and `/ooda/*` are aliases that redirect to the route-based explorer.
+- `/sagas` UI routes were hard-cut in v0; `/ooda` is the only explorer route family.
 - Loop pages are now presented as **missions** in UI copy:
-  - `/sagas/loops` -> mission list
-  - `/sagas/loops/:loopId` -> mission control page
+  - `/ooda/loops` -> mission list
+  - `/ooda/loops/:loopId` -> mission control page
   (route names and API contract remain unchanged for compatibility).
 - Loop detail UI now hides explicit `observe/orient/decide/act` controls and
   phase-board terminology in favor of operator-native lanes:
@@ -424,8 +566,8 @@ Design note:
   - adds realistic virtual-time delays/waits on core lifecycle transitions so run
     timelines simulate real passage-of-time without wall-clock sleeps
 - The canonical loop library is also reseedable through the authenticated API:
-  - `POST /api/v1/sagas/library/reset-reseed`
-  - `POST /api/v1/sagas/library/sync-docs`
+  - `POST /api/v1/ooda/sagas/library/reset-reseed`
+  - `POST /api/v1/ooda/sagas/library/sync-docs`
 - Reset/reseed now truncates OODA loop tables too (`ooda_loops`, links, entries, actions)
   so stale loop journals do not survive saga run hard resets.
 - The DB migration stack has been hard-cut to one fresh v0 baseline:

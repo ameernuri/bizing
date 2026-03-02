@@ -371,7 +371,7 @@ export const sagaRoutes = new Hono()
  * rails for lifecycle test infrastructure.
  */
 
-sagaRoutes.get('/sagas/docs', requireAuth, async (c) => {
+sagaRoutes.get('/ooda/sagas/docs', requireAuth, async (c) => {
   const user = getCurrentUser(c)
   if (!user) return fail(c, 'UNAUTHORIZED', 'Authentication required.', 401)
 
@@ -388,16 +388,16 @@ sagaRoutes.get('/sagas/docs', requireAuth, async (c) => {
       defaultSchemaCoverageFile: DEFAULT_SCHEMA_COVERAGE_FILE,
     },
     workflow: [
-      'Create/replace DB-native saga specs via POST/PUT /api/v1/sagas/specs.',
-      'List revisions via GET /api/v1/sagas/specs/:sagaKey/revisions.',
-      'Optional: import file specs with POST /api/v1/sagas/specs/sync.',
-      'Create run with POST /api/v1/sagas/runs.',
-      'Archive runs with POST /api/v1/sagas/runs/:runId/archive or /api/v1/sagas/runs/archive.',
+      'Create/replace DB-native saga specs via POST/PUT /api/v1/ooda/sagas/specs.',
+      'List revisions via GET /api/v1/ooda/sagas/specs/:sagaKey/revisions.',
+      'Optional: import file specs with POST /api/v1/ooda/sagas/specs/sync.',
+      'Create run with POST /api/v1/ooda/sagas/runs.',
+      'Archive runs with POST /api/v1/ooda/sagas/runs/:runId/archive or /api/v1/ooda/sagas/runs/archive.',
       'Use agents tools and report each step via /steps/:stepKey/result.',
       'Attach snapshots and final report to complete evidence trail.',
-      'Control simulation clock via /sagas/runs/:runId/clock* for virtual-time tests.',
-      'Inspect/update scheduler jobs via /sagas/runs/:runId/scheduler/jobs*.',
-      'Use /api/v1/sagas/test-mode/next for agent-driven next-step execution.',
+      'Control simulation clock via /api/v1/ooda/sagas/runs/:runId/clock* for virtual-time tests.',
+      'Inspect/update scheduler jobs via /api/v1/ooda/sagas/runs/:runId/scheduler/jobs*.',
+      'Use /api/v1/ooda/sagas/test-mode/next for agent-driven next-step execution.',
     ],
     realtime: {
       websocket: '/api/v1/ws/sagas',
@@ -409,7 +409,7 @@ sagaRoutes.get('/sagas/docs', requireAuth, async (c) => {
   })
 })
 
-sagaRoutes.get('/sagas/llm/health', requireAuth, async (c) => {
+sagaRoutes.get('/ooda/sagas/llm/health', requireAuth, async (c) => {
   const user = getCurrentUser(c)
   if (!user) return fail(c, 'UNAUTHORIZED', 'Authentication required.', 401)
 
@@ -417,7 +417,7 @@ sagaRoutes.get('/sagas/llm/health', requireAuth, async (c) => {
   return ok(c, health)
 })
 
-sagaRoutes.post('/sagas/library/sync-docs', requireAuth, async (c) => {
+sagaRoutes.post('/ooda/sagas/library/sync-docs', requireAuth, async (c) => {
   const user = getCurrentUser(c)
   if (!user) return fail(c, 'UNAUTHORIZED', 'Authentication required.', 401)
 
@@ -437,7 +437,7 @@ sagaRoutes.post('/sagas/library/sync-docs', requireAuth, async (c) => {
   return ok(c, synced, 201)
 })
 
-sagaRoutes.post('/sagas/library/reset-reseed', requireAuth, async (c) => {
+sagaRoutes.post('/ooda/sagas/library/reset-reseed', requireAuth, async (c) => {
   const user = getCurrentUser(c)
   if (!user) return fail(c, 'UNAUTHORIZED', 'Authentication required.', 401)
   if (!isPlatformAdmin(user)) {
@@ -491,7 +491,7 @@ sagaRoutes.post('/sagas/library/reset-reseed', requireAuth, async (c) => {
   )
 })
 
-sagaRoutes.post('/sagas/schema-coverage/import', requireAuth, async (c) => {
+sagaRoutes.post('/ooda/sagas/schema-coverage/import', requireAuth, async (c) => {
   const user = getCurrentUser(c)
   if (!user) return fail(c, 'UNAUTHORIZED', 'Authentication required.', 401)
 
@@ -514,9 +514,9 @@ sagaRoutes.post('/sagas/schema-coverage/import', requireAuth, async (c) => {
  *
  * ELI5:
  * This endpoint lets you write coverage directly into DB (no markdown parsing).
- * Dashboard reads this data immediately from `/sagas/schema-coverage/reports*`.
+ * Dashboard reads this data immediately from `/ooda/sagas/schema-coverage/reports*`.
  */
-sagaRoutes.post('/sagas/schema-coverage/reports', requireAuth, async (c) => {
+sagaRoutes.post('/ooda/sagas/schema-coverage/reports', requireAuth, async (c) => {
   const user = getCurrentUser(c)
   if (!user) return fail(c, 'UNAUTHORIZED', 'Authentication required.', 401)
 
@@ -540,7 +540,7 @@ sagaRoutes.post('/sagas/schema-coverage/reports', requireAuth, async (c) => {
   return ok(c, created, 201)
 })
 
-sagaRoutes.get('/sagas/library/overview', requireAuth, async (c) => {
+sagaRoutes.get('/ooda/sagas/library/overview', requireAuth, async (c) => {
   const user = getCurrentUser(c)
   if (!user) return fail(c, 'UNAUTHORIZED', 'Authentication required.', 401)
 
@@ -595,7 +595,7 @@ sagaRoutes.get('/sagas/library/overview', requireAuth, async (c) => {
   })
 })
 
-sagaRoutes.get('/sagas/use-cases', requireAuth, async (c) => {
+sagaRoutes.get('/ooda/sagas/use-cases', requireAuth, async (c) => {
   const user = getCurrentUser(c)
   if (!user) return fail(c, 'UNAUTHORIZED', 'Authentication required.', 401)
   const parsed = listLibraryQuerySchema.safeParse(c.req.query())
@@ -610,7 +610,7 @@ sagaRoutes.get('/sagas/use-cases', requireAuth, async (c) => {
   return ok(c, rows)
 })
 
-sagaRoutes.post('/sagas/use-cases', requireAuth, async (c) => {
+sagaRoutes.post('/ooda/sagas/use-cases', requireAuth, async (c) => {
   const user = getCurrentUser(c)
   if (!user) return fail(c, 'UNAUTHORIZED', 'Authentication required.', 401)
   const body = await c.req.json().catch(() => null)
@@ -629,7 +629,7 @@ sagaRoutes.post('/sagas/use-cases', requireAuth, async (c) => {
   }
 })
 
-sagaRoutes.get('/sagas/use-cases/:ucKey', requireAuth, async (c) => {
+sagaRoutes.get('/ooda/sagas/use-cases/:ucKey', requireAuth, async (c) => {
   const user = getCurrentUser(c)
   if (!user) return fail(c, 'UNAUTHORIZED', 'Authentication required.', 401)
   const detail = await getSagaUseCaseDetail(c.req.param('ucKey'))
@@ -637,7 +637,7 @@ sagaRoutes.get('/sagas/use-cases/:ucKey', requireAuth, async (c) => {
   return ok(c, detail)
 })
 
-sagaRoutes.patch('/sagas/use-cases/:ucKey', requireAuth, async (c) => {
+sagaRoutes.patch('/ooda/sagas/use-cases/:ucKey', requireAuth, async (c) => {
   const user = getCurrentUser(c)
   if (!user) return fail(c, 'UNAUTHORIZED', 'Authentication required.', 401)
   const body = await c.req.json().catch(() => null)
@@ -654,7 +654,7 @@ sagaRoutes.patch('/sagas/use-cases/:ucKey', requireAuth, async (c) => {
   return ok(c, updated)
 })
 
-sagaRoutes.post('/sagas/use-cases/:ucKey/versions', requireAuth, async (c) => {
+sagaRoutes.post('/ooda/sagas/use-cases/:ucKey/versions', requireAuth, async (c) => {
   const user = getCurrentUser(c)
   if (!user) return fail(c, 'UNAUTHORIZED', 'Authentication required.', 401)
   const body = await c.req.json().catch(() => null)
@@ -671,7 +671,7 @@ sagaRoutes.post('/sagas/use-cases/:ucKey/versions', requireAuth, async (c) => {
   return ok(c, created, 201)
 })
 
-sagaRoutes.delete('/sagas/use-cases/:ucKey', requireAuth, async (c) => {
+sagaRoutes.delete('/ooda/sagas/use-cases/:ucKey', requireAuth, async (c) => {
   const user = getCurrentUser(c)
   if (!user) return fail(c, 'UNAUTHORIZED', 'Authentication required.', 401)
   const deleted = await deleteSagaUseCaseDefinition({
@@ -682,7 +682,7 @@ sagaRoutes.delete('/sagas/use-cases/:ucKey', requireAuth, async (c) => {
   return ok(c, { deleted: true })
 })
 
-sagaRoutes.get('/sagas/personas', requireAuth, async (c) => {
+sagaRoutes.get('/ooda/sagas/personas', requireAuth, async (c) => {
   const user = getCurrentUser(c)
   if (!user) return fail(c, 'UNAUTHORIZED', 'Authentication required.', 401)
   const parsed = listLibraryQuerySchema.safeParse(c.req.query())
@@ -697,7 +697,7 @@ sagaRoutes.get('/sagas/personas', requireAuth, async (c) => {
   return ok(c, rows)
 })
 
-sagaRoutes.post('/sagas/personas', requireAuth, async (c) => {
+sagaRoutes.post('/ooda/sagas/personas', requireAuth, async (c) => {
   const user = getCurrentUser(c)
   if (!user) return fail(c, 'UNAUTHORIZED', 'Authentication required.', 401)
   const body = await c.req.json().catch(() => null)
@@ -716,7 +716,7 @@ sagaRoutes.post('/sagas/personas', requireAuth, async (c) => {
   }
 })
 
-sagaRoutes.get('/sagas/personas/:personaKey', requireAuth, async (c) => {
+sagaRoutes.get('/ooda/sagas/personas/:personaKey', requireAuth, async (c) => {
   const user = getCurrentUser(c)
   if (!user) return fail(c, 'UNAUTHORIZED', 'Authentication required.', 401)
   const detail = await getSagaPersonaDetail(c.req.param('personaKey'))
@@ -724,7 +724,7 @@ sagaRoutes.get('/sagas/personas/:personaKey', requireAuth, async (c) => {
   return ok(c, detail)
 })
 
-sagaRoutes.patch('/sagas/personas/:personaKey', requireAuth, async (c) => {
+sagaRoutes.patch('/ooda/sagas/personas/:personaKey', requireAuth, async (c) => {
   const user = getCurrentUser(c)
   if (!user) return fail(c, 'UNAUTHORIZED', 'Authentication required.', 401)
   const body = await c.req.json().catch(() => null)
@@ -741,7 +741,7 @@ sagaRoutes.patch('/sagas/personas/:personaKey', requireAuth, async (c) => {
   return ok(c, updated)
 })
 
-sagaRoutes.post('/sagas/personas/:personaKey/versions', requireAuth, async (c) => {
+sagaRoutes.post('/ooda/sagas/personas/:personaKey/versions', requireAuth, async (c) => {
   const user = getCurrentUser(c)
   if (!user) return fail(c, 'UNAUTHORIZED', 'Authentication required.', 401)
   const body = await c.req.json().catch(() => null)
@@ -758,7 +758,7 @@ sagaRoutes.post('/sagas/personas/:personaKey/versions', requireAuth, async (c) =
   return ok(c, created, 201)
 })
 
-sagaRoutes.delete('/sagas/personas/:personaKey', requireAuth, async (c) => {
+sagaRoutes.delete('/ooda/sagas/personas/:personaKey', requireAuth, async (c) => {
   const user = getCurrentUser(c)
   if (!user) return fail(c, 'UNAUTHORIZED', 'Authentication required.', 401)
   const deleted = await deleteSagaPersonaDefinition({
@@ -769,7 +769,7 @@ sagaRoutes.delete('/sagas/personas/:personaKey', requireAuth, async (c) => {
   return ok(c, { deleted: true })
 })
 
-sagaRoutes.get('/sagas/library/related', requireAuth, async (c) => {
+sagaRoutes.get('/ooda/sagas/library/related', requireAuth, async (c) => {
   const user = getCurrentUser(c)
   if (!user) return fail(c, 'UNAUTHORIZED', 'Authentication required.', 401)
   const parsed = libraryRelationsQuerySchema.safeParse(c.req.query())
@@ -785,7 +785,7 @@ sagaRoutes.get('/sagas/library/related', requireAuth, async (c) => {
   return ok(c, detail)
 })
 
-sagaRoutes.get('/sagas/definitions/:sagaKey/links', requireAuth, async (c) => {
+sagaRoutes.get('/ooda/sagas/definitions/:sagaKey/links', requireAuth, async (c) => {
   const user = getCurrentUser(c)
   if (!user) return fail(c, 'UNAUTHORIZED', 'Authentication required.', 401)
   const sagaKey = c.req.param('sagaKey')
@@ -869,7 +869,7 @@ sagaRoutes.get('/sagas/definitions/:sagaKey/links', requireAuth, async (c) => {
  * These are coverage reports derived from saga executions (pass/fail runs),
  * not the schema baseline markdown matrix.
  */
-sagaRoutes.get('/sagas/run-assessments/reports', requireAuth, async (c) => {
+sagaRoutes.get('/ooda/sagas/run-assessments/reports', requireAuth, async (c) => {
   const user = getCurrentUser(c)
   if (!user) return fail(c, 'UNAUTHORIZED', 'Authentication required.', 401)
   const parsed = listCoverageReportsQuerySchema.safeParse(c.req.query())
@@ -885,7 +885,7 @@ sagaRoutes.get('/sagas/run-assessments/reports', requireAuth, async (c) => {
   return ok(c, rows)
 })
 
-sagaRoutes.get('/sagas/run-assessments/reports/:reportId', requireAuth, async (c) => {
+sagaRoutes.get('/ooda/sagas/run-assessments/reports/:reportId', requireAuth, async (c) => {
   const user = getCurrentUser(c)
   if (!user) return fail(c, 'UNAUTHORIZED', 'Authentication required.', 401)
   const reportId = c.req.param('reportId')
@@ -904,7 +904,7 @@ sagaRoutes.get('/sagas/run-assessments/reports/:reportId', requireAuth, async (c
  * These rows come from the markdown schema coverage matrix and are independent
  * from saga run execution status.
  */
-sagaRoutes.get('/sagas/schema-coverage/reports', requireAuth, async (c) => {
+sagaRoutes.get('/ooda/sagas/schema-coverage/reports', requireAuth, async (c) => {
   const user = getCurrentUser(c)
   if (!user) return fail(c, 'UNAUTHORIZED', 'Authentication required.', 401)
   const parsed = listCoverageReportsQuerySchema.safeParse(c.req.query())
@@ -918,7 +918,7 @@ sagaRoutes.get('/sagas/schema-coverage/reports', requireAuth, async (c) => {
   return ok(c, rows)
 })
 
-sagaRoutes.get('/sagas/schema-coverage/reports/:reportId', requireAuth, async (c) => {
+sagaRoutes.get('/ooda/sagas/schema-coverage/reports/:reportId', requireAuth, async (c) => {
   const user = getCurrentUser(c)
   if (!user) return fail(c, 'UNAUTHORIZED', 'Authentication required.', 401)
   const reportId = c.req.param('reportId')
@@ -932,9 +932,9 @@ sagaRoutes.get('/sagas/schema-coverage/reports/:reportId', requireAuth, async (c
 
 /**
  * Backward-compat alias:
- * `/sagas/coverage/reports*` now maps to run-assessment coverage.
+ * `/ooda/sagas/coverage/reports*` now maps to run-assessment coverage.
  */
-sagaRoutes.get('/sagas/coverage/reports', requireAuth, async (c) => {
+sagaRoutes.get('/ooda/sagas/coverage/reports', requireAuth, async (c) => {
   const user = getCurrentUser(c)
   if (!user) return fail(c, 'UNAUTHORIZED', 'Authentication required.', 401)
   const parsed = listCoverageReportsQuerySchema.safeParse(c.req.query())
@@ -950,7 +950,7 @@ sagaRoutes.get('/sagas/coverage/reports', requireAuth, async (c) => {
   return ok(c, rows)
 })
 
-sagaRoutes.get('/sagas/coverage/reports/:reportId', requireAuth, async (c) => {
+sagaRoutes.get('/ooda/sagas/coverage/reports/:reportId', requireAuth, async (c) => {
   const user = getCurrentUser(c)
   if (!user) return fail(c, 'UNAUTHORIZED', 'Authentication required.', 401)
   const reportId = c.req.param('reportId')
@@ -959,7 +959,7 @@ sagaRoutes.get('/sagas/coverage/reports/:reportId', requireAuth, async (c) => {
   return ok(c, detail)
 })
 
-sagaRoutes.get('/sagas/specs', requireAuth, async (c) => {
+sagaRoutes.get('/ooda/sagas/specs', requireAuth, async (c) => {
   const user = getCurrentUser(c)
   if (!user) return fail(c, 'UNAUTHORIZED', 'Authentication required.', 401)
 
@@ -985,7 +985,7 @@ sagaRoutes.get('/sagas/specs', requireAuth, async (c) => {
  *
  * This is canonical CRUD creation path (not file-sync).
  */
-sagaRoutes.post('/sagas/specs', requireAuth, async (c) => {
+sagaRoutes.post('/ooda/sagas/specs', requireAuth, async (c) => {
   const user = getCurrentUser(c)
   if (!user) return fail(c, 'UNAUTHORIZED', 'Authentication required.', 401)
 
@@ -1019,7 +1019,7 @@ sagaRoutes.post('/sagas/specs', requireAuth, async (c) => {
   return ok(c, saved, 201)
 })
 
-sagaRoutes.post('/sagas/specs/generate', requireAuth, async (c) => {
+sagaRoutes.post('/ooda/sagas/specs/generate', requireAuth, async (c) => {
   const user = getCurrentUser(c)
   if (!user) return fail(c, 'UNAUTHORIZED', 'Authentication required.', 401)
 
@@ -1046,7 +1046,7 @@ sagaRoutes.post('/sagas/specs/generate', requireAuth, async (c) => {
   })
 })
 
-sagaRoutes.post('/sagas/specs/sync', requireAuth, async (c) => {
+sagaRoutes.post('/ooda/sagas/specs/sync', requireAuth, async (c) => {
   const user = getCurrentUser(c)
   if (!user) return fail(c, 'UNAUTHORIZED', 'Authentication required.', 401)
   const synced = await syncSagaDefinitionsFromDisk(user.id)
@@ -1064,7 +1064,7 @@ sagaRoutes.post('/sagas/specs/sync', requireAuth, async (c) => {
 /**
  * Replace/update one saga definition's canonical DB spec payload.
  */
-sagaRoutes.put('/sagas/specs/:sagaKey', requireAuth, async (c) => {
+sagaRoutes.put('/ooda/sagas/specs/:sagaKey', requireAuth, async (c) => {
   const user = getCurrentUser(c)
   if (!user) return fail(c, 'UNAUTHORIZED', 'Authentication required.', 401)
 
@@ -1101,7 +1101,7 @@ sagaRoutes.put('/sagas/specs/:sagaKey', requireAuth, async (c) => {
 /**
  * Force-create one new revision for an existing saga definition.
  */
-sagaRoutes.post('/sagas/specs/:sagaKey/revisions', requireAuth, async (c) => {
+sagaRoutes.post('/ooda/sagas/specs/:sagaKey/revisions', requireAuth, async (c) => {
   const user = getCurrentUser(c)
   if (!user) return fail(c, 'UNAUTHORIZED', 'Authentication required.', 401)
 
@@ -1138,7 +1138,7 @@ sagaRoutes.post('/sagas/specs/:sagaKey/revisions', requireAuth, async (c) => {
   return ok(c, saved, 201)
 })
 
-sagaRoutes.get('/sagas/specs/:sagaKey/revisions', requireAuth, async (c) => {
+sagaRoutes.get('/ooda/sagas/specs/:sagaKey/revisions', requireAuth, async (c) => {
   const user = getCurrentUser(c)
   if (!user) return fail(c, 'UNAUTHORIZED', 'Authentication required.', 401)
 
@@ -1156,7 +1156,7 @@ sagaRoutes.get('/sagas/specs/:sagaKey/revisions', requireAuth, async (c) => {
   return ok(c, detail)
 })
 
-sagaRoutes.delete('/sagas/specs/:sagaKey', requireAuth, async (c) => {
+sagaRoutes.delete('/ooda/sagas/specs/:sagaKey', requireAuth, async (c) => {
   const user = getCurrentUser(c)
   if (!user) return fail(c, 'UNAUTHORIZED', 'Authentication required.', 401)
   const sagaKey = c.req.param('sagaKey')
@@ -1168,7 +1168,7 @@ sagaRoutes.delete('/sagas/specs/:sagaKey', requireAuth, async (c) => {
   return ok(c, archived)
 })
 
-sagaRoutes.get('/sagas/specs/:sagaKey', requireAuth, async (c) => {
+sagaRoutes.get('/ooda/sagas/specs/:sagaKey', requireAuth, async (c) => {
   const user = getCurrentUser(c)
   if (!user) return fail(c, 'UNAUTHORIZED', 'Authentication required.', 401)
 
@@ -1179,7 +1179,7 @@ sagaRoutes.get('/sagas/specs/:sagaKey', requireAuth, async (c) => {
   return ok(c, resolved)
 })
 
-sagaRoutes.post('/sagas/runs', requireAuth, async (c) => {
+sagaRoutes.post('/ooda/sagas/runs', requireAuth, async (c) => {
   const user = getCurrentUser(c)
   if (!user) return fail(c, 'UNAUTHORIZED', 'Authentication required.', 401)
 
@@ -1207,7 +1207,7 @@ sagaRoutes.post('/sagas/runs', requireAuth, async (c) => {
   return ok(c, created, 201)
 })
 
-sagaRoutes.get('/sagas/runs', requireAuth, async (c) => {
+sagaRoutes.get('/ooda/sagas/runs', requireAuth, async (c) => {
   const user = getCurrentUser(c)
   if (!user) return fail(c, 'UNAUTHORIZED', 'Authentication required.', 401)
 
@@ -1254,7 +1254,7 @@ sagaRoutes.get('/sagas/runs', requireAuth, async (c) => {
   return ok(c, refreshedRuns)
 })
 
-sagaRoutes.get('/sagas/runs/:runId', requireAuth, async (c) => {
+sagaRoutes.get('/ooda/sagas/runs/:runId', requireAuth, async (c) => {
   const user = getCurrentUser(c)
   if (!user) return fail(c, 'UNAUTHORIZED', 'Authentication required.', 401)
 
@@ -1289,7 +1289,7 @@ sagaRoutes.get('/sagas/runs/:runId', requireAuth, async (c) => {
  * at the end to say "now that all the evidence files are attached, judge the
  * whole run properly."
  */
-sagaRoutes.post('/sagas/runs/:runId/refresh', requireAuth, async (c) => {
+sagaRoutes.post('/ooda/sagas/runs/:runId/refresh', requireAuth, async (c) => {
   const user = getCurrentUser(c)
   if (!user) return fail(c, 'UNAUTHORIZED', 'Authentication required.', 401)
 
@@ -1329,7 +1329,7 @@ sagaRoutes.post('/sagas/runs/:runId/refresh', requireAuth, async (c) => {
  * - Dashboard "rerun" used to only create pending rows.
  * - This endpoint runs steps server-side so reruns transition out of pending.
  */
-sagaRoutes.post('/sagas/runs/:runId/execute', requireAuth, async (c) => {
+sagaRoutes.post('/ooda/sagas/runs/:runId/execute', requireAuth, async (c) => {
   const user = getCurrentUser(c)
   if (!user) return fail(c, 'UNAUTHORIZED', 'Authentication required.', 401)
 
@@ -1380,7 +1380,7 @@ sagaRoutes.post('/sagas/runs/:runId/execute', requireAuth, async (c) => {
   })
 })
 
-sagaRoutes.get('/sagas/runs/:runId/clock', requireAuth, async (c) => {
+sagaRoutes.get('/ooda/sagas/runs/:runId/clock', requireAuth, async (c) => {
   const user = getCurrentUser(c)
   if (!user) return fail(c, 'UNAUTHORIZED', 'Authentication required.', 401)
 
@@ -1399,7 +1399,7 @@ sagaRoutes.get('/sagas/runs/:runId/clock', requireAuth, async (c) => {
   return ok(c, clock)
 })
 
-sagaRoutes.post('/sagas/runs/:runId/clock/advance', requireAuth, async (c) => {
+sagaRoutes.post('/ooda/sagas/runs/:runId/clock/advance', requireAuth, async (c) => {
   const user = getCurrentUser(c)
   if (!user) return fail(c, 'UNAUTHORIZED', 'Authentication required.', 401)
 
@@ -1431,7 +1431,7 @@ sagaRoutes.post('/sagas/runs/:runId/clock/advance', requireAuth, async (c) => {
   return ok(c, clock)
 })
 
-sagaRoutes.get('/sagas/runs/:runId/scheduler/jobs', requireAuth, async (c) => {
+sagaRoutes.get('/ooda/sagas/runs/:runId/scheduler/jobs', requireAuth, async (c) => {
   const user = getCurrentUser(c)
   if (!user) return fail(c, 'UNAUTHORIZED', 'Authentication required.', 401)
 
@@ -1460,7 +1460,7 @@ sagaRoutes.get('/sagas/runs/:runId/scheduler/jobs', requireAuth, async (c) => {
   return ok(c, jobs)
 })
 
-sagaRoutes.post('/sagas/runs/:runId/scheduler/jobs', requireAuth, async (c) => {
+sagaRoutes.post('/ooda/sagas/runs/:runId/scheduler/jobs', requireAuth, async (c) => {
   const user = getCurrentUser(c)
   if (!user) return fail(c, 'UNAUTHORIZED', 'Authentication required.', 401)
 
@@ -1489,7 +1489,7 @@ sagaRoutes.post('/sagas/runs/:runId/scheduler/jobs', requireAuth, async (c) => {
   return ok(c, job, 201)
 })
 
-sagaRoutes.patch('/sagas/runs/:runId/scheduler/jobs/:jobId', requireAuth, async (c) => {
+sagaRoutes.patch('/ooda/sagas/runs/:runId/scheduler/jobs/:jobId', requireAuth, async (c) => {
   const user = getCurrentUser(c)
   if (!user) return fail(c, 'UNAUTHORIZED', 'Authentication required.', 401)
 
@@ -1543,7 +1543,7 @@ sagaRoutes.patch('/sagas/runs/:runId/scheduler/jobs/:jobId', requireAuth, async 
   return ok(c, job)
 })
 
-sagaRoutes.get('/sagas/runs/:runId/actors', requireAuth, async (c) => {
+sagaRoutes.get('/ooda/sagas/runs/:runId/actors', requireAuth, async (c) => {
   const user = getCurrentUser(c)
   if (!user) return fail(c, 'UNAUTHORIZED', 'Authentication required.', 401)
 
@@ -1562,7 +1562,7 @@ sagaRoutes.get('/sagas/runs/:runId/actors', requireAuth, async (c) => {
   return ok(c, rows)
 })
 
-sagaRoutes.get('/sagas/runs/:runId/messages', requireAuth, async (c) => {
+sagaRoutes.get('/ooda/sagas/runs/:runId/messages', requireAuth, async (c) => {
   const user = getCurrentUser(c)
   if (!user) return fail(c, 'UNAUTHORIZED', 'Authentication required.', 401)
 
@@ -1586,7 +1586,7 @@ sagaRoutes.get('/sagas/runs/:runId/messages', requireAuth, async (c) => {
   return ok(c, rows)
 })
 
-sagaRoutes.post('/sagas/runs/:runId/messages', requireAuth, async (c) => {
+sagaRoutes.post('/ooda/sagas/runs/:runId/messages', requireAuth, async (c) => {
   const user = getCurrentUser(c)
   if (!user) return fail(c, 'UNAUTHORIZED', 'Authentication required.', 401)
 
@@ -1615,7 +1615,7 @@ sagaRoutes.post('/sagas/runs/:runId/messages', requireAuth, async (c) => {
   return ok(c, row, 201)
 })
 
-sagaRoutes.get('/sagas/runs/:runId/coverage', requireAuth, async (c) => {
+sagaRoutes.get('/ooda/sagas/runs/:runId/coverage', requireAuth, async (c) => {
   const user = getCurrentUser(c)
   if (!user) return fail(c, 'UNAUTHORIZED', 'Authentication required.', 401)
 
@@ -1649,7 +1649,7 @@ sagaRoutes.get('/sagas/runs/:runId/coverage', requireAuth, async (c) => {
   })
 })
 
-sagaRoutes.post('/sagas/runs/:runId/archive', requireAuth, async (c) => {
+sagaRoutes.post('/ooda/sagas/runs/:runId/archive', requireAuth, async (c) => {
   const user = getCurrentUser(c)
   if (!user) return fail(c, 'UNAUTHORIZED', 'Authentication required.', 401)
 
@@ -1675,7 +1675,7 @@ sagaRoutes.post('/sagas/runs/:runId/archive', requireAuth, async (c) => {
   })
 })
 
-sagaRoutes.post('/sagas/runs/archive', requireAuth, async (c) => {
+sagaRoutes.post('/ooda/sagas/runs/archive', requireAuth, async (c) => {
   const user = getCurrentUser(c)
   if (!user) return fail(c, 'UNAUTHORIZED', 'Authentication required.', 401)
 
@@ -1719,7 +1719,7 @@ sagaRoutes.post('/sagas/runs/archive', requireAuth, async (c) => {
   })
 })
 
-sagaRoutes.post('/sagas/runs/:runId/steps/:stepKey/result', requireAuth, async (c) => {
+sagaRoutes.post('/ooda/sagas/runs/:runId/steps/:stepKey/result', requireAuth, async (c) => {
   const user = getCurrentUser(c)
   if (!user) return fail(c, 'UNAUTHORIZED', 'Authentication required.', 401)
 
@@ -1762,7 +1762,7 @@ sagaRoutes.post('/sagas/runs/:runId/steps/:stepKey/result', requireAuth, async (
   }
 })
 
-sagaRoutes.post('/sagas/runs/:runId/steps/:stepKey/exploratory-evaluate', requireAuth, async (c) => {
+sagaRoutes.post('/ooda/sagas/runs/:runId/steps/:stepKey/exploratory-evaluate', requireAuth, async (c) => {
   const user = getCurrentUser(c)
   if (!user) return fail(c, 'UNAUTHORIZED', 'Authentication required.', 401)
 
@@ -1797,7 +1797,7 @@ sagaRoutes.post('/sagas/runs/:runId/steps/:stepKey/exploratory-evaluate', requir
   return ok(c, evaluation)
 })
 
-sagaRoutes.post('/sagas/runs/:runId/snapshots', requireAuth, async (c) => {
+sagaRoutes.post('/ooda/sagas/runs/:runId/snapshots', requireAuth, async (c) => {
   const user = getCurrentUser(c)
   if (!user) return fail(c, 'UNAUTHORIZED', 'Authentication required.', 401)
 
@@ -1837,7 +1837,7 @@ sagaRoutes.post('/sagas/runs/:runId/snapshots', requireAuth, async (c) => {
   return ok(c, artifact, 201)
 })
 
-sagaRoutes.post('/sagas/runs/:runId/report', requireAuth, async (c) => {
+sagaRoutes.post('/ooda/sagas/runs/:runId/report', requireAuth, async (c) => {
   const user = getCurrentUser(c)
   if (!user) return fail(c, 'UNAUTHORIZED', 'Authentication required.', 401)
 
@@ -1870,7 +1870,7 @@ sagaRoutes.post('/sagas/runs/:runId/report', requireAuth, async (c) => {
   return ok(c, artifact, 201)
 })
 
-sagaRoutes.post('/sagas/runs/:runId/traces', requireAuth, async (c) => {
+sagaRoutes.post('/ooda/sagas/runs/:runId/traces', requireAuth, async (c) => {
   const user = getCurrentUser(c)
   if (!user) return fail(c, 'UNAUTHORIZED', 'Authentication required.', 401)
 
@@ -1910,7 +1910,7 @@ sagaRoutes.post('/sagas/runs/:runId/traces', requireAuth, async (c) => {
   return ok(c, artifact, 201)
 })
 
-sagaRoutes.get('/sagas/runs/:runId/artifacts/:artifactId/content', requireAuth, async (c) => {
+sagaRoutes.get('/ooda/sagas/runs/:runId/artifacts/:artifactId/content', requireAuth, async (c) => {
   const user = getCurrentUser(c)
   if (!user) return fail(c, 'UNAUTHORIZED', 'Authentication required.', 401)
 
@@ -1935,7 +1935,7 @@ sagaRoutes.get('/sagas/runs/:runId/artifacts/:artifactId/content', requireAuth, 
   return ok(c, payload ?? null)
 })
 
-sagaRoutes.get('/sagas/runs/:runId/test-mode', requireAuth, async (c) => {
+sagaRoutes.get('/ooda/sagas/runs/:runId/test-mode', requireAuth, async (c) => {
   const user = getCurrentUser(c)
   if (!user) return fail(c, 'UNAUTHORIZED', 'Authentication required.', 401)
 
@@ -1962,7 +1962,7 @@ sagaRoutes.get('/sagas/runs/:runId/test-mode', requireAuth, async (c) => {
   return ok(c, refreshedState)
 })
 
-sagaRoutes.get('/sagas/test-mode/next', requireAuth, async (c) => {
+sagaRoutes.get('/ooda/sagas/test-mode/next', requireAuth, async (c) => {
   const user = getCurrentUser(c)
   if (!user) return fail(c, 'UNAUTHORIZED', 'Authentication required.', 401)
 

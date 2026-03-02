@@ -184,6 +184,7 @@ async function main() {
   const specs = await loadCanonicalPartialIndexes();
   const repaired: string[] = [];
   const alreadyCanonical: string[] = [];
+  let lifecycleDeliveryFkRepaired = false;
 
   try {
     for (const spec of specs) {
@@ -220,12 +221,79 @@ async function main() {
       repaired.push(spec.name);
     }
 
+    /**
+     * Canonical FK repair for lifecycle deliveries.
+     *
+     * Why this exists:
+     * - Older local DB states may still point lifecycle delivery rows to
+     *   `lifecycle_events` instead of canonical `domain_events`.
+     * - The API now writes canonical domain events only, so stale FK targets
+     *   cause false 409 failures in saga validation.
+     *
+     * ELI5:
+     * If delivery rows say "this delivery belongs to event X", the database
+     * must check event X in the canonical event table, not in a legacy table.
+     */
+    const lifecycleFkRows = await client.query<{ conname: string; def: string }>(
+      `
+      SELECT conname, pg_get_constraintdef(oid) AS def
+      FROM pg_constraint
+      WHERE conrelid = 'lifecycle_event_deliveries'::regclass
+        AND contype = 'f'
+        AND (
+          conname IN (
+            'lifecycle_event_deliveries_biz_event_fk',
+            'lifecycle_event_deliveries_lifecycle_event_id_lifecycle_events_',
+            'lifecycle_event_deliveries_lifecycle_event_id_domain_events_fk'
+          )
+          OR pg_get_constraintdef(oid) ILIKE '%lifecycle_events%'
+          OR pg_get_constraintdef(oid) ILIKE '%domain_events%'
+        )
+      `,
+    );
+    const hasLegacyLifecycleTarget = lifecycleFkRows.rows.some((row) =>
+      row.def.toLowerCase().includes("references lifecycle_events"),
+    );
+    if (hasLegacyLifecycleTarget) {
+      await client.query("BEGIN");
+      try {
+        await client.query(`
+          DELETE FROM lifecycle_event_deliveries d
+          WHERE NOT EXISTS (
+            SELECT 1
+            FROM domain_events e
+            WHERE e.id = d.lifecycle_event_id
+              AND e.biz_id = d.biz_id
+          )
+        `);
+        await client.query(`
+          ALTER TABLE lifecycle_event_deliveries
+            DROP CONSTRAINT IF EXISTS lifecycle_event_deliveries_biz_event_fk,
+            DROP CONSTRAINT IF EXISTS lifecycle_event_deliveries_lifecycle_event_id_lifecycle_events_,
+            DROP CONSTRAINT IF EXISTS lifecycle_event_deliveries_lifecycle_event_id_domain_events_fk
+        `);
+        await client.query(`
+          ALTER TABLE lifecycle_event_deliveries
+            ADD CONSTRAINT lifecycle_event_deliveries_biz_event_fk
+              FOREIGN KEY (biz_id, lifecycle_event_id) REFERENCES domain_events(biz_id, id),
+            ADD CONSTRAINT lifecycle_event_deliveries_lifecycle_event_id_domain_events_fk
+              FOREIGN KEY (lifecycle_event_id) REFERENCES domain_events(id)
+        `);
+        await client.query("COMMIT");
+        lifecycleDeliveryFkRepaired = true;
+      } catch (error) {
+        await client.query("ROLLBACK");
+        throw error;
+      }
+    }
+
     console.log(
       JSON.stringify(
         {
           inspected: specs.length,
           repaired,
           alreadyCanonicalCount: alreadyCanonical.length,
+          lifecycleDeliveryFkRepaired,
         },
         null,
         2,
