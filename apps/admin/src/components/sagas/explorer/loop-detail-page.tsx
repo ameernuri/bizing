@@ -304,7 +304,7 @@ export function OodaLoopDetailPage({ loopId }: { loopId: string }) {
       return {
         title: found?.title ?? link.targetId,
         subtitle: found ? `definition · ${found.sagaKey}` : 'definition',
-        href: `/sagas/definitions/${encodeURIComponent(link.targetId)}`,
+        href: `/ooda/definitions/${encodeURIComponent(link.targetId)}`,
       }
     }
 
@@ -315,7 +315,7 @@ export function OodaLoopDetailPage({ loopId }: { loopId: string }) {
         subtitle: found
           ? `run · ${found.status} · ${found.passedSteps}/${found.totalSteps}`
           : 'run',
-        href: `/sagas/runs/${encodeURIComponent(link.targetId)}`,
+        href: `/ooda/runs/${encodeURIComponent(link.targetId)}`,
       }
     }
 
@@ -327,7 +327,7 @@ export function OodaLoopDetailPage({ loopId }: { loopId: string }) {
       return {
         title: uc?.title ?? ucKey,
         subtitle: `use case · ${ucKey}`,
-        href: `/sagas/use-cases/${encodeURIComponent(ucKey)}`,
+        href: `/ooda/use-cases/${encodeURIComponent(ucKey)}`,
       }
     }
 
@@ -339,7 +339,7 @@ export function OodaLoopDetailPage({ loopId }: { loopId: string }) {
       return {
         title: persona?.name ?? personaKey,
         subtitle: `persona · ${personaKey}`,
-        href: `/sagas/personas/${encodeURIComponent(personaKey)}`,
+        href: `/ooda/personas/${encodeURIComponent(personaKey)}`,
       }
     }
 
@@ -509,7 +509,7 @@ export function OodaLoopDetailPage({ loopId }: { loopId: string }) {
         mode: runForm.mode,
         actionTitle: `Execute ${runForm.sagaKey.trim()} from mission`,
       })
-      window.location.href = `/sagas/runs/${created.run.run.id}`
+      window.location.href = `/ooda/runs/${created.run.run.id}`
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Failed to start run from mission.')
       setIsRunning(false)
@@ -537,7 +537,7 @@ export function OodaLoopDetailPage({ loopId }: { loopId: string }) {
     if (!detail) return
     try {
       await oodaApi.archiveLoop(detail.loop.id)
-      window.location.href = '/sagas/loops'
+      window.location.href = '/ooda/loops'
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Failed to archive loop.')
     }
@@ -552,7 +552,7 @@ export function OodaLoopDetailPage({ loopId }: { loopId: string }) {
         actions={
           <>
             <Button variant="outline" asChild>
-              <Link href="/sagas/loops">
+              <Link href="/ooda/loops">
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Back to missions
               </Link>
@@ -781,7 +781,7 @@ export function OodaLoopDetailPage({ loopId }: { loopId: string }) {
                           </Button>
                           {action.linkedSagaRunId ? (
                             <Button size="sm" variant="outline" asChild>
-                              <Link href={`/sagas/runs/${action.linkedSagaRunId}`}>Open run</Link>
+                              <Link href={`/ooda/runs/${action.linkedSagaRunId}`}>Open run</Link>
                             </Button>
                           ) : null}
                         </div>
@@ -867,7 +867,7 @@ export function OodaLoopDetailPage({ loopId }: { loopId: string }) {
                                 </Select>
                                 {entry.linkedSagaRunId ? (
                                   <Button size="sm" variant="outline" asChild>
-                                    <Link href={`/sagas/runs/${entry.linkedSagaRunId}`}>Run</Link>
+                                    <Link href={`/ooda/runs/${entry.linkedSagaRunId}`}>Run</Link>
                                   </Button>
                                 ) : null}
                               </div>
@@ -891,7 +891,7 @@ export function OodaLoopDetailPage({ loopId }: { loopId: string }) {
                 </CardHeader>
                 <CardContent className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
                   {linkedRuns.slice(0, 9).map((run) => (
-                    <Link key={run.id} href={`/sagas/runs/${run.id}`} className="block">
+                    <Link key={run.id} href={`/ooda/runs/${run.id}`} className="block">
                       <div className="relative overflow-hidden rounded-lg border p-3 transition-colors hover:border-primary/40 hover:bg-muted/30">
                         <RunProgressBackdrop run={run} />
                         <div className="relative space-y-2">

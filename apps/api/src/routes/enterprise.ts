@@ -18,6 +18,7 @@ import { and, asc, desc, eq } from 'drizzle-orm'
 import { z } from 'zod'
 import dbPackage from '@bizing/db'
 import { requireAclPermission, requireAuth, requireBizAccess } from '../middleware/auth.js'
+import { executeCrudRouteAction } from '../services/action-route-bridge.js'
 import { sanitizePlainText, sanitizeUnknown } from '../lib/sanitize.js'
 import { fail, ok } from './_api.js'
 
@@ -282,6 +283,60 @@ function sanitizeText(value?: string | null) {
   return value ? sanitizePlainText(value) : null
 }
 
+async function createEnterpriseRow<T extends Record<string, unknown>>(input: {
+  c: Parameters<typeof fail>[0]
+  bizId: string
+  tableKey: string
+  subjectType: string
+  data: Record<string, unknown>
+  displayName?: string
+}) {
+  const delegated = await executeCrudRouteAction({
+    c: input.c,
+    bizId: input.bizId,
+    tableKey: input.tableKey,
+    operation: 'create',
+    subjectType: input.subjectType,
+    displayName: input.displayName,
+    data: input.data,
+    metadata: { routeFamily: 'enterprise' },
+  })
+  if (!delegated.ok) {
+    return fail(input.c, delegated.code, delegated.message, delegated.httpStatus, delegated.details)
+  }
+  return delegated.row as T
+}
+
+async function updateEnterpriseRow<T extends Record<string, unknown>>(input: {
+  c: Parameters<typeof fail>[0]
+  bizId: string
+  tableKey: string
+  subjectType: string
+  id: string
+  patch: Record<string, unknown>
+  notFoundMessage: string
+}) {
+  const delegated = await executeCrudRouteAction({
+    c: input.c,
+    bizId: input.bizId,
+    tableKey: input.tableKey,
+    operation: 'update',
+    id: input.id,
+    subjectType: input.subjectType,
+    subjectId: input.id,
+    patch: input.patch,
+    metadata: { routeFamily: 'enterprise' },
+  })
+  if (!delegated.ok) {
+    if (delegated.code === 'CRUD_TARGET_NOT_FOUND') {
+      return fail(input.c, 'NOT_FOUND', input.notFoundMessage, 404)
+    }
+    return fail(input.c, delegated.code, delegated.message, delegated.httpStatus, delegated.details)
+  }
+  if (!delegated.row) return fail(input.c, 'NOT_FOUND', input.notFoundMessage, 404)
+  return delegated.row as T
+}
+
 export const enterpriseRoutes = new Hono()
 
 enterpriseRoutes.get('/bizes/:bizId/enterprise/relationship-templates', requireAuth, requireBizAccess('bizId'), requireAclPermission('bizes.read', { bizIdParam: 'bizId' }), async (c) => {
@@ -294,7 +349,13 @@ enterpriseRoutes.post('/bizes/:bizId/enterprise/relationship-templates', require
   const bizId = c.req.param('bizId')
   const parsed = relationshipTemplateBodySchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid enterprise relationship template body.', 400, parsed.error.flatten())
-  const [row] = await db.insert(enterpriseRelationshipTemplates).values({
+  const rowOrResponse = await createEnterpriseRow({
+    c,
+    bizId,
+    tableKey: 'enterpriseRelationshipTemplates',
+    subjectType: 'enterprise_relationship_template',
+    displayName: parsed.data.name,
+    data: {
     bizId,
     name: sanitizePlainText(parsed.data.name),
     slug: sanitizePlainText(parsed.data.slug),
@@ -305,7 +366,10 @@ enterpriseRoutes.post('/bizes/:bizId/enterprise/relationship-templates', require
     allowsCycles: parsed.data.allowsCycles ?? false,
     status: parsed.data.status ?? 'active',
     metadata: cleanRecord(parsed.data.metadata),
-  }).returning()
+    },
+  })
+  if (rowOrResponse instanceof Response) return rowOrResponse
+  const row = rowOrResponse
   return ok(c, row, 201)
 })
 
@@ -319,7 +383,12 @@ enterpriseRoutes.post('/bizes/:bizId/enterprise/relationships', requireAuth, req
   const bizId = c.req.param('bizId')
   const parsed = relationshipBodySchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid enterprise relationship body.', 400, parsed.error.flatten())
-  const [row] = await db.insert(enterpriseRelationships).values({
+  const rowOrResponse = await createEnterpriseRow({
+    c,
+    bizId,
+    tableKey: 'enterpriseRelationships',
+    subjectType: 'enterprise_relationship',
+    data: {
     bizId,
     relationshipTemplateId: parsed.data.relationshipTemplateId,
     fromBizId: parsed.data.fromBizId,
@@ -329,7 +398,10 @@ enterpriseRoutes.post('/bizes/:bizId/enterprise/relationships', requireAuth, req
     effectiveTo: asDate(parsed.data.effectiveTo),
     priority: parsed.data.priority ?? 100,
     metadata: cleanRecord(parsed.data.metadata),
-  }).returning()
+    },
+  })
+  if (rowOrResponse instanceof Response) return rowOrResponse
+  const row = rowOrResponse
   return ok(c, row, 201)
 })
 
@@ -343,7 +415,13 @@ enterpriseRoutes.post('/bizes/:bizId/enterprise/scopes', requireAuth, requireBiz
   const bizId = c.req.param('bizId')
   const parsed = scopeBodySchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid enterprise scope body.', 400, parsed.error.flatten())
-  const [row] = await db.insert(enterpriseScopes).values({
+  const rowOrResponse = await createEnterpriseRow({
+    c,
+    bizId,
+    tableKey: 'enterpriseScopes',
+    subjectType: 'enterprise_scope',
+    displayName: parsed.data.scopeKey,
+    data: {
     bizId,
     scopeType: parsed.data.scopeType,
     scopeKey: sanitizePlainText(parsed.data.scopeKey),
@@ -352,7 +430,10 @@ enterpriseRoutes.post('/bizes/:bizId/enterprise/scopes', requireAuth, requireBiz
     targetSubjectType: sanitizeText(parsed.data.targetSubjectType),
     targetSubjectId: sanitizeText(parsed.data.targetSubjectId),
     metadata: cleanRecord(parsed.data.metadata),
-  }).returning()
+    },
+  })
+  if (rowOrResponse instanceof Response) return rowOrResponse
+  const row = rowOrResponse
   return ok(c, row, 201)
 })
 
@@ -366,7 +447,12 @@ enterpriseRoutes.post('/bizes/:bizId/enterprise/intercompany-accounts', requireA
   const bizId = c.req.param('bizId')
   const parsed = intercompanyAccountBodySchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid intercompany account body.', 400, parsed.error.flatten())
-  const [row] = await db.insert(enterpriseIntercompanyAccounts).values({
+  const rowOrResponse = await createEnterpriseRow({
+    c,
+    bizId,
+    tableKey: 'enterpriseIntercompanyAccounts',
+    subjectType: 'enterprise_intercompany_account',
+    data: {
     bizId,
     sourceBizId: parsed.data.sourceBizId,
     counterpartyBizId: parsed.data.counterpartyBizId,
@@ -376,7 +462,10 @@ enterpriseRoutes.post('/bizes/:bizId/enterprise/intercompany-accounts', requireA
     externalAccountRef: sanitizeText(parsed.data.externalAccountRef),
     description: sanitizeText(parsed.data.description),
     metadata: cleanRecord(parsed.data.metadata),
-  }).returning()
+    },
+  })
+  if (rowOrResponse instanceof Response) return rowOrResponse
+  const row = rowOrResponse
   return ok(c, row, 201)
 })
 
@@ -391,7 +480,12 @@ enterpriseRoutes.post('/bizes/:bizId/enterprise/intercompany-entries', requireAu
   const bizId = c.req.param('bizId')
   const parsed = intercompanyEntryBodySchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid intercompany entry body.', 400, parsed.error.flatten())
-  const [row] = await db.insert(enterpriseIntercompanyEntries).values({
+  const rowOrResponse = await createEnterpriseRow({
+    c,
+    bizId,
+    tableKey: 'enterpriseIntercompanyEntries',
+    subjectType: 'enterprise_intercompany_entry',
+    data: {
     bizId,
     intercompanyAccountId: parsed.data.intercompanyAccountId,
     entryType: parsed.data.entryType,
@@ -404,7 +498,10 @@ enterpriseRoutes.post('/bizes/:bizId/enterprise/intercompany-entries', requireAu
     sourceCrossBizOrderId: parsed.data.sourceCrossBizOrderId ?? null,
     sourcePaymentTransactionId: parsed.data.sourcePaymentTransactionId ?? null,
     metadata: cleanRecord(parsed.data.metadata),
-  }).returning()
+    },
+  })
+  if (rowOrResponse instanceof Response) return rowOrResponse
+  const row = rowOrResponse
   return ok(c, row, 201)
 })
 
@@ -418,7 +515,13 @@ enterpriseRoutes.post('/bizes/:bizId/enterprise/contract-pack-templates', requir
   const bizId = c.req.param('bizId')
   const parsed = contractPackTemplateBodySchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid contract pack template body.', 400, parsed.error.flatten())
-  const [row] = await db.insert(enterpriseContractPackTemplates).values({
+  const rowOrResponse = await createEnterpriseRow({
+    c,
+    bizId,
+    tableKey: 'enterpriseContractPackTemplates',
+    subjectType: 'enterprise_contract_pack_template',
+    displayName: parsed.data.name,
+    data: {
     bizId,
     name: sanitizePlainText(parsed.data.name),
     slug: sanitizePlainText(parsed.data.slug),
@@ -426,7 +529,10 @@ enterpriseRoutes.post('/bizes/:bizId/enterprise/contract-pack-templates', requir
     description: sanitizeText(parsed.data.description),
     status: parsed.data.status ?? 'active',
     metadata: cleanRecord(parsed.data.metadata),
-  }).returning()
+    },
+  })
+  if (rowOrResponse instanceof Response) return rowOrResponse
+  const row = rowOrResponse
   return ok(c, row, 201)
 })
 
@@ -441,7 +547,12 @@ enterpriseRoutes.post('/bizes/:bizId/enterprise/contract-pack-versions', require
   const bizId = c.req.param('bizId')
   const parsed = contractPackVersionBodySchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid contract pack version body.', 400, parsed.error.flatten())
-  const [row] = await db.insert(enterpriseContractPackVersions).values({
+  const rowOrResponse = await createEnterpriseRow({
+    c,
+    bizId,
+    tableKey: 'enterpriseContractPackVersions',
+    subjectType: 'enterprise_contract_pack_version',
+    data: {
     bizId,
     contractPackTemplateId: parsed.data.contractPackTemplateId,
     versionNumber: parsed.data.versionNumber,
@@ -450,7 +561,10 @@ enterpriseRoutes.post('/bizes/:bizId/enterprise/contract-pack-versions', require
     effectiveTo: asDate(parsed.data.effectiveTo),
     definition: cleanRecord(parsed.data.definition),
     metadata: cleanRecord(parsed.data.metadata),
-  }).returning()
+    },
+  })
+  if (rowOrResponse instanceof Response) return rowOrResponse
+  const row = rowOrResponse
   return ok(c, row, 201)
 })
 
@@ -464,7 +578,12 @@ enterpriseRoutes.post('/bizes/:bizId/enterprise/contract-pack-bindings', require
   const bizId = c.req.param('bizId')
   const parsed = contractPackBindingBodySchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid contract pack binding body.', 400, parsed.error.flatten())
-  const [row] = await db.insert(enterpriseContractPackBindings).values({
+  const rowOrResponse = await createEnterpriseRow({
+    c,
+    bizId,
+    tableKey: 'enterpriseContractPackBindings',
+    subjectType: 'enterprise_contract_pack_binding',
+    data: {
     bizId,
     contractPackVersionId: parsed.data.contractPackVersionId,
     scopeId: parsed.data.scopeId,
@@ -475,7 +594,10 @@ enterpriseRoutes.post('/bizes/:bizId/enterprise/contract-pack-bindings', require
     effectiveFrom: asDate(parsed.data.effectiveFrom),
     effectiveTo: asDate(parsed.data.effectiveTo),
     metadata: cleanRecord(parsed.data.metadata),
-  }).returning()
+    },
+  })
+  if (rowOrResponse instanceof Response) return rowOrResponse
+  const row = rowOrResponse
   return ok(c, row, 201)
 })
 
@@ -489,18 +611,26 @@ enterpriseRoutes.post('/bizes/:bizId/enterprise/admin-delegations', requireAuth,
   const bizId = c.req.param('bizId')
   const parsed = adminDelegationBodySchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid enterprise delegation body.', 400, parsed.error.flatten())
-  const [row] = await db.insert(enterpriseAdminDelegations).values({
+  const rowOrResponse = await createEnterpriseRow({
+    c,
     bizId,
-    delegatorUserId: parsed.data.delegatorUserId,
-    delegateUserId: parsed.data.delegateUserId,
-    delegationAction: sanitizePlainText(parsed.data.delegationAction),
-    scopeId: parsed.data.scopeId,
-    status: parsed.data.status ?? 'active',
-    effectiveFrom: asDate(parsed.data.effectiveFrom) ?? new Date(),
-    effectiveTo: asDate(parsed.data.effectiveTo),
-    canSubdelegate: parsed.data.canSubdelegate ?? false,
-    metadata: cleanRecord(parsed.data.metadata),
-  }).returning()
+    tableKey: 'enterpriseAdminDelegations',
+    subjectType: 'enterprise_admin_delegation',
+    data: {
+      bizId,
+      delegatorUserId: parsed.data.delegatorUserId,
+      delegateUserId: parsed.data.delegateUserId,
+      delegationAction: sanitizePlainText(parsed.data.delegationAction),
+      scopeId: parsed.data.scopeId,
+      status: parsed.data.status ?? 'active',
+      effectiveFrom: asDate(parsed.data.effectiveFrom) ?? new Date(),
+      effectiveTo: asDate(parsed.data.effectiveTo),
+      canSubdelegate: parsed.data.canSubdelegate ?? false,
+      metadata: cleanRecord(parsed.data.metadata),
+    },
+  })
+  if (rowOrResponse instanceof Response) return rowOrResponse
+  const row = rowOrResponse
   return ok(c, row, 201)
 })
 
@@ -508,19 +638,28 @@ enterpriseRoutes.patch('/bizes/:bizId/enterprise/admin-delegations/:delegationId
   const { bizId, delegationId } = c.req.param()
   const parsed = adminDelegationPatchBodySchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid enterprise delegation patch body.', 400, parsed.error.flatten())
-  const [row] = await db.update(enterpriseAdminDelegations).set({
-    delegatorUserId: parsed.data.delegatorUserId ?? undefined,
-    delegateUserId: parsed.data.delegateUserId ?? undefined,
-    delegationAction: parsed.data.delegationAction ? sanitizePlainText(parsed.data.delegationAction) : undefined,
-    scopeId: parsed.data.scopeId ?? undefined,
-    status: parsed.data.status ?? undefined,
-    effectiveFrom:
-      parsed.data.effectiveFrom == null ? undefined : new Date(parsed.data.effectiveFrom),
-    effectiveTo: asOptionalDate(parsed.data.effectiveTo),
-    canSubdelegate: parsed.data.canSubdelegate ?? undefined,
-    metadata: parsed.data.metadata ? cleanRecord(parsed.data.metadata) : undefined,
-  }).where(and(eq(enterpriseAdminDelegations.bizId, bizId), eq(enterpriseAdminDelegations.id, delegationId))).returning()
-  if (!row) return fail(c, 'NOT_FOUND', 'Enterprise delegation not found.', 404)
+  const rowOrResponse = await updateEnterpriseRow({
+    c,
+    bizId,
+    tableKey: 'enterpriseAdminDelegations',
+    subjectType: 'enterprise_admin_delegation',
+    id: delegationId,
+    notFoundMessage: 'Enterprise delegation not found.',
+    patch: {
+      delegatorUserId: parsed.data.delegatorUserId ?? undefined,
+      delegateUserId: parsed.data.delegateUserId ?? undefined,
+      delegationAction: parsed.data.delegationAction ? sanitizePlainText(parsed.data.delegationAction) : undefined,
+      scopeId: parsed.data.scopeId ?? undefined,
+      status: parsed.data.status ?? undefined,
+      effectiveFrom:
+        parsed.data.effectiveFrom == null ? undefined : new Date(parsed.data.effectiveFrom),
+      effectiveTo: asOptionalDate(parsed.data.effectiveTo),
+      canSubdelegate: parsed.data.canSubdelegate ?? undefined,
+      metadata: parsed.data.metadata ? cleanRecord(parsed.data.metadata) : undefined,
+    },
+  })
+  if (rowOrResponse instanceof Response) return rowOrResponse
+  const row = rowOrResponse
   return ok(c, row)
 })
 
@@ -534,19 +673,27 @@ enterpriseRoutes.post('/bizes/:bizId/enterprise/approval-authority-limits', requ
   const bizId = c.req.param('bizId')
   const parsed = approvalLimitBodySchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid approval authority limit body.', 400, parsed.error.flatten())
-  const [row] = await db.insert(enterpriseApprovalAuthorityLimits).values({
+  const rowOrResponse = await createEnterpriseRow({
+    c,
     bizId,
-    userId: parsed.data.userId,
-    actionType: sanitizePlainText(parsed.data.actionType),
-    scopeId: parsed.data.scopeId,
-    currency: parsed.data.currency ?? 'USD',
-    perApprovalLimitMinor: parsed.data.perApprovalLimitMinor ?? null,
-    dailyLimitMinor: parsed.data.dailyLimitMinor ?? null,
-    monthlyLimitMinor: parsed.data.monthlyLimitMinor ?? null,
-    requiresSecondApprover: parsed.data.requiresSecondApprover ?? false,
-    status: parsed.data.status ?? 'active',
-    metadata: cleanRecord(parsed.data.metadata),
-  }).returning()
+    tableKey: 'enterpriseApprovalAuthorityLimits',
+    subjectType: 'enterprise_approval_authority_limit',
+    data: {
+      bizId,
+      userId: parsed.data.userId,
+      actionType: sanitizePlainText(parsed.data.actionType),
+      scopeId: parsed.data.scopeId,
+      currency: parsed.data.currency ?? 'USD',
+      perApprovalLimitMinor: parsed.data.perApprovalLimitMinor ?? null,
+      dailyLimitMinor: parsed.data.dailyLimitMinor ?? null,
+      monthlyLimitMinor: parsed.data.monthlyLimitMinor ?? null,
+      requiresSecondApprover: parsed.data.requiresSecondApprover ?? false,
+      status: parsed.data.status ?? 'active',
+      metadata: cleanRecord(parsed.data.metadata),
+    },
+  })
+  if (rowOrResponse instanceof Response) return rowOrResponse
+  const row = rowOrResponse
   return ok(c, row, 201)
 })
 
@@ -554,19 +701,28 @@ enterpriseRoutes.patch('/bizes/:bizId/enterprise/approval-authority-limits/:limi
   const { bizId, limitId } = c.req.param()
   const parsed = approvalLimitPatchBodySchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid approval authority limit patch body.', 400, parsed.error.flatten())
-  const [row] = await db.update(enterpriseApprovalAuthorityLimits).set({
-    userId: parsed.data.userId ?? undefined,
-    actionType: parsed.data.actionType ? sanitizePlainText(parsed.data.actionType) : undefined,
-    scopeId: parsed.data.scopeId ?? undefined,
-    currency: parsed.data.currency ?? undefined,
-    perApprovalLimitMinor: parsed.data.perApprovalLimitMinor === undefined ? undefined : parsed.data.perApprovalLimitMinor,
-    dailyLimitMinor: parsed.data.dailyLimitMinor === undefined ? undefined : parsed.data.dailyLimitMinor,
-    monthlyLimitMinor: parsed.data.monthlyLimitMinor === undefined ? undefined : parsed.data.monthlyLimitMinor,
-    requiresSecondApprover: parsed.data.requiresSecondApprover ?? undefined,
-    status: parsed.data.status ?? undefined,
-    metadata: parsed.data.metadata ? cleanRecord(parsed.data.metadata) : undefined,
-  }).where(and(eq(enterpriseApprovalAuthorityLimits.bizId, bizId), eq(enterpriseApprovalAuthorityLimits.id, limitId))).returning()
-  if (!row) return fail(c, 'NOT_FOUND', 'Approval authority limit not found.', 404)
+  const rowOrResponse = await updateEnterpriseRow({
+    c,
+    bizId,
+    tableKey: 'enterpriseApprovalAuthorityLimits',
+    subjectType: 'enterprise_approval_authority_limit',
+    id: limitId,
+    notFoundMessage: 'Approval authority limit not found.',
+    patch: {
+      userId: parsed.data.userId ?? undefined,
+      actionType: parsed.data.actionType ? sanitizePlainText(parsed.data.actionType) : undefined,
+      scopeId: parsed.data.scopeId ?? undefined,
+      currency: parsed.data.currency ?? undefined,
+      perApprovalLimitMinor: parsed.data.perApprovalLimitMinor === undefined ? undefined : parsed.data.perApprovalLimitMinor,
+      dailyLimitMinor: parsed.data.dailyLimitMinor === undefined ? undefined : parsed.data.dailyLimitMinor,
+      monthlyLimitMinor: parsed.data.monthlyLimitMinor === undefined ? undefined : parsed.data.monthlyLimitMinor,
+      requiresSecondApprover: parsed.data.requiresSecondApprover ?? undefined,
+      status: parsed.data.status ?? undefined,
+      metadata: parsed.data.metadata ? cleanRecord(parsed.data.metadata) : undefined,
+    },
+  })
+  if (rowOrResponse instanceof Response) return rowOrResponse
+  const row = rowOrResponse
   return ok(c, row)
 })
 
@@ -580,23 +736,32 @@ enterpriseRoutes.post('/bizes/:bizId/enterprise/identity-providers', requireAuth
   const bizId = c.req.param('bizId')
   const parsed = identityProviderBodySchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid identity provider body.', 400, parsed.error.flatten())
-  const [row] = await db.insert(enterpriseIdentityProviders).values({
+  const rowOrResponse = await createEnterpriseRow({
+    c,
     bizId,
-    name: sanitizePlainText(parsed.data.name),
-    slug: sanitizePlainText(parsed.data.slug),
-    providerType: parsed.data.providerType,
-    status: parsed.data.status ?? 'active',
-    issuerUrl: sanitizeText(parsed.data.issuerUrl),
-    authorizationUrl: sanitizeText(parsed.data.authorizationUrl),
-    tokenUrl: sanitizeText(parsed.data.tokenUrl),
-    jwksUrl: sanitizeText(parsed.data.jwksUrl),
-    ssoEntryPointUrl: sanitizeText(parsed.data.ssoEntryPointUrl),
-    scimBaseUrl: sanitizeText(parsed.data.scimBaseUrl),
-    audience: sanitizeText(parsed.data.audience),
-    clientId: sanitizeText(parsed.data.clientId),
-    lastSyncAt: asDate(parsed.data.lastSyncAt),
-    metadata: cleanRecord(parsed.data.metadata),
-  }).returning()
+    tableKey: 'enterpriseIdentityProviders',
+    subjectType: 'enterprise_identity_provider',
+    displayName: parsed.data.name,
+    data: {
+      bizId,
+      name: sanitizePlainText(parsed.data.name),
+      slug: sanitizePlainText(parsed.data.slug),
+      providerType: parsed.data.providerType,
+      status: parsed.data.status ?? 'active',
+      issuerUrl: sanitizeText(parsed.data.issuerUrl),
+      authorizationUrl: sanitizeText(parsed.data.authorizationUrl),
+      tokenUrl: sanitizeText(parsed.data.tokenUrl),
+      jwksUrl: sanitizeText(parsed.data.jwksUrl),
+      ssoEntryPointUrl: sanitizeText(parsed.data.ssoEntryPointUrl),
+      scimBaseUrl: sanitizeText(parsed.data.scimBaseUrl),
+      audience: sanitizeText(parsed.data.audience),
+      clientId: sanitizeText(parsed.data.clientId),
+      lastSyncAt: asDate(parsed.data.lastSyncAt),
+      metadata: cleanRecord(parsed.data.metadata),
+    },
+  })
+  if (rowOrResponse instanceof Response) return rowOrResponse
+  const row = rowOrResponse
   return ok(c, row, 201)
 })
 
@@ -611,19 +776,27 @@ enterpriseRoutes.post('/bizes/:bizId/enterprise/scim-sync-states', requireAuth, 
   const bizId = c.req.param('bizId')
   const parsed = scimSyncStateBodySchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid SCIM sync state body.', 400, parsed.error.flatten())
-  const [row] = await db.insert(enterpriseScimSyncStates).values({
+  const rowOrResponse = await createEnterpriseRow({
+    c,
     bizId,
-    identityProviderId: parsed.data.identityProviderId,
-    status: parsed.data.status ?? 'pending',
-    syncStartedAt: asDate(parsed.data.syncStartedAt) ?? new Date(),
-    syncFinishedAt: asDate(parsed.data.syncFinishedAt),
-    cursor: sanitizeText(parsed.data.cursor),
-    importedUsersCount: parsed.data.importedUsersCount ?? 0,
-    updatedUsersCount: parsed.data.updatedUsersCount ?? 0,
-    deactivatedUsersCount: parsed.data.deactivatedUsersCount ?? 0,
-    errorSummary: sanitizeText(parsed.data.errorSummary),
-    metadata: cleanRecord(parsed.data.metadata),
-  }).returning()
+    tableKey: 'enterpriseScimSyncStates',
+    subjectType: 'enterprise_scim_sync_state',
+    data: {
+      bizId,
+      identityProviderId: parsed.data.identityProviderId,
+      status: parsed.data.status ?? 'pending',
+      syncStartedAt: asDate(parsed.data.syncStartedAt) ?? new Date(),
+      syncFinishedAt: asDate(parsed.data.syncFinishedAt),
+      cursor: sanitizeText(parsed.data.cursor),
+      importedUsersCount: parsed.data.importedUsersCount ?? 0,
+      updatedUsersCount: parsed.data.updatedUsersCount ?? 0,
+      deactivatedUsersCount: parsed.data.deactivatedUsersCount ?? 0,
+      errorSummary: sanitizeText(parsed.data.errorSummary),
+      metadata: cleanRecord(parsed.data.metadata),
+    },
+  })
+  if (rowOrResponse instanceof Response) return rowOrResponse
+  const row = rowOrResponse
   return ok(c, row, 201)
 })
 
@@ -631,20 +804,29 @@ enterpriseRoutes.patch('/bizes/:bizId/enterprise/scim-sync-states/:syncStateId',
   const { bizId, syncStateId } = c.req.param()
   const parsed = scimSyncStatePatchBodySchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid SCIM sync state patch body.', 400, parsed.error.flatten())
-  const [row] = await db.update(enterpriseScimSyncStates).set({
-    identityProviderId: parsed.data.identityProviderId ?? undefined,
-    status: parsed.data.status ?? undefined,
-    syncStartedAt:
-      parsed.data.syncStartedAt == null ? undefined : new Date(parsed.data.syncStartedAt),
-    syncFinishedAt: asOptionalDate(parsed.data.syncFinishedAt),
-    cursor: parsed.data.cursor === undefined ? undefined : sanitizeText(parsed.data.cursor),
-    importedUsersCount: parsed.data.importedUsersCount ?? undefined,
-    updatedUsersCount: parsed.data.updatedUsersCount ?? undefined,
-    deactivatedUsersCount: parsed.data.deactivatedUsersCount ?? undefined,
-    errorSummary: parsed.data.errorSummary === undefined ? undefined : sanitizeText(parsed.data.errorSummary),
-    metadata: parsed.data.metadata ? cleanRecord(parsed.data.metadata) : undefined,
-  }).where(and(eq(enterpriseScimSyncStates.bizId, bizId), eq(enterpriseScimSyncStates.id, syncStateId))).returning()
-  if (!row) return fail(c, 'NOT_FOUND', 'SCIM sync state not found.', 404)
+  const rowOrResponse = await updateEnterpriseRow({
+    c,
+    bizId,
+    tableKey: 'enterpriseScimSyncStates',
+    subjectType: 'enterprise_scim_sync_state',
+    id: syncStateId,
+    notFoundMessage: 'SCIM sync state not found.',
+    patch: {
+      identityProviderId: parsed.data.identityProviderId ?? undefined,
+      status: parsed.data.status ?? undefined,
+      syncStartedAt:
+        parsed.data.syncStartedAt == null ? undefined : new Date(parsed.data.syncStartedAt),
+      syncFinishedAt: asOptionalDate(parsed.data.syncFinishedAt),
+      cursor: parsed.data.cursor === undefined ? undefined : sanitizeText(parsed.data.cursor),
+      importedUsersCount: parsed.data.importedUsersCount ?? undefined,
+      updatedUsersCount: parsed.data.updatedUsersCount ?? undefined,
+      deactivatedUsersCount: parsed.data.deactivatedUsersCount ?? undefined,
+      errorSummary: parsed.data.errorSummary === undefined ? undefined : sanitizeText(parsed.data.errorSummary),
+      metadata: parsed.data.metadata ? cleanRecord(parsed.data.metadata) : undefined,
+    },
+  })
+  if (rowOrResponse instanceof Response) return rowOrResponse
+  const row = rowOrResponse
   return ok(c, row)
 })
 
@@ -659,19 +841,27 @@ enterpriseRoutes.post('/bizes/:bizId/enterprise/directory-links', requireAuth, r
   const bizId = c.req.param('bizId')
   const parsed = directoryLinkBodySchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid external directory link body.', 400, parsed.error.flatten())
-  const [row] = await db.insert(enterpriseExternalDirectoryLinks).values({
+  const rowOrResponse = await createEnterpriseRow({
+    c,
     bizId,
-    identityProviderId: parsed.data.identityProviderId,
-    principalType: sanitizePlainText(parsed.data.principalType),
-    userId: parsed.data.userId ?? null,
-    subjectType: sanitizeText(parsed.data.subjectType),
-    subjectId: sanitizeText(parsed.data.subjectId),
-    externalDirectoryId: sanitizePlainText(parsed.data.externalDirectoryId),
-    externalParentId: sanitizeText(parsed.data.externalParentId),
-    status: parsed.data.status ?? 'active',
-    lastSeenAt: asDate(parsed.data.lastSeenAt),
-    metadata: cleanRecord(parsed.data.metadata),
-  }).returning()
+    tableKey: 'enterpriseExternalDirectoryLinks',
+    subjectType: 'enterprise_external_directory_link',
+    data: {
+      bizId,
+      identityProviderId: parsed.data.identityProviderId,
+      principalType: sanitizePlainText(parsed.data.principalType),
+      userId: parsed.data.userId ?? null,
+      subjectType: sanitizeText(parsed.data.subjectType),
+      subjectId: sanitizeText(parsed.data.subjectId),
+      externalDirectoryId: sanitizePlainText(parsed.data.externalDirectoryId),
+      externalParentId: sanitizeText(parsed.data.externalParentId),
+      status: parsed.data.status ?? 'active',
+      lastSeenAt: asDate(parsed.data.lastSeenAt),
+      metadata: cleanRecord(parsed.data.metadata),
+    },
+  })
+  if (rowOrResponse instanceof Response) return rowOrResponse
+  const row = rowOrResponse
   return ok(c, row, 201)
 })
 
@@ -679,19 +869,28 @@ enterpriseRoutes.patch('/bizes/:bizId/enterprise/directory-links/:directoryLinkI
   const { bizId, directoryLinkId } = c.req.param()
   const parsed = directoryLinkPatchBodySchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid external directory link patch body.', 400, parsed.error.flatten())
-  const [row] = await db.update(enterpriseExternalDirectoryLinks).set({
-    identityProviderId: parsed.data.identityProviderId ?? undefined,
-    principalType: parsed.data.principalType ? sanitizePlainText(parsed.data.principalType) : undefined,
-    userId: parsed.data.userId ?? undefined,
-    subjectType: parsed.data.subjectType === undefined ? undefined : sanitizeText(parsed.data.subjectType),
-    subjectId: parsed.data.subjectId === undefined ? undefined : sanitizeText(parsed.data.subjectId),
-    externalDirectoryId: parsed.data.externalDirectoryId ? sanitizePlainText(parsed.data.externalDirectoryId) : undefined,
-    externalParentId: parsed.data.externalParentId === undefined ? undefined : sanitizeText(parsed.data.externalParentId),
-    status: parsed.data.status ?? undefined,
-    lastSeenAt: asOptionalDate(parsed.data.lastSeenAt),
-    metadata: parsed.data.metadata ? cleanRecord(parsed.data.metadata) : undefined,
-  }).where(and(eq(enterpriseExternalDirectoryLinks.bizId, bizId), eq(enterpriseExternalDirectoryLinks.id, directoryLinkId))).returning()
-  if (!row) return fail(c, 'NOT_FOUND', 'External directory link not found.', 404)
+  const rowOrResponse = await updateEnterpriseRow({
+    c,
+    bizId,
+    tableKey: 'enterpriseExternalDirectoryLinks',
+    subjectType: 'enterprise_external_directory_link',
+    id: directoryLinkId,
+    notFoundMessage: 'External directory link not found.',
+    patch: {
+      identityProviderId: parsed.data.identityProviderId ?? undefined,
+      principalType: parsed.data.principalType ? sanitizePlainText(parsed.data.principalType) : undefined,
+      userId: parsed.data.userId ?? undefined,
+      subjectType: parsed.data.subjectType === undefined ? undefined : sanitizeText(parsed.data.subjectType),
+      subjectId: parsed.data.subjectId === undefined ? undefined : sanitizeText(parsed.data.subjectId),
+      externalDirectoryId: parsed.data.externalDirectoryId ? sanitizePlainText(parsed.data.externalDirectoryId) : undefined,
+      externalParentId: parsed.data.externalParentId === undefined ? undefined : sanitizeText(parsed.data.externalParentId),
+      status: parsed.data.status ?? undefined,
+      lastSeenAt: asOptionalDate(parsed.data.lastSeenAt),
+      metadata: parsed.data.metadata ? cleanRecord(parsed.data.metadata) : undefined,
+    },
+  })
+  if (rowOrResponse instanceof Response) return rowOrResponse
+  const row = rowOrResponse
   return ok(c, row)
 })
 
@@ -708,20 +907,28 @@ enterpriseRoutes.post('/bizes/:bizId/enterprise/intercompany-settlement-runs', r
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid intercompany settlement run body.', 400, parsed.error.flatten())
   const expectedTotalMinor = parsed.data.expectedTotalMinor ?? 0
   const postedTotalMinor = parsed.data.postedTotalMinor ?? 0
-  const [row] = await db.insert(enterpriseIntercompanySettlementRuns).values({
+  const rowOrResponse = await createEnterpriseRow({
+    c,
     bizId,
-    intercompanyAccountId: parsed.data.intercompanyAccountId,
-    status: parsed.data.status ?? 'draft',
-    windowStartDate: parsed.data.windowStartDate,
-    windowEndDate: parsed.data.windowEndDate,
-    expectedTotalMinor,
-    postedTotalMinor,
-    differenceMinor: parsed.data.differenceMinor ?? expectedTotalMinor - postedTotalMinor,
-    startedAt: asDate(parsed.data.startedAt) ?? new Date(),
-    finishedAt: asDate(parsed.data.finishedAt),
-    errorSummary: sanitizeText(parsed.data.errorSummary),
-    metadata: cleanRecord(parsed.data.metadata),
-  }).returning()
+    tableKey: 'enterpriseIntercompanySettlementRuns',
+    subjectType: 'enterprise_intercompany_settlement_run',
+    data: {
+      bizId,
+      intercompanyAccountId: parsed.data.intercompanyAccountId,
+      status: parsed.data.status ?? 'draft',
+      windowStartDate: parsed.data.windowStartDate,
+      windowEndDate: parsed.data.windowEndDate,
+      expectedTotalMinor,
+      postedTotalMinor,
+      differenceMinor: parsed.data.differenceMinor ?? expectedTotalMinor - postedTotalMinor,
+      startedAt: asDate(parsed.data.startedAt) ?? new Date(),
+      finishedAt: asDate(parsed.data.finishedAt),
+      errorSummary: sanitizeText(parsed.data.errorSummary),
+      metadata: cleanRecord(parsed.data.metadata),
+    },
+  })
+  if (rowOrResponse instanceof Response) return rowOrResponse
+  const row = rowOrResponse
   return ok(c, row, 201)
 })
 
@@ -729,21 +936,30 @@ enterpriseRoutes.patch('/bizes/:bizId/enterprise/intercompany-settlement-runs/:s
   const { bizId, settlementRunId } = c.req.param()
   const parsed = settlementRunPatchBodySchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid intercompany settlement run patch body.', 400, parsed.error.flatten())
-  const [row] = await db.update(enterpriseIntercompanySettlementRuns).set({
-    intercompanyAccountId: parsed.data.intercompanyAccountId ?? undefined,
-    status: parsed.data.status ?? undefined,
-    windowStartDate: parsed.data.windowStartDate ?? undefined,
-    windowEndDate: parsed.data.windowEndDate ?? undefined,
-    expectedTotalMinor: parsed.data.expectedTotalMinor ?? undefined,
-    postedTotalMinor: parsed.data.postedTotalMinor ?? undefined,
-    differenceMinor: parsed.data.differenceMinor ?? undefined,
-    startedAt:
-      parsed.data.startedAt == null ? undefined : new Date(parsed.data.startedAt),
-    finishedAt: asOptionalDate(parsed.data.finishedAt),
-    errorSummary: parsed.data.errorSummary === undefined ? undefined : sanitizeText(parsed.data.errorSummary),
-    metadata: parsed.data.metadata ? cleanRecord(parsed.data.metadata) : undefined,
-  }).where(and(eq(enterpriseIntercompanySettlementRuns.bizId, bizId), eq(enterpriseIntercompanySettlementRuns.id, settlementRunId))).returning()
-  if (!row) return fail(c, 'NOT_FOUND', 'Intercompany settlement run not found.', 404)
+  const rowOrResponse = await updateEnterpriseRow({
+    c,
+    bizId,
+    tableKey: 'enterpriseIntercompanySettlementRuns',
+    subjectType: 'enterprise_intercompany_settlement_run',
+    id: settlementRunId,
+    notFoundMessage: 'Intercompany settlement run not found.',
+    patch: {
+      intercompanyAccountId: parsed.data.intercompanyAccountId ?? undefined,
+      status: parsed.data.status ?? undefined,
+      windowStartDate: parsed.data.windowStartDate ?? undefined,
+      windowEndDate: parsed.data.windowEndDate ?? undefined,
+      expectedTotalMinor: parsed.data.expectedTotalMinor ?? undefined,
+      postedTotalMinor: parsed.data.postedTotalMinor ?? undefined,
+      differenceMinor: parsed.data.differenceMinor ?? undefined,
+      startedAt:
+        parsed.data.startedAt == null ? undefined : new Date(parsed.data.startedAt),
+      finishedAt: asOptionalDate(parsed.data.finishedAt),
+      errorSummary: parsed.data.errorSummary === undefined ? undefined : sanitizeText(parsed.data.errorSummary),
+      metadata: parsed.data.metadata ? cleanRecord(parsed.data.metadata) : undefined,
+    },
+  })
+  if (rowOrResponse instanceof Response) return rowOrResponse
+  const row = rowOrResponse
   return ok(c, row)
 })
 
@@ -757,20 +973,29 @@ enterpriseRoutes.post('/bizes/:bizId/enterprise/change-rollout-runs', requireAut
   const bizId = c.req.param('bizId')
   const parsed = rolloutRunBodySchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid enterprise rollout run body.', 400, parsed.error.flatten())
-  const [row] = await db.insert(enterpriseChangeRolloutRuns).values({
+  const rowOrResponse = await createEnterpriseRow({
+    c,
     bizId,
-    name: sanitizePlainText(parsed.data.name),
-    slug: sanitizeText(parsed.data.slug),
-    changeType: sanitizePlainText(parsed.data.changeType),
-    status: parsed.data.status ?? 'draft',
-    sourceRevision: sanitizeText(parsed.data.sourceRevision),
-    targetRevision: sanitizeText(parsed.data.targetRevision),
-    requestedByUserId: parsed.data.requestedByUserId ?? null,
-    startedAt: asDate(parsed.data.startedAt) ?? new Date(),
-    finishedAt: asDate(parsed.data.finishedAt),
-    errorSummary: sanitizeText(parsed.data.errorSummary),
-    metadata: cleanRecord(parsed.data.metadata),
-  }).returning()
+    tableKey: 'enterpriseChangeRolloutRuns',
+    subjectType: 'enterprise_change_rollout_run',
+    displayName: parsed.data.name,
+    data: {
+      bizId,
+      name: sanitizePlainText(parsed.data.name),
+      slug: sanitizeText(parsed.data.slug),
+      changeType: sanitizePlainText(parsed.data.changeType),
+      status: parsed.data.status ?? 'draft',
+      sourceRevision: sanitizeText(parsed.data.sourceRevision),
+      targetRevision: sanitizeText(parsed.data.targetRevision),
+      requestedByUserId: parsed.data.requestedByUserId ?? null,
+      startedAt: asDate(parsed.data.startedAt) ?? new Date(),
+      finishedAt: asDate(parsed.data.finishedAt),
+      errorSummary: sanitizeText(parsed.data.errorSummary),
+      metadata: cleanRecord(parsed.data.metadata),
+    },
+  })
+  if (rowOrResponse instanceof Response) return rowOrResponse
+  const row = rowOrResponse
   return ok(c, row, 201)
 })
 
@@ -785,16 +1010,24 @@ enterpriseRoutes.post('/bizes/:bizId/enterprise/change-rollout-targets', require
   const bizId = c.req.param('bizId')
   const parsed = rolloutTargetBodySchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid enterprise rollout target body.', 400, parsed.error.flatten())
-  const [row] = await db.insert(enterpriseChangeRolloutTargets).values({
+  const rowOrResponse = await createEnterpriseRow({
+    c,
     bizId,
-    rolloutRunId: parsed.data.rolloutRunId,
-    scopeId: parsed.data.scopeId,
-    targetOrder: parsed.data.targetOrder ?? 100,
-    status: parsed.data.status ?? 'pending',
-    appliedAt: asDate(parsed.data.appliedAt),
-    errorSummary: sanitizeText(parsed.data.errorSummary),
-    metadata: cleanRecord(parsed.data.metadata),
-  }).returning()
+    tableKey: 'enterpriseChangeRolloutTargets',
+    subjectType: 'enterprise_change_rollout_target',
+    data: {
+      bizId,
+      rolloutRunId: parsed.data.rolloutRunId,
+      scopeId: parsed.data.scopeId,
+      targetOrder: parsed.data.targetOrder ?? 100,
+      status: parsed.data.status ?? 'pending',
+      appliedAt: asDate(parsed.data.appliedAt),
+      errorSummary: sanitizeText(parsed.data.errorSummary),
+      metadata: cleanRecord(parsed.data.metadata),
+    },
+  })
+  if (rowOrResponse instanceof Response) return rowOrResponse
+  const row = rowOrResponse
   return ok(c, row, 201)
 })
 
@@ -802,16 +1035,25 @@ enterpriseRoutes.patch('/bizes/:bizId/enterprise/change-rollout-targets/:rollout
   const { bizId, rolloutTargetId } = c.req.param()
   const parsed = rolloutTargetPatchBodySchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid enterprise rollout target patch body.', 400, parsed.error.flatten())
-  const [row] = await db.update(enterpriseChangeRolloutTargets).set({
-    rolloutRunId: parsed.data.rolloutRunId ?? undefined,
-    scopeId: parsed.data.scopeId ?? undefined,
-    targetOrder: parsed.data.targetOrder ?? undefined,
-    status: parsed.data.status ?? undefined,
-    appliedAt: asOptionalDate(parsed.data.appliedAt),
-    errorSummary: parsed.data.errorSummary === undefined ? undefined : sanitizeText(parsed.data.errorSummary),
-    metadata: parsed.data.metadata ? cleanRecord(parsed.data.metadata) : undefined,
-  }).where(and(eq(enterpriseChangeRolloutTargets.bizId, bizId), eq(enterpriseChangeRolloutTargets.id, rolloutTargetId))).returning()
-  if (!row) return fail(c, 'NOT_FOUND', 'Enterprise rollout target not found.', 404)
+  const rowOrResponse = await updateEnterpriseRow({
+    c,
+    bizId,
+    tableKey: 'enterpriseChangeRolloutTargets',
+    subjectType: 'enterprise_change_rollout_target',
+    id: rolloutTargetId,
+    notFoundMessage: 'Enterprise rollout target not found.',
+    patch: {
+      rolloutRunId: parsed.data.rolloutRunId ?? undefined,
+      scopeId: parsed.data.scopeId ?? undefined,
+      targetOrder: parsed.data.targetOrder ?? undefined,
+      status: parsed.data.status ?? undefined,
+      appliedAt: asOptionalDate(parsed.data.appliedAt),
+      errorSummary: parsed.data.errorSummary === undefined ? undefined : sanitizeText(parsed.data.errorSummary),
+      metadata: parsed.data.metadata ? cleanRecord(parsed.data.metadata) : undefined,
+    },
+  })
+  if (rowOrResponse instanceof Response) return rowOrResponse
+  const row = rowOrResponse
   return ok(c, row)
 })
 
@@ -826,16 +1068,24 @@ enterpriseRoutes.post('/bizes/:bizId/enterprise/change-rollout-results', require
   const bizId = c.req.param('bizId')
   const parsed = rolloutResultBodySchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid enterprise rollout result body.', 400, parsed.error.flatten())
-  const [row] = await db.insert(enterpriseChangeRolloutResults).values({
+  const rowOrResponse = await createEnterpriseRow({
+    c,
     bizId,
-    rolloutTargetId: parsed.data.rolloutTargetId,
-    resultType: sanitizePlainText(parsed.data.resultType),
-    resultCode: sanitizeText(parsed.data.resultCode),
-    message: sanitizeText(parsed.data.message),
-    beforeSnapshot: cleanRecord(parsed.data.beforeSnapshot),
-    afterSnapshot: cleanRecord(parsed.data.afterSnapshot),
-    metadata: cleanRecord(parsed.data.metadata),
-  }).returning()
+    tableKey: 'enterpriseChangeRolloutResults',
+    subjectType: 'enterprise_change_rollout_result',
+    data: {
+      bizId,
+      rolloutTargetId: parsed.data.rolloutTargetId,
+      resultType: sanitizePlainText(parsed.data.resultType),
+      resultCode: sanitizeText(parsed.data.resultCode),
+      message: sanitizeText(parsed.data.message),
+      beforeSnapshot: cleanRecord(parsed.data.beforeSnapshot),
+      afterSnapshot: cleanRecord(parsed.data.afterSnapshot),
+      metadata: cleanRecord(parsed.data.metadata),
+    },
+  })
+  if (rowOrResponse instanceof Response) return rowOrResponse
+  const row = rowOrResponse
   return ok(c, row, 201)
 })
 
@@ -849,17 +1099,25 @@ enterpriseRoutes.post('/bizes/:bizId/enterprise/revenue-daily', requireAuth, req
   const bizId = c.req.param('bizId')
   const parsed = revenueFactBodySchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid enterprise revenue fact body.', 400, parsed.error.flatten())
-  const [row] = await db.insert(factEnterpriseRevenueDaily).values({
+  const rowOrResponse = await createEnterpriseRow({
+    c,
     bizId,
-    memberBizId: parsed.data.memberBizId ?? null,
-    factDate: parsed.data.factDate,
-    currency: parsed.data.currency ?? 'USD',
-    grossMinor: parsed.data.grossMinor,
-    feeMinor: parsed.data.feeMinor,
-    refundMinor: parsed.data.refundMinor,
-    netMinor: parsed.data.netMinor,
-    ordersCount: parsed.data.ordersCount,
-    metadata: cleanRecord(parsed.data.metadata),
-  }).returning()
+    tableKey: 'factEnterpriseRevenueDaily',
+    subjectType: 'enterprise_revenue_daily_fact',
+    data: {
+      bizId,
+      memberBizId: parsed.data.memberBizId ?? null,
+      factDate: parsed.data.factDate,
+      currency: parsed.data.currency ?? 'USD',
+      grossMinor: parsed.data.grossMinor,
+      feeMinor: parsed.data.feeMinor,
+      refundMinor: parsed.data.refundMinor,
+      netMinor: parsed.data.netMinor,
+      ordersCount: parsed.data.ordersCount,
+      metadata: cleanRecord(parsed.data.metadata),
+    },
+  })
+  if (rowOrResponse instanceof Response) return rowOrResponse
+  const row = rowOrResponse
   return ok(c, row, 201)
 })

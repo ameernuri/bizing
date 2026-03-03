@@ -20,6 +20,7 @@ import { and, asc, eq } from 'drizzle-orm'
 import { z } from 'zod'
 import dbPackage from '@bizing/db'
 import { requireAclPermission, requireAuth, requireBizAccess } from '../middleware/auth.js'
+import { executeCrudRouteAction } from '../services/action-route-bridge.js'
 import { fail, ok } from './_api.js'
 
 const { db, projectionCheckpoints } = dbPackage
@@ -72,6 +73,56 @@ function scopeWhere(bizId: string, body: z.infer<typeof upsertCheckpointBodySche
 
 export const reportingRoutes = new Hono()
 
+async function createReportingRow<T extends Record<string, unknown>>(input: {
+  c: Parameters<typeof fail>[0]
+  bizId: string
+  tableKey: string
+  subjectType: string
+  data: Record<string, unknown>
+  displayName?: string
+}) {
+  const delegated = await executeCrudRouteAction({
+    c: input.c,
+    bizId: input.bizId,
+    tableKey: input.tableKey,
+    operation: 'create',
+    subjectType: input.subjectType,
+    displayName: input.displayName,
+    data: input.data,
+    metadata: { routeFamily: 'reporting' },
+  })
+  if (!delegated.ok) return fail(input.c, delegated.code, delegated.message, delegated.httpStatus, delegated.details)
+  return delegated.row as T
+}
+
+async function updateReportingRow<T extends Record<string, unknown>>(input: {
+  c: Parameters<typeof fail>[0]
+  bizId: string
+  tableKey: string
+  subjectType: string
+  id: string
+  patch: Record<string, unknown>
+  notFoundMessage: string
+}) {
+  const delegated = await executeCrudRouteAction({
+    c: input.c,
+    bizId: input.bizId,
+    tableKey: input.tableKey,
+    operation: 'update',
+    id: input.id,
+    subjectType: input.subjectType,
+    subjectId: input.id,
+    patch: input.patch,
+    metadata: { routeFamily: 'reporting' },
+  })
+  if (!delegated.ok) {
+    if (delegated.code === 'CRUD_TARGET_NOT_FOUND') return fail(input.c, 'NOT_FOUND', input.notFoundMessage, 404)
+    return fail(input.c, delegated.code, delegated.message, delegated.httpStatus, delegated.details)
+  }
+  if (!delegated.row) return fail(input.c, 'NOT_FOUND', input.notFoundMessage, 404)
+  return delegated.row as T
+}
+
 reportingRoutes.get(
   '/bizes/:bizId/projection-checkpoints',
   requireAuth,
@@ -105,7 +156,14 @@ reportingRoutes.post(
 
     const existing = await db.query.projectionCheckpoints.findFirst({ where: scopeWhere(bizId, parsed.data) })
     if (existing) {
-      const [updated] = await db.update(projectionCheckpoints).set({
+      const updated = await updateReportingRow<typeof projectionCheckpoints.$inferSelect>({
+        c,
+        bizId,
+        tableKey: 'projectionCheckpoints',
+        subjectType: 'projection_checkpoint',
+        id: existing.id,
+        notFoundMessage: 'Projection checkpoint not found.',
+        patch: {
         status: parsed.data.status,
         revision: parsed.data.revision,
         lastLifecycleEventId: parsed.data.lastLifecycleEventId ?? null,
@@ -114,11 +172,19 @@ reportingRoutes.post(
         lagSeconds: parsed.data.lagSeconds,
         errorSummary: parsed.data.errorSummary ?? null,
         metadata: parsed.data.metadata ?? {},
-      }).where(and(eq(projectionCheckpoints.bizId, bizId), eq(projectionCheckpoints.id, existing.id))).returning()
+        },
+      })
+      if (updated instanceof Response) return updated
       return ok(c, updated, 200)
     }
 
-    const [created] = await db.insert(projectionCheckpoints).values({
+    const created = await createReportingRow<typeof projectionCheckpoints.$inferSelect>({
+      c,
+      bizId,
+      tableKey: 'projectionCheckpoints',
+      subjectType: 'projection_checkpoint',
+      displayName: parsed.data.projectionKey,
+      data: {
       bizId,
       projectionKey: parsed.data.projectionKey,
       scopeType: parsed.data.scopeType,
@@ -135,7 +201,9 @@ reportingRoutes.post(
       lagSeconds: parsed.data.lagSeconds,
       errorSummary: parsed.data.errorSummary ?? null,
       metadata: parsed.data.metadata ?? {},
-    }).returning()
+      },
+    })
+    if (created instanceof Response) return created
     return ok(c, created, 201)
   },
 )
@@ -155,7 +223,14 @@ reportingRoutes.post(
     })
     if (!existing) return fail(c, 'NOT_FOUND', 'Projection checkpoint not found.', 404)
 
-    const [updated] = await db.update(projectionCheckpoints).set({
+    const updated = await updateReportingRow<typeof projectionCheckpoints.$inferSelect>({
+      c,
+      bizId,
+      tableKey: 'projectionCheckpoints',
+      subjectType: 'projection_checkpoint',
+      id: checkpointId,
+      notFoundMessage: 'Projection checkpoint not found.',
+      patch: {
       status: parsed.data.toStatus,
       revision: existing.revision + 1,
       lastLifecycleEventId: parsed.data.lastLifecycleEventId ?? existing.lastLifecycleEventId,
@@ -169,7 +244,9 @@ reportingRoutes.post(
         replayedAt: new Date().toISOString(),
         previousRevision: existing.revision,
       },
-    }).where(and(eq(projectionCheckpoints.bizId, bizId), eq(projectionCheckpoints.id, checkpointId))).returning()
+      },
+    })
+    if (updated instanceof Response) return updated
 
     return ok(c, updated, 200)
   },

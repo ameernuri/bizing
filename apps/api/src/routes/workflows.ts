@@ -21,6 +21,7 @@ import { and, desc, eq } from 'drizzle-orm'
 import { z } from 'zod'
 import dbPackage from '@bizing/db'
 import { requireAclPermission, requireAuth, requireBizAccess } from '../middleware/auth.js'
+import { executeCrudRouteAction } from '../services/action-route-bridge.js'
 import { fail, ok, parsePositiveInt } from './_api.js'
 
 const {
@@ -32,6 +33,29 @@ const {
   workflowDecisions,
   asyncDeliverables,
 } = dbPackage
+
+async function createWorkflowRow<TTableKey extends 'reviewQueues' | 'reviewQueueItems'>(
+  c: Parameters<typeof executeCrudRouteAction>[0]['c'],
+  bizId: string,
+  tableKey: TTableKey,
+  data: Parameters<typeof executeCrudRouteAction>[0]['data'],
+  meta: { subjectType: string; subjectId: string; displayName: string; source: string },
+) {
+  const result = await executeCrudRouteAction({
+    c,
+    bizId,
+    tableKey,
+    operation: 'create',
+    data,
+    subjectType: meta.subjectType,
+    subjectId: meta.subjectId,
+    displayName: meta.displayName,
+    metadata: { source: meta.source },
+  })
+  if (!result.ok) throw new Error(result.message ?? `Failed to create ${tableKey}`)
+  if (!result.row) throw new Error(`Missing row for ${tableKey} create`)
+  return result.row
+}
 
 const listQuerySchema = z.object({
   page: z.string().optional(),
@@ -103,15 +127,26 @@ workflowRoutes.post(
     if (!parsed.success) {
       return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
     }
-    const [row] = await db.insert(reviewQueues).values({
+    const row = await createWorkflowRow(
+      c,
       bizId,
-      name: parsed.data.name,
-      slug: parsed.data.slug,
-      type: parsed.data.type,
-      status: parsed.data.status ?? 'active',
-      policy: parsed.data.policy ?? {},
-      metadata: parsed.data.metadata ?? {},
-    }).returning()
+      'reviewQueues',
+      {
+        bizId,
+        name: parsed.data.name,
+        slug: parsed.data.slug,
+        type: parsed.data.type,
+        status: parsed.data.status ?? 'active',
+        policy: parsed.data.policy ?? {},
+        metadata: parsed.data.metadata ?? {},
+      },
+      {
+        subjectType: 'review_queue',
+        subjectId: parsed.data.slug,
+        displayName: parsed.data.name,
+        source: 'routes.workflows.createReviewQueue',
+      },
+    )
     return ok(c, row, 201)
   },
 )
@@ -189,24 +224,35 @@ workflowRoutes.post(
     if (!parsed.success) {
       return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
     }
-    const [row] = await db.insert(reviewQueueItems).values({
+    const row = await createWorkflowRow(
+      c,
       bizId,
-      reviewQueueId: parsed.data.reviewQueueId,
-      status: parsed.data.status ?? 'pending',
-      itemType: parsed.data.itemType,
-      itemRefId: parsed.data.itemRefId,
-      bookingOrderId: parsed.data.bookingOrderId ?? null,
-      fulfillmentUnitId: parsed.data.fulfillmentUnitId ?? null,
-      sourceActionRequestId: parsed.data.sourceActionRequestId ?? null,
-      sourceDomainEventId: parsed.data.sourceDomainEventId ?? null,
-      priority: parsed.data.priority ?? 100,
-      riskScore: parsed.data.riskScore ?? null,
-      assignedToUserId: parsed.data.assignedToUserId ?? null,
-      dueAt: parsed.data.dueAt ? new Date(parsed.data.dueAt) : null,
-      resolvedAt: parsed.data.resolvedAt ? new Date(parsed.data.resolvedAt) : null,
-      resolutionPayload: parsed.data.resolutionPayload ?? {},
-      metadata: parsed.data.metadata ?? {},
-    }).returning()
+      'reviewQueueItems',
+      {
+        bizId,
+        reviewQueueId: parsed.data.reviewQueueId,
+        status: parsed.data.status ?? 'pending',
+        itemType: parsed.data.itemType,
+        itemRefId: parsed.data.itemRefId,
+        bookingOrderId: parsed.data.bookingOrderId ?? null,
+        fulfillmentUnitId: parsed.data.fulfillmentUnitId ?? null,
+        sourceActionRequestId: parsed.data.sourceActionRequestId ?? null,
+        sourceDomainEventId: parsed.data.sourceDomainEventId ?? null,
+        priority: parsed.data.priority ?? 100,
+        riskScore: parsed.data.riskScore ?? null,
+        assignedToUserId: parsed.data.assignedToUserId ?? null,
+        dueAt: parsed.data.dueAt ? new Date(parsed.data.dueAt) : null,
+        resolvedAt: parsed.data.resolvedAt ? new Date(parsed.data.resolvedAt) : null,
+        resolutionPayload: parsed.data.resolutionPayload ?? {},
+        metadata: parsed.data.metadata ?? {},
+      },
+      {
+        subjectType: 'review_queue_item',
+        subjectId: parsed.data.itemRefId,
+        displayName: parsed.data.itemType,
+        source: 'routes.workflows.createReviewQueueItem',
+      },
+    )
     return ok(c, row, 201)
   },
 )

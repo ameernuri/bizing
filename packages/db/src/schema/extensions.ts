@@ -1,7 +1,6 @@
 import { sql } from "drizzle-orm";
 import { check, foreignKey, index, uniqueIndex } from "drizzle-orm/pg-core";
 import {
-  AnyPgColumn,
   boolean,
   date,
   integer,
@@ -29,11 +28,11 @@ import {
   extensionSourceTypeEnum,
   idempotencyStatusEnum,
   lifecycleEventPhaseEnum,
-  lifecycleEventSourceEnum,
   lifecycleStatusEnum,
   outboxStatusEnum,
 } from "./enums";
 import { subjects } from "./subjects";
+import { domainEvents } from "./domain_events";
 
 /**
  * extension_definitions
@@ -507,9 +506,9 @@ export const extensionStateDocuments = pgTable(
     /** Extension-managed schema version of payload. */
     schemaVersion: integer("schema_version").default(1).notNull(),
 
-    /** Optional last lifecycle event processed into this state. */
+    /** Optional last canonical domain event processed into this state. */
     lastLifecycleEventId: idRef("last_lifecycle_event_id").references(
-      () => lifecycleEvents.id,
+      () => domainEvents.id,
     ),
 
     /** Optional timestamp of last successful materialization/update. */
@@ -577,10 +576,10 @@ export const extensionStateDocuments = pgTable(
       name: "extension_state_documents_biz_subject_fk",
     }),
 
-    /** Tenant-safe FK to optional lifecycle event checkpoint. */
+    /** Tenant-safe FK to optional domain-event checkpoint. */
     extensionStateDocumentsBizLifecycleEventFk: foreignKey({
       columns: [table.bizId, table.lastLifecycleEventId],
-      foreignColumns: [lifecycleEvents.bizId, lifecycleEvents.id],
+      foreignColumns: [domainEvents.bizId, domainEvents.id],
       name: "extension_state_documents_biz_lifecycle_event_fk",
     }),
 
@@ -619,123 +618,6 @@ export const extensionStateDocuments = pgTable(
       AND "revision" >= 1
       AND "schema_version" >= 1
       `,
-    ),
-  }),
-);
-
-/**
- * lifecycle_events
- *
- * ELI5:
- * This is the append-only timeline of "important business events happened".
- *
- * Important distinction:
- * - `audit_events` answers "who changed what for compliance".
- * - `lifecycle_events` answers "what domain event happened for automation/hooks".
- *
- * Examples:
- * - `booking_order.created`
- * - `payment_intent.succeeded`
- * - `fulfillment_unit.checked_in`
- */
-export const lifecycleEvents = pgTable(
-  "lifecycle_events",
-  {
-    /** Stable primary key for one event message. */
-    id: idWithTag("lifecycle_event"),
-
-    /** Tenant boundary. */
-    bizId: idRef("biz_id")
-      .references(() => bizes.id)
-      .notNull(),
-
-    /** Source category for debugging pipelines. */
-    sourceType: lifecycleEventSourceEnum("source_type").notNull(),
-
-    /** Versioned event name used by subscriptions and consumers. */
-    eventName: varchar("event_name", { length: 200 }).notNull(),
-
-    /** Event contract version (starts at 1). */
-    eventVersion: integer("event_version").default(1).notNull(),
-
-    /** Primary entity class this event describes. */
-    entityType: varchar("entity_type", { length: 120 }).notNull(),
-
-    /** Primary entity id this event describes. */
-    entityId: varchar("entity_id", { length: 140 }).notNull(),
-
-    /** Optional aggregate/parent root type for grouped workflows. */
-    aggregateType: varchar("aggregate_type", { length: 120 }),
-
-    /** Optional aggregate/parent root id for grouped workflows. */
-    aggregateId: varchar("aggregate_id", { length: 140 }),
-
-    /** Event occurrence timestamp from business perspective. */
-    occurredAt: timestamp("occurred_at", { withTimezone: true })
-      .defaultNow()
-      .notNull(),
-
-    /** Optional actor user pointer when triggered by a user action. */
-    actorUserId: idRef("actor_user_id").references(() => users.id),
-
-    /** Correlation id to stitch all events from one request or workflow run. */
-    correlationId: varchar("correlation_id", { length: 200 }),
-
-    /** Optional previous/causing lifecycle event id. */
-    causationEventId: idRef("causation_event_id").references(
-      (): AnyPgColumn => lifecycleEvents.id,
-    ),
-
-    /** Optional caller-provided dedupe key. */
-    idempotencyKey: varchar("idempotency_key", { length: 200 }),
-
-    /** Event payload consumed by hooks/automations/integrations. */
-    payload: jsonb("payload").default({}).notNull(),
-
-    /** Event metadata (trace ids, schema fingerprints, etc.). */
-    metadata: jsonb("metadata").default({}),
-
-    /**
-     * Event row write timestamp.
-     *
-     * This intentionally uses one-way created time because lifecycle events are
-     * designed to be append-only operational facts.
-     */
-    recordedAt: createdAt,
-  },
-  (table) => ({
-    lifecycleEventsBizIdIdUnique: uniqueIndex("lifecycle_events_biz_id_id_unique").on(
-      table.bizId,
-      table.id,
-    ),
-    /** Composite unique key used by tenant-safe delivery FKs. */
-
-    /** Fast event feed query by topic. */
-    lifecycleEventsBizEventOccurredIdx: index("lifecycle_events_biz_event_occurred_idx").on(
-      table.bizId,
-      table.eventName,
-      table.occurredAt,
-    ),
-
-    /** Fast event lookup by primary entity. */
-    lifecycleEventsBizEntityOccurredIdx: index("lifecycle_events_biz_entity_occurred_idx").on(
-      table.bizId,
-      table.entityType,
-      table.entityId,
-      table.occurredAt,
-    ),
-
-    /** Optional dedupe key guard for publishers that retry event writes. */
-    lifecycleEventsBizIdempotencyUnique: uniqueIndex(
-      "lifecycle_events_biz_idempotency_unique",
-    )
-      .on(table.bizId, table.idempotencyKey)
-      .where(sql`"idempotency_key" IS NOT NULL`),
-
-    /** Event version must be positive. */
-    lifecycleEventsVersionCheck: check(
-      "lifecycle_events_version_check",
-      sql`"event_version" >= 1`,
     ),
   }),
 );
@@ -890,9 +772,9 @@ export const lifecycleEventDeliveries = pgTable(
       .references(() => bizes.id)
       .notNull(),
 
-    /** Event being delivered. */
+    /** Canonical domain event being delivered. */
     lifecycleEventId: idRef("lifecycle_event_id")
-      .references(() => lifecycleEvents.id)
+      .references(() => domainEvents.id)
       .notNull(),
 
     /** Subscription receiving this event. */
@@ -971,10 +853,10 @@ export const lifecycleEventDeliveries = pgTable(
       "lifecycle_event_deliveries_biz_subscription_status_idx",
     ).on(table.bizId, table.lifecycleEventSubscriptionId, table.status),
 
-    /** Tenant-safe FK to lifecycle event. */
+    /** Tenant-safe FK to canonical domain event. */
     lifecycleEventDeliveriesBizEventFk: foreignKey({
       columns: [table.bizId, table.lifecycleEventId],
-      foreignColumns: [lifecycleEvents.bizId, lifecycleEvents.id],
+      foreignColumns: [domainEvents.bizId, domainEvents.id],
       name: "lifecycle_event_deliveries_biz_event_fk",
     }),
 
@@ -2161,9 +2043,6 @@ export type NewBizExtensionPermissionGrant =
 
 export type ExtensionStateDocument = typeof extensionStateDocuments.$inferSelect;
 export type NewExtensionStateDocument = typeof extensionStateDocuments.$inferInsert;
-
-export type LifecycleEvent = typeof lifecycleEvents.$inferSelect;
-export type NewLifecycleEvent = typeof lifecycleEvents.$inferInsert;
 
 export type LifecycleEventSubscription =
   typeof lifecycleEventSubscriptions.$inferSelect;

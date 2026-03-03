@@ -20,6 +20,7 @@ import dbPackage from '@bizing/db'
 import { requireAclPermission, requireAuth, requireBizAccess } from '../middleware/auth.js'
 import { fail, ok, parsePositiveInt } from './_api.js'
 import { sanitizePlainText, sanitizeUnknown } from '../lib/sanitize.js'
+import { executeCrudRouteAction } from '../services/action-route-bridge.js'
 
 const {
   db,
@@ -29,6 +30,29 @@ const {
   resources,
   outboundMessages,
 } = dbPackage
+
+async function createAnalyticsRow<TTableKey extends 'projections' | 'projectionDocuments'>(
+  c: Parameters<typeof executeCrudRouteAction>[0]['c'],
+  bizId: string,
+  tableKey: TTableKey,
+  data: Parameters<typeof executeCrudRouteAction>[0]['data'],
+  meta: { subjectType: string; subjectId: string; displayName: string; source: string },
+) {
+  const result = await executeCrudRouteAction({
+    c,
+    bizId,
+    tableKey,
+    operation: 'create',
+    data,
+    subjectType: meta.subjectType,
+    subjectId: meta.subjectId,
+    displayName: meta.displayName,
+    metadata: { source: meta.source },
+  })
+  if (!result.ok) throw new Error(result.message ?? `Failed to create ${tableKey}`)
+  if (!result.row) throw new Error(`Missing row for ${tableKey} create`)
+  return result.row
+}
 
 function pagination(input: { page?: string; perPage?: string }) {
   const page = parsePositiveInt(input.page, 1)
@@ -214,19 +238,30 @@ analyticsRoutes.post(
     const bizId = c.req.param('bizId')
     const parsed = createReportBodySchema.safeParse(await c.req.json().catch(() => null))
     if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
-    const [created] = await db.insert(projections).values({
+    const created = await createAnalyticsRow(
+      c,
       bizId,
-      projectionKey: parsed.data.projectionKey,
-      projectionFamily: 'analytics_custom_report',
-      status: 'active',
-      freshnessPolicy: sanitizeUnknown(parsed.data.freshnessPolicy ?? {}),
-      metadata: sanitizeUnknown({
-        name: sanitizePlainText(parsed.data.name),
-        description: parsed.data.description ? sanitizePlainText(parsed.data.description) : null,
-        spec: parsed.data.spec,
-        ...(parsed.data.metadata ?? {}),
-      }),
-    }).returning()
+      'projections',
+      {
+        bizId,
+        projectionKey: parsed.data.projectionKey,
+        projectionFamily: 'analytics_custom_report',
+        status: 'active',
+        freshnessPolicy: sanitizeUnknown(parsed.data.freshnessPolicy ?? {}),
+        metadata: sanitizeUnknown({
+          name: sanitizePlainText(parsed.data.name),
+          description: parsed.data.description ? sanitizePlainText(parsed.data.description) : null,
+          spec: parsed.data.spec,
+          ...(parsed.data.metadata ?? {}),
+        }),
+      },
+      {
+        subjectType: 'projection',
+        subjectId: parsed.data.projectionKey,
+        displayName: parsed.data.name,
+        source: 'routes.analytics.createReport',
+      },
+    )
     return ok(c, created, 201)
   },
 )
@@ -247,21 +282,32 @@ analyticsRoutes.post(
     if (!projection) return fail(c, 'NOT_FOUND', 'Analytics report definition not found.', 404)
     const rendered = await buildAnalyticsDataset(bizId)
     const documentKey = parsed.data.documentKey ?? `render_${Date.now()}`
-    const [created] = await db.insert(projectionDocuments).values({
+    const created = await createAnalyticsRow(
+      c,
       bizId,
-      projectionId,
-      documentKey,
-      subjectType: parsed.data.subjectType ?? 'biz',
-      subjectId: parsed.data.subjectId ?? bizId,
-      status: 'current',
-      versionNumber: 1,
-      renderedData: sanitizeUnknown({
-        reportDefinition: projection.metadata,
-        overrides: parsed.data.specOverrides ?? {},
-        dataset: rendered,
-      }),
-      metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
-    }).returning()
+      'projectionDocuments',
+      {
+        bizId,
+        projectionId,
+        documentKey,
+        subjectType: parsed.data.subjectType ?? 'biz',
+        subjectId: parsed.data.subjectId ?? bizId,
+        status: 'current',
+        versionNumber: 1,
+        renderedData: sanitizeUnknown({
+          reportDefinition: projection.metadata,
+          overrides: parsed.data.specOverrides ?? {},
+          dataset: rendered,
+        }),
+        metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
+      },
+      {
+        subjectType: 'projection_document',
+        subjectId: projectionId,
+        displayName: documentKey,
+        source: 'routes.analytics.renderReport',
+      },
+    )
     return ok(c, created, 201)
   },
 )
@@ -280,25 +326,36 @@ analyticsRoutes.post(
     })
     if (!projection) return fail(c, 'NOT_FOUND', 'Projection not found.', 404)
     const rendered = await buildAnalyticsDataset(bizId)
-    const [doc] = await db.insert(projectionDocuments).values({
+    const doc = await createAnalyticsRow(
+      c,
       bizId,
-      projectionId: projection.id,
-      documentKey: `export_${parsed.data.format}_${Date.now()}`,
-      subjectType: 'biz',
-      subjectId: bizId,
-      status: 'current',
-      versionNumber: 1,
-      renderedData: sanitizeUnknown({
-        exportFormat: parsed.data.format,
-        dataset: rendered,
-      }),
-      metadata: sanitizeUnknown({
-        reason: parsed.data.reason ?? null,
-        exportFormat: parsed.data.format,
-        exportReady: true,
-        ...(parsed.data.metadata ?? {}),
-      }),
-    }).returning()
+      'projectionDocuments',
+      {
+        bizId,
+        projectionId: projection.id,
+        documentKey: `export_${parsed.data.format}_${Date.now()}`,
+        subjectType: 'biz',
+        subjectId: bizId,
+        status: 'current',
+        versionNumber: 1,
+        renderedData: sanitizeUnknown({
+          exportFormat: parsed.data.format,
+          dataset: rendered,
+        }),
+        metadata: sanitizeUnknown({
+          reason: parsed.data.reason ?? null,
+          exportFormat: parsed.data.format,
+          exportReady: true,
+          ...(parsed.data.metadata ?? {}),
+        }),
+      },
+      {
+        subjectType: 'projection_document',
+        subjectId: projection.id,
+        displayName: parsed.data.format,
+        source: 'routes.analytics.exportReport',
+      },
+    )
     return ok(c, {
       exportId: doc.id,
       format: parsed.data.format,

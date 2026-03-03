@@ -32,6 +32,7 @@ import {
   requireBizAccess,
   requirePlatformAdmin,
 } from '../middleware/auth.js'
+import { executeCrudRouteAction } from '../services/action-route-bridge.js'
 import { appendAuditEvent, createOperationalAlert } from '../lib/audit-log.js'
 import { sanitizePlainText, sanitizeUnknown } from '../lib/sanitize.js'
 import { fail, ok } from './_api.js'
@@ -264,6 +265,95 @@ function buildScopedPayload(params: {
   return { scope, scopeRef, resolvedScopeType }
 }
 
+async function createAuthzRow(
+  c: Parameters<typeof executeCrudRouteAction>[0]['c'],
+  bizId: string | null | undefined,
+  tableKey: string,
+  data: Record<string, unknown>,
+  options?: {
+    subjectType?: string
+    subjectId?: string
+    displayName?: string
+    metadata?: Record<string, unknown>
+  },
+) {
+  const result = await executeCrudRouteAction({
+    c,
+    bizId: bizId ?? null,
+    tableKey,
+    operation: 'create',
+    data,
+    subjectType: options?.subjectType,
+    subjectId: options?.subjectId,
+    displayName: options?.displayName,
+    metadata: options?.metadata,
+  })
+  if (!result.ok) {
+    return fail(c, result.code, result.message, result.httpStatus, result.details)
+  }
+  return result.row
+}
+
+async function updateAuthzRow(
+  c: Parameters<typeof executeCrudRouteAction>[0]['c'],
+  bizId: string | null | undefined,
+  tableKey: string,
+  id: string,
+  patch: Record<string, unknown>,
+  options?: {
+    subjectType?: string
+    subjectId?: string
+    displayName?: string
+    metadata?: Record<string, unknown>
+  },
+) {
+  const result = await executeCrudRouteAction({
+    c,
+    bizId: bizId ?? null,
+    tableKey,
+    operation: 'update',
+    id,
+    patch,
+    subjectType: options?.subjectType,
+    subjectId: options?.subjectId,
+    displayName: options?.displayName,
+    metadata: options?.metadata,
+  })
+  if (!result.ok) {
+    return fail(c, result.code, result.message, result.httpStatus, result.details)
+  }
+  return result.row
+}
+
+async function deleteAuthzRow(
+  c: Parameters<typeof executeCrudRouteAction>[0]['c'],
+  bizId: string | null | undefined,
+  tableKey: string,
+  id: string,
+  options?: {
+    subjectType?: string
+    subjectId?: string
+    displayName?: string
+    metadata?: Record<string, unknown>
+  },
+) {
+  const result = await executeCrudRouteAction({
+    c,
+    bizId: bizId ?? null,
+    tableKey,
+    operation: 'delete',
+    id,
+    subjectType: options?.subjectType,
+    subjectId: options?.subjectId,
+    displayName: options?.displayName,
+    metadata: options?.metadata,
+  })
+  if (!result.ok) {
+    return fail(c, result.code, result.message, result.httpStatus, result.details)
+  }
+  return result.row
+}
+
 export const authzRoutes = new Hono()
 
 /**
@@ -354,21 +444,24 @@ authzRoutes.patch('/auth/active-biz', requireAuth, async (c) => {
     return fail(c, 'FORBIDDEN', 'Permission denied to switch active biz.', 403, decision)
   }
 
-  const [updated] = await db
-    .update(sessions)
-    .set({
+  const updated = (await updateAuthzRow(
+    c,
+    parsed.data.bizId,
+    'sessions',
+    session.id,
+    {
       activeOrganizationId: parsed.data.bizId,
       updatedAt: new Date(),
-    })
-    .where(and(eq(sessions.id, session.id), eq(sessions.userId, user.id)))
-    .returning({
-      id: sessions.id,
-      activeOrganizationId: sessions.activeOrganizationId,
-    })
+    },
+    {
+      subjectType: 'session',
+      subjectId: session.id,
+      displayName: 'Switch active biz',
+      metadata: { source: 'routes.authz.switchActiveBiz' },
+    },
+  )) as Record<string, unknown> | Response
 
-  if (!updated) {
-    return fail(c, 'NOT_FOUND', 'Session not found.', 404)
-  }
+  if (updated instanceof Response) return updated
 
   emitAuthzEvent(c, {
     authSource: 'session',
@@ -450,23 +543,32 @@ authzRoutes.post(
     })
     if (existing) return fail(c, 'CONFLICT', 'User is already a member of this biz.', 409)
 
-    const [created] = await db
-      .insert(members)
-      .values({
+    const created = (await createAuthzRow(
+      c,
+      bizId,
+      'members',
+      {
         id: `member_${crypto.randomUUID().replace(/-/g, '')}`,
         organizationId: bizId,
         userId: targetUserId,
         role: parsed.data.role,
         createdAt: new Date(),
-      })
-      .returning()
+      },
+      {
+        subjectType: 'member',
+        subjectId: targetUserId,
+        displayName: 'Create member',
+        metadata: { source: 'routes.authz.createMember' },
+      },
+    )) as Record<string, unknown> | Response
+    if (created instanceof Response) return created
 
     await emitAdminActionTrace(c, {
       bizId,
       streamKey: `member:${created.id}`,
       streamType: 'member',
       entityType: 'member',
-      entityId: created.id,
+      entityId: String(created.id),
       eventType: 'create',
       reasonCode: 'member_added',
       note: `Member ${created.id} was added to biz ${bizId}.`,
@@ -520,10 +622,17 @@ authzRoutes.post(
       })
     }
 
-    const removedRows = await db
-      .delete(members)
-      .where(and(eq(members.organizationId, bizId), inArray(members.id, parsed.data.memberIds)))
-      .returning({ id: members.id })
+    const removedRows: Array<{ id: string }> = []
+    for (const memberId of parsed.data.memberIds) {
+      const removed = (await deleteAuthzRow(c, bizId, 'members', memberId, {
+        subjectType: 'member',
+        subjectId: memberId,
+        displayName: 'Bulk remove member',
+        metadata: { source: 'routes.authz.bulkDeleteMembers' },
+      })) as Record<string, unknown> | Response
+      if (removed instanceof Response) return removed
+      removedRows.push({ id: String(removed.id) })
+    }
 
     const batchId = `bulk_member_delete_${crypto.randomUUID().replace(/-/g, '')}`
     await emitAdminActionTrace(c, {
@@ -580,20 +689,22 @@ authzRoutes.patch(
     })
     if (!existing) return fail(c, 'NOT_FOUND', 'Member not found.', 404)
 
-    const [updated] = await db
-      .update(members)
-      .set({ role: parsed.data.role })
-      .where(and(eq(members.organizationId, bizId), eq(members.id, memberId)))
-      .returning()
-
-    if (!updated) return fail(c, 'NOT_FOUND', 'Member not found.', 404)
+    const updated = (await updateAuthzRow(c, bizId, 'members', memberId, {
+      role: parsed.data.role,
+    }, {
+      subjectType: 'member',
+      subjectId: memberId,
+      displayName: 'Update member role',
+      metadata: { source: 'routes.authz.updateMember' },
+    })) as Record<string, unknown> | Response
+    if (updated instanceof Response) return updated
 
     await emitAdminActionTrace(c, {
       bizId,
       streamKey: `member:${updated.id}`,
       streamType: 'member',
       entityType: 'member',
-      entityId: updated.id,
+      entityId: String(updated.id),
       eventType: 'update',
       reasonCode: 'member_role_updated',
       note: `Member ${updated.id} role was updated from ${existing.role} to ${updated.role}.`,
@@ -632,12 +743,13 @@ authzRoutes.delete(
     })
     if (!existing) return fail(c, 'NOT_FOUND', 'Member not found.', 404)
 
-    const [removed] = await db
-      .delete(members)
-      .where(and(eq(members.organizationId, bizId), eq(members.id, memberId)))
-      .returning({ id: members.id })
-
-    if (!removed) return fail(c, 'NOT_FOUND', 'Member not found.', 404)
+    const removed = (await deleteAuthzRow(c, bizId, 'members', memberId, {
+      subjectType: 'member',
+      subjectId: memberId,
+      displayName: 'Remove member',
+      metadata: { source: 'routes.authz.deleteMember' },
+    })) as Record<string, unknown> | Response
+    if (removed instanceof Response) return removed
 
     await emitAdminActionTrace(c, {
       bizId,
@@ -697,10 +809,17 @@ authzRoutes.post(
       })
     }
 
-    const removedRows = await db
-      .delete(members)
-      .where(and(eq(members.organizationId, bizId), inArray(members.id, parsed.data.memberIds)))
-      .returning({ id: members.id })
+    const removedRows: Array<{ id: string }> = []
+    for (const memberId of parsed.data.memberIds) {
+      const removed = (await deleteAuthzRow(c, bizId, 'members', memberId, {
+        subjectType: 'member',
+        subjectId: memberId,
+        displayName: 'Bulk remove member',
+        metadata: { source: 'routes.authz.bulkDeleteMembers' },
+      })) as Record<string, unknown> | Response
+      if (removed instanceof Response) return removed
+      removedRows.push({ id: String(removed.id) })
+    }
 
     const batchId = `bulk_member_delete_${crypto.randomUUID().replace(/-/g, '')}`
     await emitAdminActionTrace(c, {
@@ -757,12 +876,13 @@ authzRoutes.post(
     })
     if (!existing) return fail(c, 'NOT_FOUND', 'Member not found.', 404)
 
-    const [removed] = await db
-      .delete(members)
-      .where(and(eq(members.organizationId, bizId), eq(members.id, memberId)))
-      .returning({ id: members.id })
-
-    if (!removed) return fail(c, 'NOT_FOUND', 'Member not found.', 404)
+    const removed = (await deleteAuthzRow(c, bizId, 'members', memberId, {
+      subjectType: 'member',
+      subjectId: memberId,
+      displayName: 'Offboard member',
+      metadata: { source: 'routes.authz.offboardMember' },
+    })) as Record<string, unknown> | Response
+    if (removed instanceof Response) return removed
 
     await emitAdminActionTrace(c, {
       bizId,
@@ -828,9 +948,11 @@ authzRoutes.post(
       return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
     }
 
-    const [created] = await db
-      .insert(invitations)
-      .values({
+    const created = (await createAuthzRow(
+      c,
+      bizId,
+      'invitations',
+      {
         id: `invite_${crypto.randomUUID().replace(/-/g, '')}`,
         organizationId: bizId,
         email: parsed.data.email,
@@ -839,8 +961,14 @@ authzRoutes.post(
         inviterId: user.id,
         createdAt: new Date(),
         expiresAt: parsed.data.expiresAt ? new Date(parsed.data.expiresAt) : nowPlusDays(7),
-      })
-      .returning()
+      },
+      {
+        subjectType: 'invitation',
+        displayName: parsed.data.email,
+        metadata: { source: 'routes.authz.createInvitation' },
+      },
+    )) as Record<string, unknown> | Response
+    if (created instanceof Response) return created
 
     return ok(c, created, 201)
   },
@@ -854,12 +982,13 @@ authzRoutes.delete(
   async (c) => {
     const { bizId, invitationId } = c.req.param()
 
-    const [removed] = await db
-      .delete(invitations)
-      .where(and(eq(invitations.organizationId, bizId), eq(invitations.id, invitationId)))
-      .returning({ id: invitations.id })
-
-    if (!removed) return fail(c, 'NOT_FOUND', 'Invitation not found.', 404)
+    const removed = (await deleteAuthzRow(c, bizId, 'invitations', invitationId, {
+      subjectType: 'invitation',
+      subjectId: invitationId,
+      displayName: 'Delete invitation',
+      metadata: { source: 'routes.authz.deleteInvitation' },
+    })) as Record<string, unknown> | Response
+    if (removed instanceof Response) return removed
     return ok(c, removed)
   },
 )
@@ -933,9 +1062,11 @@ authzRoutes.post(
       return fail(c, 'CONFLICT', 'Role key already exists for this scope.', 409)
     }
 
-    const [created] = await db
-      .insert(authzRoleDefinitions)
-      .values({
+    const created = (await createAuthzRow(
+      c,
+      bizId,
+      'authzRoleDefinitions',
+      {
         bizId,
         scopeType: parsed.data.scopeType,
         scopeRef: scoped.scopeRef,
@@ -949,8 +1080,14 @@ authzRoutes.post(
         status: 'active',
         isDefault: parsed.data.isDefault ?? false,
         metadata: parsed.data.metadata ?? {},
-      })
-      .returning()
+      },
+      {
+        subjectType: 'authz_role_definition',
+        displayName: parsed.data.roleKey,
+        metadata: { source: 'routes.authz.createBizRole' },
+      },
+    )) as Record<string, unknown> | Response
+    if (created instanceof Response) return created
 
     return ok(c, created, 201)
   },
@@ -969,16 +1106,27 @@ authzRoutes.patch(
       return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
     }
 
-    const [updated] = await db
-      .update(authzRoleDefinitions)
-      .set({
+    const roleExisting = await db.query.authzRoleDefinitions.findFirst({
+      where: and(eq(authzRoleDefinitions.id, roleId), eq(authzRoleDefinitions.bizId, bizId)),
+    })
+    if (!roleExisting) return fail(c, 'NOT_FOUND', 'Role not found in this biz.', 404)
+    const updated = (await updateAuthzRow(
+      c,
+      bizId,
+      'authzRoleDefinitions',
+      roleId,
+      {
         ...parsed.data,
         description: parsed.data.description === null ? null : parsed.data.description,
-      })
-      .where(and(eq(authzRoleDefinitions.id, roleId), eq(authzRoleDefinitions.bizId, bizId)))
-      .returning()
-
-    if (!updated) return fail(c, 'NOT_FOUND', 'Role not found in this biz.', 404)
+      },
+      {
+        subjectType: 'authz_role_definition',
+        subjectId: roleId,
+        displayName: roleExisting.roleKey,
+        metadata: { source: 'routes.authz.updateBizRole' },
+      },
+    )) as Record<string, unknown> | Response
+    if (updated instanceof Response) return updated
     return ok(c, updated)
   },
 )
@@ -1047,23 +1195,51 @@ authzRoutes.put(
       const permissionId = permissionIdByKey.get(row.permissionKey)
       if (!permissionId) continue
 
-      await db
-        .insert(authzRolePermissions)
-        .values({
-          roleDefinitionId: roleId,
-          permissionDefinitionId: permissionId,
-          effect: row.effect,
-          priority: row.priority,
-          isActive: row.isActive,
-        })
-        .onConflictDoUpdate({
-          target: [authzRolePermissions.roleDefinitionId, authzRolePermissions.permissionDefinitionId],
-          set: {
+      const existingPermission = await db.query.authzRolePermissions.findFirst({
+        where: and(
+          eq(authzRolePermissions.roleDefinitionId, roleId),
+          eq(authzRolePermissions.permissionDefinitionId, permissionId),
+        ),
+      })
+      if (existingPermission) {
+        const updated = await updateAuthzRow(
+          c,
+          bizId,
+          'authzRolePermissions',
+          existingPermission.id,
+          {
             effect: row.effect,
             priority: row.priority,
             isActive: row.isActive,
           },
-        })
+          {
+            subjectType: 'authz_role_permission',
+            subjectId: existingPermission.id,
+            displayName: row.permissionKey,
+            metadata: { source: 'routes.authz.upsertBizRolePermissions' },
+          },
+        )
+        if (updated instanceof Response) return updated
+      } else {
+        const created = await createAuthzRow(
+          c,
+          bizId,
+          'authzRolePermissions',
+          {
+            roleDefinitionId: roleId,
+            permissionDefinitionId: permissionId,
+            effect: row.effect,
+            priority: row.priority,
+            isActive: row.isActive,
+          },
+          {
+            subjectType: 'authz_role_permission',
+            displayName: row.permissionKey,
+            metadata: { source: 'routes.authz.upsertBizRolePermissions' },
+          },
+        )
+        if (created instanceof Response) return created
+      }
     }
 
     return ok(c, { updatedCount: parsed.data.permissions.length })
@@ -1120,39 +1296,60 @@ authzRoutes.post(
       return fail(c, 'NOT_FOUND', 'Role definition not found for this biz context.', 404)
     }
 
-    const [created] = await db
-      .insert(authzRoleAssignments)
-      .values({
-        userId: parsed.data.userId,
-        bizId,
-        roleDefinitionId: parsed.data.roleDefinitionId,
-        scopeType: parsed.data.scopeType,
-        scopeRef: scoped.scopeRef,
-        locationId: scoped.scope.locationId,
-        resourceId: scoped.scope.resourceId,
-        scopeSubjectType: scoped.scope.subjectType,
-        scopeSubjectId: scoped.scope.subjectId,
-        status: 'active',
-        effectiveTo: parsed.data.effectiveTo ? new Date(parsed.data.effectiveTo) : null,
-        metadata: parsed.data.metadata ?? {},
-      })
-      .onConflictDoUpdate({
-        target: [
-          authzRoleAssignments.userId,
-          authzRoleAssignments.roleDefinitionId,
-          authzRoleAssignments.scopeRef,
-        ],
-        set: {
-          status: 'active',
-          locationId: scoped.scope.locationId,
-          resourceId: scoped.scope.resourceId,
-          scopeSubjectType: scoped.scope.subjectType,
-          scopeSubjectId: scoped.scope.subjectId,
-          effectiveTo: parsed.data.effectiveTo ? new Date(parsed.data.effectiveTo) : null,
-          metadata: parsed.data.metadata ?? {},
-        },
-      })
-      .returning()
+    const existingAssignment = await db.query.authzRoleAssignments.findFirst({
+      where: and(
+        eq(authzRoleAssignments.userId, parsed.data.userId),
+        eq(authzRoleAssignments.roleDefinitionId, parsed.data.roleDefinitionId),
+        eq(authzRoleAssignments.scopeRef, scoped.scopeRef),
+      ),
+    })
+    const created = existingAssignment
+      ? ((await updateAuthzRow(
+          c,
+          bizId,
+          'authzRoleAssignments',
+          existingAssignment.id,
+          {
+            status: 'active',
+            locationId: scoped.scope.locationId,
+            resourceId: scoped.scope.resourceId,
+            scopeSubjectType: scoped.scope.subjectType,
+            scopeSubjectId: scoped.scope.subjectId,
+            effectiveTo: parsed.data.effectiveTo ? new Date(parsed.data.effectiveTo) : null,
+            metadata: parsed.data.metadata ?? {},
+          },
+          {
+            subjectType: 'authz_role_assignment',
+            subjectId: existingAssignment.id,
+            displayName: 'ACL assignment',
+            metadata: { source: 'routes.authz.upsertBizAssignment' },
+          },
+        )) as Record<string, unknown> | Response)
+      : ((await createAuthzRow(
+          c,
+          bizId,
+          'authzRoleAssignments',
+          {
+            userId: parsed.data.userId,
+            bizId,
+            roleDefinitionId: parsed.data.roleDefinitionId,
+            scopeType: parsed.data.scopeType,
+            scopeRef: scoped.scopeRef,
+            locationId: scoped.scope.locationId,
+            resourceId: scoped.scope.resourceId,
+            scopeSubjectType: scoped.scope.subjectType,
+            scopeSubjectId: scoped.scope.subjectId,
+            status: 'active',
+            effectiveTo: parsed.data.effectiveTo ? new Date(parsed.data.effectiveTo) : null,
+            metadata: parsed.data.metadata ?? {},
+          },
+          {
+            subjectType: 'authz_role_assignment',
+            displayName: 'ACL assignment',
+            metadata: { source: 'routes.authz.upsertBizAssignment' },
+          },
+        )) as Record<string, unknown> | Response)
+    if (created instanceof Response) return created
 
     return ok(c, created, 201)
   },
@@ -1165,16 +1362,27 @@ authzRoutes.delete(
   requireAclPermission('acl.write', { bizIdParam: 'bizId' }),
   async (c) => {
     const { bizId, assignmentId } = c.req.param()
-    const [updated] = await db
-      .update(authzRoleAssignments)
-      .set({
+    const assignment = await db.query.authzRoleAssignments.findFirst({
+      where: and(eq(authzRoleAssignments.bizId, bizId), eq(authzRoleAssignments.id, assignmentId)),
+    })
+    if (!assignment) return fail(c, 'NOT_FOUND', 'Assignment not found.', 404)
+    const updated = (await updateAuthzRow(
+      c,
+      bizId,
+      'authzRoleAssignments',
+      assignmentId,
+      {
         status: 'inactive',
         effectiveTo: new Date(),
-      })
-      .where(and(eq(authzRoleAssignments.bizId, bizId), eq(authzRoleAssignments.id, assignmentId)))
-      .returning({ id: authzRoleAssignments.id, status: authzRoleAssignments.status })
-
-    if (!updated) return fail(c, 'NOT_FOUND', 'Assignment not found.', 404)
+      },
+      {
+        subjectType: 'authz_role_assignment',
+        subjectId: assignmentId,
+        displayName: 'Deactivate ACL assignment',
+        metadata: { source: 'routes.authz.deleteBizAssignment' },
+      },
+    )) as Record<string, unknown> | Response
+    if (updated instanceof Response) return updated
     return ok(c, updated)
   },
 )
@@ -1207,20 +1415,38 @@ authzRoutes.put(
       return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
     }
 
-    await db.transaction(async (tx) => {
-      await tx.delete(authzMembershipRoleMappings).where(eq(authzMembershipRoleMappings.bizId, bizId))
-      if (parsed.data.mappings.length === 0) return
-
-      await tx.insert(authzMembershipRoleMappings).values(
-        parsed.data.mappings.map((mapping) => ({
+    const existingMappings = await db.query.authzMembershipRoleMappings.findMany({
+      where: eq(authzMembershipRoleMappings.bizId, bizId),
+    })
+    for (const mapping of existingMappings) {
+      const removed = await deleteAuthzRow(c, bizId, 'authzMembershipRoleMappings', mapping.id, {
+        subjectType: 'authz_membership_role_mapping',
+        subjectId: mapping.id,
+        displayName: 'Replace biz membership mapping',
+        metadata: { source: 'routes.authz.replaceBizMembershipMappings' },
+      })
+      if (removed instanceof Response) return removed
+    }
+    for (const mapping of parsed.data.mappings) {
+      const created = await createAuthzRow(
+        c,
+        bizId,
+        'authzMembershipRoleMappings',
+        {
           bizId,
           membershipRole: mapping.membershipRole,
           roleDefinitionId: mapping.roleDefinitionId,
           isActive: mapping.isActive,
           priority: mapping.priority,
-        })),
+        },
+        {
+          subjectType: 'authz_membership_role_mapping',
+          displayName: mapping.membershipRole,
+          metadata: { source: 'routes.authz.replaceBizMembershipMappings' },
+        },
       )
-    })
+      if (created instanceof Response) return created
+    }
 
     return ok(c, { updatedCount: parsed.data.mappings.length })
   },
@@ -1335,20 +1561,38 @@ authzRoutes.put(
       return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
     }
 
-    await db.transaction(async (tx) => {
-      await tx.delete(authzMembershipRoleMappings).where(sql`"biz_id" IS NULL`)
-      if (parsed.data.mappings.length === 0) return
-
-      await tx.insert(authzMembershipRoleMappings).values(
-        parsed.data.mappings.map((mapping) => ({
+    const existingMappings = await db.query.authzMembershipRoleMappings.findMany({
+      where: sql`"biz_id" IS NULL`,
+    })
+    for (const mapping of existingMappings) {
+      const removed = await deleteAuthzRow(c, null, 'authzMembershipRoleMappings', mapping.id, {
+        subjectType: 'authz_membership_role_mapping',
+        subjectId: mapping.id,
+        displayName: 'Replace platform membership mapping',
+        metadata: { source: 'routes.authz.replacePlatformMembershipMappings' },
+      })
+      if (removed instanceof Response) return removed
+    }
+    for (const mapping of parsed.data.mappings) {
+      const created = await createAuthzRow(
+        c,
+        null,
+        'authzMembershipRoleMappings',
+        {
           bizId: null,
           membershipRole: mapping.membershipRole,
           roleDefinitionId: mapping.roleDefinitionId,
           isActive: mapping.isActive,
           priority: mapping.priority,
-        })),
+        },
+        {
+          subjectType: 'authz_membership_role_mapping',
+          displayName: mapping.membershipRole,
+          metadata: { source: 'routes.authz.replacePlatformMembershipMappings' },
+        },
       )
-    })
+      if (created instanceof Response) return created
+    }
 
     return ok(c, { updatedCount: parsed.data.mappings.length })
   },
@@ -1370,9 +1614,11 @@ authzRoutes.post(
     })
     if (duplicate) return fail(c, 'CONFLICT', 'Platform role key already exists.', 409)
 
-    const [created] = await db
-      .insert(authzRoleDefinitions)
-      .values({
+    const created = (await createAuthzRow(
+      c,
+      null,
+      'authzRoleDefinitions',
+      {
         scopeType: 'platform',
         scopeRef: 'platform',
         roleKey: parsed.data.roleKey,
@@ -1381,8 +1627,14 @@ authzRoutes.post(
         status: 'active',
         isDefault: parsed.data.isDefault ?? false,
         metadata: parsed.data.metadata ?? {},
-      })
-      .returning()
+      },
+      {
+        subjectType: 'authz_role_definition',
+        displayName: parsed.data.roleKey,
+        metadata: { source: 'routes.authz.createPlatformRole' },
+      },
+    )) as Record<string, unknown> | Response
+    if (created instanceof Response) return created
 
     return ok(c, created, 201)
   },
@@ -1400,22 +1652,31 @@ authzRoutes.patch(
       return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
     }
 
-    const [updated] = await db
-      .update(authzRoleDefinitions)
-      .set({
+    const roleExisting = await db.query.authzRoleDefinitions.findFirst({
+      where: and(
+        eq(authzRoleDefinitions.id, roleId),
+        eq(authzRoleDefinitions.scopeType, 'platform'),
+        sql`"biz_id" IS NULL`,
+      ),
+    })
+    if (!roleExisting) return fail(c, 'NOT_FOUND', 'Platform role not found.', 404)
+    const updated = (await updateAuthzRow(
+      c,
+      null,
+      'authzRoleDefinitions',
+      roleId,
+      {
         ...parsed.data,
         description: parsed.data.description === null ? null : parsed.data.description,
-      })
-      .where(
-        and(
-          eq(authzRoleDefinitions.id, roleId),
-          eq(authzRoleDefinitions.scopeType, 'platform'),
-          sql`"biz_id" IS NULL`,
-        ),
-      )
-      .returning()
-
-    if (!updated) return fail(c, 'NOT_FOUND', 'Platform role not found.', 404)
+      },
+      {
+        subjectType: 'authz_role_definition',
+        subjectId: roleId,
+        displayName: roleExisting.roleKey,
+        metadata: { source: 'routes.authz.updatePlatformRole' },
+      },
+    )) as Record<string, unknown> | Response
+    if (updated instanceof Response) return updated
     return ok(c, updated)
   },
 )
@@ -1492,23 +1753,51 @@ authzRoutes.put(
       const permissionId = permissionIdByKey.get(row.permissionKey)
       if (!permissionId) continue
 
-      await db
-        .insert(authzRolePermissions)
-        .values({
-          roleDefinitionId: roleId,
-          permissionDefinitionId: permissionId,
-          effect: row.effect,
-          priority: row.priority,
-          isActive: row.isActive,
-        })
-        .onConflictDoUpdate({
-          target: [authzRolePermissions.roleDefinitionId, authzRolePermissions.permissionDefinitionId],
-          set: {
+      const existingPermission = await db.query.authzRolePermissions.findFirst({
+        where: and(
+          eq(authzRolePermissions.roleDefinitionId, roleId),
+          eq(authzRolePermissions.permissionDefinitionId, permissionId),
+        ),
+      })
+      if (existingPermission) {
+        const updated = await updateAuthzRow(
+          c,
+          null,
+          'authzRolePermissions',
+          existingPermission.id,
+          {
             effect: row.effect,
             priority: row.priority,
             isActive: row.isActive,
           },
-        })
+          {
+            subjectType: 'authz_role_permission',
+            subjectId: existingPermission.id,
+            displayName: row.permissionKey,
+            metadata: { source: 'routes.authz.upsertPlatformRolePermissions' },
+          },
+        )
+        if (updated instanceof Response) return updated
+      } else {
+        const created = await createAuthzRow(
+          c,
+          null,
+          'authzRolePermissions',
+          {
+            roleDefinitionId: roleId,
+            permissionDefinitionId: permissionId,
+            effect: row.effect,
+            priority: row.priority,
+            isActive: row.isActive,
+          },
+          {
+            subjectType: 'authz_role_permission',
+            displayName: row.permissionKey,
+            metadata: { source: 'routes.authz.upsertPlatformRolePermissions' },
+          },
+        )
+        if (created instanceof Response) return created
+      }
     }
 
     return ok(c, { updatedCount: parsed.data.permissions.length })
@@ -1550,31 +1839,52 @@ authzRoutes.post(
       return fail(c, 'NOT_FOUND', 'Platform role definition not found.', 404)
     }
 
-    const [created] = await db
-      .insert(authzRoleAssignments)
-      .values({
-        userId: parsed.data.userId,
-        bizId: null,
-        roleDefinitionId: parsed.data.roleDefinitionId,
-        scopeType: 'platform',
-        scopeRef: 'platform',
-        status: 'active',
-        effectiveTo: parsed.data.effectiveTo ? new Date(parsed.data.effectiveTo) : null,
-        metadata: parsed.data.metadata ?? {},
-      })
-      .onConflictDoUpdate({
-        target: [
-          authzRoleAssignments.userId,
-          authzRoleAssignments.roleDefinitionId,
-          authzRoleAssignments.scopeRef,
-        ],
-        set: {
-          status: 'active',
-          effectiveTo: parsed.data.effectiveTo ? new Date(parsed.data.effectiveTo) : null,
-          metadata: parsed.data.metadata ?? {},
-        },
-      })
-      .returning()
+    const existingAssignment = await db.query.authzRoleAssignments.findFirst({
+      where: and(
+        eq(authzRoleAssignments.userId, parsed.data.userId),
+        eq(authzRoleAssignments.roleDefinitionId, parsed.data.roleDefinitionId),
+        eq(authzRoleAssignments.scopeRef, 'platform'),
+      ),
+    })
+    const created = existingAssignment
+      ? ((await updateAuthzRow(
+          c,
+          null,
+          'authzRoleAssignments',
+          existingAssignment.id,
+          {
+            status: 'active',
+            effectiveTo: parsed.data.effectiveTo ? new Date(parsed.data.effectiveTo) : null,
+            metadata: parsed.data.metadata ?? {},
+          },
+          {
+            subjectType: 'authz_role_assignment',
+            subjectId: existingAssignment.id,
+            displayName: 'Platform ACL assignment',
+            metadata: { source: 'routes.authz.upsertPlatformAssignment' },
+          },
+        )) as Record<string, unknown> | Response)
+      : ((await createAuthzRow(
+          c,
+          null,
+          'authzRoleAssignments',
+          {
+            userId: parsed.data.userId,
+            bizId: null,
+            roleDefinitionId: parsed.data.roleDefinitionId,
+            scopeType: 'platform',
+            scopeRef: 'platform',
+            status: 'active',
+            effectiveTo: parsed.data.effectiveTo ? new Date(parsed.data.effectiveTo) : null,
+            metadata: parsed.data.metadata ?? {},
+          },
+          {
+            subjectType: 'authz_role_assignment',
+            displayName: 'Platform ACL assignment',
+            metadata: { source: 'routes.authz.upsertPlatformAssignment' },
+          },
+        )) as Record<string, unknown> | Response)
+    if (created instanceof Response) return created
 
     return ok(c, created, 201)
   },
@@ -1586,22 +1896,31 @@ authzRoutes.delete(
   requireAclPermission('acl.write'),
   async (c) => {
     const assignmentId = c.req.param('assignmentId')
-    const [updated] = await db
-      .update(authzRoleAssignments)
-      .set({
+    const assignment = await db.query.authzRoleAssignments.findFirst({
+      where: and(
+        eq(authzRoleAssignments.id, assignmentId),
+        eq(authzRoleAssignments.scopeType, 'platform'),
+        sql`"biz_id" IS NULL`,
+      ),
+    })
+    if (!assignment) return fail(c, 'NOT_FOUND', 'Platform assignment not found.', 404)
+    const updated = (await updateAuthzRow(
+      c,
+      null,
+      'authzRoleAssignments',
+      assignmentId,
+      {
         status: 'inactive',
         effectiveTo: new Date(),
-      })
-      .where(
-        and(
-          eq(authzRoleAssignments.id, assignmentId),
-          eq(authzRoleAssignments.scopeType, 'platform'),
-          sql`"biz_id" IS NULL`,
-        ),
-      )
-      .returning({ id: authzRoleAssignments.id, status: authzRoleAssignments.status })
-
-    if (!updated) return fail(c, 'NOT_FOUND', 'Platform assignment not found.', 404)
+      },
+      {
+        subjectType: 'authz_role_assignment',
+        subjectId: assignmentId,
+        displayName: 'Deactivate platform ACL assignment',
+        metadata: { source: 'routes.authz.deletePlatformAssignment' },
+      },
+    )) as Record<string, unknown> | Response
+    if (updated instanceof Response) return updated
     return ok(c, updated)
   },
 )

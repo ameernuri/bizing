@@ -151,7 +151,7 @@ export function SagaPersonaDetailPage({ personaKey }: { personaKey: string }) {
     setError(null)
     try {
       await sagaApi.deletePersona(detail.definition.personaKey)
-      window.location.href = '/sagas/personas'
+      window.location.href = '/ooda/personas'
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Failed to delete persona.')
       setIsDeleting(false)
@@ -167,7 +167,7 @@ export function SagaPersonaDetailPage({ personaKey }: { personaKey: string }) {
         actions={
           <>
             <Button variant="outline" asChild>
-              <Link href="/sagas/personas">
+              <Link href="/ooda/personas">
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Back to personas
               </Link>
@@ -294,7 +294,7 @@ export function SagaPersonaDetailPage({ personaKey }: { personaKey: string }) {
                   {definitionSummaries.map(({ definition, latestRun, runSummary }) => (
                     <EntitySummaryCard
                       key={definition.id}
-                      href={`/sagas/definitions/${encodeURIComponent(definition.sagaKey)}`}
+                      href={`/ooda/definitions/${encodeURIComponent(definition.sagaKey)}`}
                       title={definition.title}
                       description={definition.description}
                       status={latestRun ? <RunStatusBadge status={latestRun.status} /> : <LifecycleBadge status={definition.status} />}

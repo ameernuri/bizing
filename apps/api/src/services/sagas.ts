@@ -122,6 +122,7 @@ type CreateSchemaCoverageBaselineItemInput = {
 }
 
 type CreateSchemaCoverageBaselineReportInput = {
+  scopeType?: string
   title: string
   summary?: string | null
   reportMarkdown?: string | null
@@ -153,6 +154,57 @@ type ParsedSchemaCoverageReport = {
     semanticTotals: Record<string, number>
   }
   useCases: SchemaCoverageUseCaseEntry[]
+}
+
+type UcCoverageMatrixBuildInput = {
+  /**
+   * Optional source schema-baseline report id.
+   * If missing, we use the latest `schema_baseline` report.
+   */
+  sourceSchemaReportId?: string
+
+  /**
+   * Replace prior `uc_coverage_matrix` reports before inserting new one.
+   */
+  replaceExisting?: boolean
+
+  /**
+   * Optional explicit coverage markdown path when bootstrap data is missing.
+   */
+  coverageFile?: string
+
+  /** Optional actor id for audit attribution. */
+  actorUserId?: string
+
+  /** Optional tenant scope for multi-tenant installations. */
+  bizId?: string | null
+}
+
+type ApiEndpointCoverageRow = {
+  method: string
+  path: string
+  normalizedPath: string
+  signature: string
+  callCount: number
+  latestStatus: number | null
+  latestSeenAt: string | null
+  statusBuckets: {
+    "2xx": number
+    "3xx": number
+    "4xx": number
+    "5xx": number
+    other: number
+  }
+}
+
+type UcApiCoverageSummary = {
+  verdict: "full" | "strong" | "partial" | "gap"
+  definitionsCount: number
+  latestRunsCount: number
+  passedLatestRuns: number
+  totalRunsCount: number
+  passRatePct: number
+  endpoints: ApiEndpointCoverageRow[]
 }
 
 type GenerateSagaSpecsOptions = {
@@ -480,6 +532,15 @@ const C2E_SCORE_BY_TAG: Record<SchemaCoverageUseCaseEntry["coreToExtensionTag"],
   "#extension-driven": 1,
 }
 
+const COVERAGE_VERDICT_SCORE: Record<"full" | "strong" | "partial" | "gap", number> = {
+  full: 4,
+  strong: 3,
+  partial: 2,
+  gap: 1,
+}
+
+let cachedKnownSchemaTableNames: Set<string> | null = null
+
 function toCoverageVerdictTag(
   value: string,
 ): SchemaCoverageUseCaseEntry["verdictTag"] | null {
@@ -498,6 +559,18 @@ function normalizeCoverageVerdict(value: string): "full" | "strong" | "partial" 
   if (normalized === "partial") return "partial"
   if (normalized === "gap") return "gap"
   return null
+}
+
+function asCoverageVerdict(value: string | null | undefined): "full" | "strong" | "partial" | "gap" {
+  const normalized = normalizeCoverageVerdict(value ?? "")
+  return normalized ?? "gap"
+}
+
+function worstCoverageVerdict(
+  left: "full" | "strong" | "partial" | "gap",
+  right: "full" | "strong" | "partial" | "gap",
+): "full" | "strong" | "partial" | "gap" {
+  return COVERAGE_VERDICT_SCORE[left] <= COVERAGE_VERDICT_SCORE[right] ? left : right
 }
 
 function normalizeNativeToHacky(
@@ -564,6 +637,404 @@ function toCoreToExtensionTag(
     return normalized
   }
   return null
+}
+
+/**
+ * Build a canonical table-name dictionary from the exported DB package.
+ *
+ * ELI5:
+ * We use this to map prose phrases in coverage explanations to actual schema
+ * table names so OODash can show concrete table-level support per UC.
+ */
+function getKnownSchemaTableNames() {
+  if (cachedKnownSchemaTableNames) return cachedKnownSchemaTableNames
+  const names = new Set<string>()
+  for (const value of Object.values(dbPackage as Record<string, unknown>)) {
+    if (!value || typeof value !== "object") continue
+    const maybeTable = value as {
+      _?: {
+        name?: string
+        columns?: Record<string, unknown>
+      }
+    }
+    const name = maybeTable._?.name
+    const columns = maybeTable._?.columns
+    if (typeof name === "string" && name.length > 0 && columns && typeof columns === "object") {
+      names.add(name)
+    }
+  }
+  cachedKnownSchemaTableNames = names
+  return names
+}
+
+function extractSchemaEvidenceFromExplanation(explanation: string) {
+  const knownTables = getKnownSchemaTableNames()
+  const orderedTables: string[] = []
+  const seen = new Set<string>()
+  const addTable = (candidate: string) => {
+    const normalized = candidate.trim().toLowerCase().replace(/[^a-z0-9_]/g, "")
+    if (!normalized || !knownTables.has(normalized) || seen.has(normalized)) return
+    seen.add(normalized)
+    orderedTables.push(normalized)
+  }
+
+  const backtickMatches = explanation.matchAll(/`([^`]+)`/g)
+  for (const match of backtickMatches) {
+    const raw = (match[1] ?? "").trim().toLowerCase()
+    if (!raw) continue
+    addTable(raw)
+    for (const token of raw.split(/[^a-z0-9_]+/g)) {
+      addTable(token)
+    }
+  }
+
+  const normalizedWords = explanation
+    .toLowerCase()
+    .replace(/[`]/g, " ")
+    .replace(/[^a-z0-9_ -]+/g, " ")
+    .replace(/[-]+/g, " ")
+    .split(/\s+/)
+    .filter(Boolean)
+  for (let windowSize = 4; windowSize >= 1; windowSize -= 1) {
+    for (let index = 0; index <= normalizedWords.length - windowSize; index += 1) {
+      const phrase = normalizedWords.slice(index, index + windowSize).join("_")
+      addTable(phrase)
+    }
+  }
+
+  const connections: string[] = []
+  for (let index = 0; index < orderedTables.length - 1; index += 1) {
+    const edge = `${orderedTables[index]} -> ${orderedTables[index + 1]}`
+    if (!connections.includes(edge)) connections.push(edge)
+  }
+
+  return {
+    tables: orderedTables,
+    connections,
+  }
+}
+
+function normalizeApiPath(pathValue: string) {
+  const noQuery = pathValue.split("?")[0] ?? pathValue
+  return noQuery
+    .replace(/\/[a-z]+_[A-Za-z0-9]{10,}(?=\/|$)/g, "/:id")
+    .replace(/\/[0-9a-f]{8}-[0-9a-f-]{27,36}(?=\/|$)/gi, "/:id")
+    .replace(/\/[0-9A-HJKMNP-TV-Z]{24,26}(?=\/|$)/g, "/:id")
+}
+
+function bucketForStatus(status: number | null) {
+  if (status === null) return "other" as const
+  if (status >= 200 && status < 300) return "2xx" as const
+  if (status >= 300 && status < 400) return "3xx" as const
+  if (status >= 400 && status < 500) return "4xx" as const
+  if (status >= 500 && status < 600) return "5xx" as const
+  return "other" as const
+}
+
+function parseApiTraceCalls(content: string) {
+  const calls: Array<{ method: string; path: string; status: number | null }> = []
+  const trimmed = content.trim()
+  if (!trimmed) return calls
+  let parsed: unknown = null
+  try {
+    parsed = JSON.parse(trimmed)
+  } catch {
+    return calls
+  }
+  const root = parsed as Record<string, unknown>
+  const traceCalls =
+    (Array.isArray(root.calls) ? root.calls : null) ??
+    (root.trace && typeof root.trace === "object" && Array.isArray((root.trace as Record<string, unknown>).calls)
+      ? ((root.trace as Record<string, unknown>).calls as unknown[])
+      : null)
+  if (!traceCalls) return calls
+  for (const row of traceCalls) {
+    if (!row || typeof row !== "object") continue
+    const item = row as Record<string, unknown>
+    const method = typeof item.method === "string" ? item.method.toUpperCase() : ""
+    const path = typeof item.path === "string" ? item.path : ""
+    const status =
+      typeof item.status === "number" && Number.isFinite(item.status) ? item.status : null
+    if (!method || !path) continue
+    calls.push({ method, path, status })
+  }
+  return calls
+}
+
+function parseApiCallList(value: unknown) {
+  const calls: Array<{ method: string; path: string; status: number | null }> = []
+  if (!Array.isArray(value)) return calls
+  for (const row of value) {
+    if (!row || typeof row !== "object") continue
+    const item = row as Record<string, unknown>
+    const method = typeof item.method === "string" ? item.method.toUpperCase() : ""
+    const path = typeof item.path === "string" ? item.path : ""
+    const status =
+      typeof item.status === "number" && Number.isFinite(item.status) ? item.status : null
+    if (!method || !path) continue
+    calls.push({ method, path, status })
+  }
+  return calls
+}
+
+function parseObservedPathList(value: unknown) {
+  const calls: Array<{ method: string; path: string; status: number | null }> = []
+  if (!Array.isArray(value)) return calls
+  for (const row of value) {
+    if (typeof row !== "string") continue
+    const text = row.trim()
+    if (!text) continue
+    const match = text.match(/^(GET|POST|PUT|PATCH|DELETE|OPTIONS|HEAD)\s+(\S+)/i)
+    if (!match) continue
+    calls.push({
+      method: match[1]!.toUpperCase(),
+      path: match[2]!,
+      status: null,
+    })
+  }
+  return calls
+}
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null
+  return value as Record<string, unknown>
+}
+
+function parseApiCallsFromStepPayload(input: {
+  resultPayload: unknown
+  assertionSummary: unknown
+}) {
+  const calls: Array<{ method: string; path: string; status: number | null }> = []
+  const resultPayload = asRecord(input.resultPayload)
+  const assertionSummary = asRecord(input.assertionSummary)
+
+  const candidates: unknown[] = [
+    resultPayload?.apiCalls,
+    resultPayload?.calls,
+    asRecord(resultPayload?.trace)?.calls,
+    asRecord(resultPayload?.evidence)?.apiCalls,
+    assertionSummary?.apiCalls,
+    assertionSummary?.calls,
+    asRecord(assertionSummary?.trace)?.calls,
+    assertionSummary?.observedPaths,
+    assertionSummary?.matchedPaths,
+  ]
+
+  for (const candidate of candidates) {
+    calls.push(...parseApiCallList(candidate))
+    calls.push(...parseObservedPathList(candidate))
+  }
+
+  return calls
+}
+
+async function computeApiCoverageByUseCase(
+  ucRefs: string[],
+): Promise<Map<string, UcApiCoverageSummary>> {
+  const ucMap = new Map<string, UcApiCoverageSummary>()
+  if (ucRefs.length === 0) return ucMap
+
+  const definitions = await db.query.sagaDefinitions.findMany({
+    where: inArray(sagaDefinitions.sourceUseCaseRef, ucRefs),
+    columns: {
+      id: true,
+      sourceUseCaseRef: true,
+      sagaKey: true,
+    },
+    limit: 50000,
+  })
+  const definitionIds = definitions.map((row) => row.id)
+  const runs = definitionIds.length
+    ? await db.query.sagaRuns.findMany({
+        where: and(
+          inArray(sagaRuns.sagaDefinitionId, definitionIds),
+          sql`deleted_at IS NULL`,
+        ),
+        columns: {
+          id: true,
+          sagaDefinitionId: true,
+          status: true,
+        },
+        limit: 200000,
+      })
+    : []
+
+  const runsByDefinition = new Map<string, (typeof runs)[number][]>()
+  for (const run of runs) {
+    const list = runsByDefinition.get(run.sagaDefinitionId) ?? []
+    list.push(run)
+    runsByDefinition.set(run.sagaDefinitionId, list)
+  }
+
+  const latestRunsByUc = new Map<string, (typeof runs)[number][]>()
+  const totalRunsByUc = new Map<string, number>()
+  const definitionCountByUc = new Map<string, number>()
+  for (const definition of definitions) {
+    const ucRef = (definition.sourceUseCaseRef ?? "").toUpperCase()
+    if (!ucRef) continue
+    definitionCountByUc.set(ucRef, (definitionCountByUc.get(ucRef) ?? 0) + 1)
+    const definitionRuns = runsByDefinition.get(definition.id) ?? []
+    totalRunsByUc.set(ucRef, (totalRunsByUc.get(ucRef) ?? 0) + definitionRuns.length)
+    if (definitionRuns.length === 0) continue
+    const latest = [...definitionRuns].sort((a, b) => b.id.localeCompare(a.id))[0]
+    const list = latestRunsByUc.get(ucRef) ?? []
+    list.push(latest)
+    latestRunsByUc.set(ucRef, list)
+  }
+
+  const latestRunIds = Array.from(
+    new Set(Array.from(latestRunsByUc.values()).flatMap((rows) => rows.map((row) => row.id))),
+  )
+  const apiTraceArtifacts = latestRunIds.length
+    ? await db.query.sagaRunArtifacts.findMany({
+        where: and(
+          inArray(sagaRunArtifacts.sagaRunId, latestRunIds),
+          eq(sagaRunArtifacts.artifactType, "api_trace"),
+          sql`deleted_at IS NULL`,
+        ),
+        columns: {
+          sagaRunId: true,
+          bodyText: true,
+          capturedAt: true,
+        },
+        limit: 500000,
+      })
+    : []
+
+  const latestRunSteps = latestRunIds.length
+    ? await db.query.sagaRunSteps.findMany({
+        where: and(
+          inArray(sagaRunSteps.sagaRunId, latestRunIds),
+          sql`deleted_at IS NULL`,
+        ),
+        columns: {
+          sagaRunId: true,
+          resultPayload: true,
+          assertionSummary: true,
+        },
+        limit: 1000000,
+      })
+    : []
+
+  const endpointRowsByRun = new Map<string, ApiEndpointCoverageRow[]>()
+  for (const artifact of apiTraceArtifacts) {
+    const calls = parseApiTraceCalls(artifact.bodyText ?? "")
+    if (calls.length === 0) continue
+    const existingRows = endpointRowsByRun.get(artifact.sagaRunId) ?? []
+    const bySignature = new Map(existingRows.map((row) => [row.signature, row]))
+    for (const call of calls) {
+      const normalizedPath = normalizeApiPath(call.path)
+      const signature = `${call.method} ${normalizedPath}`
+      const row = bySignature.get(signature)
+      const seenAt = artifact.capturedAt ? new Date(artifact.capturedAt).toISOString() : null
+      if (!row) {
+        const created: ApiEndpointCoverageRow = {
+          method: call.method,
+          path: call.path,
+          normalizedPath,
+          signature,
+          callCount: 1,
+          latestStatus: call.status,
+          latestSeenAt: seenAt,
+          statusBuckets: { "2xx": 0, "3xx": 0, "4xx": 0, "5xx": 0, other: 0 },
+        }
+        created.statusBuckets[bucketForStatus(call.status)] += 1
+        bySignature.set(signature, created)
+      } else {
+        row.callCount += 1
+        row.latestStatus = call.status
+        row.latestSeenAt = seenAt ?? row.latestSeenAt
+        row.statusBuckets[bucketForStatus(call.status)] += 1
+      }
+    }
+    endpointRowsByRun.set(artifact.sagaRunId, Array.from(bySignature.values()))
+  }
+
+  for (const step of latestRunSteps) {
+    const calls = parseApiCallsFromStepPayload({
+      resultPayload: step.resultPayload,
+      assertionSummary: step.assertionSummary,
+    })
+    if (calls.length === 0) continue
+    const existingRows = endpointRowsByRun.get(step.sagaRunId) ?? []
+    const bySignature = new Map(existingRows.map((row) => [row.signature, row]))
+    for (const call of calls) {
+      const normalizedPath = normalizeApiPath(call.path)
+      const signature = `${call.method} ${normalizedPath}`
+      const row = bySignature.get(signature)
+      if (!row) {
+        const created: ApiEndpointCoverageRow = {
+          method: call.method,
+          path: call.path,
+          normalizedPath,
+          signature,
+          callCount: 1,
+          latestStatus: call.status,
+          latestSeenAt: null,
+          statusBuckets: { "2xx": 0, "3xx": 0, "4xx": 0, "5xx": 0, other: 0 },
+        }
+        created.statusBuckets[bucketForStatus(call.status)] += 1
+        bySignature.set(signature, created)
+      } else {
+        row.callCount += 1
+        row.latestStatus = row.latestStatus ?? call.status
+        row.statusBuckets[bucketForStatus(call.status)] += 1
+      }
+    }
+    endpointRowsByRun.set(step.sagaRunId, Array.from(bySignature.values()))
+  }
+
+  for (const ucRef of ucRefs.map((row) => row.toUpperCase())) {
+    const latestRuns = latestRunsByUc.get(ucRef) ?? []
+    const passedLatestRuns = latestRuns.filter((run) => run.status === "passed").length
+    const passRatePct =
+      latestRuns.length > 0 ? Math.round((passedLatestRuns / latestRuns.length) * 100) : 0
+
+    const endpointBySignature = new Map<string, ApiEndpointCoverageRow>()
+    for (const run of latestRuns) {
+      const endpointRows = endpointRowsByRun.get(run.id) ?? []
+      for (const row of endpointRows) {
+        const existing = endpointBySignature.get(row.signature)
+        if (!existing) {
+          endpointBySignature.set(row.signature, { ...row })
+          continue
+        }
+        existing.callCount += row.callCount
+        existing.latestStatus = row.latestStatus
+        existing.latestSeenAt = row.latestSeenAt ?? existing.latestSeenAt
+        existing.statusBuckets["2xx"] += row.statusBuckets["2xx"]
+        existing.statusBuckets["3xx"] += row.statusBuckets["3xx"]
+        existing.statusBuckets["4xx"] += row.statusBuckets["4xx"]
+        existing.statusBuckets["5xx"] += row.statusBuckets["5xx"]
+        existing.statusBuckets.other += row.statusBuckets.other
+      }
+    }
+
+    const endpointRows = Array.from(endpointBySignature.values()).sort((a, b) => {
+      if (b.callCount !== a.callCount) return b.callCount - a.callCount
+      return a.signature.localeCompare(b.signature)
+    })
+
+    let verdict: UcApiCoverageSummary["verdict"] = "gap"
+    if (latestRuns.length === 0) verdict = "gap"
+    else if (endpointRows.length === 0) verdict = "partial"
+    else if (passRatePct >= 95) verdict = "full"
+    else if (passRatePct >= 70) verdict = "strong"
+    else if (passRatePct >= 35) verdict = "partial"
+    else verdict = "gap"
+
+    ucMap.set(ucRef, {
+      verdict,
+      definitionsCount: definitionCountByUc.get(ucRef) ?? 0,
+      latestRunsCount: latestRuns.length,
+      passedLatestRuns,
+      totalRunsCount: totalRunsByUc.get(ucRef) ?? 0,
+      passRatePct,
+      endpoints: endpointRows,
+    })
+  }
+
+  return ucMap
 }
 
 /**
@@ -3473,8 +3944,12 @@ export async function resetSagaLoopData() {
  * - we keep `run` scope coverage intact while replacing only `schema_baseline`.
  */
 async function clearSchemaBaselineCoverage() {
+  await clearCoverageScope("schema_baseline")
+}
+
+async function clearCoverageScope(scopeType: string) {
   const existingReports = await db.query.sagaCoverageReports.findMany({
-    where: eq(sagaCoverageReports.scopeType, "schema_baseline"),
+    where: eq(sagaCoverageReports.scopeType, scopeType),
     columns: { id: true },
     limit: 10000,
   })
@@ -3528,8 +4003,9 @@ export async function createSchemaCoverageBaselineReport(
     throw new Error("Schema baseline report requires at least one coverage item.")
   }
 
+  const scopeType = input.scopeType?.trim() || "schema_baseline"
   if (input.replaceExisting) {
-    await clearSchemaBaselineCoverage()
+    await clearCoverageScope(scopeType)
   }
 
   const normalizedItems = input.items.map((item) => {
@@ -3593,7 +4069,7 @@ export async function createSchemaCoverageBaselineReport(
       bizId: input.bizId ?? null,
       sagaRunId: null,
       sagaDefinitionId: null,
-      scopeType: "schema_baseline",
+      scopeType,
       status: "published",
       title: input.title,
       summary:
@@ -3685,7 +4161,7 @@ export async function createSchemaCoverageBaselineReport(
 
   return {
     reportId: report.id,
-    scopeType: report.scopeType,
+    scopeType,
     totalUseCases,
     summaryCounts: {
       full: fullCount,
@@ -3734,6 +4210,20 @@ export async function importSchemaCoverageReportFromMarkdown(input?: {
     replaceExisting: input?.replaceExisting ?? true,
     actorUserId: input?.actorUserId,
     items: parsed.useCases.map((row) => ({
+      ...(() => {
+        const schemaEvidence = extractSchemaEvidenceFromExplanation(row.explanation)
+        return {
+          evidence: {
+            sourceLink: row.sourceLink,
+            schema: {
+              verdict: row.verdictTag.replace(/^#/, ""),
+              explanation: row.explanation,
+              tables: schemaEvidence.tables,
+              connections: schemaEvidence.connections,
+            },
+          },
+        }
+      })(),
       itemType: "use_case",
       itemRefKey: row.ucRef,
       itemTitle: row.ucTitle,
@@ -3741,11 +4231,238 @@ export async function importSchemaCoverageReportFromMarkdown(input?: {
       nativeToHackyTag: row.nativeToHackyTag,
       coreToExtensionTag: row.coreToExtensionTag,
       explanation: row.explanation,
-      evidence: {
-        sourceLink: row.sourceLink,
-      },
       metadata: {},
+      tags: [
+        row.verdictTag,
+        row.nativeToHackyTag,
+        row.coreToExtensionTag,
+      ],
     })),
+  })
+}
+
+/**
+ * Build a unified UC coverage matrix that combines:
+ * - schema baseline (from imported markdown report rows)
+ * - API execution evidence (from latest saga runs and API trace artifacts)
+ *
+ * ELI5:
+ * This is the canonical "does platform behavior match UC claims?" table.
+ */
+export async function rebuildUcCoverageMatrixReport(input?: UcCoverageMatrixBuildInput) {
+  let sourceSchemaReportId = input?.sourceSchemaReportId
+  if (!sourceSchemaReportId) {
+    const latest = await listSagaCoverageReports({
+      scopeType: "schema_baseline",
+      limit: 1,
+    })
+    sourceSchemaReportId = latest[0]?.id
+  }
+
+  if (!sourceSchemaReportId && input?.coverageFile) {
+    const imported = await importSchemaCoverageReportFromMarkdown({
+      coverageFile: input.coverageFile,
+      replaceExisting: true,
+      actorUserId: input.actorUserId,
+    })
+    const latest = await listSagaCoverageReports({
+      scopeType: "schema_baseline",
+      limit: 1,
+    })
+    sourceSchemaReportId = latest[0]?.id
+    if (!sourceSchemaReportId) {
+      throw new Error(
+        `Could not resolve schema baseline report after import: ${imported.reportId}`,
+      )
+    }
+  }
+
+  if (!sourceSchemaReportId) {
+    throw new Error(
+      "No schema baseline report found. Import schema coverage first or provide coverageFile.",
+    )
+  }
+
+  const sourceDetail = await getSagaCoverageReportDetail(sourceSchemaReportId)
+  if (!sourceDetail || sourceDetail.report.scopeType !== "schema_baseline") {
+    throw new Error("Source report must be a schema_baseline coverage report.")
+  }
+
+  if (input?.replaceExisting ?? true) {
+    await clearCoverageScope("uc_coverage_matrix")
+  }
+
+  const sourceItems = sourceDetail.items.filter((item) => item.itemType === "use_case")
+  const sourceByUc = new Map(sourceItems.map((item) => [item.itemRefKey.toUpperCase(), item]))
+
+  const currentUseCases = await listSagaUseCases({
+    status: "active",
+    limit: 20000,
+  })
+
+  const ucMetaByRef = new Map<string, { title: string }>()
+  for (const row of currentUseCases) {
+    ucMetaByRef.set(row.ucKey.toUpperCase(), { title: row.title })
+  }
+  for (const item of sourceItems) {
+    const key = item.itemRefKey.toUpperCase()
+    if (!ucMetaByRef.has(key)) {
+      ucMetaByRef.set(key, { title: item.itemTitle ?? key })
+    }
+  }
+
+  const ucRefs = Array.from(ucMetaByRef.keys()).sort((a, b) => {
+    const aNum = Number(a.replace(/^UC-/i, ""))
+    const bNum = Number(b.replace(/^UC-/i, ""))
+    if (Number.isFinite(aNum) && Number.isFinite(bNum) && aNum !== bNum) return aNum - bNum
+    return a.localeCompare(b)
+  })
+
+  const apiByUc = await computeApiCoverageByUseCase(ucRefs)
+
+  const items: CreateSchemaCoverageBaselineItemInput[] = []
+  const schemaTotals = { full: 0, strong: 0, partial: 0, gap: 0 }
+  const apiTotals = { full: 0, strong: 0, partial: 0, gap: 0 }
+  const overallTotals = { full: 0, strong: 0, partial: 0, gap: 0 }
+  const n2hTotals = {
+    native: 0,
+    "mostly-native": 0,
+    "mixed-model": 0,
+    "workaround-heavy": 0,
+    hacky: 0,
+  }
+  const c2eTotals = {
+    "core-centric": 0,
+    "core-first": 0,
+    "balanced-core-extension": 0,
+    "extension-heavy": 0,
+    "extension-driven": 0,
+  }
+
+  for (const ucRef of ucRefs) {
+    const source = sourceByUc.get(ucRef)
+    const sourceEvidence =
+      (source?.evidence as Record<string, unknown> | null | undefined) ?? {}
+    const sourceSchemaEvidence =
+      (sourceEvidence.schema as Record<string, unknown> | undefined) ?? {}
+    const sourceLink =
+      typeof sourceEvidence.sourceLink === "string" ? sourceEvidence.sourceLink : null
+    const explanation = source?.explanation?.trim() || "No schema baseline explanation yet."
+    const parsedSchemaEvidence = extractSchemaEvidenceFromExplanation(explanation)
+    const schemaTables =
+      Array.isArray(sourceSchemaEvidence.tables) && sourceSchemaEvidence.tables.length > 0
+        ? (sourceSchemaEvidence.tables as string[])
+        : parsedSchemaEvidence.tables
+    const schemaConnections =
+      Array.isArray(sourceSchemaEvidence.connections) && sourceSchemaEvidence.connections.length > 0
+        ? (sourceSchemaEvidence.connections as string[])
+        : parsedSchemaEvidence.connections
+
+    const schemaVerdict = asCoverageVerdict(source?.verdict)
+    const apiSummary = apiByUc.get(ucRef) ?? {
+      verdict: "gap" as const,
+      definitionsCount: 0,
+      latestRunsCount: 0,
+      passedLatestRuns: 0,
+      totalRunsCount: 0,
+      passRatePct: 0,
+      endpoints: [],
+    }
+    const overallVerdict = worstCoverageVerdict(schemaVerdict, apiSummary.verdict)
+
+    schemaTotals[schemaVerdict] += 1
+    apiTotals[apiSummary.verdict] += 1
+    overallTotals[overallVerdict] += 1
+
+    const nativeToHacky = source?.nativeToHacky ?? null
+    const coreToExtension = source?.coreToExtension ?? null
+    if (nativeToHacky && nativeToHacky in n2hTotals) {
+      ;(n2hTotals as Record<string, number>)[nativeToHacky] += 1
+    }
+    if (coreToExtension && coreToExtension in c2eTotals) {
+      ;(c2eTotals as Record<string, number>)[coreToExtension] += 1
+    }
+
+    const itemTags = new Set<string>((source?.tags ?? []).filter((tag): tag is string => Boolean(tag)))
+    itemTags.add(`#${overallVerdict}`)
+    itemTags.add(`#schema-${schemaVerdict}`)
+    itemTags.add(`#api-${apiSummary.verdict}`)
+    if (nativeToHacky) itemTags.add(`#${nativeToHacky}`)
+    if (coreToExtension) itemTags.add(`#${coreToExtension}`)
+    if (apiSummary.endpoints.length > 0) itemTags.add("#api-endpoints-observed")
+
+    items.push({
+      itemType: "use_case",
+      itemRefKey: ucRef,
+      itemTitle: source?.itemTitle ?? ucMetaByRef.get(ucRef)?.title ?? ucRef,
+      verdictTag: `#${overallVerdict}`,
+      nativeToHackyTag: nativeToHacky ? `#${nativeToHacky}` : undefined,
+      coreToExtensionTag: coreToExtension ? `#${coreToExtension}` : undefined,
+      explanation,
+      evidence: {
+        sourceLink,
+        schema: {
+          verdict: schemaVerdict,
+          explanation,
+          tables: schemaTables,
+          connections: schemaConnections,
+        },
+        api: {
+          verdict: apiSummary.verdict,
+          definitionsCount: apiSummary.definitionsCount,
+          latestRunsCount: apiSummary.latestRunsCount,
+          passedLatestRuns: apiSummary.passedLatestRuns,
+          totalRunsCount: apiSummary.totalRunsCount,
+          passRatePct: apiSummary.passRatePct,
+          endpoints: apiSummary.endpoints,
+        },
+      },
+      metadata: {
+        schemaVerdict,
+        apiVerdict: apiSummary.verdict,
+        overallVerdict,
+      },
+      tags: Array.from(itemTags),
+    })
+  }
+
+  const denominator = Math.max(items.length, 1)
+  const fullPct = Math.round((overallTotals.full / denominator) * 100)
+  const strongPct = Math.round(((overallTotals.full + overallTotals.strong) / denominator) * 100)
+  const sourceReportData =
+    (sourceDetail.report.reportData as Record<string, unknown> | null | undefined) ?? {}
+
+  return createSchemaCoverageBaselineReport({
+    scopeType: "uc_coverage_matrix",
+    title: "UC Coverage Matrix (Schema + API)",
+    summary: `Unified UC coverage matrix across schema baseline + API execution evidence (${items.length} UCs).`,
+    reportData: {
+      sourceSchemaReportId,
+      sourceScopeType: sourceDetail.report.scopeType,
+      sourceReportData,
+      totals: {
+        evaluatedUseCases: items.length,
+        schema: schemaTotals,
+        api: apiTotals,
+        overall: overallTotals,
+      },
+      semanticTotals: {
+        nativeToHacky: n2hTotals,
+        coreToExtension: c2eTotals,
+      },
+      percentages: {
+        fullPct,
+        strongPct,
+      },
+    },
+    metadata: {
+      source: "uc_coverage_matrix_v1",
+      generatedAt: new Date().toISOString(),
+    },
+    replaceExisting: false,
+    bizId: input?.bizId ?? null,
+    actorUserId: input?.actorUserId,
+    items,
   })
 }
 

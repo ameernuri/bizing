@@ -19,6 +19,7 @@ import { and, asc, desc, eq } from 'drizzle-orm'
 import { z } from 'zod'
 import dbPackage from '@bizing/db'
 import { getCurrentUser, requireAclPermission, requireAuth, requireBizAccess } from '../middleware/auth.js'
+import { executeCrudRouteAction } from '../services/action-route-bridge.js'
 import { sanitizePlainText, sanitizeUnknown } from '../lib/sanitize.js'
 import { fail, ok } from './_api.js'
 
@@ -203,6 +204,58 @@ const claimEventBodySchema = z.object({
   metadata: z.record(z.unknown()).optional(),
 })
 
+async function createCommitmentRow<T extends Record<string, unknown>>(input: {
+  c: Parameters<typeof fail>[0]
+  bizId: string
+  tableKey: string
+  subjectType: string
+  data: Record<string, unknown>
+  displayName?: string
+}) {
+  const delegated = await executeCrudRouteAction({
+    c: input.c,
+    bizId: input.bizId,
+    tableKey: input.tableKey,
+    operation: 'create',
+    subjectType: input.subjectType,
+    displayName: input.displayName,
+    data: input.data,
+    metadata: { routeFamily: 'commitments' },
+  })
+  if (!delegated.ok) {
+    return fail(input.c, delegated.code, delegated.message, delegated.httpStatus, delegated.details)
+  }
+  return delegated.row as T
+}
+
+async function updateCommitmentRow<T extends Record<string, unknown>>(input: {
+  c: Parameters<typeof fail>[0]
+  bizId: string
+  tableKey: string
+  subjectType: string
+  id: string
+  patch: Record<string, unknown>
+  notFoundMessage: string
+}) {
+  const delegated = await executeCrudRouteAction({
+    c: input.c,
+    bizId: input.bizId,
+    tableKey: input.tableKey,
+    operation: 'update',
+    id: input.id,
+    subjectType: input.subjectType,
+    subjectId: input.id,
+    patch: input.patch,
+    metadata: { routeFamily: 'commitments' },
+  })
+  if (!delegated.ok) {
+    if (delegated.code === 'CRUD_TARGET_NOT_FOUND') return fail(input.c, 'NOT_FOUND', input.notFoundMessage, 404)
+    return fail(input.c, delegated.code, delegated.message, delegated.httpStatus, delegated.details)
+  }
+  if (!delegated.row) return fail(input.c, 'NOT_FOUND', input.notFoundMessage, 404)
+  return delegated.row as T
+}
+
 export const commitmentRoutes = new Hono()
 
 commitmentRoutes.get('/bizes/:bizId/commitment-contracts', requireAuth, requireBizAccess('bizId'), requireAclPermission('bizes.read', { bizIdParam: 'bizId' }), async (c) => {
@@ -219,30 +272,39 @@ commitmentRoutes.post('/bizes/:bizId/commitment-contracts', requireAuth, require
   const parsed = contractBodySchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
 
-  const [created] = await db.insert(commitmentContracts).values({
+  const createdOrResponse = await createCommitmentRow<typeof commitmentContracts.$inferSelect>({
+    c,
     bizId,
-    contractType: parsed.data.contractType,
-    status: parsed.data.status,
-    title: sanitizePlainText(parsed.data.title),
-    description: parsed.data.description ? sanitizePlainText(parsed.data.description) : null,
-    anchorSubjectType: parsed.data.anchorSubjectType,
-    anchorSubjectId: parsed.data.anchorSubjectId,
-    counterpartySubjectType: parsed.data.counterpartySubjectType ?? null,
-    counterpartySubjectId: parsed.data.counterpartySubjectId ?? null,
-    offerVersionId: parsed.data.offerVersionId ?? null,
-    bookingOrderId: parsed.data.bookingOrderId ?? null,
-    arInvoiceId: parsed.data.arInvoiceId ?? null,
-    currency: parsed.data.currency,
-    committedAmountMinor: parsed.data.committedAmountMinor,
-    releasedAmountMinor: parsed.data.releasedAmountMinor,
-    forfeitedAmountMinor: parsed.data.forfeitedAmountMinor,
-    startedAt: parsed.data.startedAt ? new Date(parsed.data.startedAt) : null,
-    expiresAt: parsed.data.expiresAt ? new Date(parsed.data.expiresAt) : null,
-    completedAt: parsed.data.completedAt ? new Date(parsed.data.completedAt) : null,
-    cancelledAt: parsed.data.cancelledAt ? new Date(parsed.data.cancelledAt) : null,
-    policySnapshot: sanitizeUnknown(parsed.data.policySnapshot ?? {}),
-    metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
-  }).returning()
+    tableKey: 'commitmentContracts',
+    subjectType: 'commitment_contract',
+    displayName: parsed.data.title,
+    data: {
+      bizId,
+      contractType: parsed.data.contractType,
+      status: parsed.data.status,
+      title: sanitizePlainText(parsed.data.title),
+      description: parsed.data.description ? sanitizePlainText(parsed.data.description) : null,
+      anchorSubjectType: parsed.data.anchorSubjectType,
+      anchorSubjectId: parsed.data.anchorSubjectId,
+      counterpartySubjectType: parsed.data.counterpartySubjectType ?? null,
+      counterpartySubjectId: parsed.data.counterpartySubjectId ?? null,
+      offerVersionId: parsed.data.offerVersionId ?? null,
+      bookingOrderId: parsed.data.bookingOrderId ?? null,
+      arInvoiceId: parsed.data.arInvoiceId ?? null,
+      currency: parsed.data.currency,
+      committedAmountMinor: parsed.data.committedAmountMinor,
+      releasedAmountMinor: parsed.data.releasedAmountMinor,
+      forfeitedAmountMinor: parsed.data.forfeitedAmountMinor,
+      startedAt: parsed.data.startedAt ? new Date(parsed.data.startedAt) : null,
+      expiresAt: parsed.data.expiresAt ? new Date(parsed.data.expiresAt) : null,
+      completedAt: parsed.data.completedAt ? new Date(parsed.data.completedAt) : null,
+      cancelledAt: parsed.data.cancelledAt ? new Date(parsed.data.cancelledAt) : null,
+      policySnapshot: sanitizeUnknown(parsed.data.policySnapshot ?? {}),
+      metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
+    },
+  })
+  if (createdOrResponse instanceof Response) return createdOrResponse
+  const created = createdOrResponse
   return ok(c, created, 201)
 })
 
@@ -260,31 +322,40 @@ commitmentRoutes.post('/bizes/:bizId/commitment-contracts/:contractId/obligation
   const parsed = obligationBodySchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
 
-  const [created] = await db.insert(commitmentObligations).values({
+  const createdOrResponse = await createCommitmentRow<typeof commitmentObligations.$inferSelect>({
+    c,
     bizId,
-    commitmentContractId: contractId,
-    obligationType: parsed.data.obligationType,
-    status: parsed.data.status,
-    title: sanitizePlainText(parsed.data.title),
-    description: parsed.data.description ? sanitizePlainText(parsed.data.description) : null,
-    obligorSubjectType: parsed.data.obligorSubjectType ?? null,
-    obligorSubjectId: parsed.data.obligorSubjectId ?? null,
-    beneficiarySubjectType: parsed.data.beneficiarySubjectType ?? null,
-    beneficiarySubjectId: parsed.data.beneficiarySubjectId ?? null,
-    requiredAmountMinor: parsed.data.requiredAmountMinor ?? null,
-    satisfiedAmountMinor: parsed.data.satisfiedAmountMinor,
-    currency: parsed.data.currency,
-    dueAt: parsed.data.dueAt ? new Date(parsed.data.dueAt) : null,
-    satisfiedAt: parsed.data.satisfiedAt ? new Date(parsed.data.satisfiedAt) : null,
-    breachedAt: parsed.data.breachedAt ? new Date(parsed.data.breachedAt) : null,
-    waivedAt: parsed.data.waivedAt ? new Date(parsed.data.waivedAt) : null,
-    cancelledAt: parsed.data.cancelledAt ? new Date(parsed.data.cancelledAt) : null,
-    sourceSubjectType: parsed.data.sourceSubjectType ?? null,
-    sourceSubjectId: parsed.data.sourceSubjectId ?? null,
-    sortOrder: parsed.data.sortOrder,
-    evidencePolicy: sanitizeUnknown(parsed.data.evidencePolicy ?? {}),
-    metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
-  }).returning()
+    tableKey: 'commitmentObligations',
+    subjectType: 'commitment_obligation',
+    displayName: parsed.data.title,
+    data: {
+      bizId,
+      commitmentContractId: contractId,
+      obligationType: parsed.data.obligationType,
+      status: parsed.data.status,
+      title: sanitizePlainText(parsed.data.title),
+      description: parsed.data.description ? sanitizePlainText(parsed.data.description) : null,
+      obligorSubjectType: parsed.data.obligorSubjectType ?? null,
+      obligorSubjectId: parsed.data.obligorSubjectId ?? null,
+      beneficiarySubjectType: parsed.data.beneficiarySubjectType ?? null,
+      beneficiarySubjectId: parsed.data.beneficiarySubjectId ?? null,
+      requiredAmountMinor: parsed.data.requiredAmountMinor ?? null,
+      satisfiedAmountMinor: parsed.data.satisfiedAmountMinor,
+      currency: parsed.data.currency,
+      dueAt: parsed.data.dueAt ? new Date(parsed.data.dueAt) : null,
+      satisfiedAt: parsed.data.satisfiedAt ? new Date(parsed.data.satisfiedAt) : null,
+      breachedAt: parsed.data.breachedAt ? new Date(parsed.data.breachedAt) : null,
+      waivedAt: parsed.data.waivedAt ? new Date(parsed.data.waivedAt) : null,
+      cancelledAt: parsed.data.cancelledAt ? new Date(parsed.data.cancelledAt) : null,
+      sourceSubjectType: parsed.data.sourceSubjectType ?? null,
+      sourceSubjectId: parsed.data.sourceSubjectId ?? null,
+      sortOrder: parsed.data.sortOrder,
+      evidencePolicy: sanitizeUnknown(parsed.data.evidencePolicy ?? {}),
+      metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
+    },
+  })
+  if (createdOrResponse instanceof Response) return createdOrResponse
+  const created = createdOrResponse
   return ok(c, created, 201)
 })
 
@@ -292,25 +363,39 @@ commitmentRoutes.patch('/bizes/:bizId/commitment-contracts/:contractId/obligatio
   const { bizId, contractId, obligationId } = c.req.param()
   const parsed = obligationBodySchema.partial().safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
+  const existing = await db.query.commitmentObligations.findFirst({
+    where: and(
+      eq(commitmentObligations.bizId, bizId),
+      eq(commitmentObligations.commitmentContractId, contractId),
+      eq(commitmentObligations.id, obligationId),
+    ),
+    columns: { id: true },
+  })
+  if (!existing) return fail(c, 'NOT_FOUND', 'Commitment obligation not found.', 404)
 
-  const [updated] = await db.update(commitmentObligations).set({
-    ...('status' in parsed.data ? { status: parsed.data.status } : {}),
-    ...('title' in parsed.data ? { title: parsed.data.title ? sanitizePlainText(parsed.data.title) : undefined } : {}),
-    ...('description' in parsed.data ? { description: parsed.data.description ? sanitizePlainText(parsed.data.description) : null } : {}),
-    ...('requiredAmountMinor' in parsed.data ? { requiredAmountMinor: parsed.data.requiredAmountMinor ?? null } : {}),
-    ...('satisfiedAmountMinor' in parsed.data ? { satisfiedAmountMinor: parsed.data.satisfiedAmountMinor } : {}),
-    ...('dueAt' in parsed.data ? { dueAt: parsed.data.dueAt ? new Date(parsed.data.dueAt) : null } : {}),
-    ...('satisfiedAt' in parsed.data ? { satisfiedAt: parsed.data.satisfiedAt ? new Date(parsed.data.satisfiedAt) : null } : {}),
-    ...('breachedAt' in parsed.data ? { breachedAt: parsed.data.breachedAt ? new Date(parsed.data.breachedAt) : null } : {}),
-    ...('waivedAt' in parsed.data ? { waivedAt: parsed.data.waivedAt ? new Date(parsed.data.waivedAt) : null } : {}),
-    ...('cancelledAt' in parsed.data ? { cancelledAt: parsed.data.cancelledAt ? new Date(parsed.data.cancelledAt) : null } : {}),
-    ...('metadata' in parsed.data ? { metadata: sanitizeUnknown(parsed.data.metadata ?? {}) } : {}),
-  }).where(and(
-    eq(commitmentObligations.bizId, bizId),
-    eq(commitmentObligations.commitmentContractId, contractId),
-    eq(commitmentObligations.id, obligationId),
-  )).returning()
-  if (!updated) return fail(c, 'NOT_FOUND', 'Commitment obligation not found.', 404)
+  const updatedOrResponse = await updateCommitmentRow<typeof commitmentObligations.$inferSelect>({
+    c,
+    bizId,
+    tableKey: 'commitmentObligations',
+    subjectType: 'commitment_obligation',
+    id: obligationId,
+    notFoundMessage: 'Commitment obligation not found.',
+    patch: {
+      ...('status' in parsed.data ? { status: parsed.data.status } : {}),
+      ...('title' in parsed.data ? { title: parsed.data.title ? sanitizePlainText(parsed.data.title) : undefined } : {}),
+      ...('description' in parsed.data ? { description: parsed.data.description ? sanitizePlainText(parsed.data.description) : null } : {}),
+      ...('requiredAmountMinor' in parsed.data ? { requiredAmountMinor: parsed.data.requiredAmountMinor ?? null } : {}),
+      ...('satisfiedAmountMinor' in parsed.data ? { satisfiedAmountMinor: parsed.data.satisfiedAmountMinor } : {}),
+      ...('dueAt' in parsed.data ? { dueAt: parsed.data.dueAt ? new Date(parsed.data.dueAt) : null } : {}),
+      ...('satisfiedAt' in parsed.data ? { satisfiedAt: parsed.data.satisfiedAt ? new Date(parsed.data.satisfiedAt) : null } : {}),
+      ...('breachedAt' in parsed.data ? { breachedAt: parsed.data.breachedAt ? new Date(parsed.data.breachedAt) : null } : {}),
+      ...('waivedAt' in parsed.data ? { waivedAt: parsed.data.waivedAt ? new Date(parsed.data.waivedAt) : null } : {}),
+      ...('cancelledAt' in parsed.data ? { cancelledAt: parsed.data.cancelledAt ? new Date(parsed.data.cancelledAt) : null } : {}),
+      ...('metadata' in parsed.data ? { metadata: sanitizeUnknown(parsed.data.metadata ?? {}) } : {}),
+    },
+  })
+  if (updatedOrResponse instanceof Response) return updatedOrResponse
+  const updated = updatedOrResponse
   return ok(c, updated)
 })
 
@@ -328,27 +413,36 @@ commitmentRoutes.post('/bizes/:bizId/commitment-contracts/:contractId/milestones
   const parsed = milestoneBodySchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
 
-  const [created] = await db.insert(commitmentMilestones).values({
+  const createdOrResponse = await createCommitmentRow<typeof commitmentMilestones.$inferSelect>({
+    c,
     bizId,
-    commitmentContractId: contractId,
-    code: sanitizePlainText(parsed.data.code),
-    title: sanitizePlainText(parsed.data.title),
-    description: parsed.data.description ? sanitizePlainText(parsed.data.description) : null,
-    status: parsed.data.status,
-    evaluationMode: parsed.data.evaluationMode,
-    minSatisfiedCount: parsed.data.minSatisfiedCount ?? null,
-    releaseMode: parsed.data.releaseMode,
-    releaseAmountMinor: parsed.data.releaseAmountMinor,
-    currency: parsed.data.currency,
-    dueAt: parsed.data.dueAt ? new Date(parsed.data.dueAt) : null,
-    readyAt: parsed.data.readyAt ? new Date(parsed.data.readyAt) : null,
-    releasedAt: parsed.data.releasedAt ? new Date(parsed.data.releasedAt) : null,
-    cancelledAt: parsed.data.cancelledAt ? new Date(parsed.data.cancelledAt) : null,
-    releasedByUserId: parsed.data.releasedByUserId ?? null,
-    sortOrder: parsed.data.sortOrder,
-    policySnapshot: sanitizeUnknown(parsed.data.policySnapshot ?? {}),
-    metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
-  }).returning()
+    tableKey: 'commitmentMilestones',
+    subjectType: 'commitment_milestone',
+    displayName: parsed.data.title,
+    data: {
+      bizId,
+      commitmentContractId: contractId,
+      code: sanitizePlainText(parsed.data.code),
+      title: sanitizePlainText(parsed.data.title),
+      description: parsed.data.description ? sanitizePlainText(parsed.data.description) : null,
+      status: parsed.data.status,
+      evaluationMode: parsed.data.evaluationMode,
+      minSatisfiedCount: parsed.data.minSatisfiedCount ?? null,
+      releaseMode: parsed.data.releaseMode,
+      releaseAmountMinor: parsed.data.releaseAmountMinor,
+      currency: parsed.data.currency,
+      dueAt: parsed.data.dueAt ? new Date(parsed.data.dueAt) : null,
+      readyAt: parsed.data.readyAt ? new Date(parsed.data.readyAt) : null,
+      releasedAt: parsed.data.releasedAt ? new Date(parsed.data.releasedAt) : null,
+      cancelledAt: parsed.data.cancelledAt ? new Date(parsed.data.cancelledAt) : null,
+      releasedByUserId: parsed.data.releasedByUserId ?? null,
+      sortOrder: parsed.data.sortOrder,
+      policySnapshot: sanitizeUnknown(parsed.data.policySnapshot ?? {}),
+      metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
+    },
+  })
+  if (createdOrResponse instanceof Response) return createdOrResponse
+  const created = createdOrResponse
   return ok(c, created, 201)
 })
 
@@ -356,20 +450,34 @@ commitmentRoutes.patch('/bizes/:bizId/commitment-contracts/:contractId/milestone
   const { bizId, contractId, milestoneId } = c.req.param()
   const parsed = milestoneBodySchema.partial().safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
+  const existing = await db.query.commitmentMilestones.findFirst({
+    where: and(
+      eq(commitmentMilestones.bizId, bizId),
+      eq(commitmentMilestones.commitmentContractId, contractId),
+      eq(commitmentMilestones.id, milestoneId),
+    ),
+    columns: { id: true },
+  })
+  if (!existing) return fail(c, 'NOT_FOUND', 'Commitment milestone not found.', 404)
 
-  const [updated] = await db.update(commitmentMilestones).set({
-    ...('status' in parsed.data ? { status: parsed.data.status } : {}),
-    ...('readyAt' in parsed.data ? { readyAt: parsed.data.readyAt ? new Date(parsed.data.readyAt) : null } : {}),
-    ...('releasedAt' in parsed.data ? { releasedAt: parsed.data.releasedAt ? new Date(parsed.data.releasedAt) : null } : {}),
-    ...('cancelledAt' in parsed.data ? { cancelledAt: parsed.data.cancelledAt ? new Date(parsed.data.cancelledAt) : null } : {}),
-    ...('releasedByUserId' in parsed.data ? { releasedByUserId: parsed.data.releasedByUserId ?? null } : {}),
-    ...('metadata' in parsed.data ? { metadata: sanitizeUnknown(parsed.data.metadata ?? {}) } : {}),
-  }).where(and(
-    eq(commitmentMilestones.bizId, bizId),
-    eq(commitmentMilestones.commitmentContractId, contractId),
-    eq(commitmentMilestones.id, milestoneId),
-  )).returning()
-  if (!updated) return fail(c, 'NOT_FOUND', 'Commitment milestone not found.', 404)
+  const updatedOrResponse = await updateCommitmentRow<typeof commitmentMilestones.$inferSelect>({
+    c,
+    bizId,
+    tableKey: 'commitmentMilestones',
+    subjectType: 'commitment_milestone',
+    id: milestoneId,
+    notFoundMessage: 'Commitment milestone not found.',
+    patch: {
+      ...('status' in parsed.data ? { status: parsed.data.status } : {}),
+      ...('readyAt' in parsed.data ? { readyAt: parsed.data.readyAt ? new Date(parsed.data.readyAt) : null } : {}),
+      ...('releasedAt' in parsed.data ? { releasedAt: parsed.data.releasedAt ? new Date(parsed.data.releasedAt) : null } : {}),
+      ...('cancelledAt' in parsed.data ? { cancelledAt: parsed.data.cancelledAt ? new Date(parsed.data.cancelledAt) : null } : {}),
+      ...('releasedByUserId' in parsed.data ? { releasedByUserId: parsed.data.releasedByUserId ?? null } : {}),
+      ...('metadata' in parsed.data ? { metadata: sanitizeUnknown(parsed.data.metadata ?? {}) } : {}),
+    },
+  })
+  if (updatedOrResponse instanceof Response) return updatedOrResponse
+  const updated = updatedOrResponse
   return ok(c, updated)
 })
 
@@ -387,16 +495,24 @@ commitmentRoutes.post('/bizes/:bizId/commitment-contracts/:contractId/milestones
   const parsed = milestoneLinkBodySchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
 
-  const [created] = await db.insert(commitmentMilestoneObligations).values({
+  const createdOrResponse = await createCommitmentRow<typeof commitmentMilestoneObligations.$inferSelect>({
+    c,
     bizId,
-    commitmentContractId: contractId,
-    commitmentMilestoneId: milestoneId,
-    commitmentObligationId: parsed.data.commitmentObligationId,
-    isRequired: parsed.data.isRequired,
-    weight: parsed.data.weight,
-    sortOrder: parsed.data.sortOrder,
-    metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
-  }).returning()
+    tableKey: 'commitmentMilestoneObligations',
+    subjectType: 'commitment_milestone_obligation',
+    data: {
+      bizId,
+      commitmentContractId: contractId,
+      commitmentMilestoneId: milestoneId,
+      commitmentObligationId: parsed.data.commitmentObligationId,
+      isRequired: parsed.data.isRequired,
+      weight: parsed.data.weight,
+      sortOrder: parsed.data.sortOrder,
+      metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
+    },
+  })
+  if (createdOrResponse instanceof Response) return createdOrResponse
+  const created = createdOrResponse
   return ok(c, created, 201)
 })
 
@@ -415,27 +531,36 @@ commitmentRoutes.post('/bizes/:bizId/secured-balance-accounts', requireAuth, req
   const parsed = accountBodySchema.extend({ commitmentContractId: z.string().optional() }).safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
 
-  const [created] = await db.insert(securedBalanceAccounts).values({
+  const createdOrResponse = await createCommitmentRow<typeof securedBalanceAccounts.$inferSelect>({
+    c,
     bizId,
-    commitmentContractId: parsed.data.commitmentContractId ?? null,
-    accountType: parsed.data.accountType,
-    status: parsed.data.status,
-    title: sanitizePlainText(parsed.data.title),
-    description: parsed.data.description ? sanitizePlainText(parsed.data.description) : null,
-    currency: parsed.data.currency,
-    balanceMinor: parsed.data.balanceMinor,
-    heldMinor: parsed.data.heldMinor,
-    releasedMinor: parsed.data.releasedMinor,
-    forfeitedMinor: parsed.data.forfeitedMinor,
-    ownerSubjectType: parsed.data.ownerSubjectType,
-    ownerSubjectId: parsed.data.ownerSubjectId,
-    counterpartySubjectType: parsed.data.counterpartySubjectType ?? null,
-    counterpartySubjectId: parsed.data.counterpartySubjectId ?? null,
-    openedAt: parsed.data.openedAt ? new Date(parsed.data.openedAt) : new Date(),
-    closedAt: parsed.data.closedAt ? new Date(parsed.data.closedAt) : null,
-    policySnapshot: sanitizeUnknown(parsed.data.policySnapshot ?? {}),
-    metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
-  }).returning()
+    tableKey: 'securedBalanceAccounts',
+    subjectType: 'secured_balance_account',
+    displayName: parsed.data.title,
+    data: {
+      bizId,
+      commitmentContractId: parsed.data.commitmentContractId ?? null,
+      accountType: parsed.data.accountType,
+      status: parsed.data.status,
+      title: sanitizePlainText(parsed.data.title),
+      description: parsed.data.description ? sanitizePlainText(parsed.data.description) : null,
+      currency: parsed.data.currency,
+      balanceMinor: parsed.data.balanceMinor,
+      heldMinor: parsed.data.heldMinor,
+      releasedMinor: parsed.data.releasedMinor,
+      forfeitedMinor: parsed.data.forfeitedMinor,
+      ownerSubjectType: parsed.data.ownerSubjectType,
+      ownerSubjectId: parsed.data.ownerSubjectId,
+      counterpartySubjectType: parsed.data.counterpartySubjectType ?? null,
+      counterpartySubjectId: parsed.data.counterpartySubjectId ?? null,
+      openedAt: parsed.data.openedAt ? new Date(parsed.data.openedAt) : new Date(),
+      closedAt: parsed.data.closedAt ? new Date(parsed.data.closedAt) : null,
+      policySnapshot: sanitizeUnknown(parsed.data.policySnapshot ?? {}),
+      metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
+    },
+  })
+  if (createdOrResponse instanceof Response) return createdOrResponse
+  const created = createdOrResponse
   return ok(c, created, 201)
 })
 
@@ -458,39 +583,57 @@ commitmentRoutes.post('/bizes/:bizId/secured-balance-accounts/:accountId/ledger-
   })
   if (!account) return fail(c, 'NOT_FOUND', 'Secured-balance account not found.', 404)
 
-  const [created] = await db.insert(securedBalanceLedgerEntries).values({
+  const createdOrResponse = await createCommitmentRow<typeof securedBalanceLedgerEntries.$inferSelect>({
+    c,
     bizId,
-    securedBalanceAccountId: accountId,
-    entryType: parsed.data.entryType,
-    status: parsed.data.status,
-    occurredAt: parsed.data.occurredAt ? new Date(parsed.data.occurredAt) : new Date(),
-    currency: parsed.data.currency,
-    balanceDeltaMinor: parsed.data.balanceDeltaMinor,
-    heldDeltaMinor: parsed.data.heldDeltaMinor,
-    commitmentContractId: parsed.data.commitmentContractId ?? null,
-    commitmentMilestoneId: parsed.data.commitmentMilestoneId ?? null,
-    commitmentObligationId: parsed.data.commitmentObligationId ?? null,
-    paymentTransactionId: parsed.data.paymentTransactionId ?? null,
-    arInvoiceId: parsed.data.arInvoiceId ?? null,
-    bookingOrderId: parsed.data.bookingOrderId ?? null,
-    bookingOrderLineId: parsed.data.bookingOrderLineId ?? null,
-    sourceSubjectType: parsed.data.sourceSubjectType ?? null,
-    sourceSubjectId: parsed.data.sourceSubjectId ?? null,
-    idempotencyKey: parsed.data.idempotencyKey ?? null,
-    reasonCode: parsed.data.reasonCode ?? null,
-    notes: parsed.data.notes ? sanitizePlainText(parsed.data.notes) : null,
-    metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
-  }).returning()
+    tableKey: 'securedBalanceLedgerEntries',
+    subjectType: 'secured_balance_ledger_entry',
+    data: {
+      bizId,
+      securedBalanceAccountId: accountId,
+      entryType: parsed.data.entryType,
+      status: parsed.data.status,
+      occurredAt: parsed.data.occurredAt ? new Date(parsed.data.occurredAt) : new Date(),
+      currency: parsed.data.currency,
+      balanceDeltaMinor: parsed.data.balanceDeltaMinor,
+      heldDeltaMinor: parsed.data.heldDeltaMinor,
+      commitmentContractId: parsed.data.commitmentContractId ?? null,
+      commitmentMilestoneId: parsed.data.commitmentMilestoneId ?? null,
+      commitmentObligationId: parsed.data.commitmentObligationId ?? null,
+      paymentTransactionId: parsed.data.paymentTransactionId ?? null,
+      arInvoiceId: parsed.data.arInvoiceId ?? null,
+      bookingOrderId: parsed.data.bookingOrderId ?? null,
+      bookingOrderLineId: parsed.data.bookingOrderLineId ?? null,
+      sourceSubjectType: parsed.data.sourceSubjectType ?? null,
+      sourceSubjectId: parsed.data.sourceSubjectId ?? null,
+      idempotencyKey: parsed.data.idempotencyKey ?? null,
+      reasonCode: parsed.data.reasonCode ?? null,
+      notes: parsed.data.notes ? sanitizePlainText(parsed.data.notes) : null,
+      metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
+    },
+  })
+  if (createdOrResponse instanceof Response) return createdOrResponse
+  const created = createdOrResponse
 
-  await db.update(securedBalanceAccounts).set({
-    balanceMinor: account.balanceMinor + parsed.data.balanceDeltaMinor,
-    heldMinor: account.heldMinor + parsed.data.heldDeltaMinor,
-    releasedMinor: account.releasedMinor + (parsed.data.entryType === 'release' ? Math.max(parsed.data.balanceDeltaMinor * -1, 0) : 0),
-    forfeitedMinor: account.forfeitedMinor + (parsed.data.entryType === 'forfeit' ? Math.max(parsed.data.balanceDeltaMinor * -1, 0) : 0),
-    status: parsed.data.metadata && (parsed.data.metadata.nextAccountStatus === 'frozen' || parsed.data.metadata.nextAccountStatus === 'releasing')
-      ? parsed.data.metadata.nextAccountStatus as 'frozen' | 'releasing'
-      : undefined,
-  }).where(and(eq(securedBalanceAccounts.bizId, bizId), eq(securedBalanceAccounts.id, accountId)))
+  const nextStatus = parsed.data.metadata && (parsed.data.metadata.nextAccountStatus === 'frozen' || parsed.data.metadata.nextAccountStatus === 'releasing')
+    ? parsed.data.metadata.nextAccountStatus as 'frozen' | 'releasing'
+    : undefined
+  const accountUpdateOrResponse = await updateCommitmentRow<typeof securedBalanceAccounts.$inferSelect>({
+    c,
+    bizId,
+    tableKey: 'securedBalanceAccounts',
+    subjectType: 'secured_balance_account',
+    id: accountId,
+    notFoundMessage: 'Secured-balance account not found.',
+    patch: {
+      balanceMinor: account.balanceMinor + parsed.data.balanceDeltaMinor,
+      heldMinor: account.heldMinor + parsed.data.heldDeltaMinor,
+      releasedMinor: account.releasedMinor + (parsed.data.entryType === 'release' ? Math.max(parsed.data.balanceDeltaMinor * -1, 0) : 0),
+      forfeitedMinor: account.forfeitedMinor + (parsed.data.entryType === 'forfeit' ? Math.max(parsed.data.balanceDeltaMinor * -1, 0) : 0),
+      status: nextStatus,
+    },
+  })
+  if (accountUpdateOrResponse instanceof Response) return accountUpdateOrResponse
 
   return ok(c, created, 201)
 })
@@ -509,22 +652,30 @@ commitmentRoutes.post('/bizes/:bizId/secured-balance-ledger-entries/:entryId/all
   const parsed = allocationBodySchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
 
-  const [created] = await db.insert(securedBalanceAllocations).values({
+  const createdOrResponse = await createCommitmentRow<typeof securedBalanceAllocations.$inferSelect>({
+    c,
     bizId,
-    securedBalanceLedgerEntryId: entryId,
-    allocationType: parsed.data.allocationType,
-    allocatedAmountMinor: parsed.data.allocatedAmountMinor,
-    currency: parsed.data.currency,
-    commitmentObligationId: parsed.data.commitmentObligationId ?? null,
-    commitmentMilestoneId: parsed.data.commitmentMilestoneId ?? null,
-    bookingOrderLineId: parsed.data.bookingOrderLineId ?? null,
-    arInvoiceId: parsed.data.arInvoiceId ?? null,
-    paymentTransactionLineAllocationId: parsed.data.paymentTransactionLineAllocationId ?? null,
-    targetSubjectType: parsed.data.targetSubjectType ?? null,
-    targetSubjectId: parsed.data.targetSubjectId ?? null,
-    occurredAt: parsed.data.occurredAt ? new Date(parsed.data.occurredAt) : new Date(),
-    metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
-  }).returning()
+    tableKey: 'securedBalanceAllocations',
+    subjectType: 'secured_balance_allocation',
+    data: {
+      bizId,
+      securedBalanceLedgerEntryId: entryId,
+      allocationType: parsed.data.allocationType,
+      allocatedAmountMinor: parsed.data.allocatedAmountMinor,
+      currency: parsed.data.currency,
+      commitmentObligationId: parsed.data.commitmentObligationId ?? null,
+      commitmentMilestoneId: parsed.data.commitmentMilestoneId ?? null,
+      bookingOrderLineId: parsed.data.bookingOrderLineId ?? null,
+      arInvoiceId: parsed.data.arInvoiceId ?? null,
+      paymentTransactionLineAllocationId: parsed.data.paymentTransactionLineAllocationId ?? null,
+      targetSubjectType: parsed.data.targetSubjectType ?? null,
+      targetSubjectId: parsed.data.targetSubjectId ?? null,
+      occurredAt: parsed.data.occurredAt ? new Date(parsed.data.occurredAt) : new Date(),
+      metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
+    },
+  })
+  if (createdOrResponse instanceof Response) return createdOrResponse
+  const created = createdOrResponse
   return ok(c, created, 201)
 })
 
@@ -542,38 +693,54 @@ commitmentRoutes.post('/bizes/:bizId/commitment-contracts/:contractId/claims', r
   const parsed = claimBodySchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
 
-  const [created] = await db.insert(commitmentClaims).values({
+  const createdOrResponse = await createCommitmentRow<typeof commitmentClaims.$inferSelect>({
+    c,
     bizId,
-    commitmentContractId: contractId,
-    claimType: parsed.data.claimType,
-    status: parsed.data.status,
-    resolutionType: parsed.data.resolutionType ?? null,
-    title: sanitizePlainText(parsed.data.title),
-    description: parsed.data.description ? sanitizePlainText(parsed.data.description) : null,
-    raisedBySubjectType: parsed.data.raisedBySubjectType,
-    raisedBySubjectId: parsed.data.raisedBySubjectId,
-    againstSubjectType: parsed.data.againstSubjectType ?? null,
-    againstSubjectId: parsed.data.againstSubjectId ?? null,
-    disputedAmountMinor: parsed.data.disputedAmountMinor ?? null,
-    settledAmountMinor: parsed.data.settledAmountMinor ?? null,
-    currency: parsed.data.currency,
-    openedAt: parsed.data.openedAt ? new Date(parsed.data.openedAt) : new Date(),
-    resolvedAt: parsed.data.resolvedAt ? new Date(parsed.data.resolvedAt) : null,
-    closedAt: parsed.data.closedAt ? new Date(parsed.data.closedAt) : null,
-    policySnapshot: sanitizeUnknown(parsed.data.policySnapshot ?? {}),
-    metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
-  }).returning()
-
-  await db.insert(commitmentClaimEvents).values({
-    bizId,
-    commitmentClaimId: created.id,
-    eventType: 'opened',
-    occurredAt: new Date(),
-    actorUserId: getCurrentUser(c)?.id ?? null,
-    note: 'Claim opened through API.',
-    payload: { source: 'commitments.create_claim' },
-    metadata: { source: 'commitments.create_claim' },
+    tableKey: 'commitmentClaims',
+    subjectType: 'commitment_claim',
+    displayName: parsed.data.title,
+    data: {
+      bizId,
+      commitmentContractId: contractId,
+      claimType: parsed.data.claimType,
+      status: parsed.data.status,
+      resolutionType: parsed.data.resolutionType ?? null,
+      title: sanitizePlainText(parsed.data.title),
+      description: parsed.data.description ? sanitizePlainText(parsed.data.description) : null,
+      raisedBySubjectType: parsed.data.raisedBySubjectType,
+      raisedBySubjectId: parsed.data.raisedBySubjectId,
+      againstSubjectType: parsed.data.againstSubjectType ?? null,
+      againstSubjectId: parsed.data.againstSubjectId ?? null,
+      disputedAmountMinor: parsed.data.disputedAmountMinor ?? null,
+      settledAmountMinor: parsed.data.settledAmountMinor ?? null,
+      currency: parsed.data.currency,
+      openedAt: parsed.data.openedAt ? new Date(parsed.data.openedAt) : new Date(),
+      resolvedAt: parsed.data.resolvedAt ? new Date(parsed.data.resolvedAt) : null,
+      closedAt: parsed.data.closedAt ? new Date(parsed.data.closedAt) : null,
+      policySnapshot: sanitizeUnknown(parsed.data.policySnapshot ?? {}),
+      metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
+    },
   })
+  if (createdOrResponse instanceof Response) return createdOrResponse
+  const created = createdOrResponse
+
+  const openedEventOrResponse = await createCommitmentRow<typeof commitmentClaimEvents.$inferSelect>({
+    c,
+    bizId,
+    tableKey: 'commitmentClaimEvents',
+    subjectType: 'commitment_claim_event',
+    data: {
+      bizId,
+      commitmentClaimId: created.id,
+      eventType: 'opened',
+      occurredAt: new Date(),
+      actorUserId: getCurrentUser(c)?.id ?? null,
+      note: 'Claim opened through API.',
+      payload: { source: 'commitments.create_claim' },
+      metadata: { source: 'commitments.create_claim' },
+    },
+  })
+  if (openedEventOrResponse instanceof Response) return openedEventOrResponse
 
   return ok(c, created, 201)
 })
@@ -582,20 +749,34 @@ commitmentRoutes.patch('/bizes/:bizId/commitment-contracts/:contractId/claims/:c
   const { bizId, contractId, claimId } = c.req.param()
   const parsed = claimPatchSchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
+  const existing = await db.query.commitmentClaims.findFirst({
+    where: and(
+      eq(commitmentClaims.bizId, bizId),
+      eq(commitmentClaims.commitmentContractId, contractId),
+      eq(commitmentClaims.id, claimId),
+    ),
+    columns: { id: true },
+  })
+  if (!existing) return fail(c, 'NOT_FOUND', 'Commitment claim not found.', 404)
 
-  const [updated] = await db.update(commitmentClaims).set({
-    ...('status' in parsed.data ? { status: parsed.data.status } : {}),
-    ...('resolutionType' in parsed.data ? { resolutionType: parsed.data.resolutionType ?? null } : {}),
-    ...('settledAmountMinor' in parsed.data ? { settledAmountMinor: parsed.data.settledAmountMinor ?? null } : {}),
-    ...('resolvedAt' in parsed.data ? { resolvedAt: parsed.data.resolvedAt ? new Date(parsed.data.resolvedAt) : null } : {}),
-    ...('closedAt' in parsed.data ? { closedAt: parsed.data.closedAt ? new Date(parsed.data.closedAt) : null } : {}),
-    ...('metadata' in parsed.data ? { metadata: sanitizeUnknown(parsed.data.metadata ?? {}) } : {}),
-  }).where(and(
-    eq(commitmentClaims.bizId, bizId),
-    eq(commitmentClaims.commitmentContractId, contractId),
-    eq(commitmentClaims.id, claimId),
-  )).returning()
-  if (!updated) return fail(c, 'NOT_FOUND', 'Commitment claim not found.', 404)
+  const updatedOrResponse = await updateCommitmentRow<typeof commitmentClaims.$inferSelect>({
+    c,
+    bizId,
+    tableKey: 'commitmentClaims',
+    subjectType: 'commitment_claim',
+    id: claimId,
+    notFoundMessage: 'Commitment claim not found.',
+    patch: {
+      ...('status' in parsed.data ? { status: parsed.data.status } : {}),
+      ...('resolutionType' in parsed.data ? { resolutionType: parsed.data.resolutionType ?? null } : {}),
+      ...('settledAmountMinor' in parsed.data ? { settledAmountMinor: parsed.data.settledAmountMinor ?? null } : {}),
+      ...('resolvedAt' in parsed.data ? { resolvedAt: parsed.data.resolvedAt ? new Date(parsed.data.resolvedAt) : null } : {}),
+      ...('closedAt' in parsed.data ? { closedAt: parsed.data.closedAt ? new Date(parsed.data.closedAt) : null } : {}),
+      ...('metadata' in parsed.data ? { metadata: sanitizeUnknown(parsed.data.metadata ?? {}) } : {}),
+    },
+  })
+  if (updatedOrResponse instanceof Response) return updatedOrResponse
+  const updated = updatedOrResponse
   return ok(c, updated)
 })
 
@@ -613,16 +794,24 @@ commitmentRoutes.post('/bizes/:bizId/commitment-contracts/:contractId/claims/:cl
   const parsed = claimEventBodySchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
 
-  const [created] = await db.insert(commitmentClaimEvents).values({
+  const createdOrResponse = await createCommitmentRow<typeof commitmentClaimEvents.$inferSelect>({
+    c,
     bizId,
-    commitmentClaimId: claimId,
-    eventType: parsed.data.eventType,
-    occurredAt: parsed.data.occurredAt ? new Date(parsed.data.occurredAt) : new Date(),
-    actorUserId: getCurrentUser(c)?.id ?? null,
-    actorSubjectType: parsed.data.actorSubjectType ?? null,
-    actorSubjectId: parsed.data.actorSubjectId ?? null,
-    note: parsed.data.note ? sanitizePlainText(parsed.data.note) : null,
-    metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
-  }).returning()
+    tableKey: 'commitmentClaimEvents',
+    subjectType: 'commitment_claim_event',
+    data: {
+      bizId,
+      commitmentClaimId: claimId,
+      eventType: parsed.data.eventType,
+      occurredAt: parsed.data.occurredAt ? new Date(parsed.data.occurredAt) : new Date(),
+      actorUserId: getCurrentUser(c)?.id ?? null,
+      actorSubjectType: parsed.data.actorSubjectType ?? null,
+      actorSubjectId: parsed.data.actorSubjectId ?? null,
+      note: parsed.data.note ? sanitizePlainText(parsed.data.note) : null,
+      metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
+    },
+  })
+  if (createdOrResponse instanceof Response) return createdOrResponse
+  const created = createdOrResponse
   return ok(c, created, 201)
 })

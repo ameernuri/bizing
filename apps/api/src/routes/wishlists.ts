@@ -17,10 +17,34 @@ import { and, asc, desc, eq } from 'drizzle-orm'
 import { z } from 'zod'
 import dbPackage from '@bizing/db'
 import { requireAclPermission, requireAuth, requireBizAccess } from '../middleware/auth.js'
+import { executeCrudRouteAction } from '../services/action-route-bridge.js'
 import { sanitizePlainText, sanitizeUnknown } from '../lib/sanitize.js'
 import { fail, ok } from './_api.js'
 
 const { db, wishlists, wishlistItems } = dbPackage
+
+async function createWishlistRow<TTableKey extends 'wishlists' | 'wishlistItems'>(
+  c: Parameters<typeof executeCrudRouteAction>[0]['c'],
+  bizId: string,
+  tableKey: TTableKey,
+  data: Parameters<typeof executeCrudRouteAction>[0]['data'],
+  meta: { subjectType: string; subjectId: string; displayName: string; source: string },
+) {
+  const result = await executeCrudRouteAction({
+    c,
+    bizId,
+    tableKey,
+    operation: 'create',
+    data,
+    subjectType: meta.subjectType,
+    subjectId: meta.subjectId,
+    displayName: meta.displayName,
+    metadata: { source: meta.source },
+  })
+  if (!result.ok) throw new Error(result.message ?? `Failed to create ${tableKey}`)
+  if (!result.row) throw new Error(`Missing row for ${tableKey} create`)
+  return result.row
+}
 
 const wishlistBodySchema = z.object({
   crmContactId: z.string().min(1),
@@ -67,17 +91,28 @@ wishlistRoutes.post('/bizes/:bizId/wishlists', requireAuth, requireBizAccess('bi
   const bizId = c.req.param('bizId')
   const parsed = wishlistBodySchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid wishlist body.', 400, parsed.error.flatten())
-  const [row] = await db.insert(wishlists).values({
+  const row = await createWishlistRow(
+    c,
     bizId,
-    crmContactId: parsed.data.crmContactId,
-    name: sanitizePlainText(parsed.data.name),
-    slug: sanitizePlainText(parsed.data.slug),
-    status: (parsed.data.status ?? 'active') as 'active' | 'draft' | 'inactive' | 'suspended' | 'archived',
-    visibilityMode: parsed.data.visibilityMode ?? 'private',
-    isDefault: parsed.data.isDefault ?? false,
-    sortOrder: parsed.data.sortOrder ?? 100,
-    metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
-  }).returning()
+    'wishlists',
+    {
+      bizId,
+      crmContactId: parsed.data.crmContactId,
+      name: sanitizePlainText(parsed.data.name),
+      slug: sanitizePlainText(parsed.data.slug),
+      status: (parsed.data.status ?? 'active') as 'active' | 'draft' | 'inactive' | 'suspended' | 'archived',
+      visibilityMode: parsed.data.visibilityMode ?? 'private',
+      isDefault: parsed.data.isDefault ?? false,
+      sortOrder: parsed.data.sortOrder ?? 100,
+      metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
+    },
+    {
+      subjectType: 'wishlist',
+      subjectId: parsed.data.crmContactId,
+      displayName: parsed.data.name,
+      source: 'routes.wishlists.create',
+    },
+  )
   return ok(c, row, 201)
 })
 
@@ -94,20 +129,31 @@ wishlistRoutes.post('/bizes/:bizId/wishlists/:wishlistId/items', requireAuth, re
   const { bizId, wishlistId } = c.req.param()
   const parsed = wishlistItemBodySchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid wishlist item body.', 400, parsed.error.flatten())
-  const [row] = await db.insert(wishlistItems).values({
+  const row = await createWishlistRow(
+    c,
     bizId,
-    wishlistId,
-    sellableId: parsed.data.sellableId,
-    variantKey: parsed.data.variantKey ?? null,
-    status: (parsed.data.status ?? 'active') as 'active' | 'draft' | 'inactive' | 'suspended' | 'archived',
-    desiredQuantity: parsed.data.desiredQuantity ?? 1,
-    priority: parsed.data.priority ?? 100,
-    note: parsed.data.note ? sanitizePlainText(parsed.data.note) : null,
-    desiredUnitPriceMinor: parsed.data.desiredUnitPriceMinor ?? null,
-    currency: parsed.data.currency ?? 'USD',
-    addedAt: asDate(parsed.data.addedAt) ?? new Date(),
-    lastTouchedAt: asDate(parsed.data.lastTouchedAt) ?? new Date(),
-    metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
-  }).returning()
+    'wishlistItems',
+    {
+      bizId,
+      wishlistId,
+      sellableId: parsed.data.sellableId,
+      variantKey: parsed.data.variantKey ?? null,
+      status: (parsed.data.status ?? 'active') as 'active' | 'draft' | 'inactive' | 'suspended' | 'archived',
+      desiredQuantity: parsed.data.desiredQuantity ?? 1,
+      priority: parsed.data.priority ?? 100,
+      note: parsed.data.note ? sanitizePlainText(parsed.data.note) : null,
+      desiredUnitPriceMinor: parsed.data.desiredUnitPriceMinor ?? null,
+      currency: parsed.data.currency ?? 'USD',
+      addedAt: asDate(parsed.data.addedAt) ?? new Date(),
+      lastTouchedAt: asDate(parsed.data.lastTouchedAt) ?? new Date(),
+      metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
+    },
+    {
+      subjectType: 'wishlist_item',
+      subjectId: wishlistId,
+      displayName: parsed.data.sellableId,
+      source: 'routes.wishlists.createItem',
+    },
+  )
   return ok(c, row, 201)
 })

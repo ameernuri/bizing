@@ -20,6 +20,7 @@ import { z } from 'zod'
 import { randomUUID } from 'node:crypto'
 import dbPackage from '@bizing/db'
 import { requireAclPermission, requireAuth, requireBizAccess } from '../middleware/auth.js'
+import { executeCrudRouteAction } from '../services/action-route-bridge.js'
 import { sanitizePlainText, sanitizeUnknown } from '../lib/sanitize.js'
 import { fail, ok, parsePositiveInt } from './_api.js'
 
@@ -179,6 +180,56 @@ const createEventBodySchema = z.object({
 
 export const referralRoutes = new Hono()
 
+async function createReferralRow<T extends Record<string, unknown>>(input: {
+  c: Parameters<typeof fail>[0]
+  bizId: string
+  tableKey: string
+  subjectType: string
+  data: Record<string, unknown>
+  displayName?: string
+}) {
+  const delegated = await executeCrudRouteAction({
+    c: input.c,
+    bizId: input.bizId,
+    tableKey: input.tableKey,
+    operation: 'create',
+    subjectType: input.subjectType,
+    displayName: input.displayName,
+    data: input.data,
+    metadata: { routeFamily: 'referrals' },
+  })
+  if (!delegated.ok) return fail(input.c, delegated.code, delegated.message, delegated.httpStatus, delegated.details)
+  return delegated.row as T
+}
+
+async function updateReferralRow<T extends Record<string, unknown>>(input: {
+  c: Parameters<typeof fail>[0]
+  bizId: string
+  tableKey: string
+  subjectType: string
+  id: string
+  patch: Record<string, unknown>
+  notFoundMessage: string
+}) {
+  const delegated = await executeCrudRouteAction({
+    c: input.c,
+    bizId: input.bizId,
+    tableKey: input.tableKey,
+    operation: 'update',
+    id: input.id,
+    subjectType: input.subjectType,
+    subjectId: input.id,
+    patch: input.patch,
+    metadata: { routeFamily: 'referrals' },
+  })
+  if (!delegated.ok) {
+    if (delegated.code === 'CRUD_TARGET_NOT_FOUND') return fail(input.c, 'NOT_FOUND', input.notFoundMessage, 404)
+    return fail(input.c, delegated.code, delegated.message, delegated.httpStatus, delegated.details)
+  }
+  if (!delegated.row) return fail(input.c, 'NOT_FOUND', input.notFoundMessage, 404)
+  return delegated.row as T
+}
+
 referralRoutes.get(
   '/bizes/:bizId/referral-programs',
   requireAuth,
@@ -222,7 +273,13 @@ referralRoutes.post(
     const bizId = c.req.param('bizId')
     const parsed = createProgramBodySchema.safeParse(await c.req.json().catch(() => null))
     if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
-    const [created] = await db.insert(referralPrograms).values({
+    const created = await createReferralRow<typeof referralPrograms.$inferSelect>({
+      c,
+      bizId,
+      tableKey: 'referralPrograms',
+      subjectType: 'referral_program',
+      displayName: parsed.data.name,
+      data: {
       bizId,
       name: sanitizePlainText(parsed.data.name),
       slug: sanitizePlainText(parsed.data.slug),
@@ -231,7 +288,9 @@ referralRoutes.post(
       endsAt: parsed.data.endsAt ? new Date(parsed.data.endsAt) : null,
       policy: cleanMetadata(parsed.data.policy),
       metadata: cleanMetadata(parsed.data.metadata),
-    }).returning()
+      },
+    })
+    if (created instanceof Response) return created
     return ok(c, created, 201)
   },
 )
@@ -250,7 +309,14 @@ referralRoutes.patch(
       where: and(eq(referralPrograms.bizId, bizId), eq(referralPrograms.id, programId)),
     })
     if (!existing) return fail(c, 'NOT_FOUND', 'Referral program not found.', 404)
-    const [updated] = await db.update(referralPrograms).set({
+    const updated = await updateReferralRow<typeof referralPrograms.$inferSelect>({
+      c,
+      bizId,
+      tableKey: 'referralPrograms',
+      subjectType: 'referral_program',
+      id: programId,
+      notFoundMessage: 'Referral program not found.',
+      patch: {
       name: parsed.data.name === undefined ? existing.name : sanitizePlainText(parsed.data.name),
       slug: parsed.data.slug === undefined ? existing.slug : sanitizePlainText(parsed.data.slug),
       isActive: parsed.data.isActive ?? existing.isActive,
@@ -258,7 +324,9 @@ referralRoutes.patch(
       endsAt: parsed.data.endsAt === undefined ? existing.endsAt : (parsed.data.endsAt ? new Date(parsed.data.endsAt) : null),
       policy: parsed.data.policy === undefined ? existing.policy : cleanMetadata(parsed.data.policy),
       metadata: parsed.data.metadata === undefined ? existing.metadata : cleanMetadata(parsed.data.metadata),
-    }).where(and(eq(referralPrograms.bizId, bizId), eq(referralPrograms.id, programId))).returning()
+      },
+    })
+    if (updated instanceof Response) return updated
     return ok(c, updated)
   },
 )
@@ -308,7 +376,13 @@ referralRoutes.post(
     const bizId = c.req.param('bizId')
     const parsed = createLinkBodySchema.safeParse(await c.req.json().catch(() => null))
     if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
-    const [created] = await db.insert(referralLinks).values({
+    const created = await createReferralRow<typeof referralLinks.$inferSelect>({
+      c,
+      bizId,
+      tableKey: 'referralLinks',
+      subjectType: 'referral_link',
+      displayName: parsed.data.linkCode ?? 'referral_link',
+      data: {
       bizId,
       referralProgramId: parsed.data.referralProgramId,
       linkCode: sanitizePlainText(parsed.data.linkCode ?? makeReferralCode()),
@@ -326,7 +400,9 @@ referralRoutes.post(
       attributionModel: parsed.data.attributionModel,
       attributionWindowMinutes: parsed.data.attributionWindowMinutes,
       metadata: cleanMetadata(parsed.data.metadata),
-    }).returning()
+      },
+    })
+    if (created instanceof Response) return created
     return ok(c, created, 201)
   },
 )
@@ -375,7 +451,13 @@ referralRoutes.post(
     const bizId = c.req.param('bizId')
     const parsed = createClickBodySchema.safeParse(await c.req.json().catch(() => null))
     if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
-    const [created] = await db.insert(referralLinkClicks).values({
+    const created = await createReferralRow<typeof referralLinkClicks.$inferSelect>({
+      c,
+      bizId,
+      tableKey: 'referralLinkClicks',
+      subjectType: 'referral_link_click',
+      displayName: parsed.data.referralLinkId,
+      data: {
       bizId,
       referralLinkId: parsed.data.referralLinkId,
       clickedAt: parsed.data.clickedAt ? new Date(parsed.data.clickedAt) : new Date(),
@@ -387,7 +469,9 @@ referralRoutes.post(
       landingPath: parsed.data.landingPath ?? null,
       campaignParams: cleanMetadata(parsed.data.campaignParams),
       metadata: cleanMetadata(parsed.data.metadata),
-    }).returning()
+      },
+    })
+    if (created instanceof Response) return created
     return ok(c, created, 201)
   },
 )
@@ -437,7 +521,13 @@ referralRoutes.post(
     const bizId = c.req.param('bizId')
     const parsed = createAttributionBodySchema.safeParse(await c.req.json().catch(() => null))
     if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
-    const [created] = await db.insert(referralAttributions).values({
+    const created = await createReferralRow<typeof referralAttributions.$inferSelect>({
+      c,
+      bizId,
+      tableKey: 'referralAttributions',
+      subjectType: 'referral_attribution',
+      displayName: parsed.data.referralLinkId,
+      data: {
       bizId,
       referralLinkId: parsed.data.referralLinkId,
       referralLinkClickId: parsed.data.referralLinkClickId ?? null,
@@ -452,7 +542,9 @@ referralRoutes.post(
       reasonCode: parsed.data.reasonCode ?? null,
       decisionDetails: cleanMetadata(parsed.data.decisionDetails),
       metadata: cleanMetadata(parsed.data.metadata),
-    }).returning()
+      },
+    })
+    if (created instanceof Response) return created
     return ok(c, created, 201)
   },
 )
@@ -484,7 +576,13 @@ referralRoutes.post(
     const bizId = c.req.param('bizId')
     const parsed = createEventBodySchema.safeParse(await c.req.json().catch(() => null))
     if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
-    const [created] = await db.insert(referralEvents).values({
+    const created = await createReferralRow<typeof referralEvents.$inferSelect>({
+      c,
+      bizId,
+      tableKey: 'referralEvents',
+      subjectType: 'referral_event',
+      displayName: parsed.data.eventType,
+      data: {
       bizId,
       referralProgramId: parsed.data.referralProgramId,
       eventType: parsed.data.eventType,
@@ -497,7 +595,9 @@ referralRoutes.post(
       actionRequestId: parsed.data.actionRequestId ?? null,
       domainEventId: parsed.data.domainEventId ?? null,
       debugSnapshotId: parsed.data.debugSnapshotId ?? null,
-    }).returning()
+      },
+    })
+    if (created instanceof Response) return created
     return ok(c, created, 201)
   },
 )
@@ -547,7 +647,13 @@ referralRoutes.post(
     const bizId = c.req.param('bizId')
     const parsed = createRewardBodySchema.safeParse(await c.req.json().catch(() => null))
     if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
-    const [created] = await db.insert(rewardGrants).values({
+    const created = await createReferralRow<typeof rewardGrants.$inferSelect>({
+      c,
+      bizId,
+      tableKey: 'rewardGrants',
+      subjectType: 'reward_grant',
+      displayName: parsed.data.rewardType,
+      data: {
       bizId,
       referralProgramId: parsed.data.referralProgramId,
       referralEventId: parsed.data.referralEventId,
@@ -560,7 +666,9 @@ referralRoutes.post(
       reversedAt: parsed.data.reversedAt ? new Date(parsed.data.reversedAt) : null,
       payoutReference: parsed.data.payoutReference ?? null,
       metadata: cleanMetadata(parsed.data.metadata),
-    }).returning()
+      },
+    })
+    if (created instanceof Response) return created
     return ok(c, created, 201)
   },
 )

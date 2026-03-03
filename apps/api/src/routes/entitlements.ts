@@ -23,6 +23,7 @@ import { and, asc, desc, eq, sql } from 'drizzle-orm'
 import { z } from 'zod'
 import dbPackage from '@bizing/db'
 import { getCurrentUser, requireAclPermission, requireAuth, requireBizAccess } from '../middleware/auth.js'
+import { executeCrudRouteAction } from '../services/action-route-bridge.js'
 import { sanitizeUnknown } from '../lib/sanitize.js'
 import { fail, ok, parsePositiveInt } from './_api.js'
 
@@ -347,9 +348,69 @@ function asRecord(value: unknown): Record<string, unknown> {
 }
 
 function getGiftInstrumentMetadata(
-  wallet: typeof entitlementWallets.$inferSelect,
+  wallet: { metadata: unknown },
 ): Record<string, unknown> {
   return asRecord(asRecord(wallet.metadata).giftInstrument)
+}
+
+async function createEntitlementRow(
+  c: Parameters<typeof executeCrudRouteAction>[0]['c'],
+  bizId: string | null | undefined,
+  tableKey: string,
+  data: Record<string, unknown>,
+  options?: {
+    subjectType?: string
+    subjectId?: string
+    displayName?: string
+    metadata?: Record<string, unknown>
+  },
+) {
+  const result = await executeCrudRouteAction({
+    c,
+    bizId: bizId ?? null,
+    tableKey,
+    operation: 'create',
+    data,
+    subjectType: options?.subjectType,
+    subjectId: options?.subjectId,
+    displayName: options?.displayName,
+    metadata: options?.metadata,
+  })
+  if (!result.ok) {
+    return fail(c, result.code, result.message, result.httpStatus, result.details)
+  }
+  return result.row
+}
+
+async function updateEntitlementRow(
+  c: Parameters<typeof executeCrudRouteAction>[0]['c'],
+  bizId: string | null | undefined,
+  tableKey: string,
+  id: string,
+  patch: Record<string, unknown>,
+  options?: {
+    subjectType?: string
+    subjectId?: string
+    displayName?: string
+    metadata?: Record<string, unknown>
+  },
+) {
+  const result = await executeCrudRouteAction({
+    c,
+    bizId: bizId ?? null,
+    tableKey,
+    operation: 'update',
+    id,
+    patch,
+    subjectType: options?.subjectType,
+    subjectId: options?.subjectId,
+    displayName: options?.displayName,
+    metadata: options?.metadata,
+  })
+  if (!result.ok) {
+    return fail(c, result.code, result.message, result.httpStatus, result.details)
+  }
+  return result.row
 }
 
 export const entitlementRoutes = new Hono()
@@ -417,9 +478,11 @@ entitlementRoutes.post(
       return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
     }
 
-    const [created] = await db
-      .insert(membershipPlansTable)
-      .values({
+    const created = (await createEntitlementRow(
+      c,
+      bizId,
+      'membershipPlans',
+      {
         bizId,
         name: parsed.data.name,
         slug: parsed.data.slug,
@@ -438,8 +501,14 @@ entitlementRoutes.post(
         entitlementPolicy: cleanMetadata(parsed.data.entitlementPolicy),
         membershipPolicy: cleanMetadata(parsed.data.membershipPolicy),
         metadata: cleanMetadata(parsed.data.metadata),
-      })
-      .returning()
+      },
+      {
+        subjectType: 'membership_plan',
+        displayName: parsed.data.name,
+        metadata: { source: 'routes.entitlements.createMembershipPlan' },
+      },
+    )) as Record<string, unknown> | Response
+    if (created instanceof Response) return created
 
     return ok(c, created, 201)
   },
@@ -468,9 +537,12 @@ entitlementRoutes.patch(
     })
     if (!existing) return fail(c, 'NOT_FOUND', 'Membership plan not found.', 404)
 
-    const [updated] = await db
-      .update(membershipPlansTable)
-      .set({
+    const updated = (await updateEntitlementRow(
+      c,
+      bizId,
+      'membershipPlans',
+      membershipPlanId,
+      {
         ...parsed.data,
         entitlementPolicy:
           parsed.data.entitlementPolicy === undefined
@@ -481,9 +553,15 @@ entitlementRoutes.patch(
             ? undefined
             : cleanMetadata(parsed.data.membershipPolicy),
         metadata: parsed.data.metadata === undefined ? undefined : cleanMetadata(parsed.data.metadata),
-      })
-      .where(and(eq(membershipPlansTable.bizId, bizId), eq(membershipPlansTable.id, membershipPlanId)))
-      .returning()
+      },
+      {
+        subjectType: 'membership_plan',
+        subjectId: membershipPlanId,
+        displayName: existing.name,
+        metadata: { source: 'routes.entitlements.updateMembershipPlan' },
+      },
+    )) as Record<string, unknown> | Response
+    if (updated instanceof Response) return updated
 
     return ok(c, updated)
   },
@@ -551,9 +629,11 @@ entitlementRoutes.post(
       return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
     }
 
-    const [created] = await db
-      .insert(membershipTableRef)
-      .values({
+    const created = (await createEntitlementRow(
+      c,
+      bizId,
+      'entitlementMemberships',
+      {
         bizId,
         membershipPlanId: parsed.data.membershipPlanId,
         ownerUserId: parsed.data.ownerUserId,
@@ -569,8 +649,14 @@ entitlementRoutes.post(
         providerSubscriptionRef: parsed.data.providerSubscriptionRef,
         statusReason: parsed.data.statusReason,
         metadata: cleanMetadata(parsed.data.metadata),
-      })
-      .returning()
+      },
+      {
+        subjectType: 'membership',
+        displayName: parsed.data.membershipPlanId,
+        metadata: { source: 'routes.entitlements.createMembership' },
+      },
+    )) as Record<string, unknown> | Response
+    if (created instanceof Response) return created
 
     return ok(c, created, 201)
   },
@@ -627,9 +713,12 @@ entitlementRoutes.patch(
     const existing = existingRows[0] ?? null
     if (!existing) return fail(c, 'NOT_FOUND', 'Membership not found.', 404)
 
-    const [updated] = await db
-      .update(membershipTableRef)
-      .set({
+    const updated = (await updateEntitlementRow(
+      c,
+      bizId,
+      'entitlementMemberships',
+      membershipId,
+      {
         membershipPlanId: parsed.data.membershipPlanId,
         ownerUserId: parsed.data.ownerUserId,
         ownerGroupAccountId: parsed.data.ownerGroupAccountId,
@@ -651,9 +740,15 @@ entitlementRoutes.patch(
         providerSubscriptionRef: parsed.data.providerSubscriptionRef,
         statusReason: parsed.data.statusReason,
         metadata: parsed.data.metadata === undefined ? undefined : cleanMetadata(parsed.data.metadata),
-      })
-      .where(and(eq(membershipTableRef.bizId, bizId), eq(membershipTableRef.id, membershipId)))
-      .returning()
+      },
+      {
+        subjectType: 'membership',
+        subjectId: membershipId,
+        displayName: existing.id,
+        metadata: { source: 'routes.entitlements.updateMembership' },
+      },
+    )) as Record<string, unknown> | Response
+    if (updated instanceof Response) return updated
 
     return ok(c, updated)
   },
@@ -714,9 +809,11 @@ entitlementRoutes.post(
       return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
     }
 
-    const [created] = await db
-      .insert(entitlementWallets)
-      .values({
+    const created = (await createEntitlementRow(
+      c,
+      bizId,
+      'entitlementWallets',
+      {
         bizId,
         membershipId: parsed.data.membershipId,
         ownerUserId: parsed.data.ownerUserId,
@@ -728,8 +825,14 @@ entitlementRoutes.post(
         expiresAt: parsed.data.expiresAt ? new Date(parsed.data.expiresAt) : null,
         isActive: parsed.data.isActive,
         metadata: cleanMetadata(parsed.data.metadata),
-      })
-      .returning()
+      },
+      {
+        subjectType: 'entitlement_wallet',
+        displayName: parsed.data.name,
+        metadata: { source: 'routes.entitlements.createWallet' },
+      },
+    )) as Record<string, unknown> | Response
+    if (created instanceof Response) return created
 
     return ok(c, created, 201)
   },
@@ -1169,9 +1272,12 @@ entitlementRoutes.post('/public/bizes/:bizId/gift-wallets/redeem', requireAuth, 
   const gift = getGiftInstrumentMetadata(wallet)
   if (gift.status === 'revoked') return fail(c, 'GIFT_REVOKED', 'Gift has been revoked.', 409)
 
-  const [updated] = await db
-    .update(entitlementWallets)
-    .set({
+  const updated = (await updateEntitlementRow(
+    c,
+    bizId,
+    'entitlementWallets',
+    wallet.id,
+    {
       metadata: cleanMetadata({
         ...asRecord(wallet.metadata),
         ...parsed.data.metadata,
@@ -1183,11 +1289,17 @@ entitlementRoutes.post('/public/bizes/:bizId/gift-wallets/redeem', requireAuth, 
           status: 'redeemed',
         },
       }),
-    })
-    .where(and(eq(entitlementWallets.bizId, bizId), eq(entitlementWallets.id, wallet.id)))
-    .returning()
+    },
+    {
+      subjectType: 'entitlement_wallet',
+      subjectId: wallet.id,
+      displayName: wallet.name,
+      metadata: { source: 'routes.entitlements.redeemGiftWallet' },
+    },
+  )) as Record<string, unknown> | Response
+  if (updated instanceof Response) return updated
 
-  return ok(c, { wallet: updated, giftInstrument: getGiftInstrumentMetadata(updated) })
+  return ok(c, { wallet: updated, giftInstrument: getGiftInstrumentMetadata({ metadata: updated.metadata }) })
 })
 
 entitlementRoutes.post(
@@ -1213,9 +1325,12 @@ entitlementRoutes.post(
       return fail(c, 'TRANSFER_DISABLED', 'Gift cannot be transferred.', 409)
     }
 
-    const [updated] = await db
-      .update(entitlementWallets)
-      .set({
+    const updated = (await updateEntitlementRow(
+      c,
+      bizId,
+      'entitlementWallets',
+      walletId,
+      {
         metadata: cleanMetadata({
           ...asRecord(wallet.metadata),
           ...parsed.data.metadata,
@@ -1227,11 +1342,17 @@ entitlementRoutes.post(
             transferReason: parsed.data.reason ?? null,
           },
         }),
-      })
-      .where(and(eq(entitlementWallets.bizId, bizId), eq(entitlementWallets.id, walletId)))
-      .returning()
+      },
+      {
+        subjectType: 'entitlement_wallet',
+        subjectId: walletId,
+        displayName: wallet.name,
+        metadata: { source: 'routes.entitlements.transferGiftWallet' },
+      },
+    )) as Record<string, unknown> | Response
+    if (updated instanceof Response) return updated
 
-    return ok(c, { wallet: updated, giftInstrument: getGiftInstrumentMetadata(updated) })
+    return ok(c, { wallet: updated, giftInstrument: getGiftInstrumentMetadata({ metadata: updated.metadata }) })
   },
 )
 
@@ -1258,9 +1379,12 @@ entitlementRoutes.post(
       return fail(c, 'ALREADY_REDEEMED', 'Redeemed gifts cannot be revoked.', 409)
     }
 
-    const [updated] = await db
-      .update(entitlementWallets)
-      .set({
+    const updated = (await updateEntitlementRow(
+      c,
+      bizId,
+      'entitlementWallets',
+      walletId,
+      {
         isActive: false,
         metadata: cleanMetadata({
           ...asRecord(wallet.metadata),
@@ -1272,11 +1396,17 @@ entitlementRoutes.post(
             revokeReason: parsed.data.reason ?? null,
           },
         }),
-      })
-      .where(and(eq(entitlementWallets.bizId, bizId), eq(entitlementWallets.id, walletId)))
-      .returning()
+      },
+      {
+        subjectType: 'entitlement_wallet',
+        subjectId: walletId,
+        displayName: wallet.name,
+        metadata: { source: 'routes.entitlements.revokeGiftWallet' },
+      },
+    )) as Record<string, unknown> | Response
+    if (updated instanceof Response) return updated
 
-    return ok(c, { wallet: updated, giftInstrument: getGiftInstrumentMetadata(updated) })
+    return ok(c, { wallet: updated, giftInstrument: getGiftInstrumentMetadata({ metadata: updated.metadata }) })
   },
 )
 
@@ -1303,9 +1433,12 @@ entitlementRoutes.post(
       return fail(c, 'EXTENSION_DISABLED', 'Gift cannot be extended.', 409)
     }
 
-    const [updated] = await db
-      .update(entitlementWallets)
-      .set({
+    const updated = (await updateEntitlementRow(
+      c,
+      bizId,
+      'entitlementWallets',
+      walletId,
+      {
         expiresAt: new Date(parsed.data.expiresAt),
         metadata: cleanMetadata({
           ...asRecord(wallet.metadata),
@@ -1317,11 +1450,17 @@ entitlementRoutes.post(
             extensionReason: parsed.data.reason ?? null,
           },
         }),
-      })
-      .where(and(eq(entitlementWallets.bizId, bizId), eq(entitlementWallets.id, walletId)))
-      .returning()
+      },
+      {
+        subjectType: 'entitlement_wallet',
+        subjectId: walletId,
+        displayName: wallet.name,
+        metadata: { source: 'routes.entitlements.extendGiftWallet' },
+      },
+    )) as Record<string, unknown> | Response
+    if (updated instanceof Response) return updated
 
-    return ok(c, { wallet: updated, giftInstrument: getGiftInstrumentMetadata(updated) })
+    return ok(c, { wallet: updated, giftInstrument: getGiftInstrumentMetadata({ metadata: updated.metadata }) })
   },
 )
 

@@ -17,6 +17,7 @@ import { and, asc, desc, eq } from 'drizzle-orm'
 import { z } from 'zod'
 import dbPackage from '@bizing/db'
 import { requireAclPermission, requireAuth, requireBizAccess } from '../middleware/auth.js'
+import { executeCrudRouteAction } from '../services/action-route-bridge.js'
 import { sanitizePlainText, sanitizeUnknown } from '../lib/sanitize.js'
 import { fail, ok } from './_api.js'
 
@@ -105,6 +106,28 @@ function asDate(value?: string | null) {
 
 export const salesQuoteRoutes = new Hono()
 
+async function createSalesQuoteRow<T extends Record<string, unknown>>(input: {
+  c: Parameters<typeof fail>[0]
+  bizId: string
+  tableKey: string
+  subjectType: string
+  data: Record<string, unknown>
+  displayName?: string
+}) {
+  const delegated = await executeCrudRouteAction({
+    c: input.c,
+    bizId: input.bizId,
+    tableKey: input.tableKey,
+    operation: 'create',
+    subjectType: input.subjectType,
+    displayName: input.displayName,
+    data: input.data,
+    metadata: { routeFamily: 'sales-quotes' },
+  })
+  if (!delegated.ok) return fail(input.c, delegated.code, delegated.message, delegated.httpStatus, delegated.details)
+  return delegated.row as T
+}
+
 salesQuoteRoutes.get('/bizes/:bizId/sales-quotes', requireAuth, requireBizAccess('bizId'), requireAclPermission('bizes.read', { bizIdParam: 'bizId' }), async (c) => {
   const bizId = c.req.param('bizId')
   const rows = await db.query.salesQuotes.findMany({ where: eq(salesQuotes.bizId, bizId), orderBy: [desc(salesQuotes.validUntil), desc(salesQuotes.id)] })
@@ -115,7 +138,13 @@ salesQuoteRoutes.post('/bizes/:bizId/sales-quotes', requireAuth, requireBizAcces
   const bizId = c.req.param('bizId')
   const parsed = quoteBodySchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid sales quote body.', 400, parsed.error.flatten())
-  const [row] = await db.insert(salesQuotes).values({
+  const row = await createSalesQuoteRow<typeof salesQuotes.$inferSelect>({
+    c,
+    bizId,
+    tableKey: 'salesQuotes',
+    subjectType: 'sales_quote',
+    displayName: parsed.data.quoteNumber,
+    data: {
     bizId,
     quoteNumber: sanitizePlainText(parsed.data.quoteNumber),
     status: parsed.data.status ?? 'draft',
@@ -133,7 +162,9 @@ salesQuoteRoutes.post('/bizes/:bizId/sales-quotes', requireAuth, requireBizAcces
     termsSnapshot: sanitizeUnknown(parsed.data.termsSnapshot ?? {}),
     pricingContext: sanitizeUnknown(parsed.data.pricingContext ?? {}),
     metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
-  }).returning()
+    },
+  })
+  if (row instanceof Response) return row
   return ok(c, row, 201)
 })
 
@@ -147,7 +178,13 @@ salesQuoteRoutes.post('/bizes/:bizId/sales-quotes/:salesQuoteId/versions', requi
   const { bizId, salesQuoteId } = c.req.param()
   const parsed = quoteVersionBodySchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid sales quote version body.', 400, parsed.error.flatten())
-  const [row] = await db.insert(salesQuoteVersions).values({
+  const row = await createSalesQuoteRow<typeof salesQuoteVersions.$inferSelect>({
+    c,
+    bizId,
+    tableKey: 'salesQuoteVersions',
+    subjectType: 'sales_quote_version',
+    displayName: `${salesQuoteId}:v${parsed.data.versionNumber}`,
+    data: {
     bizId,
     salesQuoteId,
     versionNumber: parsed.data.versionNumber,
@@ -164,7 +201,9 @@ salesQuoteRoutes.post('/bizes/:bizId/sales-quotes/:salesQuoteId/versions', requi
     termsSnapshot: sanitizeUnknown(parsed.data.termsSnapshot ?? {}),
     pricingSnapshot: sanitizeUnknown(parsed.data.pricingSnapshot ?? {}),
     metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
-  }).returning()
+    },
+  })
+  if (row instanceof Response) return row
   return ok(c, row, 201)
 })
 
@@ -178,7 +217,13 @@ salesQuoteRoutes.post('/bizes/:bizId/sales-quote-versions/:salesQuoteVersionId/l
   const { bizId, salesQuoteVersionId } = c.req.param()
   const parsed = quoteLineBodySchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid sales quote line body.', 400, parsed.error.flatten())
-  const [row] = await db.insert(salesQuoteLines).values({
+  const row = await createSalesQuoteRow<typeof salesQuoteLines.$inferSelect>({
+    c,
+    bizId,
+    tableKey: 'salesQuoteLines',
+    subjectType: 'sales_quote_line',
+    displayName: parsed.data.label,
+    data: {
     bizId,
     salesQuoteVersionId,
     lineType: parsed.data.lineType ?? 'custom',
@@ -194,7 +239,9 @@ salesQuoteRoutes.post('/bizes/:bizId/sales-quote-versions/:salesQuoteVersionId/l
     currency: parsed.data.currency ?? 'USD',
     sortOrder: parsed.data.sortOrder ?? 100,
     metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
-  }).returning()
+    },
+  })
+  if (row instanceof Response) return row
   return ok(c, row, 201)
 })
 
@@ -208,7 +255,13 @@ salesQuoteRoutes.post('/bizes/:bizId/sales-quote-versions/:salesQuoteVersionId/a
   const { bizId, salesQuoteVersionId } = c.req.param()
   const parsed = quoteAcceptanceBodySchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid sales quote acceptance body.', 400, parsed.error.flatten())
-  const [row] = await db.insert(salesQuoteAcceptances).values({
+  const row = await createSalesQuoteRow<typeof salesQuoteAcceptances.$inferSelect>({
+    c,
+    bizId,
+    tableKey: 'salesQuoteAcceptances',
+    subjectType: 'sales_quote_acceptance',
+    displayName: parsed.data.decisionType,
+    data: {
     bizId,
     salesQuoteVersionId,
     decisionType: sanitizePlainText(parsed.data.decisionType),
@@ -225,6 +278,8 @@ salesQuoteRoutes.post('/bizes/:bizId/sales-quote-versions/:salesQuoteVersionId/a
     sourceUserAgent: parsed.data.sourceUserAgent ? sanitizePlainText(parsed.data.sourceUserAgent) : null,
     signatureEvidence: sanitizeUnknown(parsed.data.signatureEvidence ?? parsed.data.acceptedTermsSnapshot ?? {}),
     metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
-  }).returning()
+    },
+  })
+  if (row instanceof Response) return row
   return ok(c, row, 201)
 })

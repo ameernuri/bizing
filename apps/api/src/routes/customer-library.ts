@@ -19,9 +19,10 @@
  */
 
 import { Hono } from 'hono'
-import { and, asc, desc, eq, inArray } from 'drizzle-orm'
+import { and, asc, desc, eq, inArray, sql } from 'drizzle-orm'
 import dbPackage from '@bizing/db'
 import { getCurrentUser, requireAclPermission, requireAuth, requireBizAccess } from '../middleware/auth.js'
+import { executeCrudRouteAction } from '../services/action-route-bridge.js'
 import { fail, ok } from './_api.js'
 
 const {
@@ -39,6 +40,11 @@ const {
 } = dbPackage
 
 export const customerLibraryRoutes = new Hono()
+/**
+ * Keep this unqualified to let Drizzle attach the active table alias correctly
+ * in generated SQL across different query shapes.
+ */
+const accessLibraryItemsNotDeleted = sql`"deleted_at" IS NULL`
 
 function computeAvailabilityState(input: {
   status?: string | null
@@ -55,6 +61,7 @@ function computeAvailabilityState(input: {
 }
 
 async function rebuildCustomerLibraryForOwner(input: {
+  c: Parameters<typeof executeCrudRouteAction>[0]['c']
   bizId: string
   ownerUserId?: string | null
   ownerGroupAccountId?: string | null
@@ -301,18 +308,31 @@ async function rebuildCustomerLibraryForOwner(input: {
   }
 
   const touchedProjectionKeys = upserts.map((row) => row.projectionKey as string)
-  await db.delete(accessLibraryItems).where(
-    and(
-      eq(accessLibraryItems.bizId, input.bizId),
-      input.ownerUserId ? eq(accessLibraryItems.ownerUserId, input.ownerUserId) : undefined,
-      input.ownerGroupAccountId ? eq(accessLibraryItems.ownerGroupAccountId, input.ownerGroupAccountId) : undefined,
-      inArray(accessLibraryItems.projectionKey, touchedProjectionKeys),
-    ),
-  )
-  const touched = await db
-    .insert(accessLibraryItems)
-    .values(upserts as Array<typeof accessLibraryItems.$inferInsert>)
-    .returning()
+  await db
+    .delete(accessLibraryItems)
+    .where(
+      and(
+        eq(accessLibraryItems.bizId, input.bizId),
+        input.ownerUserId ? eq(accessLibraryItems.ownerUserId, input.ownerUserId) : undefined,
+        input.ownerGroupAccountId ? eq(accessLibraryItems.ownerGroupAccountId, input.ownerGroupAccountId) : undefined,
+        inArray(accessLibraryItems.projectionKey, touchedProjectionKeys),
+      ),
+    )
+  const touched: Array<Record<string, unknown>> = []
+  for (const upsertRow of upserts as Array<typeof accessLibraryItems.$inferInsert>) {
+    const createResult = await executeCrudRouteAction({
+      c: input.c,
+      bizId: input.bizId,
+      tableKey: 'accessLibraryItems',
+      operation: 'create',
+      data: upsertRow as unknown as Record<string, unknown>,
+      subjectType: 'customer_library_item',
+      subjectId: String(upsertRow.projectionKey ?? ''),
+      displayName: String(upsertRow.projectionKey ?? ''),
+      metadata: { source: 'routes.customerLibrary.rebuild.create' },
+    })
+    if (createResult.ok && createResult.row) touched.push(createResult.row)
+  }
 
   const rows = await db.query.accessLibraryItems.findMany({
     where: and(
@@ -320,6 +340,7 @@ async function rebuildCustomerLibraryForOwner(input: {
       input.ownerUserId ? eq(accessLibraryItems.ownerUserId, input.ownerUserId) : undefined,
       input.ownerGroupAccountId ? eq(accessLibraryItems.ownerGroupAccountId, input.ownerGroupAccountId) : undefined,
       inArray(accessLibraryItems.projectionKey, touchedProjectionKeys),
+      accessLibraryItemsNotDeleted,
     ),
     orderBy: [desc(accessLibraryItems.lastUsedAt), desc(accessLibraryItems.availableUntil), asc(accessLibraryItems.projectionKey)],
   })
@@ -334,20 +355,26 @@ customerLibraryRoutes.get('/me/library', requireAuth, async (c) => {
 
   let rows = await db.query.accessLibraryItems.findMany({
     where: and(
-      bizId ? eq(accessLibraryItems.bizId, bizId) : undefined,
-      eq(accessLibraryItems.ownerUserId, user.id),
-    ),
+        bizId ? eq(accessLibraryItems.bizId, bizId) : undefined,
+        eq(accessLibraryItems.ownerUserId, user.id),
+        accessLibraryItemsNotDeleted,
+      ),
     orderBy: [desc(accessLibraryItems.lastUsedAt), desc(accessLibraryItems.availableUntil), asc(accessLibraryItems.projectionKey)],
   })
 
   if (bizId && rows.length === 0) {
     await rebuildCustomerLibraryForOwner({
+      c,
       bizId,
       ownerUserId: user.id,
       ownerGroupAccountId: null,
     })
     rows = await db.query.accessLibraryItems.findMany({
-      where: and(eq(accessLibraryItems.bizId, bizId), eq(accessLibraryItems.ownerUserId, user.id)),
+      where: and(
+        eq(accessLibraryItems.bizId, bizId),
+        eq(accessLibraryItems.ownerUserId, user.id),
+        accessLibraryItemsNotDeleted,
+      ),
       orderBy: [desc(accessLibraryItems.lastUsedAt), desc(accessLibraryItems.availableUntil), asc(accessLibraryItems.projectionKey)],
     })
   }
@@ -420,6 +447,7 @@ customerLibraryRoutes.get(
         eq(accessLibraryItems.bizId, bizId),
         ownerUserId ? eq(accessLibraryItems.ownerUserId, ownerUserId) : undefined,
         ownerGroupAccountId ? eq(accessLibraryItems.ownerGroupAccountId, ownerGroupAccountId) : undefined,
+        accessLibraryItemsNotDeleted,
       ),
       orderBy: [desc(accessLibraryItems.lastUsedAt), desc(accessLibraryItems.availableUntil), asc(accessLibraryItems.projectionKey)],
     })
@@ -443,6 +471,7 @@ customerLibraryRoutes.post(
     }
     try {
       const rebuilt = await rebuildCustomerLibraryForOwner({
+        c,
         bizId,
         ownerUserId: body.ownerUserId ?? null,
         ownerGroupAccountId: body.ownerGroupAccountId ?? null,

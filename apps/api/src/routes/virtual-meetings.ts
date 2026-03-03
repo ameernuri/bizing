@@ -25,6 +25,7 @@ import {
   requireAuth,
   requireBizAccess,
 } from '../middleware/auth.js'
+import { executeCrudRouteAction } from '../services/action-route-bridge.js'
 import { fail, ok } from './_api.js'
 
 const {
@@ -35,6 +36,58 @@ const {
   outboundMessages,
   outboundMessageEvents,
 } = dbPackage
+
+async function createVirtualMeetingRow<
+  TTableKey extends 'channelEntityLinks' | 'outboundMessages' | 'outboundMessageEvents',
+>(
+  c: Parameters<typeof executeCrudRouteAction>[0]['c'],
+  bizId: string,
+  tableKey: TTableKey,
+  data: Parameters<typeof executeCrudRouteAction>[0]['data'],
+  meta: { subjectType: string; subjectId: string; displayName: string; source: string },
+) {
+  const result = await executeCrudRouteAction({
+    c,
+    bizId,
+    tableKey,
+    operation: 'create',
+    data,
+    subjectType: meta.subjectType,
+    subjectId: meta.subjectId,
+    displayName: meta.displayName,
+    metadata: { source: meta.source },
+  })
+  if (!result.ok) throw new Error(result.message ?? `Failed to create ${tableKey}`)
+  if (!result.row) throw new Error(`Missing row for ${tableKey} create`)
+  return result.row
+}
+
+async function updateVirtualMeetingRow<
+  TTableKey extends 'bookingOrders' | 'channelEntityLinks',
+>(
+  c: Parameters<typeof executeCrudRouteAction>[0]['c'],
+  bizId: string,
+  tableKey: TTableKey,
+  id: string,
+  patch: Parameters<typeof executeCrudRouteAction>[0]['patch'],
+  meta: { subjectType: string; subjectId: string; displayName: string; source: string },
+) {
+  const result = await executeCrudRouteAction({
+    c,
+    bizId,
+    tableKey,
+    operation: 'update',
+    id,
+    patch,
+    subjectType: meta.subjectType,
+    subjectId: meta.subjectId,
+    displayName: meta.displayName,
+    metadata: { source: meta.source },
+  })
+  if (!result.ok) throw new Error(result.message ?? `Failed to update ${tableKey}`)
+  if (!result.row) throw new Error(`Missing row for ${tableKey} update`)
+  return result.row
+}
 
 const upsertVirtualMeetingBodySchema = z.object({
   channelAccountId: z.string(),
@@ -153,15 +206,24 @@ virtualMeetingRoutes.post(
       ...parsed.data.metadata,
     }
 
-    await db
-      .update(bookingOrders)
-      .set({
+    await updateVirtualMeetingRow(
+      c,
+      bizId,
+      'bookingOrders',
+      bookingOrderId,
+      {
         metadata: {
           ...currentMetadata,
           virtualMeeting,
         },
-      })
-      .where(and(eq(bookingOrders.bizId, bizId), eq(bookingOrders.id, bookingOrderId)))
+      },
+      {
+        subjectType: 'booking_order',
+        subjectId: bookingOrderId,
+        displayName: 'attach virtual meeting',
+        source: 'routes.virtualMeetings.upsert.updateBooking',
+      },
+    )
 
     const existingLink = await db.query.channelEntityLinks.findFirst({
       where: and(
@@ -172,9 +234,12 @@ virtualMeetingRoutes.post(
       ),
     })
     if (existingLink) {
-      await db
-        .update(channelEntityLinks)
-        .set({
+      await updateVirtualMeetingRow(
+        c,
+        bizId,
+        'channelEntityLinks',
+        existingLink.id,
+        {
           channelAccountId: channelAccount.id,
           externalObjectId: meetingId,
           externalParentId: fallbackMeetingId,
@@ -183,28 +248,47 @@ virtualMeetingRoutes.post(
           metadata: {
             providerLabel: parsed.data.providerLabel,
           },
-        })
-        .where(and(eq(channelEntityLinks.bizId, bizId), eq(channelEntityLinks.id, existingLink.id)))
-    } else {
-      await db.insert(channelEntityLinks).values({
-        bizId,
-        channelAccountId: channelAccount.id,
-        objectType: 'custom',
-        bookingOrderId,
-        localReferenceKey: `virtual_meeting:${bookingOrderId}`,
-        externalObjectId: meetingId,
-        externalParentId: fallbackMeetingId,
-        syncHash: `${meetingId}:${fallbackMeetingId}`,
-        isActive: true,
-        metadata: {
-          providerLabel: parsed.data.providerLabel,
         },
-      })
+        {
+          subjectType: 'channel_entity_link',
+          subjectId: existingLink.id,
+          displayName: 'update virtual meeting link',
+          source: 'routes.virtualMeetings.upsert.updateLink',
+        },
+      )
+    } else {
+      await createVirtualMeetingRow(
+        c,
+        bizId,
+        'channelEntityLinks',
+        {
+          bizId,
+          channelAccountId: channelAccount.id,
+          objectType: 'custom',
+          bookingOrderId,
+          localReferenceKey: `virtual_meeting:${bookingOrderId}`,
+          externalObjectId: meetingId,
+          externalParentId: fallbackMeetingId,
+          syncHash: `${meetingId}:${fallbackMeetingId}`,
+          isActive: true,
+          metadata: {
+            providerLabel: parsed.data.providerLabel,
+          },
+        },
+        {
+          subjectType: 'channel_entity_link',
+          subjectId: bookingOrderId,
+          displayName: 'create virtual meeting link',
+          source: 'routes.virtualMeetings.upsert.createLink',
+        },
+      )
     }
 
-    const [message] = await db
-      .insert(outboundMessages)
-      .values({
+    const message = await createVirtualMeetingRow(
+      c,
+      bizId,
+      'outboundMessages',
+      {
         bizId,
         channel: 'email',
         purpose: 'transactional',
@@ -231,29 +315,34 @@ virtualMeetingRoutes.post(
           eventType: 'virtual_meeting.created',
           meetingId,
         },
-      })
-      .returning()
+      },
+      {
+        subjectType: 'outbound_message',
+        subjectId: bookingOrderId,
+        displayName: 'virtual meeting notification',
+        source: 'routes.virtualMeetings.upsert.createMessage',
+      },
+    )
 
-    await db.insert(outboundMessageEvents).values([
-      {
+    for (const eventType of ['queued', 'sent', 'delivered'] as const) {
+      await createVirtualMeetingRow(
+        c,
         bizId,
-        outboundMessageId: message.id,
-        eventType: 'queued',
-        payload: { meetingId },
-      },
-      {
-        bizId,
-        outboundMessageId: message.id,
-        eventType: 'sent',
-        payload: { meetingId },
-      },
-      {
-        bizId,
-        outboundMessageId: message.id,
-        eventType: 'delivered',
-        payload: { meetingId },
-      },
-    ])
+        'outboundMessageEvents',
+        {
+          bizId,
+          outboundMessageId: message.id,
+          eventType,
+          payload: { meetingId },
+        },
+        {
+          subjectType: 'outbound_message_event',
+          subjectId: String(message.id),
+          displayName: eventType,
+          source: 'routes.virtualMeetings.upsert.createMessageEvent',
+        },
+      )
+    }
 
     return ok(
       c,

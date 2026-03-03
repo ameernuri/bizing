@@ -19,6 +19,7 @@ import {
   requireAuth,
   requireBizAccess,
 } from '../middleware/auth.js'
+import { executeCrudRouteAction } from '../services/action-route-bridge.js'
 import { fail, ok } from './_api.js'
 
 const {
@@ -29,6 +30,54 @@ const {
   resources,
   bookingOrders,
 } = dbPackage
+
+async function createFulfillmentRow<
+  TTableKey extends 'fulfillmentUnits' | 'fulfillmentAssignments' | 'compensationAssignmentRoles',
+>(
+  c: Parameters<typeof executeCrudRouteAction>[0]['c'],
+  bizId: string,
+  tableKey: TTableKey,
+  data: Parameters<typeof executeCrudRouteAction>[0]['data'],
+  meta: { subjectType: string; subjectId: string; displayName: string; source: string },
+) {
+  const result = await executeCrudRouteAction({
+    c,
+    bizId,
+    tableKey,
+    operation: 'create',
+    data,
+    subjectType: meta.subjectType,
+    subjectId: meta.subjectId,
+    displayName: meta.displayName,
+    metadata: { source: meta.source },
+  })
+  if (!result.ok) throw new Error(result.message ?? `Failed to create ${tableKey}`)
+  if (!result.row) throw new Error(`Missing row for ${tableKey} create`)
+  return result.row
+}
+
+async function updateFulfillmentAssignmentRow(
+  c: Parameters<typeof executeCrudRouteAction>[0]['c'],
+  bizId: string,
+  fulfillmentAssignmentId: string,
+  patch: Parameters<typeof executeCrudRouteAction>[0]['patch'],
+) {
+  const result = await executeCrudRouteAction({
+    c,
+    bizId,
+    tableKey: 'fulfillmentAssignments',
+    operation: 'update',
+    id: fulfillmentAssignmentId,
+    patch,
+    subjectType: 'fulfillment_assignment',
+    subjectId: fulfillmentAssignmentId,
+    displayName: 'update fulfillment assignment',
+    metadata: { source: 'routes.fulfillment.updateAssignment' },
+  })
+  if (!result.ok) throw new Error(result.message ?? 'Failed to update fulfillment assignment')
+  if (!result.row) throw new Error('Missing row for fulfillment assignment update')
+  return result.row
+}
 
 const activeAssignmentStatuses = new Set(['reserved', 'confirmed', 'in_progress'])
 
@@ -108,9 +157,11 @@ fulfillmentRoutes.post(
     })
     if (!booking) return fail(c, 'NOT_FOUND', 'Booking order not found.', 404)
 
-    const [unit] = await db
-      .insert(fulfillmentUnits)
-      .values({
+    const unit = await createFulfillmentRow(
+      c,
+      bizId,
+      'fulfillmentUnits',
+      {
         bizId,
         bookingOrderId: parsed.data.bookingOrderId,
         kind: parsed.data.kind,
@@ -122,8 +173,14 @@ fulfillmentRoutes.post(
         calendarBindingId: parsed.data.calendarBindingId,
         assignmentPolicy: parsed.data.assignmentPolicy ?? {},
         metadata: parsed.data.metadata ?? {},
-      })
-      .returning()
+      },
+      {
+        subjectType: 'fulfillment_unit',
+        subjectId: parsed.data.bookingOrderId,
+        displayName: parsed.data.kind,
+        source: 'routes.fulfillment.createUnit',
+      },
+    )
 
     return ok(c, unit, 201)
   },
@@ -179,9 +236,11 @@ fulfillmentRoutes.post(
       }
     }
 
-    const [assignment] = await db
-      .insert(fulfillmentAssignments)
-      .values({
+    const assignment = await createFulfillmentRow(
+      c,
+      bizId,
+      'fulfillmentAssignments',
+      {
         bizId,
         fulfillmentUnitId,
         resourceId: parsed.data.resourceId,
@@ -195,20 +254,37 @@ fulfillmentRoutes.post(
         assignedByUserId: user?.id ?? null,
         assignedAt: new Date(),
         metadata: parsed.data.metadata ?? {},
-      })
-      .returning()
+      },
+      {
+        subjectType: 'fulfillment_assignment',
+        subjectId: fulfillmentUnitId,
+        displayName: parsed.data.resourceId,
+        source: 'routes.fulfillment.createAssignment',
+      },
+    )
 
     if (parsed.data.roleTemplateId) {
-      await db.insert(compensationAssignmentRoles).values({
+      await createFulfillmentRow(
+        c,
         bizId,
-        fulfillmentAssignmentId: assignment.id,
-        roleTemplateId: parsed.data.roleTemplateId,
-        source: 'manual',
-        assignedByUserId: user?.id ?? null,
-        metadata: {
-          sourceRoute: 'fulfillment.assignments.create',
+        'compensationAssignmentRoles',
+        {
+          bizId,
+          fulfillmentAssignmentId: assignment.id,
+          roleTemplateId: parsed.data.roleTemplateId,
+          source: 'manual',
+          assignedByUserId: user?.id ?? null,
+          metadata: {
+            sourceRoute: 'fulfillment.assignments.create',
+          },
         },
-      })
+        {
+          subjectType: 'compensation_assignment_role',
+          subjectId: String(assignment.id),
+          displayName: parsed.data.roleTemplateId,
+          source: 'routes.fulfillment.createAssignmentRole',
+        },
+      )
     }
 
     return ok(c, assignment, 201)
@@ -246,21 +322,17 @@ fulfillmentRoutes.patch(
       }
     }
 
-    const [updated] = await db
-      .update(fulfillmentAssignments)
-      .set({
-        resourceId: parsed.data.resourceId,
-        status: parsed.data.status,
-        conflictPolicy: parsed.data.conflictPolicy,
-        roleLabel: parsed.data.roleLabel,
-        startsAt,
-        endsAt,
-        isPrimary: parsed.data.isPrimary,
-        compensationSplitBps: parsed.data.compensationSplitBps,
-        metadata: parsed.data.metadata,
-      })
-      .where(and(eq(fulfillmentAssignments.bizId, bizId), eq(fulfillmentAssignments.id, fulfillmentAssignmentId)))
-      .returning()
+    const updated = await updateFulfillmentAssignmentRow(c, bizId, fulfillmentAssignmentId, {
+      resourceId: parsed.data.resourceId,
+      status: parsed.data.status,
+      conflictPolicy: parsed.data.conflictPolicy,
+      roleLabel: parsed.data.roleLabel,
+      startsAt,
+      endsAt,
+      isPrimary: parsed.data.isPrimary,
+      compensationSplitBps: parsed.data.compensationSplitBps,
+      metadata: parsed.data.metadata,
+    })
 
     return ok(c, updated)
   },

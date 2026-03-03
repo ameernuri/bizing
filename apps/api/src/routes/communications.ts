@@ -16,6 +16,7 @@ import { and, asc, desc, eq, sql } from 'drizzle-orm'
 import { z } from 'zod'
 import dbPackage from '@bizing/db'
 import { requireAclPermission, requireAuth, requireBizAccess } from '../middleware/auth.js'
+import { executeCrudRouteAction } from '../services/action-route-bridge.js'
 import { sanitizePlainText, sanitizeUnknown } from '../lib/sanitize.js'
 import { fail, ok, parsePositiveInt } from './_api.js'
 
@@ -272,6 +273,56 @@ function pagination(input: { page?: string; perPage?: string }) {
 
 export const communicationRoutes = new Hono()
 
+async function createCommunicationRow<T extends Record<string, unknown>>(input: {
+  c: Parameters<typeof fail>[0]
+  bizId: string
+  tableKey: string
+  subjectType: string
+  data: Record<string, unknown>
+  displayName?: string
+}) {
+  const delegated = await executeCrudRouteAction({
+    c: input.c,
+    bizId: input.bizId,
+    tableKey: input.tableKey,
+    operation: 'create',
+    subjectType: input.subjectType,
+    displayName: input.displayName,
+    data: input.data,
+    metadata: { routeFamily: 'communications' },
+  })
+  if (!delegated.ok) return fail(input.c, delegated.code, delegated.message, delegated.httpStatus, delegated.details)
+  return delegated.row as T
+}
+
+async function updateCommunicationRow<T extends Record<string, unknown>>(input: {
+  c: Parameters<typeof fail>[0]
+  bizId: string
+  tableKey: string
+  subjectType: string
+  id: string
+  patch: Record<string, unknown>
+  notFoundMessage: string
+}) {
+  const delegated = await executeCrudRouteAction({
+    c: input.c,
+    bizId: input.bizId,
+    tableKey: input.tableKey,
+    operation: 'update',
+    id: input.id,
+    subjectType: input.subjectType,
+    subjectId: input.id,
+    patch: input.patch,
+    metadata: { routeFamily: 'communications' },
+  })
+  if (!delegated.ok) {
+    if (delegated.code === 'CRUD_TARGET_NOT_FOUND') return fail(input.c, 'NOT_FOUND', input.notFoundMessage, 404)
+    return fail(input.c, delegated.code, delegated.message, delegated.httpStatus, delegated.details)
+  }
+  if (!delegated.row) return fail(input.c, 'NOT_FOUND', input.notFoundMessage, 404)
+  return delegated.row as T
+}
+
 communicationRoutes.get(
   '/bizes/:bizId/outbound-messages',
   requireAuth,
@@ -333,9 +384,13 @@ communicationRoutes.post(
       return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
     }
 
-    const [created] = await db
-      .insert(outboundMessages)
-      .values({
+    const created = await createCommunicationRow<typeof outboundMessages.$inferSelect>({
+      c,
+      bizId,
+      tableKey: 'outboundMessages',
+      subjectType: 'outbound_message',
+      displayName: parsed.data.recipientRef,
+      data: {
         bizId,
         channel: parsed.data.channel,
         purpose: parsed.data.purpose,
@@ -350,8 +405,9 @@ communicationRoutes.post(
         errorMessage: parsed.data.errorMessage ?? null,
         payload: cleanMetadata(parsed.data.payload),
         metadata: cleanMetadata(parsed.data.metadata),
-      })
-      .returning()
+      },
+    })
+    if (created instanceof Response) return created
 
     return ok(c, created, 201)
   },
@@ -397,17 +453,22 @@ communicationRoutes.post(
     if (!message) return fail(c, 'NOT_FOUND', 'Outbound message not found.', 404)
 
     const occurredAt = new Date()
-    const [event] = await db
-      .insert(outboundMessageEvents)
-      .values({
+    const event = await createCommunicationRow<typeof outboundMessageEvents.$inferSelect>({
+      c,
+      bizId,
+      tableKey: 'outboundMessageEvents',
+      subjectType: 'outbound_message_event',
+      displayName: parsed.data.eventType,
+      data: {
         bizId,
         outboundMessageId: messageId,
         eventType: parsed.data.eventType,
         providerEventRef: parsed.data.providerEventRef,
         payload: cleanMetadata(parsed.data.payload),
         metadata: cleanMetadata(parsed.data.metadata),
-      })
-      .returning()
+      },
+    })
+    if (event instanceof Response) return event
 
     const nextStatus = parsed.data.nextStatus ?? (
       parsed.data.eventType === 'failed' || parsed.data.eventType === 'bounced'
@@ -426,11 +487,16 @@ communicationRoutes.post(
     if (nextStatus === 'delivered') patch.deliveredAt = occurredAt
     if (nextStatus === 'failed' || nextStatus === 'bounced') patch.failedAt = occurredAt
 
-    const [updatedMessage] = await db
-      .update(outboundMessages)
-      .set(patch)
-      .where(and(eq(outboundMessages.bizId, bizId), eq(outboundMessages.id, messageId)))
-      .returning()
+    const updatedMessage = await updateCommunicationRow<typeof outboundMessages.$inferSelect>({
+      c,
+      bizId,
+      tableKey: 'outboundMessages',
+      subjectType: 'outbound_message',
+      id: messageId,
+      notFoundMessage: 'Outbound message not found.',
+      patch,
+    })
+    if (updatedMessage instanceof Response) return updatedMessage
 
     return ok(c, { event, message: updatedMessage }, 201)
   },
@@ -521,21 +587,31 @@ communicationRoutes.post(
     }
 
     if (existing) {
-      const [updated] = await db
-        .update(communicationConsents)
-        .set(payload)
-        .where(and(eq(communicationConsents.bizId, bizId), eq(communicationConsents.id, existing.id)))
-        .returning()
+      const updated = await updateCommunicationRow<typeof communicationConsents.$inferSelect>({
+        c,
+        bizId,
+        tableKey: 'communicationConsents',
+        subjectType: 'communication_consent',
+        id: existing.id,
+        patch: payload,
+        notFoundMessage: 'Communication consent not found.',
+      })
+      if (updated instanceof Response) return updated
       return ok(c, updated, 201, { reused: true })
     }
 
-    const [created] = await db
-      .insert(communicationConsents)
-      .values({
+    const created = await createCommunicationRow<typeof communicationConsents.$inferSelect>({
+      c,
+      bizId,
+      tableKey: 'communicationConsents',
+      subjectType: 'communication_consent',
+      displayName: `${parsed.data.channel}:${parsed.data.purpose}`,
+      data: {
         bizId,
         ...payload,
-      })
-      .returning()
+      },
+    })
+    if (created instanceof Response) return created
 
     return ok(c, created, 201)
   },
@@ -559,9 +635,14 @@ communicationRoutes.patch(
     })
     if (!existing) return fail(c, 'NOT_FOUND', 'Communication consent not found.', 404)
 
-    const [updated] = await db
-      .update(communicationConsents)
-      .set({
+    const updated = await updateCommunicationRow<typeof communicationConsents.$inferSelect>({
+      c,
+      bizId,
+      tableKey: 'communicationConsents',
+      subjectType: 'communication_consent',
+      id: consentId,
+      notFoundMessage: 'Communication consent not found.',
+      patch: {
         subjectType: parsed.data.subjectType as never | undefined,
         subjectRefId: parsed.data.subjectRefId,
         subjectUserId: parsed.data.subjectUserId,
@@ -575,9 +656,9 @@ communicationRoutes.patch(
         expiresAt: parsed.data.expiresAt === undefined ? undefined : parsed.data.expiresAt ? new Date(parsed.data.expiresAt) : null,
         revokedAt: parsed.data.revokedAt === undefined ? undefined : parsed.data.revokedAt ? new Date(parsed.data.revokedAt) : null,
         metadata: parsed.data.metadata === undefined ? undefined : cleanMetadata(parsed.data.metadata),
-      })
-      .where(and(eq(communicationConsents.bizId, bizId), eq(communicationConsents.id, consentId)))
-      .returning()
+      },
+    })
+    if (updated instanceof Response) return updated
 
     return ok(c, updated)
   },
@@ -638,9 +719,13 @@ communicationRoutes.post(
       return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
     }
 
-    const [created] = await db
-      .insert(quietHourPolicies)
-      .values({
+    const created = await createCommunicationRow<typeof quietHourPolicies.$inferSelect>({
+      c,
+      bizId,
+      tableKey: 'quietHourPolicies',
+      subjectType: 'quiet_hour_policy',
+      displayName: parsed.data.name,
+      data: {
         bizId,
         name: parsed.data.name,
         status: parsed.data.status,
@@ -655,8 +740,9 @@ communicationRoutes.post(
         allowTransactionalBypass: parsed.data.allowTransactionalBypass,
         allowEmergencyBypass: parsed.data.allowEmergencyBypass,
         metadata: cleanMetadata(parsed.data.metadata),
-      })
-      .returning()
+      },
+    })
+    if (created instanceof Response) return created
 
     return ok(c, created, 201)
   },
@@ -680,9 +766,14 @@ communicationRoutes.patch(
     })
     if (!existing) return fail(c, 'NOT_FOUND', 'Quiet-hour policy not found.', 404)
 
-    const [updated] = await db
-      .update(quietHourPolicies)
-      .set({
+    const updated = await updateCommunicationRow<typeof quietHourPolicies.$inferSelect>({
+      c,
+      bizId,
+      tableKey: 'quietHourPolicies',
+      subjectType: 'quiet_hour_policy',
+      id: policyId,
+      notFoundMessage: 'Quiet-hour policy not found.',
+      patch: {
         name: parsed.data.name,
         status: parsed.data.status,
         channel: parsed.data.channel === undefined ? undefined : parsed.data.channel ?? null,
@@ -697,9 +788,9 @@ communicationRoutes.patch(
         allowTransactionalBypass: parsed.data.allowTransactionalBypass,
         allowEmergencyBypass: parsed.data.allowEmergencyBypass,
         metadata: parsed.data.metadata === undefined ? undefined : cleanMetadata(parsed.data.metadata),
-      })
-      .where(and(eq(quietHourPolicies.bizId, bizId), eq(quietHourPolicies.id, policyId)))
-      .returning()
+      },
+    })
+    if (updated instanceof Response) return updated
 
     return ok(c, updated)
   },
@@ -730,7 +821,13 @@ communicationRoutes.post(
     const parsed = createMessageTemplateBodySchema.safeParse(await c.req.json().catch(() => null))
     if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
 
-    const [created] = await db.insert(messageTemplates).values({
+    const created = await createCommunicationRow<typeof messageTemplates.$inferSelect>({
+      c,
+      bizId,
+      tableKey: 'messageTemplates',
+      subjectType: 'message_template',
+      displayName: parsed.data.name,
+      data: {
       bizId,
       channel: parsed.data.channel,
       purpose: parsed.data.purpose,
@@ -746,7 +843,9 @@ communicationRoutes.post(
       variableSchema: cleanMetadata(parsed.data.variableSchema),
       renderPolicy: cleanMetadata(parsed.data.renderPolicy),
       metadata: cleanMetadata(parsed.data.metadata),
-    }).returning()
+      },
+    })
+    if (created instanceof Response) return created
 
     return ok(c, created, 201)
   },
@@ -762,7 +861,14 @@ communicationRoutes.patch(
     const parsed = patchMessageTemplateBodySchema.safeParse(await c.req.json().catch(() => null))
     if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
 
-    const [updated] = await db.update(messageTemplates).set({
+    const updated = await updateCommunicationRow<typeof messageTemplates.$inferSelect>({
+      c,
+      bizId,
+      tableKey: 'messageTemplates',
+      subjectType: 'message_template',
+      id: templateId,
+      notFoundMessage: 'Message template not found.',
+      patch: {
       channel: parsed.data.channel,
       purpose: parsed.data.purpose,
       name: parsed.data.name !== undefined ? sanitizePlainText(parsed.data.name) : undefined,
@@ -778,7 +884,9 @@ communicationRoutes.patch(
       variableSchema: parsed.data.variableSchema === undefined ? undefined : cleanMetadata(parsed.data.variableSchema),
       renderPolicy: parsed.data.renderPolicy === undefined ? undefined : cleanMetadata(parsed.data.renderPolicy),
       metadata: parsed.data.metadata === undefined ? undefined : cleanMetadata(parsed.data.metadata),
-    }).where(and(eq(messageTemplates.bizId, bizId), eq(messageTemplates.id, templateId))).returning()
+      },
+    })
+    if (updated instanceof Response) return updated
 
     if (!updated) return fail(c, 'NOT_FOUND', 'Message template not found.', 404)
     return ok(c, updated)
@@ -810,7 +918,13 @@ communicationRoutes.post(
     const parsed = createMessageTemplateBindingBodySchema.safeParse(await c.req.json().catch(() => null))
     if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
 
-    const [created] = await db.insert(messageTemplateBindings).values({
+    const created = await createCommunicationRow<typeof messageTemplateBindings.$inferSelect>({
+      c,
+      bizId,
+      tableKey: 'messageTemplateBindings',
+      subjectType: 'message_template_binding',
+      displayName: parsed.data.eventPattern,
+      data: {
       bizId,
       messageTemplateId: parsed.data.messageTemplateId,
       eventPattern: sanitizePlainText(parsed.data.eventPattern),
@@ -819,7 +933,9 @@ communicationRoutes.post(
       isActive: parsed.data.isActive,
       conditionExpr: cleanMetadata(parsed.data.conditionExpr),
       metadata: cleanMetadata(parsed.data.metadata),
-    }).returning()
+      },
+    })
+    if (created instanceof Response) return created
 
     return ok(c, created, 201)
   },
@@ -850,7 +966,13 @@ communicationRoutes.post(
     const parsed = createMarketingCampaignBodySchema.safeParse(await c.req.json().catch(() => null))
     if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
 
-    const [created] = await db.insert(marketingCampaigns).values({
+    const created = await createCommunicationRow<typeof marketingCampaigns.$inferSelect>({
+      c,
+      bizId,
+      tableKey: 'marketingCampaigns',
+      subjectType: 'marketing_campaign',
+      displayName: parsed.data.name,
+      data: {
       bizId,
       name: sanitizePlainText(parsed.data.name),
       slug: sanitizePlainText(parsed.data.slug),
@@ -861,7 +983,9 @@ communicationRoutes.post(
       entryPolicy: cleanMetadata(parsed.data.entryPolicy),
       exitPolicy: cleanMetadata(parsed.data.exitPolicy),
       metadata: cleanMetadata(parsed.data.metadata),
-    }).returning()
+      },
+    })
+    if (created instanceof Response) return created
 
     return ok(c, created, 201)
   },
@@ -877,7 +1001,14 @@ communicationRoutes.patch(
     const parsed = patchMarketingCampaignBodySchema.safeParse(await c.req.json().catch(() => null))
     if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
 
-    const [updated] = await db.update(marketingCampaigns).set({
+    const updated = await updateCommunicationRow<typeof marketingCampaigns.$inferSelect>({
+      c,
+      bizId,
+      tableKey: 'marketingCampaigns',
+      subjectType: 'marketing_campaign',
+      id: campaignId,
+      notFoundMessage: 'Marketing campaign not found.',
+      patch: {
       name: parsed.data.name !== undefined ? sanitizePlainText(parsed.data.name) : undefined,
       slug: parsed.data.slug !== undefined ? sanitizePlainText(parsed.data.slug) : undefined,
       status: parsed.data.status,
@@ -887,7 +1018,9 @@ communicationRoutes.patch(
       entryPolicy: parsed.data.entryPolicy === undefined ? undefined : cleanMetadata(parsed.data.entryPolicy),
       exitPolicy: parsed.data.exitPolicy === undefined ? undefined : cleanMetadata(parsed.data.exitPolicy),
       metadata: parsed.data.metadata === undefined ? undefined : cleanMetadata(parsed.data.metadata),
-    }).where(and(eq(marketingCampaigns.bizId, bizId), eq(marketingCampaigns.id, campaignId))).returning()
+      },
+    })
+    if (updated instanceof Response) return updated
 
     if (!updated) return fail(c, 'NOT_FOUND', 'Marketing campaign not found.', 404)
     return ok(c, updated)
@@ -920,7 +1053,13 @@ communicationRoutes.post(
     const parsed = createMarketingCampaignStepBodySchema.safeParse(await c.req.json().catch(() => null))
     if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
 
-    const [created] = await db.insert(marketingCampaignSteps).values({
+    const created = await createCommunicationRow<typeof marketingCampaignSteps.$inferSelect>({
+      c,
+      bizId,
+      tableKey: 'marketingCampaignSteps',
+      subjectType: 'marketing_campaign_step',
+      displayName: parsed.data.stepKey,
+      data: {
       bizId,
       marketingCampaignId: parsed.data.marketingCampaignId,
       stepKey: sanitizePlainText(parsed.data.stepKey),
@@ -936,7 +1075,9 @@ communicationRoutes.post(
       onFalseStepKey: parsed.data.onFalseStepKey ?? null,
       status: parsed.data.status,
       metadata: cleanMetadata(parsed.data.metadata),
-    }).returning()
+      },
+    })
+    if (created instanceof Response) return created
 
     return ok(c, created, 201)
   },
@@ -968,7 +1109,13 @@ communicationRoutes.post(
     const parsed = createMarketingCampaignEnrollmentBodySchema.safeParse(await c.req.json().catch(() => null))
     if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
 
-    const [created] = await db.insert(marketingCampaignEnrollments).values({
+    const created = await createCommunicationRow<typeof marketingCampaignEnrollments.$inferSelect>({
+      c,
+      bizId,
+      tableKey: 'marketingCampaignEnrollments',
+      subjectType: 'marketing_campaign_enrollment',
+      displayName: parsed.data.subjectType,
+      data: {
       bizId,
       marketingCampaignId: parsed.data.marketingCampaignId,
       subjectType: parsed.data.subjectType,
@@ -979,7 +1126,9 @@ communicationRoutes.post(
       currentStepKey: parsed.data.currentStepKey ?? null,
       exitReason: parsed.data.exitReason ?? null,
       metadata: cleanMetadata(parsed.data.metadata),
-    }).returning()
+      },
+    })
+    if (created instanceof Response) return created
 
     return ok(c, created, 201)
   },

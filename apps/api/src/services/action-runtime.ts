@@ -1,4 +1,5 @@
 import crypto from 'node:crypto'
+import { AsyncLocalStorage } from 'node:async_hooks'
 import { and, desc, eq, sql } from 'drizzle-orm'
 import { z } from 'zod'
 import dbPackage from '@bizing/db'
@@ -7,7 +8,7 @@ import { sanitizePlainText, sanitizeUnknown } from '../lib/sanitize.js'
 import { createBookingLifecycleMessage } from './booking-lifecycle-messages.js'
 
 const {
-  db,
+  db: baseDb,
   actionRequests,
   actionIdempotencyKeys,
   actionExecutions,
@@ -33,6 +34,18 @@ const {
   sellableServiceProducts,
   sellableOfferVersions,
 } = dbPackage
+
+type ActionDbExecutor = typeof baseDb
+
+const actionDbContext = new AsyncLocalStorage<ActionDbExecutor>()
+
+const db: ActionDbExecutor = new Proxy(baseDb as object, {
+  get(_target, propertyKey, _receiver) {
+    const active = actionDbContext.getStore() ?? baseDb
+    const value = Reflect.get(active as object, propertyKey)
+    return typeof value === 'function' ? (value as Function).bind(active) : value
+  },
+}) as ActionDbExecutor
 
 /**
  * Generic action envelope accepted by the canonical actions API.
@@ -306,6 +319,116 @@ const calendarArchivePayloadSchema = z.object({
   calendarId: z.string().min(1),
 })
 
+/**
+ * Generic CUD payload used by the adapter/DSL bridge.
+ *
+ * ELI5:
+ * This lets routes and tools say:
+ * - which table export they want (`tableKey`)
+ * - which write operation (`create` / `update` / `delete`)
+ * - what row data they want to write
+ *
+ * It gives us one reusable action-core bridge for long-tail domains while we
+ * keep adding richer per-domain typed adapters.
+ */
+const genericCrudPayloadSchema = z
+  .object({
+    tableKey: z.string().min(1).max(120),
+    operation: z.enum(['create', 'update', 'delete']).optional(),
+    id: z.string().optional(),
+    data: z.record(z.unknown()).optional(),
+    patch: z.record(z.unknown()).optional(),
+    subjectType: z.string().min(1).max(80).optional(),
+    subjectId: z.string().min(1).max(140).optional(),
+    displayName: z.string().min(1).max(255).optional(),
+    metadata: z.record(z.unknown()).optional(),
+  })
+  .superRefine((input, ctx) => {
+    const operation = input.operation
+    if (operation === 'create' && !input.data) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['data'],
+        message: 'data is required for create operation.',
+      })
+    }
+    if (operation === 'update') {
+      if (!input.id) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['id'],
+          message: 'id is required for update operation.',
+        })
+      }
+      if (!input.patch) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['patch'],
+          message: 'patch is required for update operation.',
+        })
+      }
+    }
+    if (operation === 'delete' && !input.id) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['id'],
+        message: 'id is required for delete operation.',
+      })
+    }
+  })
+
+type CrudOperation = 'create' | 'update' | 'delete'
+
+function resolveCrudOperation(actionKey: string, payloadOperation: string | undefined): CrudOperation {
+  if (payloadOperation === 'create' || payloadOperation === 'update' || payloadOperation === 'delete') {
+    return payloadOperation
+  }
+  const inferred = actionKey.match(/^crud\.(create|update|delete)(?:\.|$)/)?.[1]
+  if (inferred === 'create' || inferred === 'update' || inferred === 'delete') {
+    return inferred
+  }
+  throw {
+    family: 'validation',
+    code: 'CRUD_OPERATION_REQUIRED',
+    message:
+      'CRUD operation is required. Provide payload.operation or use action keys like crud.create / crud.update / crud.delete.',
+    retryable: false,
+  }
+}
+
+function resolveCrudTable(tableKey: string) {
+  const aliasMap: Record<string, string> = {
+    entitlementMemberships: 'memberships',
+  }
+  const resolvedTableKey = aliasMap[tableKey] ?? tableKey
+  const raw = (dbPackage as Record<string, unknown>)[resolvedTableKey]
+  if (!raw || typeof raw !== 'object') {
+    throw {
+      family: 'validation',
+      code: 'CRUD_TABLE_KEY_NOT_FOUND',
+      message: `Table export key '${tableKey}' was not found in @bizing/db exports.`,
+      retryable: false,
+    }
+  }
+  const table = raw as Record<string, unknown>
+  if (!('id' in table)) {
+    throw {
+      family: 'validation',
+      code: 'CRUD_TABLE_MISSING_ID_COLUMN',
+      message: `Table '${tableKey}' does not expose an 'id' column; generic CRUD adapter cannot target it safely.`,
+      retryable: false,
+    }
+  }
+  return table as Record<string, any>
+}
+
+function defaultSubjectTypeFromTableKey(tableKey: string) {
+  return tableKey
+    .replace(/([a-z0-9])([A-Z])/g, '$1_$2')
+    .replace(/__+/g, '_')
+    .toLowerCase()
+}
+
 export type CanonicalActionInput = z.infer<typeof canonicalActionBodySchema>
 
 type CanonicalSubjectDescriptor = {
@@ -513,6 +636,107 @@ function computeBookingTotal(input: {
   return input.subtotalMinor + input.taxMinor + input.feeMinor - input.discountMinor
 }
 
+function normalizeBizId(value: unknown): string | null {
+  if (typeof value !== 'string') return null
+  const trimmed = value.trim()
+  return trimmed.length > 0 ? trimmed : null
+}
+
+function looksLikeTemporalString(value: string): boolean {
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return !Number.isNaN(Date.parse(`${value}T00:00:00.000Z`))
+  }
+  return /^\d{4}-\d{2}-\d{2}T/.test(value) && !Number.isNaN(Date.parse(value))
+}
+
+/**
+ * Coerce timestamp-like string payload values into Date objects.
+ *
+ * ELI5:
+ * Generic CRUD payloads often come from JSON or sanitize passes where dates are
+ * plain strings. Drizzle timestamp columns expect Date objects in this runtime.
+ * This helper keeps generic CRUD writes resilient by converting obvious
+ * timestamp fields before insert/update.
+ */
+function coerceTemporalPayload(record: Record<string, unknown>): Record<string, unknown> {
+  const out: Record<string, unknown> = {}
+  for (const [key, value] of Object.entries(record)) {
+    if (
+      typeof value === 'string' &&
+      /(At|Date|Timestamp|From|To|For|Until|Since|Start|End|On|Source)$/i.test(key) &&
+      looksLikeTemporalString(value)
+    ) {
+      out[key] = new Date(value)
+      continue
+    }
+    out[key] = value
+  }
+  return out
+}
+
+function payloadTypeSummary(record: Record<string, unknown>) {
+  const summary: Record<string, string> = {}
+  for (const [key, value] of Object.entries(record)) {
+    if (value instanceof Date) {
+      summary[key] = 'Date'
+      continue
+    }
+    if (Array.isArray(value)) {
+      summary[key] = 'array'
+      continue
+    }
+    summary[key] = value === null ? 'null' : typeof value
+  }
+  return summary
+}
+
+/**
+ * Resolve the tenant id that should own success artifacts for an action.
+ *
+ * ELI5:
+ * - Most actions already know their biz id up front.
+ * - Some bootstrap actions (like creating a biz) do not.
+ * - For those, we infer the biz id from the action result so canonical
+ *   subjects/events/projections can still be recorded under the right tenant.
+ */
+function resolveEffectiveActionBizId(
+  explicitBizId: string | null | undefined,
+  input: CanonicalActionInput,
+  result: ActionExecuteResult,
+): string | null {
+  const direct = normalizeBizId(explicitBizId)
+  if (direct) return direct
+
+  const payload = (input.payload ?? {}) as Record<string, unknown>
+  const output = (result.outputPayload ?? {}) as Record<string, unknown>
+  const row =
+    output.row && typeof output.row === 'object' ? (output.row as Record<string, unknown>) : null
+
+  const rowBizId = normalizeBizId(row?.bizId)
+  if (rowBizId) return rowBizId
+
+  const outputBizId = normalizeBizId(output.bizId)
+  if (outputBizId) return outputBizId
+
+  const isBizCrudCreate =
+    input.actionKey.startsWith('crud.') &&
+    payload.tableKey === 'bizes' &&
+    (payload.operation === 'create' || input.actionKey === 'crud.create')
+
+  if (isBizCrudCreate) {
+    const createdBizId = normalizeBizId(row?.id ?? output.id ?? result.subject.subjectId)
+    if (createdBizId) return createdBizId
+  }
+
+  const subjectBizId =
+    result.subject.subjectType === 'biz' || result.subject.subjectType === 'bizes'
+      ? normalizeBizId(result.subject.subjectId)
+      : null
+  if (subjectBizId) return subjectBizId
+
+  return null
+}
+
 /**
  * Maps canonical business actions to the permission that actually governs them.
  *
@@ -522,6 +746,9 @@ function computeBookingTotal(input: {
  * "may they execute this specific business action?"
  */
 export function permissionForActionKey(actionKey: string) {
+  if (actionKey.startsWith('crud.')) {
+    return 'actions.execute'
+  }
   switch (actionKey) {
     case 'booking.create':
       return 'booking_orders.create'
@@ -584,6 +811,7 @@ export function permissionForActionKey(actionKey: string) {
  * Most are not. This allowlist is the explicit gate.
  */
 export function isPublicActionKey(actionKey: string) {
+  if (actionKey.startsWith('crud.')) return false
   return actionKey === 'booking.create'
 }
 
@@ -615,8 +843,10 @@ async function loadIdempotentReplay(params: {
   actorNamespace: string
   idempotencyKey: string
   requestHash: string
+  executor?: ActionDbExecutor
 }) {
-  const existing = await db.query.actionIdempotencyKeys.findFirst({
+  const executor = params.executor ?? db
+  const existing = await executor.query.actionIdempotencyKeys.findFirst({
     where: and(
       eq(actionIdempotencyKeys.bizId, params.bizId),
       eq(actionIdempotencyKeys.actionKey, params.actionKey),
@@ -628,18 +858,18 @@ async function loadIdempotentReplay(params: {
   if (existing.requestHash !== params.requestHash) {
     return { type: 'hash_mismatch' as const, existing }
   }
-  const actionRequest = await db.query.actionRequests.findFirst({
+  const actionRequest = await executor.query.actionRequests.findFirst({
     where: eq(actionRequests.id, existing.actionRequestId),
   })
-  const latestExecution = await db.query.actionExecutions.findFirst({
+  const latestExecution = await executor.query.actionExecutions.findFirst({
     where: eq(actionExecutions.actionRequestId, existing.actionRequestId),
     orderBy: desc(actionExecutions.startedAt),
   })
-  const failure = await db.query.actionFailures.findFirst({
+  const failure = await executor.query.actionFailures.findFirst({
     where: eq(actionFailures.actionRequestId, existing.actionRequestId),
     orderBy: desc(actionFailures.failedAt),
   })
-  const domainEvent = await db.query.domainEvents.findFirst({
+  const domainEvent = await executor.query.domainEvents.findFirst({
     where: eq(domainEvents.actionRequestId, existing.actionRequestId),
     orderBy: desc(domainEvents.occurredAt),
   })
@@ -659,16 +889,18 @@ async function ensureSubjectRegistered(params: {
   bizId: string
   subject: CanonicalSubjectDescriptor
   metadata?: Record<string, unknown>
+  executor?: ActionDbExecutor
 }) {
+  const executor = params.executor ?? db
   const where = and(
     eq(subjects.bizId, params.bizId),
     eq(subjects.subjectType, params.subject.subjectType),
     eq(subjects.subjectId, params.subject.subjectId),
   )
-  let row = await db.query.subjects.findFirst({ where })
+  let row = await executor.query.subjects.findFirst({ where })
   if (row) return row
 
-  await db
+  await executor
     .insert(subjects)
     .values({
       bizId: params.bizId,
@@ -685,7 +917,7 @@ async function ensureSubjectRegistered(params: {
     })
     .onConflictDoNothing()
 
-  row = await db.query.subjects.findFirst({ where })
+  row = await executor.query.subjects.findFirst({ where })
   if (!row) {
     throw {
       family: 'internal',
@@ -697,13 +929,13 @@ async function ensureSubjectRegistered(params: {
   return row
 }
 
-async function ensureActionProjection(bizId: string) {
-  let projection = await db.query.projections.findFirst({
+async function ensureActionProjection(bizId: string, executor: ActionDbExecutor = db) {
+  let projection = await executor.query.projections.findFirst({
     where: and(eq(projections.bizId, bizId), eq(projections.projectionKey, 'action_activity')),
   })
   if (projection) return projection
 
-  await db
+  await executor
     .insert(projections)
     .values({
       bizId,
@@ -720,7 +952,7 @@ async function ensureActionProjection(bizId: string) {
     })
     .onConflictDoNothing()
 
-  projection = await db.query.projections.findFirst({
+  projection = await executor.query.projections.findFirst({
     where: and(eq(projections.bizId, bizId), eq(projections.projectionKey, 'action_activity')),
   })
   if (!projection) {
@@ -741,7 +973,9 @@ async function recordSuccessArtifacts(params: {
   input: CanonicalActionInput
   result: ActionExecuteResult
   context: ActionContext
+  executor?: ActionDbExecutor
 }) {
+  const executor = params.executor ?? db
   const subject = await ensureSubjectRegistered({
     bizId: params.bizId,
     subject: params.result.subject,
@@ -749,9 +983,10 @@ async function recordSuccessArtifacts(params: {
       actionRequestId: params.actionRequestId,
       actionKey: params.input.actionKey,
     },
+    executor,
   })
 
-  const [domainEvent] = await db
+  const [domainEvent] = await executor
     .insert(domainEvents)
     .values({
       bizId: params.bizId,
@@ -774,8 +1009,8 @@ async function recordSuccessArtifacts(params: {
     })
     .returning()
 
-  const projection = await ensureActionProjection(params.bizId)
-  await db
+  const projection = await ensureActionProjection(params.bizId, executor)
+  await executor
     .insert(projectionDocuments)
     .values({
       bizId: params.bizId,
@@ -809,7 +1044,7 @@ async function recordSuccessArtifacts(params: {
     })
     .onConflictDoNothing()
 
-  const projectionDocument = await db.query.projectionDocuments.findFirst({
+  const projectionDocument = await executor.query.projectionDocuments.findFirst({
     where: and(
       eq(projectionDocuments.projectionId, projection.id),
       eq(projectionDocuments.documentKey, `action_request:${params.actionRequestId}`),
@@ -3061,8 +3296,281 @@ async function executeCalendarBlock(
   }
 }
 
+async function previewGenericCrudAction(context: ActionContext, actionKey: string, payload: Record<string, unknown>) {
+  const parsed = genericCrudPayloadSchema.parse(payload)
+  const operation = resolveCrudOperation(actionKey, parsed.operation)
+  const table = resolveCrudTable(parsed.tableKey)
+  const id = parsed.id ?? null
+  const subjectType = parsed.subjectType ?? defaultSubjectTypeFromTableKey(parsed.tableKey)
+  const subjectId = parsed.subjectId ?? id ?? '__pending__'
+  return {
+    summary: `Preview ${operation} on ${parsed.tableKey}.`,
+    effectSummary: sanitizeUnknown({
+      operation,
+      tableKey: parsed.tableKey,
+      id,
+      payloadShape: {
+        dataKeys: Object.keys(parsed.data ?? {}),
+        patchKeys: Object.keys(parsed.patch ?? {}),
+      },
+      bizScoped: 'bizId' in table,
+    }) as Record<string, unknown>,
+    normalizedPayload: sanitizeUnknown({
+      ...parsed,
+      operation,
+      subjectType,
+      subjectId,
+    }) as Record<string, unknown>,
+  } satisfies ActionPreviewResult
+}
+
+async function executeGenericCrudAction(
+  context: ActionContext,
+  _actionRequestId: string,
+  actionKey: string,
+  payload: Record<string, unknown>,
+): Promise<ActionExecuteResult> {
+  const preview = await previewGenericCrudAction(context, actionKey, payload)
+  const normalized = preview.normalizedPayload as Record<string, unknown>
+  const parsed = genericCrudPayloadSchema.parse(normalized)
+  const operation = resolveCrudOperation(actionKey, parsed.operation)
+  const table = resolveCrudTable(parsed.tableKey)
+  const idColumn = table.id as any
+  const bizIdColumn = table.bizId as any | undefined
+  const deletedAtColumn = table.deletedAt as any | undefined
+
+  if (operation === 'create') {
+    const insertPayload = coerceTemporalPayload(
+      sanitizeUnknown({
+        ...(parsed.data ?? {}),
+        ...(bizIdColumn && !(parsed.data && 'bizId' in parsed.data) ? { bizId: context.bizId } : {}),
+      }) as Record<string, unknown>,
+    )
+
+    /**
+     * Some generic tables carry optional subject pointers that are FK-bound.
+     * Auto-register lightweight subject shells when pointers are present so
+     * CRUD adapters remain deterministic across validator-heavy saga flows.
+     */
+    const ensureSubjectPair = async (
+      subjectTypeValue: unknown,
+      subjectIdValue: unknown,
+      source: string,
+    ) => {
+      const subjectType =
+        typeof subjectTypeValue === 'string' && subjectTypeValue.length > 0 ? subjectTypeValue : null
+      const subjectId =
+        typeof subjectIdValue === 'string' && subjectIdValue.length > 0 ? subjectIdValue : null
+      if (subjectType && subjectId) {
+        await db
+          .insert(subjects)
+          .values({
+            bizId: context.bizId,
+            subjectType,
+            subjectId,
+            displayName: `${subjectType}:${subjectId}`,
+            category: subjectType,
+            status: 'active',
+            isLinkable: true,
+            metadata: {
+              source,
+            },
+          })
+          .onConflictDoNothing()
+      }
+    }
+    if (parsed.tableKey === 'domainEvents') {
+      await ensureSubjectPair(
+        insertPayload.subjectType,
+        insertPayload.subjectId,
+        'action-runtime.generic-domain-events-auto-subject',
+      )
+    }
+    if (parsed.tableKey === 'accessSecurityDecisions') {
+      await ensureSubjectPair(
+        insertPayload.decidedBySubjectType,
+        insertPayload.decidedBySubjectId,
+        'action-runtime.generic-access-security-decisions-auto-subject',
+      )
+    }
+    if (parsed.tableKey === 'sessionInteractionArtifacts') {
+      await ensureSubjectPair(
+        insertPayload.uploadedBySubjectType,
+        insertPayload.uploadedBySubjectId,
+        'action-runtime.generic-session-artifacts-auto-subject',
+      )
+    }
+    let createdRows: any[]
+    try {
+      createdRows = (await db.insert(table as any).values(insertPayload as any).returning()) as any[]
+    } catch (rawError) {
+      throw {
+        family: 'internal',
+        code: 'CRUD_CREATE_EXECUTION_FAILED',
+        message: `Generic CRUD create failed for table '${parsed.tableKey}'.`,
+        retryable: false,
+        details: {
+          tableKey: parsed.tableKey,
+          operation,
+          payloadTypes: payloadTypeSummary(insertPayload),
+          rawError:
+            rawError && typeof rawError === 'object'
+              ? {
+                  message: (rawError as { message?: unknown }).message ?? String(rawError),
+                  code: (rawError as { code?: unknown }).code ?? null,
+                }
+              : { message: String(rawError), code: null },
+        },
+      }
+    }
+    const created = createdRows[0]
+
+    const subjectType = parsed.subjectType ?? defaultSubjectTypeFromTableKey(parsed.tableKey)
+    const subjectId = parsed.subjectId ?? String((created as { id?: string }).id ?? '')
+
+    return {
+      ...preview,
+      outputPayload: sanitizeUnknown({
+        tableKey: parsed.tableKey,
+        operation,
+        id: (created as { id?: string }).id ?? null,
+        row: created,
+      }) as Record<string, unknown>,
+      subject: {
+        subjectType,
+        subjectId,
+        displayName: parsed.displayName ?? `${parsed.tableKey} ${(created as { id?: string }).id ?? ''}`,
+        category: 'record',
+      },
+      event: {
+        eventKey: `${subjectType}.created`,
+        eventFamily: subjectType,
+        summary: `Created ${subjectType} ${(created as { id?: string }).id ?? ''}.`,
+        payload: sanitizeUnknown({
+          tableKey: parsed.tableKey,
+          operation,
+          id: (created as { id?: string }).id ?? null,
+        }) as Record<string, unknown>,
+      },
+    }
+  }
+
+  if (operation === 'update') {
+    const patchPayload = coerceTemporalPayload(
+      sanitizeUnknown(parsed.patch ?? {}) as Record<string, unknown>,
+    )
+    const whereClause = bizIdColumn && context.bizId
+      ? and(eq(idColumn, parsed.id as string), eq(bizIdColumn, context.bizId))
+      : eq(idColumn, parsed.id as string)
+    const updatedRows = (await db
+      .update(table as any)
+      .set(patchPayload as any)
+      .where(whereClause as any)
+      .returning()) as any[]
+    const updated = updatedRows[0]
+    if (!updated) {
+      throw {
+        family: 'validation',
+        code: 'CRUD_TARGET_NOT_FOUND',
+        message: `No row found for update on ${parsed.tableKey} with id ${parsed.id}.`,
+        retryable: false,
+      }
+    }
+    const subjectType = parsed.subjectType ?? defaultSubjectTypeFromTableKey(parsed.tableKey)
+    const subjectId = parsed.subjectId ?? String(parsed.id)
+    return {
+      ...preview,
+      outputPayload: sanitizeUnknown({
+        tableKey: parsed.tableKey,
+        operation,
+        id: parsed.id,
+        row: updated,
+      }) as Record<string, unknown>,
+      subject: {
+        subjectType,
+        subjectId,
+        displayName: parsed.displayName ?? `${parsed.tableKey} ${parsed.id}`,
+        category: 'record',
+      },
+      event: {
+        eventKey: `${subjectType}.updated`,
+        eventFamily: subjectType,
+        summary: `Updated ${subjectType} ${parsed.id}.`,
+        payload: sanitizeUnknown({
+          tableKey: parsed.tableKey,
+          operation,
+          id: parsed.id,
+        }) as Record<string, unknown>,
+      },
+    }
+  }
+
+  const deleteWhere = bizIdColumn && context.bizId
+    ? and(eq(idColumn, parsed.id as string), eq(bizIdColumn, context.bizId))
+    : eq(idColumn, parsed.id as string)
+
+  let deletedRow: unknown = null
+  if (deletedAtColumn) {
+    const softDeletedRows = (await db
+      .update(table as any)
+      .set({
+        deletedAt: new Date(),
+      } as any)
+      .where(deleteWhere as any)
+      .returning()) as any[]
+    const softDeleted = softDeletedRows[0]
+    deletedRow = softDeleted ?? null
+  } else {
+    const removedRows = (await db.delete(table as any).where(deleteWhere as any).returning()) as any[]
+    const removed = removedRows[0]
+    deletedRow = removed ?? null
+  }
+
+  if (!deletedRow) {
+    throw {
+      family: 'validation',
+      code: 'CRUD_TARGET_NOT_FOUND',
+      message: `No row found for delete on ${parsed.tableKey} with id ${parsed.id}.`,
+      retryable: false,
+    }
+  }
+
+  const subjectType = parsed.subjectType ?? defaultSubjectTypeFromTableKey(parsed.tableKey)
+  const subjectId = parsed.subjectId ?? String(parsed.id)
+  return {
+    ...preview,
+    outputPayload: sanitizeUnknown({
+      tableKey: parsed.tableKey,
+      operation,
+      id: parsed.id,
+      row: deletedRow,
+      softDeleted: Boolean(deletedAtColumn),
+    }) as Record<string, unknown>,
+    subject: {
+      subjectType,
+      subjectId,
+      displayName: parsed.displayName ?? `${parsed.tableKey} ${parsed.id}`,
+      category: 'record',
+    },
+    event: {
+      eventKey: `${subjectType}.deleted`,
+      eventFamily: subjectType,
+      summary: `Deleted ${subjectType} ${parsed.id}.`,
+      payload: sanitizeUnknown({
+        tableKey: parsed.tableKey,
+        operation,
+        id: parsed.id,
+        softDeleted: Boolean(deletedAtColumn),
+      }) as Record<string, unknown>,
+    },
+  }
+}
+
 async function previewAction(context: ActionContext, input: CanonicalActionInput): Promise<ActionPreviewResult> {
   const payload = sanitizeUnknown(input.payload) as Record<string, unknown>
+  if (input.actionKey.startsWith('crud.')) {
+    return previewGenericCrudAction(context, input.actionKey, payload)
+  }
   switch (input.actionKey) {
     case 'booking.create':
       return previewBookingCreate(context, payload)
@@ -3128,6 +3636,9 @@ async function executeActionAdapter(
   input: CanonicalActionInput,
 ): Promise<ActionExecuteResult> {
   const payload = sanitizeUnknown(input.payload) as Record<string, unknown>
+  if (input.actionKey.startsWith('crud.')) {
+    return executeGenericCrudAction(context, actionRequestId, input.actionKey, payload)
+  }
   switch (input.actionKey) {
     case 'booking.create':
       return executeBookingCreate(context, actionRequestId, payload)
@@ -3188,7 +3699,7 @@ async function executeActionAdapter(
 }
 
 async function recordFailure(params: {
-  bizId: string
+  bizId: string | null
   actionRequestId: string
   actionExecutionId: string
   input: CanonicalActionInput
@@ -3200,8 +3711,10 @@ async function recordFailure(params: {
     retryable?: boolean
   }
   context: ActionContext
+  executor?: ActionDbExecutor
 }) {
-  const [snapshot] = await db
+  const executor = params.executor ?? db
+  const [snapshot] = await executor
     .insert(debugSnapshots)
     .values({
       bizId: params.bizId,
@@ -3222,7 +3735,7 @@ async function recordFailure(params: {
     })
     .returning()
 
-  const [failure] = await db
+  const [failure] = await executor
     .insert(actionFailures)
     .values({
       bizId: params.bizId,
@@ -3268,11 +3781,12 @@ async function recordFailure(params: {
  * The point is to make the write explainable and safe.
  */
 export async function persistCanonicalAction(params: {
-  bizId: string
+  bizId: string | null
   input: CanonicalActionInput
   context: ActionContext
   intentMode: 'dry_run' | 'execute'
 }): Promise<ActionRuntimeResult> {
+  const requestedBizId = normalizeBizId(params.bizId)
   const input = {
     ...params.input,
     actionFamily: params.input.actionFamily ?? params.input.actionKey.split('.')[0] ?? 'general',
@@ -3291,9 +3805,9 @@ export async function persistCanonicalAction(params: {
 
   const actorNamespace = actorNamespaceFromContext(params.context)
 
-  if (input.idempotencyKey) {
+  if (requestedBizId && input.idempotencyKey) {
     const replay = await loadIdempotentReplay({
-      bizId: params.bizId,
+      bizId: requestedBizId,
       actionKey: input.actionKey,
       actorNamespace,
       idempotencyKey: input.idempotencyKey,
@@ -3318,208 +3832,228 @@ export async function persistCanonicalAction(params: {
     }
   }
 
-  const now = new Date()
-  const [actionRequest] = await db
-    .insert(actionRequests)
-    .values({
-      bizId: params.bizId,
-      actionKey: input.actionKey,
-      actionFamily: input.actionFamily,
-      actorType: actorTypeFromAuthSource(params.context.authSource),
-      actorUserId: params.context.user.id,
-      actorRef: actorRefFromContext(params.context),
-      sourceInstallationRef: input.sourceInstallationRef,
-      intentMode: params.intentMode,
-      status: 'pending',
-      targetSubjectType: input.targetSubjectType,
-      targetSubjectId: input.targetSubjectId,
-      inputPayload: input.payload,
-      correlationId: params.context.requestId ?? crypto.randomUUID(),
-      requestedAt: now,
-      executionStartedAt: now,
-      metadata: sanitizeUnknown({
-        accessMode: params.context.accessMode,
-        ...(input.metadata ?? {}),
-      }),
-    })
-    .returning()
+  return baseDb.transaction(async (tx) =>
+    actionDbContext.run(tx as ActionDbExecutor, async () => {
+    const executor = tx as ActionDbExecutor
+    const now = new Date()
+    const [actionRequest] = await executor
+      .insert(actionRequests)
+      .values({
+        bizId: requestedBizId,
+        actionKey: input.actionKey,
+        actionFamily: input.actionFamily,
+        actorType: actorTypeFromAuthSource(params.context.authSource),
+        actorUserId: params.context.user.id,
+        actorRef: actorRefFromContext(params.context),
+        sourceInstallationRef: input.sourceInstallationRef,
+        intentMode: params.intentMode,
+        status: 'pending',
+        targetSubjectType: null,
+        targetSubjectId: null,
+        inputPayload: input.payload,
+        correlationId: params.context.requestId ?? crypto.randomUUID(),
+        requestedAt: now,
+        executionStartedAt: now,
+        metadata: sanitizeUnknown({
+          accessMode: params.context.accessMode,
+          ...(input.metadata ?? {}),
+        }),
+      })
+      .returning()
 
-  if (input.idempotencyKey) {
-    await db.insert(actionIdempotencyKeys).values({
-      bizId: params.bizId,
-      actionRequestId: actionRequest.id,
-      idempotencyKey: input.idempotencyKey,
-      actionKey: input.actionKey,
-      actorNamespace,
-      requestHash,
-      status: 'reserved',
-      metadata: sanitizeUnknown({
-        requestId: params.context.requestId ?? null,
-      }),
-    })
-  }
+    if (requestedBizId && input.idempotencyKey) {
+      await executor.insert(actionIdempotencyKeys).values({
+        bizId: requestedBizId,
+        actionRequestId: actionRequest.id,
+        idempotencyKey: input.idempotencyKey,
+        actionKey: input.actionKey,
+        actorNamespace,
+        requestHash,
+        status: 'reserved',
+        metadata: sanitizeUnknown({
+          requestId: params.context.requestId ?? null,
+        }),
+      })
+    }
 
-  const [execution] = await db
-    .insert(actionExecutions)
-    .values({
-      bizId: params.bizId,
-      actionRequestId: actionRequest.id,
-      attemptNumber: 1,
-      phaseKey: params.intentMode === 'dry_run' ? 'preview' : 'execute',
-      status: 'running',
-      metadata: sanitizeUnknown({
-        requestId: params.context.requestId ?? null,
-      }),
-    })
-    .returning()
+    const [execution] = await executor
+      .insert(actionExecutions)
+      .values({
+        bizId: requestedBizId,
+        actionRequestId: actionRequest.id,
+        attemptNumber: 1,
+        phaseKey: params.intentMode === 'dry_run' ? 'preview' : 'execute',
+        status: 'running',
+        metadata: sanitizeUnknown({
+          requestId: params.context.requestId ?? null,
+        }),
+      })
+      .returning()
 
-  try {
-    const result =
-      params.intentMode === 'dry_run'
-        ? await previewAction(params.context, input)
-        : await executeActionAdapter(params.context, actionRequest.id, input)
+    try {
+      const result =
+        params.intentMode === 'dry_run'
+          ? await previewAction(params.context, input)
+          : await executor.transaction(async (nestedTx) =>
+              actionDbContext.run(nestedTx as ActionDbExecutor, async () =>
+                executeActionAdapter(params.context, actionRequest.id, input),
+              ),
+            )
 
-    const requestStatus = params.intentMode === 'dry_run' ? 'previewed' : 'succeeded'
-    const executionStatus = params.intentMode === 'dry_run' ? 'previewed' : 'succeeded'
+      const requestStatus = params.intentMode === 'dry_run' ? 'previewed' : 'succeeded'
+      const executionStatus = params.intentMode === 'dry_run' ? 'previewed' : 'succeeded'
 
-    let successArtifacts: { domainEvent: unknown; projectionDocument: unknown | null } | null = null
-    if (params.intentMode === 'execute') {
-      successArtifacts = await recordSuccessArtifacts({
-        bizId: params.bizId,
+      const effectiveBizId =
+        params.intentMode === 'execute'
+          ? resolveEffectiveActionBizId(requestedBizId, input, result as ActionExecuteResult)
+          : requestedBizId
+
+      let successArtifacts: { domainEvent: unknown; projectionDocument: unknown | null } | null = null
+      if (params.intentMode === 'execute' && effectiveBizId) {
+        successArtifacts = await recordSuccessArtifacts({
+          bizId: effectiveBizId,
+          actionRequestId: actionRequest.id,
+          actionExecutionId: execution.id,
+          input,
+          result: result as ActionExecuteResult,
+          context: params.context,
+          executor,
+        })
+      }
+
+      const [updatedExecution] = await executor
+        .update(actionExecutions)
+        .set({
+          bizId: effectiveBizId ?? requestedBizId,
+          status: executionStatus,
+          effectSummary: sanitizeUnknown(result.effectSummary),
+          diagnostics: sanitizeUnknown({
+            summary: result.summary,
+            ...(successArtifacts
+              ? {
+                  domainEventId: (successArtifacts.domainEvent as { id?: string }).id ?? null,
+                  projectionDocumentId: (successArtifacts.projectionDocument as { id?: string } | null)?.id ?? null,
+                }
+              : {}),
+          }),
+          completedAt: new Date(),
+        })
+        .where(eq(actionExecutions.id, execution.id))
+        .returning()
+
+      const [updatedRequest] = await executor
+        .update(actionRequests)
+        .set({
+          bizId: effectiveBizId ?? requestedBizId,
+          status: requestStatus,
+          targetSubjectType:
+            params.intentMode === 'execute'
+              ? (result as ActionExecuteResult).subject.subjectType
+              : input.targetSubjectType ?? null,
+          targetSubjectId:
+            params.intentMode === 'execute'
+              ? (result as ActionExecuteResult).subject.subjectId
+              : input.targetSubjectId ?? null,
+          previewPayload:
+            params.intentMode === 'dry_run'
+              ? sanitizeUnknown(result.effectSummary)
+              : sql`${actionRequests.previewPayload}`,
+          outputPayload:
+            params.intentMode === 'execute'
+              ? sanitizeUnknown({
+                  ...(result as ActionExecuteResult).outputPayload,
+                  domainEventId: (successArtifacts?.domainEvent as { id?: string } | undefined)?.id ?? null,
+                  projectionDocumentId:
+                    (successArtifacts?.projectionDocument as { id?: string } | null | undefined)?.id ?? null,
+                })
+              : sanitizeUnknown(result.effectSummary),
+          statusReason: result.summary,
+          completedAt: new Date(),
+        })
+        .where(eq(actionRequests.id, actionRequest.id))
+        .returning()
+
+      if (requestedBizId && input.idempotencyKey) {
+        await executor
+          .update(actionIdempotencyKeys)
+          .set({
+            status: requestStatus,
+          })
+          .where(eq(actionIdempotencyKeys.actionRequestId, actionRequest.id))
+      }
+
+      return {
+        reused: false,
+        httpStatus: params.intentMode === 'dry_run' ? 200 : 201,
+        actionRequest: updatedRequest,
+        latestExecution: updatedExecution,
+        domainEvent: successArtifacts?.domainEvent,
+        projectionDocument: successArtifacts?.projectionDocument ?? undefined,
+      }
+    } catch (rawError) {
+      const error =
+        rawError && typeof rawError === 'object'
+          ? (rawError as {
+              family?: string
+              code?: string
+              message?: string
+              details?: unknown
+              retryable?: boolean
+            })
+          : {}
+
+      const { failure } = await recordFailure({
+        bizId: requestedBizId,
         actionRequestId: actionRequest.id,
         actionExecutionId: execution.id,
         input,
-        result: result as ActionExecuteResult,
+        error,
         context: params.context,
+        executor,
       })
-    }
 
-    const [updatedExecution] = await db
-      .update(actionExecutions)
-      .set({
-        status: executionStatus,
-        effectSummary: sanitizeUnknown(result.effectSummary),
-        diagnostics: sanitizeUnknown({
-          summary: result.summary,
-          ...(successArtifacts
-            ? {
-                domainEventId: (successArtifacts.domainEvent as { id?: string }).id ?? null,
-                projectionDocumentId: (successArtifacts.projectionDocument as { id?: string } | null)?.id ?? null,
-              }
-            : {}),
-        }),
-        completedAt: new Date(),
-      })
-      .where(eq(actionExecutions.id, execution.id))
-      .returning()
-
-    const [updatedRequest] = await db
-      .update(actionRequests)
-      .set({
-        status: requestStatus,
-        targetSubjectType:
-          params.intentMode === 'execute'
-            ? (result as ActionExecuteResult).subject.subjectType
-            : input.targetSubjectType ?? null,
-        targetSubjectId:
-          params.intentMode === 'execute'
-            ? (result as ActionExecuteResult).subject.subjectId
-            : input.targetSubjectId ?? null,
-        previewPayload:
-          params.intentMode === 'dry_run'
-            ? sanitizeUnknown(result.effectSummary)
-            : sql`${actionRequests.previewPayload}`,
-        outputPayload:
-          params.intentMode === 'execute'
-            ? sanitizeUnknown({
-                ...(result as ActionExecuteResult).outputPayload,
-                domainEventId: (successArtifacts?.domainEvent as { id?: string } | undefined)?.id ?? null,
-                projectionDocumentId:
-                  (successArtifacts?.projectionDocument as { id?: string } | null | undefined)?.id ?? null,
-              })
-            : sanitizeUnknown(result.effectSummary),
-        statusReason: result.summary,
-        completedAt: new Date(),
-      })
-      .where(eq(actionRequests.id, actionRequest.id))
-      .returning()
-
-    if (input.idempotencyKey) {
-      await db
-        .update(actionIdempotencyKeys)
+      const [updatedExecution] = await executor
+        .update(actionExecutions)
         .set({
-          status: requestStatus,
-        })
-        .where(eq(actionIdempotencyKeys.actionRequestId, actionRequest.id))
-    }
-
-    return {
-      reused: false,
-      httpStatus: params.intentMode === 'dry_run' ? 200 : 201,
-      actionRequest: updatedRequest,
-      latestExecution: updatedExecution,
-      domainEvent: successArtifacts?.domainEvent,
-      projectionDocument: successArtifacts?.projectionDocument ?? undefined,
-    }
-  } catch (rawError) {
-    const error =
-      rawError && typeof rawError === 'object'
-        ? (rawError as {
-            family?: string
-            code?: string
-            message?: string
-            details?: unknown
-            retryable?: boolean
-          })
-        : {}
-
-    const { failure } = await recordFailure({
-      bizId: params.bizId,
-      actionRequestId: actionRequest.id,
-      actionExecutionId: execution.id,
-      input,
-      error,
-      context: params.context,
-    })
-
-    const [updatedExecution] = await db
-      .update(actionExecutions)
-      .set({
-        status: 'failed',
-        failureCode: error.code ?? 'ACTION_EXECUTION_FAILED',
-        failureMessage: error.message ?? 'Action execution failed.',
-        isRetryable: error.retryable === true,
-        diagnostics: sanitizeUnknown(error.details ?? {}),
-        completedAt: new Date(),
-      })
-      .where(eq(actionExecutions.id, execution.id))
-      .returning()
-
-    const [updatedRequest] = await db
-      .update(actionRequests)
-      .set({
-        status: 'failed',
-        statusReason: error.message ?? 'Action execution failed.',
-        completedAt: new Date(),
-      })
-      .where(eq(actionRequests.id, actionRequest.id))
-      .returning()
-
-    if (input.idempotencyKey) {
-      await db
-        .update(actionIdempotencyKeys)
-        .set({
+          bizId: requestedBizId,
           status: 'failed',
+          failureCode: error.code ?? 'ACTION_EXECUTION_FAILED',
+          failureMessage: error.message ?? 'Action execution failed.',
+          isRetryable: error.retryable === true,
+          diagnostics: sanitizeUnknown(error.details ?? {}),
+          completedAt: new Date(),
         })
-        .where(eq(actionIdempotencyKeys.actionRequestId, actionRequest.id))
-    }
+        .where(eq(actionExecutions.id, execution.id))
+        .returning()
 
-    return {
-      reused: false,
-      httpStatus: error.family === 'validation' ? 400 : 409,
-      actionRequest: updatedRequest,
-      latestExecution: updatedExecution,
-      failure,
+      const [updatedRequest] = await executor
+        .update(actionRequests)
+        .set({
+          bizId: requestedBizId,
+          status: 'failed',
+          statusReason: error.message ?? 'Action execution failed.',
+          completedAt: new Date(),
+        })
+        .where(eq(actionRequests.id, actionRequest.id))
+        .returning()
+
+      if (requestedBizId && input.idempotencyKey) {
+        await executor
+          .update(actionIdempotencyKeys)
+          .set({
+            status: 'failed',
+          })
+          .where(eq(actionIdempotencyKeys.actionRequestId, actionRequest.id))
+      }
+
+      return {
+        reused: false,
+        httpStatus: error.family === 'validation' ? 400 : 409,
+        actionRequest: updatedRequest,
+        latestExecution: updatedExecution,
+        failure,
+      }
     }
-  }
+    })
+  )
 }

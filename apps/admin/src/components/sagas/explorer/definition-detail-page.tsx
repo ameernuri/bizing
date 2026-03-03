@@ -84,7 +84,7 @@ export function SagaDefinitionDetailPage({ sagaKey }: { sagaKey: string }) {
       } catch {
         // The detail page has an execute control and realtime refresh fallback.
       }
-      window.location.href = `/sagas/runs/${created.run.id}`
+      window.location.href = `/ooda/runs/${created.run.id}`
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Failed to start saga run.')
       setIsStartingRun(false)
@@ -158,7 +158,7 @@ export function SagaDefinitionDetailPage({ sagaKey }: { sagaKey: string }) {
     setError(null)
     try {
       await sagaApi.deleteDefinition(detail.definition.sagaKey)
-      window.location.href = '/sagas/definitions'
+      window.location.href = '/ooda/definitions'
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Failed to delete saga definition.')
       setIsDeleting(false)
@@ -177,7 +177,7 @@ export function SagaDefinitionDetailPage({ sagaKey }: { sagaKey: string }) {
         actions={
           <>
             <Button variant="outline" asChild>
-              <Link href="/sagas/definitions">
+              <Link href="/ooda/definitions">
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Back to definitions
               </Link>
@@ -341,7 +341,7 @@ export function SagaDefinitionDetailPage({ sagaKey }: { sagaKey: string }) {
                   {links.useCaseVersions.map((version) => (
                     <EntitySummaryCard
                       key={version.id}
-                      href={`/sagas/use-cases/${encodeURIComponent(version.ucKey ?? '')}`}
+                      href={`/ooda/use-cases/${encodeURIComponent(version.ucKey ?? '')}`}
                       title={`${version.ucKey ?? 'unknown'} · ${version.useCaseTitle ?? version.title}`}
                       description={version.summary}
                       footer={`v${version.versionNumber} linked`}
@@ -356,7 +356,7 @@ export function SagaDefinitionDetailPage({ sagaKey }: { sagaKey: string }) {
                   {links.personaVersions.map((version) => (
                     <EntitySummaryCard
                       key={version.id}
-                      href={`/sagas/personas/${encodeURIComponent(version.personaKey ?? '')}`}
+                      href={`/ooda/personas/${encodeURIComponent(version.personaKey ?? '')}`}
                       title={`${version.personaKey ?? 'unknown'} · ${version.personaName ?? version.name}`}
                       description={version.profile ?? version.goals}
                       footer={`v${version.versionNumber} linked`}
@@ -397,7 +397,7 @@ export function SagaDefinitionDetailPage({ sagaKey }: { sagaKey: string }) {
                   <p className="text-sm text-muted-foreground">No runs have been recorded yet.</p>
                 ) : (
                   runs.map((run) => (
-                    <Link key={run.id} href={`/sagas/runs/${run.id}`} className="flex items-center justify-between gap-3 rounded-lg border p-3 transition-colors hover:border-primary/40 hover:bg-muted/30">
+                    <Link key={run.id} href={`/ooda/runs/${run.id}`} className="flex items-center justify-between gap-3 rounded-lg border p-3 transition-colors hover:border-primary/40 hover:bg-muted/30">
                       <div className="min-w-0 space-y-1">
                         <p className="truncate font-medium">{run.id}</p>
                         <p className="text-sm text-muted-foreground">{run.passedSteps}/{run.totalSteps} passed • {new Date(run.updatedAt ?? run.createdAt ?? Date.now()).toLocaleString()}</p>

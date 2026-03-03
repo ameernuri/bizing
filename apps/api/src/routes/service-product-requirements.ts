@@ -18,6 +18,7 @@ import { and, asc, eq } from 'drizzle-orm'
 import { z } from 'zod'
 import dbPackage from '@bizing/db'
 import { requireAclPermission, requireAuth, requireBizAccess } from '../middleware/auth.js'
+import { executeCrudRouteAction } from '../services/action-route-bridge.js'
 import { sanitizePlainText, sanitizeUnknown } from '../lib/sanitize.js'
 import { fail, ok } from './_api.js'
 
@@ -27,6 +28,31 @@ const {
   serviceProductRequirementSelectors,
   serviceProducts,
 } = dbPackage
+
+async function createRequirementRow<
+  TTableKey extends 'serviceProductRequirementGroups' | 'serviceProductRequirementSelectors',
+>(
+  c: Parameters<typeof executeCrudRouteAction>[0]['c'],
+  bizId: string,
+  tableKey: TTableKey,
+  data: Parameters<typeof executeCrudRouteAction>[0]['data'],
+  meta: { subjectType: string; subjectId: string; displayName: string; source: string },
+) {
+  const result = await executeCrudRouteAction({
+    c,
+    bizId,
+    tableKey,
+    operation: 'create',
+    data,
+    subjectType: meta.subjectType,
+    subjectId: meta.subjectId,
+    displayName: meta.displayName,
+    metadata: { source: meta.source },
+  })
+  if (!result.ok) throw new Error(result.message ?? `Failed to create ${tableKey}`)
+  if (!result.row) throw new Error(`Missing row for ${tableKey} create`)
+  return result.row
+}
 
 const requirementGroupBodySchema = z.object({
   name: z.string().min(1).max(160),
@@ -92,21 +118,32 @@ serviceProductRequirementRoutes.post(
     })
     if (!serviceProduct) return fail(c, 'NOT_FOUND', 'Service product not found.', 404)
 
-    const [created] = await db.insert(serviceProductRequirementGroups).values({
+    const created = await createRequirementRow(
+      c,
       bizId,
-      serviceProductId,
-      name: sanitizePlainText(parsed.data.name),
-      slug: parsed.data.slug,
-      targetResourceType: parsed.data.targetResourceType,
-      requirementMode: parsed.data.requirementMode,
-      minQuantity: parsed.data.minQuantity,
-      maxQuantity: parsed.data.maxQuantity ?? null,
-      selectorMatchMode: parsed.data.selectorMatchMode,
-      allowSubstitution: parsed.data.allowSubstitution,
-      sortOrder: parsed.data.sortOrder,
-      description: parsed.data.description ? sanitizePlainText(parsed.data.description) : null,
-      metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
-    }).returning()
+      'serviceProductRequirementGroups',
+      {
+        bizId,
+        serviceProductId,
+        name: sanitizePlainText(parsed.data.name),
+        slug: parsed.data.slug,
+        targetResourceType: parsed.data.targetResourceType,
+        requirementMode: parsed.data.requirementMode,
+        minQuantity: parsed.data.minQuantity,
+        maxQuantity: parsed.data.maxQuantity ?? null,
+        selectorMatchMode: parsed.data.selectorMatchMode,
+        allowSubstitution: parsed.data.allowSubstitution,
+        sortOrder: parsed.data.sortOrder,
+        description: parsed.data.description ? sanitizePlainText(parsed.data.description) : null,
+        metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
+      },
+      {
+        subjectType: 'service_product_requirement_group',
+        subjectId: serviceProductId,
+        displayName: parsed.data.name,
+        source: 'routes.serviceProductRequirements.createGroup',
+      },
+    )
 
     return ok(c, created, 201)
   },
@@ -140,21 +177,32 @@ serviceProductRequirementRoutes.post(
     const parsed = selectorBodySchema.safeParse(await c.req.json().catch(() => null))
     if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
 
-    const [created] = await db.insert(serviceProductRequirementSelectors).values({
+    const created = await createRequirementRow(
+      c,
       bizId,
-      requirementGroupId: groupId,
-      selectorType: parsed.data.selectorType,
-      isIncluded: parsed.data.isIncluded,
-      resourceId: parsed.data.resourceId ?? null,
-      resourceType: parsed.data.resourceType ?? null,
-      capabilityTemplateId: parsed.data.capabilityTemplateId ?? null,
-      locationId: parsed.data.locationId ?? null,
-      subjectType: parsed.data.selectorType === 'custom_subject' ? parsed.data.subjectType ?? null : null,
-      subjectId: parsed.data.selectorType === 'custom_subject' ? parsed.data.subjectId ?? null : null,
-      sortOrder: parsed.data.sortOrder,
-      description: parsed.data.description ? sanitizePlainText(parsed.data.description) : null,
-      metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
-    }).returning()
+      'serviceProductRequirementSelectors',
+      {
+        bizId,
+        requirementGroupId: groupId,
+        selectorType: parsed.data.selectorType,
+        isIncluded: parsed.data.isIncluded,
+        resourceId: parsed.data.resourceId ?? null,
+        resourceType: parsed.data.resourceType ?? null,
+        capabilityTemplateId: parsed.data.capabilityTemplateId ?? null,
+        locationId: parsed.data.locationId ?? null,
+        subjectType: parsed.data.selectorType === 'custom_subject' ? parsed.data.subjectType ?? null : null,
+        subjectId: parsed.data.selectorType === 'custom_subject' ? parsed.data.subjectId ?? null : null,
+        sortOrder: parsed.data.sortOrder,
+        description: parsed.data.description ? sanitizePlainText(parsed.data.description) : null,
+        metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
+      },
+      {
+        subjectType: 'service_product_requirement_selector',
+        subjectId: groupId,
+        displayName: parsed.data.selectorType,
+        source: 'routes.serviceProductRequirements.createSelector',
+      },
+    )
 
     return ok(c, created, 201)
   },

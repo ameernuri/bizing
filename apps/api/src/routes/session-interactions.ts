@@ -20,6 +20,7 @@ import { and, asc, desc, eq } from 'drizzle-orm'
 import { z } from 'zod'
 import dbPackage from '@bizing/db'
 import { requireAclPermission, requireAuth, requireBizAccess } from '../middleware/auth.js'
+import { executeCrudRouteAction } from '../services/action-route-bridge.js'
 import { fail, ok } from './_api.js'
 
 const {
@@ -28,6 +29,31 @@ const {
   sessionInteractionAggregates,
   sessionInteractionArtifacts,
 } = dbPackage
+
+async function createSessionInteractionRow<
+  TTableKey extends 'sessionInteractionEvents' | 'sessionInteractionArtifacts' | 'sessionInteractionAggregates',
+>(
+  c: Parameters<typeof executeCrudRouteAction>[0]['c'],
+  bizId: string,
+  tableKey: TTableKey,
+  data: Parameters<typeof executeCrudRouteAction>[0]['data'],
+  meta: { subjectType: string; subjectId: string; displayName: string; source: string },
+) {
+  const result = await executeCrudRouteAction({
+    c,
+    bizId,
+    tableKey,
+    operation: 'create',
+    data,
+    subjectType: meta.subjectType,
+    subjectId: meta.subjectId,
+    displayName: meta.displayName,
+    metadata: { source: meta.source },
+  })
+  if (!result.ok) return fail(c, result.code, result.message, result.httpStatus, result.details)
+  if (!result.row) return fail(c, 'ACTION_EXECUTION_FAILED', `Missing row for ${tableKey} create.`, 500)
+  return result.row
+}
 
 const eventBodySchema = z.object({
   sourceType: z.enum(['program_session', 'fulfillment_unit', 'custom_subject']),
@@ -129,13 +155,25 @@ sessionInteractionRoutes.post('/bizes/:bizId/session-interactions', requireAuth,
   const bizId = c.req.param('bizId')
   const parsed = eventBodySchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
-  const [row] = await db.insert(sessionInteractionEvents).values({
+  const row = await createSessionInteractionRow(
+    c,
     bizId,
-    ...parsed.data,
-    occurredAt: parsed.data.occurredAt ? new Date(parsed.data.occurredAt) : new Date(),
-    payload: parsed.data.payload ?? {},
-    metadata: parsed.data.metadata ?? {},
-  }).returning()
+    'sessionInteractionEvents',
+    {
+      bizId,
+      ...parsed.data,
+      occurredAt: parsed.data.occurredAt ? new Date(parsed.data.occurredAt) : new Date(),
+      payload: parsed.data.payload ?? {},
+      metadata: parsed.data.metadata ?? {},
+    },
+    {
+      subjectType: 'session_interaction_event',
+      subjectId: parsed.data.programSessionId ?? parsed.data.fulfillmentUnitId ?? parsed.data.customSessionSubjectId ?? 'custom',
+      displayName: parsed.data.interactionType,
+      source: 'routes.sessionInteractions.createEvent',
+    },
+  )
+  if (row instanceof Response) return row
   return ok(c, row, 201)
 })
 
@@ -217,27 +255,39 @@ sessionInteractionRoutes.post('/bizes/:bizId/session-interaction-artifacts', req
   const bizId = c.req.param('bizId')
   const parsed = artifactBodySchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
-  const [row] = await db.insert(sessionInteractionArtifacts).values({
+  const row = await createSessionInteractionRow(
+    c,
     bizId,
-    sessionInteractionEventId: parsed.data.sessionInteractionEventId,
-    artifactType: parsed.data.artifactType,
-    status: parsed.data.status ?? 'active',
-    visibility: parsed.data.visibility ?? 'public',
-    label: parsed.data.label ?? null,
-    storageProvider: parsed.data.storageProvider ?? 's3',
-    storageKey: parsed.data.storageKey,
-    contentType: parsed.data.contentType ?? null,
-    byteSize: parsed.data.byteSize ?? null,
-    checksum: parsed.data.checksum ?? null,
-    uploadedByUserId: parsed.data.uploadedByUserId ?? null,
-    uploadedBySubjectType: parsed.data.uploadedBySubjectType ?? null,
-    uploadedBySubjectId: parsed.data.uploadedBySubjectId ?? null,
-    createdAtSource: parsed.data.createdAtSource ? new Date(parsed.data.createdAtSource) : null,
-    expiresAt: parsed.data.expiresAt ? new Date(parsed.data.expiresAt) : null,
-    redactedAt: parsed.data.redactedAt ? new Date(parsed.data.redactedAt) : null,
-    details: parsed.data.details ?? {},
-    metadata: parsed.data.metadata ?? {},
-  }).returning()
+    'sessionInteractionArtifacts',
+    {
+      bizId,
+      sessionInteractionEventId: parsed.data.sessionInteractionEventId,
+      artifactType: parsed.data.artifactType,
+      status: parsed.data.status ?? 'active',
+      visibility: parsed.data.visibility ?? 'public',
+      label: parsed.data.label ?? null,
+      storageProvider: parsed.data.storageProvider ?? 's3',
+      storageKey: parsed.data.storageKey,
+      contentType: parsed.data.contentType ?? null,
+      byteSize: parsed.data.byteSize ?? null,
+      checksum: parsed.data.checksum ?? null,
+      uploadedByUserId: parsed.data.uploadedByUserId ?? null,
+      uploadedBySubjectType: parsed.data.uploadedBySubjectType ?? null,
+      uploadedBySubjectId: parsed.data.uploadedBySubjectId ?? null,
+      createdAtSource: parsed.data.createdAtSource ? new Date(parsed.data.createdAtSource) : null,
+      expiresAt: parsed.data.expiresAt ? new Date(parsed.data.expiresAt) : null,
+      redactedAt: parsed.data.redactedAt ? new Date(parsed.data.redactedAt) : null,
+      details: parsed.data.details ?? {},
+      metadata: parsed.data.metadata ?? {},
+    },
+    {
+      subjectType: 'session_interaction_artifact',
+      subjectId: parsed.data.sessionInteractionEventId,
+      displayName: parsed.data.artifactType,
+      source: 'routes.sessionInteractions.createArtifact',
+    },
+  )
+  if (row instanceof Response) return row
   return ok(c, row, 201)
 })
 
@@ -245,21 +295,33 @@ sessionInteractionRoutes.post('/bizes/:bizId/session-interaction-aggregates', re
   const bizId = c.req.param('bizId')
   const parsed = aggregateBodySchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
-  const [row] = await db.insert(sessionInteractionAggregates).values({
+  const row = await createSessionInteractionRow(
+    c,
     bizId,
-    sourceType: parsed.data.sourceType,
-    programSessionId: parsed.data.programSessionId ?? null,
-    fulfillmentUnitId: parsed.data.fulfillmentUnitId ?? null,
-    customSessionSubjectType: parsed.data.customSessionSubjectType ?? null,
-    customSessionSubjectId: parsed.data.customSessionSubjectId ?? null,
-    granularity: parsed.data.granularity,
-    bucketStartsAt: new Date(parsed.data.bucketStartAt),
-    bucketEndsAt: new Date(parsed.data.bucketEndAt),
-    interactionType: parsed.data.interactionType ?? null,
-    eventCount: parsed.data.eventCount,
-    uniqueParticipantCount: parsed.data.uniqueParticipantCount,
-    lastEventAt: parsed.data.lastEventAt ? new Date(parsed.data.lastEventAt) : null,
-    metrics: parsed.data.metrics ?? {},
-  }).returning()
+    'sessionInteractionAggregates',
+    {
+      bizId,
+      sourceType: parsed.data.sourceType,
+      programSessionId: parsed.data.programSessionId ?? null,
+      fulfillmentUnitId: parsed.data.fulfillmentUnitId ?? null,
+      customSessionSubjectType: parsed.data.customSessionSubjectType ?? null,
+      customSessionSubjectId: parsed.data.customSessionSubjectId ?? null,
+      granularity: parsed.data.granularity,
+      bucketStartsAt: new Date(parsed.data.bucketStartAt),
+      bucketEndsAt: new Date(parsed.data.bucketEndAt),
+      interactionType: parsed.data.interactionType ?? null,
+      eventCount: parsed.data.eventCount,
+      uniqueParticipantCount: parsed.data.uniqueParticipantCount,
+      lastEventAt: parsed.data.lastEventAt ? new Date(parsed.data.lastEventAt) : null,
+      metrics: parsed.data.metrics ?? {},
+    },
+    {
+      subjectType: 'session_interaction_aggregate',
+      subjectId: parsed.data.programSessionId ?? parsed.data.fulfillmentUnitId ?? parsed.data.customSessionSubjectId ?? 'custom',
+      displayName: parsed.data.granularity,
+      source: 'routes.sessionInteractions.createAggregate',
+    },
+  )
+  if (row instanceof Response) return row
   return ok(c, row, 201)
 })

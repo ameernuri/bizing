@@ -32,6 +32,7 @@ import {
   requireAuth,
   requireBizAccess,
 } from '../middleware/auth.js'
+import { executeCrudRouteAction } from '../services/action-route-bridge.js'
 import { fail, ok, parsePositiveInt } from './_api.js'
 
 const {
@@ -59,6 +60,7 @@ function randomHandleSuffix() {
 type GraphIdentityRow = typeof graphIdentities.$inferSelect
 
 async function ensureUserGraphIdentity(input: {
+  c: Parameters<typeof executeCrudRouteAction>[0]['c']
   userId: string
   email?: string
 }): Promise<GraphIdentityRow> {
@@ -79,9 +81,12 @@ async function ensureUserGraphIdentity(input: {
   for (let attempt = 0; attempt < 4; attempt += 1) {
     const handle = attempt === 0 ? base : `${base}_${randomHandleSuffix()}`.slice(0, 140)
     try {
-      const [created] = await db
-        .insert(graphIdentities)
-        .values({
+      const created = await executeCrudRouteAction({
+        c: input.c,
+        bizId: null,
+        tableKey: 'graphIdentities',
+        operation: 'create',
+        data: {
           ownerType: 'user',
           ownerUserId: input.userId,
           handle,
@@ -89,9 +94,13 @@ async function ensureUserGraphIdentity(input: {
           status: 'active',
           isDiscoverable: true,
           metadata: { source: 'subject-events-api' },
-        })
-        .returning()
-      if (created) return created
+        },
+        subjectType: 'graph_identity',
+        subjectId: input.userId,
+        displayName: handle,
+        metadata: { source: 'routes.subjectEvents.ensureUserGraphIdentity' },
+      })
+      if (created.ok && created.row) return created.row as GraphIdentityRow
     } catch (error) {
       lastError = error
     }
@@ -236,25 +245,38 @@ subjectEventRoutes.post(
         ),
       })
       if (!existing) {
-        await db.insert(subjects).values({
+        const createdSubject = await executeCrudRouteAction({
+          c,
           bizId,
-          subjectType: parsed.data.subjectType,
-          subjectId: parsed.data.subjectId,
-          displayName:
-            parsed.data.targetDisplayName ??
-            `${parsed.data.subjectType}:${parsed.data.subjectId.slice(-8)}`,
-          category: parsed.data.targetCategory ?? 'custom',
-          status: 'active',
-          metadata: {
-            source: 'subject-events-api',
+          tableKey: 'subjects',
+          operation: 'create',
+          data: {
+            bizId,
+            subjectType: parsed.data.subjectType,
+            subjectId: parsed.data.subjectId,
+            displayName:
+              parsed.data.targetDisplayName ??
+              `${parsed.data.subjectType}:${parsed.data.subjectId.slice(-8)}`,
+            category: parsed.data.targetCategory ?? 'custom',
+            status: 'active',
+            metadata: {
+              source: 'subject-events-api',
+            },
           },
+          subjectType: 'subject',
+          subjectId: parsed.data.subjectId,
+          displayName: parsed.data.subjectType,
+          metadata: { source: 'routes.subjectEvents.createEvent.autoRegisterSubject' },
         })
+        if (!createdSubject.ok) {
+          return fail(c, createdSubject.code, createdSubject.message, createdSubject.httpStatus, createdSubject.details)
+        }
       }
     }
 
     const actorIdentityId =
       parsed.data.actorIdentityId ??
-      (await ensureUserGraphIdentity({ userId: user.id, email: user.email })).id
+      (await ensureUserGraphIdentity({ c, userId: user.id, email: user.email })).id
 
     if (parsed.data.requestKey) {
       const existingByRequestKey = await db.query.graphSubjectEvents.findFirst({
@@ -269,9 +291,12 @@ subjectEventRoutes.post(
       }
     }
 
-    const [created] = await db
-      .insert(graphSubjectEvents)
-      .values({
+    const created = await executeCrudRouteAction({
+      c,
+      bizId,
+      tableKey: 'graphSubjectEvents',
+      operation: 'create',
+      data: {
         bizId,
         subjectType: parsed.data.subjectType,
         subjectId: parsed.data.subjectId,
@@ -283,10 +308,17 @@ subjectEventRoutes.post(
         correlationKey: parsed.data.correlationKey ?? null,
         payload: parsed.data.payload ?? {},
         metadata: parsed.data.metadata ?? {},
-      })
-      .returning()
+      },
+      subjectType: 'subject_event',
+      subjectId: parsed.data.subjectId,
+      displayName: parsed.data.eventType,
+      metadata: { source: 'routes.subjectEvents.createEvent' },
+    })
+    if (!created.ok) {
+      return fail(c, created.code, created.message, created.httpStatus, created.details)
+    }
 
-    return ok(c, created, 201)
+    return ok(c, created.row, 201)
   },
 )
 
@@ -386,9 +418,12 @@ subjectEventRoutes.post(
       }
     }
 
-    const [created] = await db
-      .insert(graphSubjectEventDeliveries)
-      .values({
+    const created = await executeCrudRouteAction({
+      c,
+      bizId,
+      tableKey: 'graphSubjectEventDeliveries',
+      operation: 'create',
+      data: {
         bizId,
         subjectEventId: parsed.data.subjectEventId,
         subscriptionId: parsed.data.subscriptionId,
@@ -404,10 +439,17 @@ subjectEventRoutes.post(
         attemptCount: parsed.data.attemptCount,
         failureReason: parsed.data.failureReason ?? null,
         metadata: parsed.data.metadata ?? {},
-      })
-      .returning()
+      },
+      subjectType: 'subject_event_delivery',
+      subjectId: parsed.data.subjectEventId,
+      displayName: parsed.data.channel,
+      metadata: { source: 'routes.subjectEvents.createDelivery' },
+    })
+    if (!created.ok) {
+      return fail(c, created.code, created.message, created.httpStatus, created.details)
+    }
 
-    return ok(c, created, 201)
+    return ok(c, created.row, 201)
   },
 )
 
@@ -443,9 +485,13 @@ subjectEventRoutes.patch(
       }
     }
 
-    const [updated] = await db
-      .update(graphSubjectEventDeliveries)
-      .set({
+    const updated = await executeCrudRouteAction({
+      c,
+      bizId,
+      tableKey: 'graphSubjectEventDeliveries',
+      operation: 'update',
+      id: deliveryId,
+      patch: {
         endpointId: parsed.data.endpointId === undefined ? existing.endpointId : parsed.data.endpointId,
         state: parsed.data.state ?? existing.state,
         attemptedAt:
@@ -476,10 +522,16 @@ subjectEventRoutes.patch(
         failureReason:
           parsed.data.failureReason === undefined ? existing.failureReason : parsed.data.failureReason,
         metadata: parsed.data.metadata === undefined ? existing.metadata : parsed.data.metadata,
-      })
-      .where(and(eq(graphSubjectEventDeliveries.bizId, bizId), eq(graphSubjectEventDeliveries.id, deliveryId)))
-      .returning()
+      },
+      subjectType: 'subject_event_delivery',
+      subjectId: deliveryId,
+      displayName: 'update delivery',
+      metadata: { source: 'routes.subjectEvents.updateDelivery' },
+    })
+    if (!updated.ok) {
+      return fail(c, updated.code, updated.message, updated.httpStatus, updated.details)
+    }
 
-    return ok(c, updated)
+    return ok(c, updated.row)
   },
 )

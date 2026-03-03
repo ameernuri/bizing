@@ -211,11 +211,11 @@ export function SagaRunDetailPage({ runId }: { runId: string }) {
             ) : null}
             {detail?.definition?.sagaKey ? (
               <Button variant="outline" asChild>
-                <Link href={`/sagas/definitions/${encodeURIComponent(detail.definition.sagaKey)}`}>Open definition</Link>
+                <Link href={`/ooda/definitions/${encodeURIComponent(detail.definition.sagaKey)}`}>Open definition</Link>
               </Button>
             ) : null}
             <Button variant="outline" asChild>
-              <Link href="/sagas/runs">
+              <Link href="/ooda/runs">
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Back to runs
               </Link>
@@ -269,13 +269,13 @@ export function SagaRunDetailPage({ runId }: { runId: string }) {
                 </CardHeader>
                 <CardContent className="space-y-4 text-sm">
                   {links?.useCaseVersions.map((version) => (
-                    <Link key={version.id} href={`/sagas/use-cases/${encodeURIComponent(version.ucKey ?? '')}`} className="block rounded-lg border p-3 transition-colors hover:border-primary/40 hover:bg-muted/30">
+                    <Link key={version.id} href={`/ooda/use-cases/${encodeURIComponent(version.ucKey ?? '')}`} className="block rounded-lg border p-3 transition-colors hover:border-primary/40 hover:bg-muted/30">
                       <p className="font-medium">Use case</p>
                       <p className="text-muted-foreground">{version.ucKey ?? 'unknown'} · {version.useCaseTitle ?? version.title}</p>
                     </Link>
                   ))}
                   {links?.personaVersions.map((version) => (
-                    <Link key={version.id} href={`/sagas/personas/${encodeURIComponent(version.personaKey ?? '')}`} className="block rounded-lg border p-3 transition-colors hover:border-primary/40 hover:bg-muted/30">
+                    <Link key={version.id} href={`/ooda/personas/${encodeURIComponent(version.personaKey ?? '')}`} className="block rounded-lg border p-3 transition-colors hover:border-primary/40 hover:bg-muted/30">
                       <p className="font-medium">Persona</p>
                       <p className="text-muted-foreground">{version.personaKey ?? 'unknown'} · {version.personaName ?? version.name}</p>
                     </Link>

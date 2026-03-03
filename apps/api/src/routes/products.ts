@@ -18,6 +18,7 @@ import { and, asc, eq } from 'drizzle-orm'
 import { z } from 'zod'
 import dbPackage from '@bizing/db'
 import { requireAclPermission, requireAuth, requireBizAccess } from '../middleware/auth.js'
+import { executeCrudRouteAction } from '../services/action-route-bridge.js'
 import { fail, ok } from './_api.js'
 
 const {
@@ -37,6 +38,7 @@ function asSellableStatus(status: string | null | undefined): 'draft' | 'active'
 }
 
 async function ensureCanonicalSellableForProduct(input: {
+  c: Parameters<typeof fail>[0]
   bizId: string
   productId: string
   name: string
@@ -49,29 +51,62 @@ async function ensureCanonicalSellableForProduct(input: {
   })
 
   if (bridge) {
-    await db.update(sellables).set({
+    const delegatedUpdate = await executeCrudRouteAction({
+      c: input.c,
+      bizId: input.bizId,
+      tableKey: 'sellables',
+      operation: 'update',
+      id: bridge.sellableId,
+      subjectType: 'sellable',
+      subjectId: bridge.sellableId,
+      patch: {
       displayName: input.name,
       slug: input.slug,
       currency: input.currency,
       status: asSellableStatus(input.status),
-    }).where(and(eq(sellables.bizId, input.bizId), eq(sellables.id, bridge.sellableId)))
+      },
+      metadata: { routeFamily: 'products' },
+    })
+    if (!delegatedUpdate.ok) return null
     return bridge.sellableId
   }
 
-  const [sellable] = await db.insert(sellables).values({
+  const delegatedCreateSellable = await executeCrudRouteAction({
+    c: input.c,
+    bizId: input.bizId,
+    tableKey: 'sellables',
+    operation: 'create',
+    subjectType: 'sellable',
+    displayName: input.name,
+    data: {
     bizId: input.bizId,
     kind: 'product',
     displayName: input.name,
     slug: input.slug,
     currency: input.currency,
     status: asSellableStatus(input.status),
-  }).returning()
+    },
+    metadata: { routeFamily: 'products' },
+  })
+  if (!delegatedCreateSellable.ok || !delegatedCreateSellable.row) return null
+  const sellable = delegatedCreateSellable.row as typeof sellables.$inferSelect
 
-  await db.insert(sellableProducts).values({
+  const delegatedCreateBridge = await executeCrudRouteAction({
+    c: input.c,
+    bizId: input.bizId,
+    tableKey: 'sellableProducts',
+    operation: 'create',
+    subjectType: 'sellable_product',
+    subjectId: input.productId,
+    displayName: input.name,
+    data: {
     bizId: input.bizId,
     sellableId: sellable.id,
     productId: input.productId,
+    },
+    metadata: { routeFamily: 'products' },
   })
+  if (!delegatedCreateBridge.ok) return null
 
   return sellable.id
 }
@@ -123,6 +158,56 @@ const productBundleComponentBodySchema = z.object({
 
 export const productRoutes = new Hono()
 
+async function createProductRow<T extends Record<string, unknown>>(input: {
+  c: Parameters<typeof fail>[0]
+  bizId: string
+  tableKey: string
+  subjectType: string
+  data: Record<string, unknown>
+  displayName?: string
+}) {
+  const delegated = await executeCrudRouteAction({
+    c: input.c,
+    bizId: input.bizId,
+    tableKey: input.tableKey,
+    operation: 'create',
+    subjectType: input.subjectType,
+    displayName: input.displayName,
+    data: input.data,
+    metadata: { routeFamily: 'products' },
+  })
+  if (!delegated.ok) return fail(input.c, delegated.code, delegated.message, delegated.httpStatus, delegated.details)
+  return delegated.row as T
+}
+
+async function updateProductRow<T extends Record<string, unknown>>(input: {
+  c: Parameters<typeof fail>[0]
+  bizId: string
+  tableKey: string
+  subjectType: string
+  id: string
+  patch: Record<string, unknown>
+  notFoundMessage: string
+}) {
+  const delegated = await executeCrudRouteAction({
+    c: input.c,
+    bizId: input.bizId,
+    tableKey: input.tableKey,
+    operation: 'update',
+    id: input.id,
+    subjectType: input.subjectType,
+    subjectId: input.id,
+    patch: input.patch,
+    metadata: { routeFamily: 'products' },
+  })
+  if (!delegated.ok) {
+    if (delegated.code === 'CRUD_TARGET_NOT_FOUND') return fail(input.c, 'NOT_FOUND', input.notFoundMessage, 404)
+    return fail(input.c, delegated.code, delegated.message, delegated.httpStatus, delegated.details)
+  }
+  if (!delegated.row) return fail(input.c, 'NOT_FOUND', input.notFoundMessage, 404)
+  return delegated.row as T
+}
+
 productRoutes.get('/bizes/:bizId/products', requireAuth, requireBizAccess('bizId'), requireAclPermission('bizes.read', { bizIdParam: 'bizId' }), async (c) => {
   const bizId = c.req.param('bizId')
   const rows = await db.query.products.findMany({
@@ -136,8 +221,17 @@ productRoutes.post('/bizes/:bizId/products', requireAuth, requireBizAccess('bizI
   const bizId = c.req.param('bizId')
   const parsed = productBodySchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
-  const [row] = await db.insert(products).values({ bizId, ...parsed.data, metadata: parsed.data.metadata ?? {} }).returning()
+  const row = await createProductRow<typeof products.$inferSelect>({
+    c,
+    bizId,
+    tableKey: 'products',
+    subjectType: 'product',
+    displayName: parsed.data.name,
+    data: { bizId, ...parsed.data, metadata: parsed.data.metadata ?? {} },
+  })
+  if (row instanceof Response) return row
   await ensureCanonicalSellableForProduct({
+    c,
     bizId,
     productId: row.id,
     name: row.name,
@@ -152,9 +246,18 @@ productRoutes.patch('/bizes/:bizId/products/:productId', requireAuth, requireBiz
   const { bizId, productId } = c.req.param()
   const parsed = productBodySchema.partial().safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
-  const [row] = await db.update(products).set(parsed.data).where(and(eq(products.bizId, bizId), eq(products.id, productId))).returning()
-  if (!row) return fail(c, 'NOT_FOUND', 'Product not found.', 404)
+  const row = await updateProductRow<typeof products.$inferSelect>({
+    c,
+    bizId,
+    tableKey: 'products',
+    subjectType: 'product',
+    id: productId,
+    patch: parsed.data,
+    notFoundMessage: 'Product not found.',
+  })
+  if (row instanceof Response) return row
   await ensureCanonicalSellableForProduct({
+    c,
     bizId,
     productId: row.id,
     name: row.name,
@@ -178,12 +281,20 @@ productRoutes.post('/bizes/:bizId/product-bundles', requireAuth, requireBizAcces
   const bizId = c.req.param('bizId')
   const parsed = productBundleBodySchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
-  const [row] = await db.insert(productBundles).values({
+  const row = await createProductRow<typeof productBundles.$inferSelect>({
+    c,
+    bizId,
+    tableKey: 'productBundles',
+    subjectType: 'product_bundle',
+    displayName: parsed.data.bundleProductId,
+    data: {
     bizId,
     ...parsed.data,
     policy: parsed.data.policy ?? {},
     metadata: parsed.data.metadata ?? {},
-  }).returning()
+    },
+  })
+  if (row instanceof Response) return row
   return ok(c, row, 201)
 })
 
@@ -203,10 +314,18 @@ productRoutes.post('/bizes/:bizId/product-bundles/:bundleId/components', require
   if (parsed.data.productBundleId !== bundleId) {
     return fail(c, 'VALIDATION_ERROR', 'Bundle id mismatch.', 400)
   }
-  const [row] = await db.insert(productBundleComponents).values({
+  const row = await createProductRow<typeof productBundleComponents.$inferSelect>({
+    c,
+    bizId,
+    tableKey: 'productBundleComponents',
+    subjectType: 'product_bundle_component',
+    displayName: parsed.data.targetType,
+    data: {
     bizId,
     ...parsed.data,
     metadata: parsed.data.metadata ?? {},
-  }).returning()
+    },
+  })
+  if (row instanceof Response) return row
   return ok(c, row, 201)
 })

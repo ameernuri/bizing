@@ -19,6 +19,7 @@ Use this as the first stop before changing API, schema, saga infrastructure, aut
 - [[SKILLS]]: where skills live and how to apply them in engineering workflows.
 - [[DOC_SYNC]]: Required workflow for keeping code docs + mind memory in sync after each code change.
 - [[CHANGE_NOTES]]: Concise engineering notes log tied to meaningful changes.
+- `docs/domains/*.md`: generated per-domain route/schema maps from source code.
 
 ## Source Files (Code)
 
@@ -49,5 +50,7 @@ Minimum required updates per meaningful change:
 1. Update one canonical code doc in this folder.
 2. Add one concise item to [[CHANGE_NOTES]].
 3. Update mind context (`RAM` and/or today's memory file) with what changed and why.
+4. Re-generate domain docs if route/schema behavior changed:
+   - `bun run docs:generate:domains`
 
 If docs are not updated, the change is incomplete.

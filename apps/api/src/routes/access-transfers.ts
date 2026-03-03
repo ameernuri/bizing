@@ -17,6 +17,7 @@ import { and, asc, desc, eq } from 'drizzle-orm'
 import { z } from 'zod'
 import dbPackage from '@bizing/db'
 import { getCurrentUser, requireAclPermission, requireAuth, requireBizAccess } from '../middleware/auth.js'
+import { executeCrudRouteAction } from '../services/action-route-bridge.js'
 import { fail, ok } from './_api.js'
 
 const {
@@ -108,12 +109,23 @@ accessTransferRoutes.post('/bizes/:bizId/access-transfer-policies', requireAuth,
   const bizId = c.req.param('bizId')
   const parsed = transferPolicyBodySchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
-  const [row] = await db.insert(accessTransferPolicies).values({
+  const delegated = await executeCrudRouteAction({
+    c,
     bizId,
-    ...parsed.data,
-    policySnapshot: parsed.data.policySnapshot ?? {},
-    metadata: parsed.data.metadata ?? {},
-  }).returning()
+    tableKey: 'accessTransferPolicies',
+    operation: 'create',
+    subjectType: 'access_transfer_policy',
+    displayName: parsed.data.name,
+    data: {
+      bizId,
+      ...parsed.data,
+      policySnapshot: parsed.data.policySnapshot ?? {},
+      metadata: parsed.data.metadata ?? {},
+    },
+    metadata: { routeFamily: 'access-transfers' },
+  })
+  if (!delegated.ok) return fail(c, delegated.code, delegated.message, delegated.httpStatus, delegated.details)
+  const row = delegated.row
   return ok(c, row, 201)
 })
 
@@ -142,50 +154,72 @@ accessTransferRoutes.post('/bizes/:bizId/access-transfers', requireAuth, require
   if (policy && !policy.allowTransfers) {
     return fail(c, 'TRANSFER_DISABLED', 'This policy does not allow transfers.', 409)
   }
-  const [row] = await db.insert(accessTransfers).values({
+  const transferCreate = await executeCrudRouteAction({
+    c,
     bizId,
-    sourceAccessArtifactId: parsed.data.sourceAccessArtifactId,
-    targetAccessArtifactId: parsed.data.targetAccessArtifactId ?? null,
-    accessTransferPolicyId: parsed.data.accessTransferPolicyId ?? null,
-    mode: parsed.data.mode,
-    status: parsed.data.status,
-    quantityRequested: parsed.data.quantityRequested,
-    quantityTransferred: parsed.data.quantityTransferred ?? null,
-    requestedByUserId: user.id,
-    requestedAt: new Date(),
-    expiresAt: parsed.data.expiresAt ? new Date(parsed.data.expiresAt) : null,
-    decidedAt: parsed.data.decidedAt ? new Date(parsed.data.decidedAt) : null,
-    completedAt: parsed.data.completedAt ? new Date(parsed.data.completedAt) : null,
-    reversedAt: parsed.data.reversedAt ? new Date(parsed.data.reversedAt) : null,
-    targetHolderUserId: parsed.data.targetHolderUserId ?? null,
-    targetHolderGroupAccountId: parsed.data.targetHolderGroupAccountId ?? null,
-    targetHolderSubjectType: parsed.data.targetHolderSubjectType ?? null,
-    targetHolderSubjectId: parsed.data.targetHolderSubjectId ?? null,
-    reasonCode: parsed.data.reasonCode ?? null,
-    reasonText: parsed.data.reasonText ?? null,
-    fromHolderSnapshot: parsed.data.fromHolderSnapshot ?? {},
-    toHolderSnapshot: parsed.data.toHolderSnapshot ?? {},
-    metadata: parsed.data.metadata ?? {},
-  }).returning()
-  await db.insert(accessArtifactEvents).values({
-    bizId,
-    accessArtifactId: row.sourceAccessArtifactId,
-    eventType: 'metadata_updated',
-    actorUserId: user.id,
-    outcome: 'allowed',
-    reasonCode: 'transfer_requested',
-    reasonText: parsed.data.reasonText ?? 'Transfer requested.',
-    payload: {
-      accessTransferId: row.id,
-      targetHolderUserId: row.targetHolderUserId,
-      targetHolderSubjectType: row.targetHolderSubjectType,
-      targetHolderSubjectId: row.targetHolderSubjectId,
+    tableKey: 'accessTransfers',
+    operation: 'create',
+    subjectType: 'access_transfer',
+    data: {
+      bizId,
+      sourceAccessArtifactId: parsed.data.sourceAccessArtifactId,
+      targetAccessArtifactId: parsed.data.targetAccessArtifactId ?? null,
+      accessTransferPolicyId: parsed.data.accessTransferPolicyId ?? null,
+      mode: parsed.data.mode,
+      status: parsed.data.status,
+      quantityRequested: parsed.data.quantityRequested,
+      quantityTransferred: parsed.data.quantityTransferred ?? null,
+      requestedByUserId: user.id,
+      requestedAt: new Date(),
+      expiresAt: parsed.data.expiresAt ? new Date(parsed.data.expiresAt) : null,
+      decidedAt: parsed.data.decidedAt ? new Date(parsed.data.decidedAt) : null,
+      completedAt: parsed.data.completedAt ? new Date(parsed.data.completedAt) : null,
+      reversedAt: parsed.data.reversedAt ? new Date(parsed.data.reversedAt) : null,
+      targetHolderUserId: parsed.data.targetHolderUserId ?? null,
+      targetHolderGroupAccountId: parsed.data.targetHolderGroupAccountId ?? null,
+      targetHolderSubjectType: parsed.data.targetHolderSubjectType ?? null,
+      targetHolderSubjectId: parsed.data.targetHolderSubjectId ?? null,
+      reasonCode: parsed.data.reasonCode ?? null,
+      reasonText: parsed.data.reasonText ?? null,
+      fromHolderSnapshot: parsed.data.fromHolderSnapshot ?? {},
+      toHolderSnapshot: parsed.data.toHolderSnapshot ?? {},
+      metadata: parsed.data.metadata ?? {},
     },
-    metadata: {
-      sourceRoute: 'access-transfers.create',
-      transferStatus: row.status,
-    },
+    metadata: { routeFamily: 'access-transfers' },
   })
+  if (!transferCreate.ok) return fail(c, transferCreate.code, transferCreate.message, transferCreate.httpStatus, transferCreate.details)
+  const row = transferCreate.row as typeof accessTransfers.$inferSelect
+
+  const transferRequestedEvent = await executeCrudRouteAction({
+    c,
+    bizId,
+    tableKey: 'accessArtifactEvents',
+    operation: 'create',
+    subjectType: 'access_artifact_event',
+    data: {
+      bizId,
+      accessArtifactId: row.sourceAccessArtifactId,
+      eventType: 'metadata_updated',
+      actorUserId: user.id,
+      outcome: 'allowed',
+      reasonCode: 'transfer_requested',
+      reasonText: parsed.data.reasonText ?? 'Transfer requested.',
+      payload: {
+        accessTransferId: row.id,
+        targetHolderUserId: row.targetHolderUserId,
+        targetHolderSubjectType: row.targetHolderSubjectType,
+        targetHolderSubjectId: row.targetHolderSubjectId,
+      },
+      metadata: {
+        sourceRoute: 'access-transfers.create',
+        transferStatus: row.status,
+      },
+    },
+    metadata: { routeFamily: 'access-transfers' },
+  })
+  if (!transferRequestedEvent.ok) {
+    return fail(c, transferRequestedEvent.code, transferRequestedEvent.message, transferRequestedEvent.httpStatus, transferRequestedEvent.details)
+  }
   return ok(c, row, 201)
 })
 
@@ -222,84 +256,127 @@ accessTransferRoutes.patch('/bizes/:bizId/access-transfers/:transferId', require
     }
   }
 
-  const [row] = await db.update(accessTransfers).set({
-    sourceAccessArtifactId: parsed.data.sourceAccessArtifactId ?? undefined,
-    targetAccessArtifactId: parsed.data.targetAccessArtifactId ?? undefined,
-    accessTransferPolicyId: parsed.data.accessTransferPolicyId ?? undefined,
-    mode: parsed.data.mode ?? undefined,
-    status: parsed.data.status ?? undefined,
-    quantityRequested: parsed.data.quantityRequested ?? undefined,
-    quantityTransferred: parsed.data.quantityTransferred ?? undefined,
-    targetHolderUserId: parsed.data.targetHolderUserId ?? undefined,
-    targetHolderGroupAccountId: parsed.data.targetHolderGroupAccountId ?? undefined,
-    targetHolderSubjectType: parsed.data.targetHolderSubjectType ?? undefined,
-    targetHolderSubjectId: parsed.data.targetHolderSubjectId ?? undefined,
-    reasonCode: parsed.data.reasonCode ?? undefined,
-    reasonText: parsed.data.reasonText ?? undefined,
-    fromHolderSnapshot: parsed.data.fromHolderSnapshot ?? undefined,
-    toHolderSnapshot: parsed.data.toHolderSnapshot ?? undefined,
-    metadata: parsed.data.metadata ?? undefined,
-    approvedByUserId:
-      parsed.data.status && ['approved', 'rejected', 'cancelled', 'expired', 'completed', 'reversed'].includes(parsed.data.status)
-        ? user.id
-        : undefined,
-    decidedAt: parsed.data.decidedAt ? new Date(parsed.data.decidedAt) : undefined,
-    completedAt: parsed.data.completedAt ? new Date(parsed.data.completedAt) : undefined,
-    reversedAt: parsed.data.reversedAt ? new Date(parsed.data.reversedAt) : undefined,
-  }).where(and(eq(accessTransfers.bizId, bizId), eq(accessTransfers.id, transferId))).returning()
-  if (!row) return fail(c, 'NOT_FOUND', 'Access transfer not found.', 404)
+  const transferUpdate = await executeCrudRouteAction({
+    c,
+    bizId,
+    tableKey: 'accessTransfers',
+    operation: 'update',
+    id: transferId,
+    subjectType: 'access_transfer',
+    subjectId: transferId,
+    patch: {
+      sourceAccessArtifactId: parsed.data.sourceAccessArtifactId ?? undefined,
+      targetAccessArtifactId: parsed.data.targetAccessArtifactId ?? undefined,
+      accessTransferPolicyId: parsed.data.accessTransferPolicyId ?? undefined,
+      mode: parsed.data.mode ?? undefined,
+      status: parsed.data.status ?? undefined,
+      quantityRequested: parsed.data.quantityRequested ?? undefined,
+      quantityTransferred: parsed.data.quantityTransferred ?? undefined,
+      targetHolderUserId: parsed.data.targetHolderUserId ?? undefined,
+      targetHolderGroupAccountId: parsed.data.targetHolderGroupAccountId ?? undefined,
+      targetHolderSubjectType: parsed.data.targetHolderSubjectType ?? undefined,
+      targetHolderSubjectId: parsed.data.targetHolderSubjectId ?? undefined,
+      reasonCode: parsed.data.reasonCode ?? undefined,
+      reasonText: parsed.data.reasonText ?? undefined,
+      fromHolderSnapshot: parsed.data.fromHolderSnapshot ?? undefined,
+      toHolderSnapshot: parsed.data.toHolderSnapshot ?? undefined,
+      metadata: parsed.data.metadata ?? undefined,
+      approvedByUserId:
+        parsed.data.status && ['approved', 'rejected', 'cancelled', 'expired', 'completed', 'reversed'].includes(parsed.data.status)
+          ? user.id
+          : undefined,
+      decidedAt: parsed.data.decidedAt ? new Date(parsed.data.decidedAt) : undefined,
+      completedAt: parsed.data.completedAt ? new Date(parsed.data.completedAt) : undefined,
+      reversedAt: parsed.data.reversedAt ? new Date(parsed.data.reversedAt) : undefined,
+    },
+    metadata: { routeFamily: 'access-transfers' },
+  })
+  if (!transferUpdate.ok) {
+    if (transferUpdate.code === 'CRUD_TARGET_NOT_FOUND') return fail(c, 'NOT_FOUND', 'Access transfer not found.', 404)
+    return fail(c, transferUpdate.code, transferUpdate.message, transferUpdate.httpStatus, transferUpdate.details)
+  }
+  const row = transferUpdate.row as typeof accessTransfers.$inferSelect
 
   if (parsed.data.status === 'completed') {
-    await db.update(accessArtifacts).set({
-      holderUserId: row.targetHolderUserId ?? undefined,
-      holderGroupAccountId: row.targetHolderGroupAccountId ?? undefined,
-      holderSubjectType: row.targetHolderSubjectType ?? undefined,
-      holderSubjectId: row.targetHolderSubjectId ?? undefined,
-      status: 'transferred',
-      metadata: {
-        accessTransferId: row.id,
-        lastTransferCompletedAt: row.completedAt?.toISOString?.() ?? new Date().toISOString(),
-      },
-    }).where(and(eq(accessArtifacts.bizId, bizId), eq(accessArtifacts.id, row.sourceAccessArtifactId)))
-
-    await db.insert(accessArtifactEvents).values({
+    const artifactUpdate = await executeCrudRouteAction({
+      c,
       bizId,
-      accessArtifactId: row.sourceAccessArtifactId,
-      eventType: 'transferred_out',
-      actorUserId: user.id,
-      outcome: 'allowed',
-      reasonCode: row.reasonCode ?? 'transfer_completed',
-      reasonText: row.reasonText ?? 'Transfer completed.',
-      payload: {
-        accessTransferId: row.id,
-        targetHolderUserId: row.targetHolderUserId,
-        targetHolderSubjectType: row.targetHolderSubjectType,
-        targetHolderSubjectId: row.targetHolderSubjectId,
+      tableKey: 'accessArtifacts',
+      operation: 'update',
+      id: row.sourceAccessArtifactId,
+      subjectType: 'access_artifact',
+      subjectId: row.sourceAccessArtifactId,
+      patch: {
+        holderUserId: row.targetHolderUserId ?? undefined,
+        holderGroupAccountId: row.targetHolderGroupAccountId ?? undefined,
+        holderSubjectType: row.targetHolderSubjectType ?? undefined,
+        holderSubjectId: row.targetHolderSubjectId ?? undefined,
+        status: 'transferred',
+        metadata: {
+          accessTransferId: row.id,
+          lastTransferCompletedAt: row.completedAt?.toISOString?.() ?? new Date().toISOString(),
+        },
       },
-      metadata: {
-        sourceRoute: 'access-transfers.patch',
-        transferStatus: row.status,
-      },
+      metadata: { routeFamily: 'access-transfers' },
     })
+    if (!artifactUpdate.ok) return fail(c, artifactUpdate.code, artifactUpdate.message, artifactUpdate.httpStatus, artifactUpdate.details)
+
+    const transferredOutEvent = await executeCrudRouteAction({
+      c,
+      bizId,
+      tableKey: 'accessArtifactEvents',
+      operation: 'create',
+      subjectType: 'access_artifact_event',
+      data: {
+        bizId,
+        accessArtifactId: row.sourceAccessArtifactId,
+        eventType: 'transferred_out',
+        actorUserId: user.id,
+        outcome: 'allowed',
+        reasonCode: row.reasonCode ?? 'transfer_completed',
+        reasonText: row.reasonText ?? 'Transfer completed.',
+        payload: {
+          accessTransferId: row.id,
+          targetHolderUserId: row.targetHolderUserId,
+          targetHolderSubjectType: row.targetHolderSubjectType,
+          targetHolderSubjectId: row.targetHolderSubjectId,
+        },
+        metadata: {
+          sourceRoute: 'access-transfers.patch',
+          transferStatus: row.status,
+        },
+      },
+      metadata: { routeFamily: 'access-transfers' },
+    })
+    if (!transferredOutEvent.ok) return fail(c, transferredOutEvent.code, transferredOutEvent.message, transferredOutEvent.httpStatus, transferredOutEvent.details)
   }
 
   if (parsed.data.status === 'reversed') {
-    await db.insert(accessArtifactEvents).values({
+    const transferredInEvent = await executeCrudRouteAction({
+      c,
       bizId,
-      accessArtifactId: row.sourceAccessArtifactId,
-      eventType: 'transferred_in',
-      actorUserId: user.id,
-      outcome: 'allowed',
-      reasonCode: row.reasonCode ?? 'transfer_reversed',
-      reasonText: row.reasonText ?? 'Transfer reversed.',
-      payload: {
-        accessTransferId: row.id,
+      tableKey: 'accessArtifactEvents',
+      operation: 'create',
+      subjectType: 'access_artifact_event',
+      data: {
+        bizId,
+        accessArtifactId: row.sourceAccessArtifactId,
+        eventType: 'transferred_in',
+        actorUserId: user.id,
+        outcome: 'allowed',
+        reasonCode: row.reasonCode ?? 'transfer_reversed',
+        reasonText: row.reasonText ?? 'Transfer reversed.',
+        payload: {
+          accessTransferId: row.id,
+        },
+        metadata: {
+          sourceRoute: 'access-transfers.patch',
+          transferStatus: row.status,
+        },
       },
-      metadata: {
-        sourceRoute: 'access-transfers.patch',
-        transferStatus: row.status,
-      },
+      metadata: { routeFamily: 'access-transfers' },
     })
+    if (!transferredInEvent.ok) return fail(c, transferredInEvent.code, transferredInEvent.message, transferredInEvent.httpStatus, transferredInEvent.details)
   }
   return ok(c, row)
 })
@@ -328,29 +405,39 @@ accessTransferRoutes.post('/bizes/:bizId/access-resale-listings', requireAuth, r
   if (policy && !policy.allowResale) {
     return fail(c, 'RESALE_DISABLED', 'This policy does not allow resale listings.', 409)
   }
-  const [row] = await db.insert(accessResaleListings).values({
+  const resaleCreate = await executeCrudRouteAction({
+    c,
     bizId,
-    accessArtifactId: parsed.data.accessArtifactId,
-    accessTransferPolicyId: parsed.data.accessTransferPolicyId ?? null,
-    status: parsed.data.status,
-    sellerUserId: parsed.data.sellerUserId ?? user.id,
-    sellerGroupAccountId: parsed.data.sellerGroupAccountId ?? null,
-    sellerSubjectType: parsed.data.sellerSubjectType ?? null,
-    sellerSubjectId: parsed.data.sellerSubjectId ?? null,
-    listedPriceMinor: parsed.data.listedPriceMinor,
-    minAcceptablePriceMinor: parsed.data.minAcceptablePriceMinor ?? null,
-    listedAt: parsed.data.listedAt ? new Date(parsed.data.listedAt) : new Date(),
-    expiresAt: parsed.data.expiresAt ? new Date(parsed.data.expiresAt) : null,
-    reservedAt: parsed.data.reservedAt ? new Date(parsed.data.reservedAt) : null,
-    soldAt: parsed.data.soldAt ? new Date(parsed.data.soldAt) : null,
-    cancelledAt: parsed.data.cancelledAt ? new Date(parsed.data.cancelledAt) : null,
-    buyerUserId: parsed.data.buyerUserId ?? null,
-    buyerGroupAccountId: parsed.data.buyerGroupAccountId ?? null,
-    buyerSubjectType: parsed.data.buyerSubjectType ?? null,
-    buyerSubjectId: parsed.data.buyerSubjectId ?? null,
-    completedTransferId: parsed.data.completedTransferId ?? null,
-    metadata: parsed.data.metadata ?? {},
-  }).returning()
+    tableKey: 'accessResaleListings',
+    operation: 'create',
+    subjectType: 'access_resale_listing',
+    data: {
+      bizId,
+      accessArtifactId: parsed.data.accessArtifactId,
+      accessTransferPolicyId: parsed.data.accessTransferPolicyId ?? null,
+      status: parsed.data.status,
+      sellerUserId: parsed.data.sellerUserId ?? user.id,
+      sellerGroupAccountId: parsed.data.sellerGroupAccountId ?? null,
+      sellerSubjectType: parsed.data.sellerSubjectType ?? null,
+      sellerSubjectId: parsed.data.sellerSubjectId ?? null,
+      listedPriceMinor: parsed.data.listedPriceMinor,
+      minAcceptablePriceMinor: parsed.data.minAcceptablePriceMinor ?? null,
+      listedAt: parsed.data.listedAt ? new Date(parsed.data.listedAt) : new Date(),
+      expiresAt: parsed.data.expiresAt ? new Date(parsed.data.expiresAt) : null,
+      reservedAt: parsed.data.reservedAt ? new Date(parsed.data.reservedAt) : null,
+      soldAt: parsed.data.soldAt ? new Date(parsed.data.soldAt) : null,
+      cancelledAt: parsed.data.cancelledAt ? new Date(parsed.data.cancelledAt) : null,
+      buyerUserId: parsed.data.buyerUserId ?? null,
+      buyerGroupAccountId: parsed.data.buyerGroupAccountId ?? null,
+      buyerSubjectType: parsed.data.buyerSubjectType ?? null,
+      buyerSubjectId: parsed.data.buyerSubjectId ?? null,
+      completedTransferId: parsed.data.completedTransferId ?? null,
+      metadata: parsed.data.metadata ?? {},
+    },
+    metadata: { routeFamily: 'access-transfers' },
+  })
+  if (!resaleCreate.ok) return fail(c, resaleCreate.code, resaleCreate.message, resaleCreate.httpStatus, resaleCreate.details)
+  const row = resaleCreate.row
   return ok(c, row, 201)
 })
 
@@ -364,42 +451,66 @@ accessTransferRoutes.patch('/bizes/:bizId/access-resale-listings/:listingId', re
     where: and(eq(accessResaleListings.bizId, bizId), eq(accessResaleListings.id, listingId)),
   })
   if (!existing) return fail(c, 'NOT_FOUND', 'Access resale listing not found.', 404)
-  const [row] = await db.update(accessResaleListings).set({
-    accessTransferPolicyId: parsed.data.accessTransferPolicyId ?? undefined,
-    status: parsed.data.status ?? undefined,
-    listedPriceMinor: parsed.data.listedPriceMinor ?? undefined,
-    minAcceptablePriceMinor: parsed.data.minAcceptablePriceMinor ?? undefined,
-    expiresAt: parsed.data.expiresAt ? new Date(parsed.data.expiresAt) : undefined,
-    reservedAt: parsed.data.reservedAt ? new Date(parsed.data.reservedAt) : undefined,
-    soldAt: parsed.data.soldAt ? new Date(parsed.data.soldAt) : undefined,
-    cancelledAt: parsed.data.cancelledAt ? new Date(parsed.data.cancelledAt) : undefined,
-    buyerUserId: parsed.data.buyerUserId ?? undefined,
-    buyerGroupAccountId: parsed.data.buyerGroupAccountId ?? undefined,
-    buyerSubjectType: parsed.data.buyerSubjectType ?? undefined,
-    buyerSubjectId: parsed.data.buyerSubjectId ?? undefined,
-    completedTransferId: parsed.data.completedTransferId ?? undefined,
-    metadata: parsed.data.metadata ?? undefined,
-  }).where(and(eq(accessResaleListings.bizId, bizId), eq(accessResaleListings.id, listingId))).returning()
-  if (!row) return fail(c, 'NOT_FOUND', 'Access resale listing not found.', 404)
-  await db.insert(accessArtifactEvents).values({
+  const resaleUpdate = await executeCrudRouteAction({
+    c,
     bizId,
-    accessArtifactId: row.accessArtifactId,
-    eventType: parsed.data.status === 'sold' ? 'transferred_out' : 'metadata_updated',
-    actorUserId: user.id,
-    outcome: 'allowed',
-    reasonCode: parsed.data.status === 'sold' ? 'resale_completed' : 'resale_updated',
-    reasonText: parsed.data.status === 'sold' ? 'Resale completed.' : 'Resale listing updated.',
-    payload: {
-      accessResaleListingId: row.id,
-      completedTransferId: row.completedTransferId,
-      buyerUserId: row.buyerUserId,
-      buyerSubjectType: row.buyerSubjectType,
-      buyerSubjectId: row.buyerSubjectId,
+    tableKey: 'accessResaleListings',
+    operation: 'update',
+    id: listingId,
+    subjectType: 'access_resale_listing',
+    subjectId: listingId,
+    patch: {
+      accessTransferPolicyId: parsed.data.accessTransferPolicyId ?? undefined,
+      status: parsed.data.status ?? undefined,
+      listedPriceMinor: parsed.data.listedPriceMinor ?? undefined,
+      minAcceptablePriceMinor: parsed.data.minAcceptablePriceMinor ?? undefined,
+      expiresAt: parsed.data.expiresAt ? new Date(parsed.data.expiresAt) : undefined,
+      reservedAt: parsed.data.reservedAt ? new Date(parsed.data.reservedAt) : undefined,
+      soldAt: parsed.data.soldAt ? new Date(parsed.data.soldAt) : undefined,
+      cancelledAt: parsed.data.cancelledAt ? new Date(parsed.data.cancelledAt) : undefined,
+      buyerUserId: parsed.data.buyerUserId ?? undefined,
+      buyerGroupAccountId: parsed.data.buyerGroupAccountId ?? undefined,
+      buyerSubjectType: parsed.data.buyerSubjectType ?? undefined,
+      buyerSubjectId: parsed.data.buyerSubjectId ?? undefined,
+      completedTransferId: parsed.data.completedTransferId ?? undefined,
+      metadata: parsed.data.metadata ?? undefined,
     },
-    metadata: {
-      sourceRoute: 'access-resale-listings.patch',
-      listingStatus: row.status,
-    },
+    metadata: { routeFamily: 'access-transfers' },
   })
+  if (!resaleUpdate.ok) {
+    if (resaleUpdate.code === 'CRUD_TARGET_NOT_FOUND') return fail(c, 'NOT_FOUND', 'Access resale listing not found.', 404)
+    return fail(c, resaleUpdate.code, resaleUpdate.message, resaleUpdate.httpStatus, resaleUpdate.details)
+  }
+  const row = resaleUpdate.row as typeof accessResaleListings.$inferSelect
+
+  const resaleEvent = await executeCrudRouteAction({
+    c,
+    bizId,
+    tableKey: 'accessArtifactEvents',
+    operation: 'create',
+    subjectType: 'access_artifact_event',
+    data: {
+      bizId,
+      accessArtifactId: row.accessArtifactId,
+      eventType: parsed.data.status === 'sold' ? 'transferred_out' : 'metadata_updated',
+      actorUserId: user.id,
+      outcome: 'allowed',
+      reasonCode: parsed.data.status === 'sold' ? 'resale_completed' : 'resale_updated',
+      reasonText: parsed.data.status === 'sold' ? 'Resale completed.' : 'Resale listing updated.',
+      payload: {
+        accessResaleListingId: row.id,
+        completedTransferId: row.completedTransferId,
+        buyerUserId: row.buyerUserId,
+        buyerSubjectType: row.buyerSubjectType,
+        buyerSubjectId: row.buyerSubjectId,
+      },
+      metadata: {
+        sourceRoute: 'access-resale-listings.patch',
+        listingStatus: row.status,
+      },
+    },
+    metadata: { routeFamily: 'access-transfers' },
+  })
+  if (!resaleEvent.ok) return fail(c, resaleEvent.code, resaleEvent.message, resaleEvent.httpStatus, resaleEvent.details)
   return ok(c, row)
 })

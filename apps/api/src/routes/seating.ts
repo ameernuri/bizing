@@ -21,6 +21,7 @@ import { and, asc, desc, eq, lte } from 'drizzle-orm'
 import { z } from 'zod'
 import dbPackage from '@bizing/db'
 import { requireAclPermission, requireAuth, requireBizAccess } from '../middleware/auth.js'
+import { executeCrudRouteAction } from '../services/action-route-bridge.js'
 import { fail, ok } from './_api.js'
 
 const { db, seatMaps, seatMapSeats, seatHolds, seatReservations } = dbPackage
@@ -116,16 +117,27 @@ seatingRoutes.post('/bizes/:bizId/seat-maps', requireAuth, requireBizAccess('biz
   const bizId = c.req.param('bizId')
   const parsed = createSeatMapBodySchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
-  const [row] = await db.insert(seatMaps).values({
+  const delegated = await executeCrudRouteAction({
+    c,
     bizId,
-    ...parsed.data,
-    resourceId: parsed.data.resourceId ?? null,
-    targetSubjectType: parsed.data.targetSubjectType ?? null,
-    targetSubjectId: parsed.data.targetSubjectId ?? null,
-    layout: parsed.data.layout ?? {},
-    policy: parsed.data.policy ?? {},
-    metadata: parsed.data.metadata ?? {},
-  }).returning()
+    tableKey: 'seatMaps',
+    operation: 'create',
+    subjectType: 'seat_map',
+    displayName: parsed.data.name,
+    data: {
+      bizId,
+      ...parsed.data,
+      resourceId: parsed.data.resourceId ?? null,
+      targetSubjectType: parsed.data.targetSubjectType ?? null,
+      targetSubjectId: parsed.data.targetSubjectId ?? null,
+      layout: parsed.data.layout ?? {},
+      policy: parsed.data.policy ?? {},
+      metadata: parsed.data.metadata ?? {},
+    },
+    metadata: { routeFamily: 'seating' },
+  })
+  if (!delegated.ok) return fail(c, delegated.code, delegated.message, delegated.httpStatus, delegated.details)
+  const row = delegated.row
   return ok(c, row, 201)
 })
 
@@ -149,18 +161,29 @@ seatingRoutes.post('/bizes/:bizId/seat-maps/:seatMapId/seats', requireAuth, requ
   const { bizId, seatMapId } = c.req.param()
   const parsed = createSeatBodySchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
-  const [row] = await db.insert(seatMapSeats).values({
+  const delegated = await executeCrudRouteAction({
+    c,
     bizId,
-    seatMapId,
-    ...parsed.data,
-    sectionKey: parsed.data.sectionKey ?? null,
-    rowLabel: parsed.data.rowLabel ?? null,
-    columnLabel: parsed.data.columnLabel ?? null,
-    gridX: parsed.data.gridX ?? null,
-    gridY: parsed.data.gridY ?? null,
-    attributes: parsed.data.attributes ?? {},
-    metadata: parsed.data.metadata ?? {},
-  }).returning()
+    tableKey: 'seatMapSeats',
+    operation: 'create',
+    subjectType: 'seat_map_seat',
+    displayName: parsed.data.seatKey,
+    data: {
+      bizId,
+      seatMapId,
+      ...parsed.data,
+      sectionKey: parsed.data.sectionKey ?? null,
+      rowLabel: parsed.data.rowLabel ?? null,
+      columnLabel: parsed.data.columnLabel ?? null,
+      gridX: parsed.data.gridX ?? null,
+      gridY: parsed.data.gridY ?? null,
+      attributes: parsed.data.attributes ?? {},
+      metadata: parsed.data.metadata ?? {},
+    },
+    metadata: { routeFamily: 'seating' },
+  })
+  if (!delegated.ok) return fail(c, delegated.code, delegated.message, delegated.httpStatus, delegated.details)
+  const row = delegated.row
   return ok(c, row, 201)
 })
 
@@ -177,22 +200,32 @@ seatingRoutes.post('/bizes/:bizId/seat-maps/:seatMapId/holds', requireAuth, requ
   const { bizId, seatMapId } = c.req.param()
   const parsed = createHoldBodySchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
-  const [row] = await db.insert(seatHolds).values({
+  const delegated = await executeCrudRouteAction({
+    c,
     bizId,
-    seatMapId,
-    seatMapSeatId: parsed.data.seatMapSeatId,
-    bookingOrderId: parsed.data.bookingOrderId ?? null,
-    bookingOrderLineId: parsed.data.bookingOrderLineId ?? null,
-    queueEntryId: parsed.data.queueEntryId ?? null,
-    holderUserId: parsed.data.holderUserId ?? null,
-    holderGroupAccountId: parsed.data.holderGroupAccountId ?? null,
-    holdType: parsed.data.holdType,
-    holdState: parsed.data.holdState,
-    expiresAt: new Date(parsed.data.expiresAt),
-    idempotencyKey: parsed.data.idempotencyKey ?? null,
-    policySnapshot: parsed.data.policySnapshot ?? {},
-    metadata: parsed.data.metadata ?? {},
-  }).returning()
+    tableKey: 'seatHolds',
+    operation: 'create',
+    subjectType: 'seat_hold',
+    data: {
+      bizId,
+      seatMapId,
+      seatMapSeatId: parsed.data.seatMapSeatId,
+      bookingOrderId: parsed.data.bookingOrderId ?? null,
+      bookingOrderLineId: parsed.data.bookingOrderLineId ?? null,
+      queueEntryId: parsed.data.queueEntryId ?? null,
+      holderUserId: parsed.data.holderUserId ?? null,
+      holderGroupAccountId: parsed.data.holderGroupAccountId ?? null,
+      holdType: parsed.data.holdType,
+      holdState: parsed.data.holdState,
+      expiresAt: new Date(parsed.data.expiresAt),
+      idempotencyKey: parsed.data.idempotencyKey ?? null,
+      policySnapshot: parsed.data.policySnapshot ?? {},
+      metadata: parsed.data.metadata ?? {},
+    },
+    metadata: { routeFamily: 'seating' },
+  })
+  if (!delegated.ok) return fail(c, delegated.code, delegated.message, delegated.httpStatus, delegated.details)
+  const row = delegated.row
   return ok(c, row, 201)
 })
 
@@ -200,12 +233,27 @@ seatingRoutes.patch('/bizes/:bizId/seat-holds/:seatHoldId', requireAuth, require
   const { bizId, seatHoldId } = c.req.param()
   const parsed = updateHoldBodySchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
-  const [row] = await db.update(seatHolds).set({
-    holdState: parsed.data.holdState,
-    releasedAt: parsed.data.releasedAt ? new Date(parsed.data.releasedAt) : undefined,
-    convertedAt: parsed.data.convertedAt ? new Date(parsed.data.convertedAt) : undefined,
-    metadata: parsed.data.metadata ?? undefined,
-  }).where(and(eq(seatHolds.bizId, bizId), eq(seatHolds.id, seatHoldId))).returning()
+  const delegated = await executeCrudRouteAction({
+    c,
+    bizId,
+    tableKey: 'seatHolds',
+    operation: 'update',
+    id: seatHoldId,
+    subjectType: 'seat_hold',
+    subjectId: seatHoldId,
+    patch: {
+      holdState: parsed.data.holdState,
+      releasedAt: parsed.data.releasedAt ? new Date(parsed.data.releasedAt) : undefined,
+      convertedAt: parsed.data.convertedAt ? new Date(parsed.data.convertedAt) : undefined,
+      metadata: parsed.data.metadata ?? undefined,
+    },
+    metadata: { routeFamily: 'seating' },
+  })
+  if (!delegated.ok) {
+    if (delegated.code === 'CRUD_TARGET_NOT_FOUND') return fail(c, 'NOT_FOUND', 'Seat hold not found.', 404)
+    return fail(c, delegated.code, delegated.message, delegated.httpStatus, delegated.details)
+  }
+  const row = delegated.row
   if (!row) return fail(c, 'NOT_FOUND', 'Seat hold not found.', 404)
   return ok(c, row)
 })
@@ -216,15 +264,32 @@ seatingRoutes.post('/bizes/:bizId/seat-maps/:seatMapId/holds/expire', requireAut
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
 
   const asOf = parsed.data.asOf ? new Date(parsed.data.asOf) : new Date()
-  const expiredRows = await db.update(seatHolds).set({
-    holdState: 'expired',
-    releasedAt: asOf,
-  }).where(and(
+  const expirableRows = await db.query.seatHolds.findMany({
+    where: and(
     eq(seatHolds.bizId, bizId),
     eq(seatHolds.seatMapId, seatMapId),
     eq(seatHolds.holdState, 'held'),
     lte(seatHolds.expiresAt, asOf),
-  )).returning()
+    ),
+  })
+  const expiredRows: Array<Record<string, unknown>> = []
+  for (const hold of expirableRows) {
+    const delegated = await executeCrudRouteAction({
+      c,
+      bizId,
+      tableKey: 'seatHolds',
+      operation: 'update',
+      id: hold.id,
+      subjectType: 'seat_hold',
+      subjectId: hold.id,
+      patch: {
+        holdState: 'expired',
+        releasedAt: asOf,
+      },
+      metadata: { routeFamily: 'seating.expireHolds' },
+    })
+    if (delegated.ok && delegated.row) expiredRows.push(delegated.row)
+  }
 
   return ok(c, {
     expiredCount: expiredRows.length,
@@ -246,18 +311,28 @@ seatingRoutes.post('/bizes/:bizId/seat-maps/:seatMapId/reservations', requireAut
   const { bizId, seatMapId } = c.req.param()
   const parsed = createReservationBodySchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
-  const [row] = await db.insert(seatReservations).values({
+  const delegated = await executeCrudRouteAction({
+    c,
     bizId,
-    seatMapId,
-    seatMapSeatId: parsed.data.seatMapSeatId,
-    seatHoldId: parsed.data.seatHoldId ?? null,
-    bookingOrderId: parsed.data.bookingOrderId ?? null,
-    bookingOrderLineId: parsed.data.bookingOrderLineId ?? null,
-    fulfillmentUnitId: parsed.data.fulfillmentUnitId ?? null,
-    queueEntryId: parsed.data.queueEntryId ?? null,
-    reservationState: parsed.data.reservationState,
-    note: parsed.data.note ?? null,
-    metadata: parsed.data.metadata ?? {},
-  }).returning()
+    tableKey: 'seatReservations',
+    operation: 'create',
+    subjectType: 'seat_reservation',
+    data: {
+      bizId,
+      seatMapId,
+      seatMapSeatId: parsed.data.seatMapSeatId,
+      seatHoldId: parsed.data.seatHoldId ?? null,
+      bookingOrderId: parsed.data.bookingOrderId ?? null,
+      bookingOrderLineId: parsed.data.bookingOrderLineId ?? null,
+      fulfillmentUnitId: parsed.data.fulfillmentUnitId ?? null,
+      queueEntryId: parsed.data.queueEntryId ?? null,
+      reservationState: parsed.data.reservationState,
+      note: parsed.data.note ?? null,
+      metadata: parsed.data.metadata ?? {},
+    },
+    metadata: { routeFamily: 'seating' },
+  })
+  if (!delegated.ok) return fail(c, delegated.code, delegated.message, delegated.httpStatus, delegated.details)
+  const row = delegated.row
   return ok(c, row, 201)
 })

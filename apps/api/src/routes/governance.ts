@@ -14,6 +14,7 @@ import { and, asc, eq } from 'drizzle-orm'
 import { z } from 'zod'
 import dbPackage from '@bizing/db'
 import { requireAclPermission, requireAuth, requireBizAccess } from '../middleware/auth.js'
+import { executeCrudRouteAction } from '../services/action-route-bridge.js'
 import { fail, ok } from './_api.js'
 
 const { db, policyBreachEvents, policyConsequenceEvents } = dbPackage
@@ -54,6 +55,56 @@ const createConsequenceBodySchema = z.object({
 
 export const governanceRoutes = new Hono()
 
+async function createGovernanceRow<T extends Record<string, unknown>>(input: {
+  c: Parameters<typeof fail>[0]
+  bizId: string
+  tableKey: string
+  subjectType: string
+  data: Record<string, unknown>
+  displayName?: string
+}) {
+  const delegated = await executeCrudRouteAction({
+    c: input.c,
+    bizId: input.bizId,
+    tableKey: input.tableKey,
+    operation: 'create',
+    subjectType: input.subjectType,
+    displayName: input.displayName,
+    data: input.data,
+    metadata: { routeFamily: 'governance' },
+  })
+  if (!delegated.ok) return fail(input.c, delegated.code, delegated.message, delegated.httpStatus, delegated.details)
+  return delegated.row as T
+}
+
+async function updateGovernanceRow<T extends Record<string, unknown>>(input: {
+  c: Parameters<typeof fail>[0]
+  bizId: string
+  tableKey: string
+  subjectType: string
+  id: string
+  patch: Record<string, unknown>
+  notFoundMessage: string
+}) {
+  const delegated = await executeCrudRouteAction({
+    c: input.c,
+    bizId: input.bizId,
+    tableKey: input.tableKey,
+    operation: 'update',
+    id: input.id,
+    subjectType: input.subjectType,
+    subjectId: input.id,
+    patch: input.patch,
+    metadata: { routeFamily: 'governance' },
+  })
+  if (!delegated.ok) {
+    if (delegated.code === 'CRUD_TARGET_NOT_FOUND') return fail(input.c, 'NOT_FOUND', input.notFoundMessage, 404)
+    return fail(input.c, delegated.code, delegated.message, delegated.httpStatus, delegated.details)
+  }
+  if (!delegated.row) return fail(input.c, 'NOT_FOUND', input.notFoundMessage, 404)
+  return delegated.row as T
+}
+
 governanceRoutes.get('/bizes/:bizId/policy-breach-events', requireAuth, requireBizAccess('bizId'), requireAclPermission('bizes.read', { bizIdParam: 'bizId' }), async (c) => {
   const bizId = c.req.param('bizId')
   const rows = await db.query.policyBreachEvents.findMany({
@@ -67,7 +118,13 @@ governanceRoutes.post('/bizes/:bizId/policy-breach-events', requireAuth, require
   const bizId = c.req.param('bizId')
   const parsed = createBreachBodySchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
-  const [row] = await db.insert(policyBreachEvents).values({
+  const row = await createGovernanceRow<typeof policyBreachEvents.$inferSelect>({
+    c,
+    bizId,
+    tableKey: 'policyBreachEvents',
+    subjectType: 'policy_breach_event',
+    displayName: parsed.data.breachCode ?? parsed.data.targetSubjectType,
+    data: {
     bizId,
     policyTemplateId: parsed.data.policyTemplateId,
     policyRuleId: parsed.data.policyRuleId ?? null,
@@ -89,7 +146,9 @@ governanceRoutes.post('/bizes/:bizId/policy-breach-events', requireAuth, require
     evidence: parsed.data.evidence ?? {},
     contextSnapshot: parsed.data.contextSnapshot ?? {},
     metadata: parsed.data.metadata ?? {},
-  }).returning()
+    },
+  })
+  if (row instanceof Response) return row
   return ok(c, row, 201)
 })
 
@@ -108,7 +167,13 @@ governanceRoutes.post('/bizes/:bizId/policy-consequence-events', requireAuth, re
   const parsed = createConsequenceBodySchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
   const now = new Date()
-  const [row] = await db.insert(policyConsequenceEvents).values({
+  const row = await createGovernanceRow<typeof policyConsequenceEvents.$inferSelect>({
+    c,
+    bizId,
+    tableKey: 'policyConsequenceEvents',
+    subjectType: 'policy_consequence_event',
+    displayName: parsed.data.consequenceType,
+    data: {
     bizId,
     policyBreachEventId: parsed.data.policyBreachEventId,
     consequenceType: parsed.data.consequenceType,
@@ -127,7 +192,9 @@ governanceRoutes.post('/bizes/:bizId/policy-consequence-events', requireAuth, re
     reviewQueueItemId: parsed.data.reviewQueueItemId ?? null,
     details: parsed.data.details ?? {},
     metadata: parsed.data.metadata ?? {},
-  }).returning()
+    },
+  })
+  if (row instanceof Response) return row
   return ok(c, row, 201)
 })
 
@@ -136,7 +203,14 @@ governanceRoutes.patch('/bizes/:bizId/policy-consequence-events/:consequenceId',
   const parsed = createConsequenceBodySchema.partial().safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
   const now = new Date()
-  const [row] = await db.update(policyConsequenceEvents).set({
+  const row = await updateGovernanceRow<typeof policyConsequenceEvents.$inferSelect>({
+    c,
+    bizId,
+    tableKey: 'policyConsequenceEvents',
+    subjectType: 'policy_consequence_event',
+    id: consequenceId,
+    notFoundMessage: 'Policy consequence event not found.',
+    patch: {
     status: parsed.data.status,
     appliedAt: parsed.data.status === 'applied' ? now : undefined,
     failedAt: parsed.data.status === 'failed' ? now : undefined,
@@ -151,7 +225,9 @@ governanceRoutes.patch('/bizes/:bizId/policy-consequence-events/:consequenceId',
     reviewQueueItemId: parsed.data.reviewQueueItemId,
     details: parsed.data.details,
     metadata: parsed.data.metadata,
-  }).where(and(eq(policyConsequenceEvents.bizId, bizId), eq(policyConsequenceEvents.id, consequenceId))).returning()
+    },
+  })
+  if (row instanceof Response) return row
   if (!row) return fail(c, 'NOT_FOUND', 'Policy consequence event not found.', 404)
   return ok(c, row)
 })

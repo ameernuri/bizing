@@ -17,6 +17,7 @@ import { and, asc, desc, eq, sql } from 'drizzle-orm'
 import { z } from 'zod'
 import dbPackage from '@bizing/db'
 import { getCurrentUser, requireAclPermission, requireAuth, requireBizAccess } from '../middleware/auth.js'
+import { executeCrudRouteAction } from '../services/action-route-bridge.js'
 import { sanitizePlainText, sanitizeUnknown } from '../lib/sanitize.js'
 import { fail, ok, parsePositiveInt } from './_api.js'
 
@@ -29,6 +30,65 @@ const {
   extensionStateDocuments,
   eventProjectionCheckpoints,
 } = dbPackage
+
+async function createExtensionRow<TTableKey extends
+  | 'extensionDefinitions'
+  | 'bizExtensionInstalls'
+  | 'extensionPermissionDefinitions'
+  | 'bizExtensionPermissionGrants'
+  | 'extensionStateDocuments'
+  | 'eventProjectionCheckpoints'>(
+  c: Parameters<typeof executeCrudRouteAction>[0]['c'],
+  bizId: string | null,
+  tableKey: TTableKey,
+  data: Parameters<typeof executeCrudRouteAction>[0]['data'],
+  meta: { subjectType: string; subjectId: string; displayName: string; source: string },
+) {
+  const result = await executeCrudRouteAction({
+    c,
+    bizId,
+    tableKey,
+    operation: 'create',
+    data,
+    subjectType: meta.subjectType,
+    subjectId: meta.subjectId,
+    displayName: meta.displayName,
+    metadata: { source: meta.source },
+  })
+  if (!result.ok) throw new Error(result.message ?? `Failed to create ${tableKey}`)
+  if (!result.row) throw new Error(`Missing row for ${tableKey} create`)
+  return result.row
+}
+
+async function updateExtensionRow<TTableKey extends
+  | 'bizExtensionInstalls'
+  | 'bizExtensionPermissionGrants'
+  | 'extensionStateDocuments'
+  | 'extensionPermissionDefinitions'
+  | 'eventProjectionCheckpoints'>(
+  c: Parameters<typeof executeCrudRouteAction>[0]['c'],
+  bizId: string,
+  tableKey: TTableKey,
+  id: string,
+  patch: Parameters<typeof executeCrudRouteAction>[0]['patch'],
+  meta: { subjectType: string; subjectId: string; displayName: string; source: string },
+) {
+  const result = await executeCrudRouteAction({
+    c,
+    bizId,
+    tableKey,
+    operation: 'update',
+    id,
+    patch,
+    subjectType: meta.subjectType,
+    subjectId: meta.subjectId,
+    displayName: meta.displayName,
+    metadata: { source: meta.source },
+  })
+  if (!result.ok) throw new Error(result.message ?? `Failed to update ${tableKey}`)
+  if (!result.row) throw new Error(`Missing row for ${tableKey} update`)
+  return result.row
+}
 
 const catalogQuerySchema = z.object({
   page: z.string().optional(),
@@ -192,27 +252,41 @@ function buildScopeRefKey(input: {
 
 export const extensionRoutes = new Hono()
 
-async function createCatalogDefinition(input: z.infer<typeof createCatalogBodySchema>) {
+async function createCatalogDefinition(
+  c: Parameters<typeof executeCrudRouteAction>[0]['c'],
+  input: z.infer<typeof createCatalogBodySchema>,
+) {
   const existing = await db.query.extensionDefinitions.findFirst({
     where: eq(extensionDefinitions.key, input.key),
   })
   if (existing) return { row: existing, created: false as const }
 
-  const [created] = await db.insert(extensionDefinitions).values({
-    key: input.key,
-    name: sanitizePlainText(input.name),
-    publisher: input.publisher ? sanitizePlainText(input.publisher) : null,
-    sourceType: input.sourceType,
-    runtimeType: input.runtimeType,
-    status: input.status,
-    currentVersion: input.currentVersion ?? null,
-    docsUrl: input.docsUrl ?? null,
-    homepageUrl: input.homepageUrl ?? null,
-    description: input.description ? sanitizePlainText(input.description) : null,
-    manifest: sanitizeUnknown(input.manifest ?? {}),
-    capabilities: sanitizeUnknown(input.capabilities ?? {}),
-    metadata: sanitizeUnknown(input.metadata ?? {}),
-  }).returning()
+  const created = await createExtensionRow(
+    c,
+    null,
+    'extensionDefinitions',
+    {
+      key: input.key,
+      name: sanitizePlainText(input.name),
+      publisher: input.publisher ? sanitizePlainText(input.publisher) : null,
+      sourceType: input.sourceType,
+      runtimeType: input.runtimeType,
+      status: input.status,
+      currentVersion: input.currentVersion ?? null,
+      docsUrl: input.docsUrl ?? null,
+      homepageUrl: input.homepageUrl ?? null,
+      description: input.description ? sanitizePlainText(input.description) : null,
+      manifest: sanitizeUnknown(input.manifest ?? {}),
+      capabilities: sanitizeUnknown(input.capabilities ?? {}),
+      metadata: sanitizeUnknown(input.metadata ?? {}),
+    },
+    {
+      subjectType: 'extension_definition',
+      subjectId: input.key,
+      displayName: input.name,
+      source: 'routes.extensions.createCatalogDefinition',
+    },
+  )
 
   return { row: created, created: true as const }
 }
@@ -266,7 +340,7 @@ extensionRoutes.post(
       return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
     }
 
-    const result = await createCatalogDefinition(parsed.data)
+    const result = await createCatalogDefinition(c, parsed.data)
     return ok(c, result.row, result.created ? 201 : 200)
   },
 )
@@ -282,7 +356,7 @@ extensionRoutes.post(
       return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
     }
 
-    const result = await createCatalogDefinition({
+    const result = await createCatalogDefinition(c, {
       ...parsed.data,
       metadata: {
         ...(parsed.data.metadata ?? {}),
@@ -348,16 +422,27 @@ extensionRoutes.post(
     })
     if (existing) return ok(c, existing)
 
-    const [created] = await db.insert(bizExtensionInstalls).values({
+    const created = await createExtensionRow(
+      c,
       bizId,
-      extensionDefinitionId: definition.id,
-      status: parsed.data.status,
-      installedVersion: parsed.data.installedVersion ?? definition.currentVersion ?? '0.0.0',
-      configuration: sanitizeUnknown(parsed.data.configuration ?? {}),
-      secretRef: parsed.data.secretRef ?? null,
-      lastHealthStatus: parsed.data.lastHealthStatus ?? null,
-      metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
-    }).returning()
+      'bizExtensionInstalls',
+      {
+        bizId,
+        extensionDefinitionId: definition.id,
+        status: parsed.data.status,
+        installedVersion: parsed.data.installedVersion ?? definition.currentVersion ?? '0.0.0',
+        configuration: sanitizeUnknown(parsed.data.configuration ?? {}),
+        secretRef: parsed.data.secretRef ?? null,
+        lastHealthStatus: parsed.data.lastHealthStatus ?? null,
+        metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
+      },
+      {
+        subjectType: 'biz_extension_install',
+        subjectId: definition.id,
+        displayName: definition.key,
+        source: 'routes.extensions.createInstall',
+      },
+    )
 
     return ok(c, created, 201)
   },
@@ -380,14 +465,26 @@ extensionRoutes.patch(
     })
     if (!existing) return fail(c, 'NOT_FOUND', 'Extension install not found.', 404)
 
-    const [updated] = await db.update(bizExtensionInstalls).set({
-      status: parsed.data.status ?? undefined,
-      installedVersion: parsed.data.installedVersion ?? undefined,
-      configuration: parsed.data.configuration ? sanitizeUnknown(parsed.data.configuration) : undefined,
-      secretRef: parsed.data.secretRef === undefined ? undefined : parsed.data.secretRef,
-      lastHealthStatus: parsed.data.lastHealthStatus === undefined ? undefined : parsed.data.lastHealthStatus,
-      metadata: parsed.data.metadata ? sanitizeUnknown(parsed.data.metadata) : undefined,
-    }).where(and(eq(bizExtensionInstalls.bizId, bizId), eq(bizExtensionInstalls.id, installId))).returning()
+    const updated = await updateExtensionRow(
+      c,
+      bizId,
+      'bizExtensionInstalls',
+      installId,
+      {
+        status: parsed.data.status ?? undefined,
+        installedVersion: parsed.data.installedVersion ?? undefined,
+        configuration: parsed.data.configuration ? sanitizeUnknown(parsed.data.configuration) : undefined,
+        secretRef: parsed.data.secretRef === undefined ? undefined : parsed.data.secretRef,
+        lastHealthStatus: parsed.data.lastHealthStatus === undefined ? undefined : parsed.data.lastHealthStatus,
+        metadata: parsed.data.metadata ? sanitizeUnknown(parsed.data.metadata) : undefined,
+      },
+      {
+        subjectType: 'biz_extension_install',
+        subjectId: installId,
+        displayName: 'update install',
+        source: 'routes.extensions.updateInstall',
+      },
+    )
 
     return ok(c, updated)
   },
@@ -414,7 +511,7 @@ extensionRoutes.post(
   requireBizAccess('bizId'),
   requireAclPermission('bizes.update', { bizIdParam: 'bizId' }),
   async (c) => {
-    const { extensionDefinitionId } = c.req.param()
+    const { bizId, extensionDefinitionId } = c.req.param()
     const parsed = permissionDefinitionBodySchema.safeParse(await c.req.json().catch(() => null))
     if (!parsed.success) {
       return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
@@ -425,30 +522,59 @@ extensionRoutes.post(
     })
     if (!definition) return fail(c, 'NOT_FOUND', 'Extension definition not found.', 404)
 
-    const [created] = await db.insert(extensionPermissionDefinitions).values({
-      extensionDefinitionId,
-      permissionKey: sanitizePlainText(parsed.data.permissionKey),
-      name: sanitizePlainText(parsed.data.name),
-      description: parsed.data.description ? sanitizePlainText(parsed.data.description) : null,
-      scope: parsed.data.scope,
-      isRequired: parsed.data.isRequired,
-      defaultEffect: parsed.data.defaultEffect,
-      riskLevel: parsed.data.riskLevel,
-      status: parsed.data.status,
-      metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
-    }).onConflictDoUpdate({
-      target: [extensionPermissionDefinitions.extensionDefinitionId, extensionPermissionDefinitions.permissionKey],
-      set: {
-        name: sanitizePlainText(parsed.data.name),
-        description: parsed.data.description ? sanitizePlainText(parsed.data.description) : null,
-        scope: parsed.data.scope,
-        isRequired: parsed.data.isRequired,
-        defaultEffect: parsed.data.defaultEffect,
-        riskLevel: parsed.data.riskLevel,
-        status: parsed.data.status,
-        metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
-      },
-    }).returning()
+    const permissionKey = sanitizePlainText(parsed.data.permissionKey)
+    const existingPermissionDef = await db.query.extensionPermissionDefinitions.findFirst({
+      where: and(
+        eq(extensionPermissionDefinitions.extensionDefinitionId, extensionDefinitionId),
+        eq(extensionPermissionDefinitions.permissionKey, permissionKey),
+      ),
+    })
+    const created = existingPermissionDef
+      ? await updateExtensionRow(
+          c,
+          bizId,
+          'extensionPermissionDefinitions',
+          existingPermissionDef.id,
+          {
+            name: sanitizePlainText(parsed.data.name),
+            description: parsed.data.description ? sanitizePlainText(parsed.data.description) : null,
+            scope: parsed.data.scope,
+            isRequired: parsed.data.isRequired,
+            defaultEffect: parsed.data.defaultEffect,
+            riskLevel: parsed.data.riskLevel,
+            status: parsed.data.status,
+            metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
+          },
+          {
+            subjectType: 'extension_permission_definition',
+            subjectId: existingPermissionDef.id,
+            displayName: permissionKey,
+            source: 'routes.extensions.upsertPermissionDefinition.update',
+          },
+        )
+      : await createExtensionRow(
+          c,
+          bizId,
+          'extensionPermissionDefinitions',
+          {
+            extensionDefinitionId,
+            permissionKey,
+            name: sanitizePlainText(parsed.data.name),
+            description: parsed.data.description ? sanitizePlainText(parsed.data.description) : null,
+            scope: parsed.data.scope,
+            isRequired: parsed.data.isRequired,
+            defaultEffect: parsed.data.defaultEffect,
+            riskLevel: parsed.data.riskLevel,
+            status: parsed.data.status,
+            metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
+          },
+          {
+            subjectType: 'extension_permission_definition',
+            subjectId: extensionDefinitionId,
+            displayName: permissionKey,
+            source: 'routes.extensions.upsertPermissionDefinition.create',
+          },
+        )
 
     return ok(c, created, 201)
   },
@@ -517,37 +643,62 @@ extensionRoutes.post(
       subjectRefId: parsed.data.subjectRefId,
     })
 
-    const [created] = await db.insert(bizExtensionPermissionGrants).values({
-      bizId,
-      bizExtensionInstallId: installId,
-      extensionPermissionDefinitionId: parsed.data.extensionPermissionDefinitionId,
-      scope: parsed.data.scope,
-      scopeRefKey,
-      locationId: parsed.data.locationId ?? null,
-      subjectRefType: parsed.data.subjectRefType ?? null,
-      subjectRefId: parsed.data.subjectRefId ?? null,
-      effect: parsed.data.effect,
-      status: parsed.data.status,
-      grantedByUserId: currentUser?.id ?? null,
-      expiresAt: parsed.data.expiresAt ? new Date(parsed.data.expiresAt) : null,
-      reason: parsed.data.reason ? sanitizePlainText(parsed.data.reason) : null,
-      metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
-    }).onConflictDoUpdate({
-      target: [
-        bizExtensionPermissionGrants.bizId,
-        bizExtensionPermissionGrants.bizExtensionInstallId,
-        bizExtensionPermissionGrants.extensionPermissionDefinitionId,
-        bizExtensionPermissionGrants.scopeRefKey,
-      ],
-      set: {
-        effect: parsed.data.effect,
-        status: parsed.data.status,
-        expiresAt: parsed.data.expiresAt ? new Date(parsed.data.expiresAt) : null,
-        reason: parsed.data.reason ? sanitizePlainText(parsed.data.reason) : null,
-        metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
-        grantedAt: new Date(),
-      },
-    }).returning()
+    const existingGrant = await db.query.bizExtensionPermissionGrants.findFirst({
+      where: and(
+        eq(bizExtensionPermissionGrants.bizId, bizId),
+        eq(bizExtensionPermissionGrants.bizExtensionInstallId, installId),
+        eq(bizExtensionPermissionGrants.extensionPermissionDefinitionId, parsed.data.extensionPermissionDefinitionId),
+        eq(bizExtensionPermissionGrants.scopeRefKey, scopeRefKey),
+      ),
+    })
+    const created = existingGrant
+      ? await updateExtensionRow(
+          c,
+          bizId,
+          'bizExtensionPermissionGrants',
+          existingGrant.id,
+          {
+            effect: parsed.data.effect,
+            status: parsed.data.status,
+            expiresAt: parsed.data.expiresAt ? new Date(parsed.data.expiresAt) : null,
+            reason: parsed.data.reason ? sanitizePlainText(parsed.data.reason) : null,
+            metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
+            grantedAt: new Date(),
+          },
+          {
+            subjectType: 'biz_extension_permission_grant',
+            subjectId: existingGrant.id,
+            displayName: scopeRefKey,
+            source: 'routes.extensions.upsertPermissionGrant.update',
+          },
+        )
+      : await createExtensionRow(
+          c,
+          bizId,
+          'bizExtensionPermissionGrants',
+          {
+            bizId,
+            bizExtensionInstallId: installId,
+            extensionPermissionDefinitionId: parsed.data.extensionPermissionDefinitionId,
+            scope: parsed.data.scope,
+            scopeRefKey,
+            locationId: parsed.data.locationId ?? null,
+            subjectRefType: parsed.data.subjectRefType ?? null,
+            subjectRefId: parsed.data.subjectRefId ?? null,
+            effect: parsed.data.effect,
+            status: parsed.data.status,
+            grantedByUserId: currentUser?.id ?? null,
+            expiresAt: parsed.data.expiresAt ? new Date(parsed.data.expiresAt) : null,
+            reason: parsed.data.reason ? sanitizePlainText(parsed.data.reason) : null,
+            metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
+          },
+          {
+            subjectType: 'biz_extension_permission_grant',
+            subjectId: installId,
+            displayName: scopeRefKey,
+            source: 'routes.extensions.upsertPermissionGrant.create',
+          },
+        )
 
     return ok(c, created, 201)
   },
@@ -580,17 +731,25 @@ extensionRoutes.patch(
     })
     if (!install) return fail(c, 'NOT_FOUND', 'Extension install not found.', 404)
 
-    const [updated] = await db.update(bizExtensionPermissionGrants).set({
-      effect: parsed.data.effect ?? undefined,
-      status: parsed.data.status ?? undefined,
-      expiresAt: parsed.data.expiresAt === undefined ? undefined : parsed.data.expiresAt ? new Date(parsed.data.expiresAt) : null,
-      reason: parsed.data.reason ? sanitizePlainText(parsed.data.reason) : undefined,
-      metadata: parsed.data.metadata ? sanitizeUnknown(parsed.data.metadata) : undefined,
-    }).where(and(
-      eq(bizExtensionPermissionGrants.bizId, bizId),
-      eq(bizExtensionPermissionGrants.bizExtensionInstallId, installId),
-      eq(bizExtensionPermissionGrants.id, grantId),
-    )).returning()
+    const updated = await updateExtensionRow(
+      c,
+      bizId,
+      'bizExtensionPermissionGrants',
+      grantId,
+      {
+        effect: parsed.data.effect ?? undefined,
+        status: parsed.data.status ?? undefined,
+        expiresAt: parsed.data.expiresAt === undefined ? undefined : parsed.data.expiresAt ? new Date(parsed.data.expiresAt) : null,
+        reason: parsed.data.reason ? sanitizePlainText(parsed.data.reason) : undefined,
+        metadata: parsed.data.metadata ? sanitizeUnknown(parsed.data.metadata) : undefined,
+      },
+      {
+        subjectType: 'biz_extension_permission_grant',
+        subjectId: grantId,
+        displayName: 'update grant',
+        source: 'routes.extensions.updatePermissionGrant',
+      },
+    )
 
     return ok(c, updated)
   },
@@ -644,22 +803,33 @@ extensionRoutes.post(
     })
     if (existing) return ok(c, existing)
 
-    const [created] = await db.insert(extensionStateDocuments).values({
+    const created = await createExtensionRow(
+      c,
       bizId,
-      bizExtensionInstallId: installId,
-      namespace: parsed.data.namespace,
-      documentKey: parsed.data.documentKey,
-      scope: parsed.data.scope,
-      scopeRefKey,
-      locationId: parsed.data.scope === 'location' ? parsed.data.locationId ?? null : null,
-      subjectRefType: parsed.data.scope === 'custom_subject' ? parsed.data.subjectRefType ?? null : null,
-      subjectRefId: parsed.data.scope === 'custom_subject' ? parsed.data.subjectRefId ?? null : null,
-      status: parsed.data.status,
-      schemaVersion: parsed.data.schemaVersion,
-      payload: sanitizeUnknown(parsed.data.payload),
-      payloadChecksum: parsed.data.payloadChecksum ?? null,
-      metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
-    }).returning()
+      'extensionStateDocuments',
+      {
+        bizId,
+        bizExtensionInstallId: installId,
+        namespace: parsed.data.namespace,
+        documentKey: parsed.data.documentKey,
+        scope: parsed.data.scope,
+        scopeRefKey,
+        locationId: parsed.data.scope === 'location' ? parsed.data.locationId ?? null : null,
+        subjectRefType: parsed.data.scope === 'custom_subject' ? parsed.data.subjectRefType ?? null : null,
+        subjectRefId: parsed.data.scope === 'custom_subject' ? parsed.data.subjectRefId ?? null : null,
+        status: parsed.data.status,
+        schemaVersion: parsed.data.schemaVersion,
+        payload: sanitizeUnknown(parsed.data.payload),
+        payloadChecksum: parsed.data.payloadChecksum ?? null,
+        metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
+      },
+      {
+        subjectType: 'extension_state_document',
+        subjectId: installId,
+        displayName: `${parsed.data.namespace}:${parsed.data.documentKey}`,
+        source: 'routes.extensions.createStateDocument',
+      },
+    )
 
     return ok(c, created, 201)
   },
@@ -700,31 +870,43 @@ extensionRoutes.patch(
       subjectRefId: parsed.data.subjectRefId ?? existing.subjectRefId ?? undefined,
     })
 
-    const [updated] = await db.update(extensionStateDocuments).set({
-      namespace: parsed.data.namespace ?? undefined,
-      documentKey: parsed.data.documentKey ?? undefined,
-      scope: parsed.data.scope ?? undefined,
-      scopeRefKey,
-      locationId:
-        nextScope === 'location'
-          ? (parsed.data.locationId ?? existing.locationId ?? null)
-          : null,
-      subjectRefType:
-        nextScope === 'custom_subject'
-          ? (parsed.data.subjectRefType ?? existing.subjectRefType ?? null)
-          : null,
-      subjectRefId:
-        nextScope === 'custom_subject'
-          ? (parsed.data.subjectRefId ?? existing.subjectRefId ?? null)
-          : null,
-      status: parsed.data.status ?? undefined,
-      revision: parsed.data.revision ?? existing.revision + 1,
-      schemaVersion: parsed.data.schemaVersion ?? undefined,
-      payload: parsed.data.payload ? sanitizeUnknown(parsed.data.payload) : undefined,
-      payloadChecksum: parsed.data.payloadChecksum ?? undefined,
-      metadata: parsed.data.metadata ? sanitizeUnknown(parsed.data.metadata) : undefined,
-      lastMaterializedAt: new Date(),
-    }).where(and(eq(extensionStateDocuments.bizId, bizId), eq(extensionStateDocuments.id, documentId))).returning()
+    const updated = await updateExtensionRow(
+      c,
+      bizId,
+      'extensionStateDocuments',
+      documentId,
+      {
+        namespace: parsed.data.namespace ?? undefined,
+        documentKey: parsed.data.documentKey ?? undefined,
+        scope: parsed.data.scope ?? undefined,
+        scopeRefKey,
+        locationId:
+          nextScope === 'location'
+            ? (parsed.data.locationId ?? existing.locationId ?? null)
+            : null,
+        subjectRefType:
+          nextScope === 'custom_subject'
+            ? (parsed.data.subjectRefType ?? existing.subjectRefType ?? null)
+            : null,
+        subjectRefId:
+          nextScope === 'custom_subject'
+            ? (parsed.data.subjectRefId ?? existing.subjectRefId ?? null)
+            : null,
+        status: parsed.data.status ?? undefined,
+        revision: parsed.data.revision ?? existing.revision + 1,
+        schemaVersion: parsed.data.schemaVersion ?? undefined,
+        payload: parsed.data.payload ? sanitizeUnknown(parsed.data.payload) : undefined,
+        payloadChecksum: parsed.data.payloadChecksum ?? undefined,
+        metadata: parsed.data.metadata ? sanitizeUnknown(parsed.data.metadata) : undefined,
+        lastMaterializedAt: new Date(),
+      },
+      {
+        subjectType: 'extension_state_document',
+        subjectId: documentId,
+        displayName: 'update state document',
+        source: 'routes.extensions.updateStateDocument',
+      },
+    )
 
     return ok(c, updated)
   },
@@ -766,31 +948,62 @@ extensionRoutes.post(
     })
     if (!install) return fail(c, 'NOT_FOUND', 'Extension install not found.', 404)
 
-    const [createdOrUpdated] = await db.insert(eventProjectionCheckpoints).values({
-      bizId,
-      projectionKey: sanitizePlainText(parsed.data.projectionKey),
-      consumerRef: sanitizePlainText(parsed.data.consumerRef),
-      lastDomainEventId: parsed.data.lastDomainEventId ?? null,
-      lastProcessedAt: new Date(),
-      status: sanitizePlainText(parsed.data.status),
-      lagHint: parsed.data.lagHint,
-      metadata: sanitizeUnknown({
-        ...(parsed.data.metadata ?? {}),
-        bizExtensionInstallId: installId,
-      }),
-    }).onConflictDoUpdate({
-      target: [eventProjectionCheckpoints.bizId, eventProjectionCheckpoints.projectionKey, eventProjectionCheckpoints.consumerRef],
-      set: {
-        lastDomainEventId: parsed.data.lastDomainEventId ?? null,
-        lastProcessedAt: new Date(),
-        status: sanitizePlainText(parsed.data.status),
-        lagHint: parsed.data.lagHint,
-        metadata: sanitizeUnknown({
-          ...(parsed.data.metadata ?? {}),
-          bizExtensionInstallId: installId,
-        }),
-      },
-    }).returning()
+    const projectionKey = sanitizePlainText(parsed.data.projectionKey)
+    const consumerRef = sanitizePlainText(parsed.data.consumerRef)
+    const existingCheckpoint = await db.query.eventProjectionCheckpoints.findFirst({
+      where: and(
+        eq(eventProjectionCheckpoints.bizId, bizId),
+        eq(eventProjectionCheckpoints.projectionKey, projectionKey),
+        eq(eventProjectionCheckpoints.consumerRef, consumerRef),
+      ),
+    })
+    const createdOrUpdated = existingCheckpoint
+      ? await updateExtensionRow(
+          c,
+          bizId,
+          'eventProjectionCheckpoints',
+          existingCheckpoint.id,
+          {
+            lastDomainEventId: parsed.data.lastDomainEventId ?? null,
+            lastProcessedAt: new Date(),
+            status: sanitizePlainText(parsed.data.status),
+            lagHint: parsed.data.lagHint,
+            metadata: sanitizeUnknown({
+              ...(parsed.data.metadata ?? {}),
+              bizExtensionInstallId: installId,
+            }),
+          },
+          {
+            subjectType: 'event_projection_checkpoint',
+            subjectId: existingCheckpoint.id,
+            displayName: `${projectionKey}:${consumerRef}`,
+            source: 'routes.extensions.upsertProjectionCheckpoint.update',
+          },
+        )
+      : await createExtensionRow(
+          c,
+          bizId,
+          'eventProjectionCheckpoints',
+          {
+            bizId,
+            projectionKey,
+            consumerRef,
+            lastDomainEventId: parsed.data.lastDomainEventId ?? null,
+            lastProcessedAt: new Date(),
+            status: sanitizePlainText(parsed.data.status),
+            lagHint: parsed.data.lagHint,
+            metadata: sanitizeUnknown({
+              ...(parsed.data.metadata ?? {}),
+              bizExtensionInstallId: installId,
+            }),
+          },
+          {
+            subjectType: 'event_projection_checkpoint',
+            subjectId: installId,
+            displayName: `${projectionKey}:${consumerRef}`,
+            source: 'routes.extensions.upsertProjectionCheckpoint.create',
+          },
+        )
 
     return ok(c, createdOrUpdated, 201)
   },

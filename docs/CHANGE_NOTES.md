@@ -13,6 +13,143 @@ Concise, high-signal notes for meaningful architecture or behavior changes.
 
 ## 2026-03-02
 
+### OODash API explorer health endpoint 404 fix
+
+- Fixed admin rewrite coverage so API explorer requests to `/health*` are proxied
+  to the API origin instead of falling through to a Next.js 404.
+  - file:
+    - `/Users/ameer/bizing/code/apps/admin/next.config.mjs`
+- Updated the runtime OpenAPI explorer catalog to prefer canonical versioned
+  health checks and avoid advertising unversioned `/health` in endpoint lists.
+  - file:
+    - `/Users/ameer/bizing/code/apps/api/src/services/openapi-explorer.ts`
+- Updated API docs so operators know which health paths to use from OODash.
+  - file:
+    - `/Users/ameer/bizing/code/docs/API.md`
+
+### Added customer calendar-aware scheduling UCs and generated saga coverage
+
+- Extended the canonical UC document with:
+  - `UC-300: The Front Desk Slot Suggestion With Customer Calendar Overlay`
+  - `UC-301: The Customer-Controlled Opaque Availability Share`
+  - source file:
+    - `/Users/ameer/bizing/mind/workspace/documentation/use-cases-comprehensive.md`
+- Generated and synced new saga specs from those UCs:
+  - `uc-300-the-front-desk-manager-lisa`
+  - `uc-300-the-solo-entrepreneur-sarah`
+  - `uc-301-the-ddos-attacker-flood`
+  - `uc-301-the-solo-entrepreneur-sarah`
+  - files:
+    - `/Users/ameer/bizing/code/testing/sagas/specs/uc-300-the-front-desk-manager-lisa.json`
+    - `/Users/ameer/bizing/code/testing/sagas/specs/uc-300-the-solo-entrepreneur-sarah.json`
+    - `/Users/ameer/bizing/code/testing/sagas/specs/uc-301-the-ddos-attacker-flood.json`
+    - `/Users/ameer/bizing/code/testing/sagas/specs/uc-301-the-solo-entrepreneur-sarah.json`
+- Executed all four new sagas in fast mode:
+  - result: `4/4 passed`
+  - command pattern:
+    - `SAGA_FAST_MODE=1 SAGA_KEY=<saga-key> bun run --cwd apps/api sagas:rerun:fast`
+- Synced UC/persona library records into DB for OODash surfaces:
+  - command:
+    - `syncSagaLoopLibraryFromDocs()`
+  - result:
+    - `useCaseCount: 301`
+    - `personaCount: 55`
+    - `linkedDefinitions: 320`
+
+### OODash OpenAPI explorer + code-mode interface surface
+
+- Added a runtime-generated API explorer catalog that enumerates API endpoints
+  from mounted route files and server-level routes, then enriches each endpoint
+  with auth posture and matching code-mode tools.
+- Added new authenticated agent endpoints:
+  - `GET /api/v1/agents/openapi/catalog`
+  - `GET /api/v1/agents/openapi.json`
+  - file:
+    - `/Users/ameer/bizing/code/apps/api/src/routes/mcp.ts`
+- Added catalog/openapi builder service:
+  - `/Users/ameer/bizing/code/apps/api/src/services/openapi-explorer.ts`
+  - includes mount-prefix resolution from core router wiring so nested surfaces
+    like `/api/v1/agents/*` are cataloged with correct full paths.
+- Added dedicated OODash API explorer page:
+  - route:
+    - `/ooda/api`
+  - files:
+    - `/Users/ameer/bizing/code/apps/admin/src/app/ooda/api/page.tsx`
+    - `/Users/ameer/bizing/code/apps/admin/src/components/sagas/explorer/api-explorer-page.tsx`
+    - `/Users/ameer/bizing/code/apps/admin/src/components/sagas/explorer/sagas-shell.tsx` (nav item)
+- Explorer UX now supports:
+  - endpoint catalog browsing/search/filter
+  - interactive endpoint request execution with request/response JSON inspection
+  - code-mode tool catalog browsing
+  - interactive `/api/v1/agents/execute` tool execution
+  - generated OpenAPI JSON inspection in the same view
+
+### OODash UC coverage redesign (DB/API-native matrix)
+
+- Added canonical unified UC coverage builder in saga services:
+  - `rebuildUcCoverageMatrixReport(...)`
+  - file:
+    - `/Users/ameer/bizing/code/apps/api/src/services/sagas.ts`
+- New matrix combines:
+  - schema-baseline rows (imported from coverage markdown into DB)
+  - API endpoint evidence from latest linked saga runs (`api_trace` artifacts)
+  - one per-UC combined verdict (worst of schema/api verdicts)
+- Coverage row evidence now carries richer payload:
+  - schema section:
+    - supporting tables inferred from explanation text
+    - inferred table-connection chain
+  - api section:
+    - pass-rate metrics across latest runs
+    - concrete endpoint signatures and status buckets
+- Added dedicated API endpoints:
+  - `POST /api/v1/ooda/sagas/uc-coverage/rebuild`
+  - `GET /api/v1/ooda/sagas/uc-coverage/reports`
+  - `GET /api/v1/ooda/sagas/uc-coverage/reports/:reportId`
+  - file:
+    - `/Users/ameer/bizing/code/apps/api/src/routes/sagas.ts`
+- Added OODash Coverage view:
+  - route:
+    - `/ooda/coverage`
+  - files:
+    - `/Users/ameer/bizing/code/apps/admin/src/app/ooda/coverage/page.tsx`
+    - `/Users/ameer/bizing/code/apps/admin/src/components/sagas/explorer/coverage-page.tsx`
+    - `/Users/ameer/bizing/code/apps/admin/src/components/sagas/explorer/sagas-shell.tsx` (nav item)
+    - `/Users/ameer/bizing/code/apps/admin/src/lib/sagas-api.ts` (client contract)
+- Dashboard coverage card now points to the UC matrix report, not schema-only baseline:
+  - `/Users/ameer/bizing/code/apps/admin/src/components/sagas/explorer/dashboard-page.tsx`
+- Regenerated domain docs after route additions:
+  - `bun run docs:generate:domains`
+  - updated:
+    - `/Users/ameer/bizing/code/docs/domains/sagas.md`
+
+### Epic-driven UC expansion (UC-292..UC-299) + deterministic saga coverage
+
+- Expanded canonical UC source with 8 new epic-inferred scenarios:
+  - `UC-292` .. `UC-299` in:
+    - `/Users/ameer/bizing/mind/workspace/documentation/use-cases-comprehensive.md`
+  - focus area: external ecosystem reliability, connector operations, regulated integration gates, offline field-proof sync, and message forensics/replay.
+- Regenerated and re-synced saga definitions from docs:
+  - command:
+    - `bun run --cwd /Users/ameer/projects/bizing/apps/api sagas:generate -- --uc=UC-292,UC-293,UC-294,UC-295,UC-296,UC-297,UC-298,UC-299 --sync=true`
+  - result:
+    - 8 new specs generated (`testing/sagas/specs/uc-292..uc-299-*.json`)
+    - saga library sync completed.
+- Validated new saga coverage in fast mode:
+  - all newly generated keys (`uc-292..uc-299`) pass end-to-end in deterministic runner mode.
+
+### Customer ops read-model parity fix for deterministic CRM validation
+
+- Added missing `crmLeadId` query support to CRM task listing:
+  - route:
+    - `GET /api/v1/bizes/:bizId/crm-tasks`
+  - file:
+    - `/Users/ameer/bizing/code/apps/api/src/routes/customer-ops.ts`
+  - impact:
+    - deterministic saga checks can now verify lead-linked follow-up tasks without overfetching and client-side heuristics.
+- Added/confirmed customer-ops read surfaces for support-case link/participant and profile merge queries in API docs:
+  - file:
+    - `/Users/ameer/bizing/code/docs/API.md`
+
 ### Strict proving + CI gate + lifecycle FK canonicalization
 
 - Completed full strict-mode proving run against dedicated strict API instance:
@@ -1156,3 +1293,120 @@ Validation:
     - `uc-201`, `uc-209`, `uc-222`, `uc-275`, `uc-54`, `uc-9`
   - full strict collect rerun:
     - `284/284 passed`, `0 failed`
+
+## CRM + Support + Marketing hard-cut expansion (2026-03-02)
+
+- Added new UC corpus slice (`UC-280..UC-291`) for first-class CRM, support, and marketing operations:
+  - `/Users/ameer/bizing/mind/workspace/documentation/use-cases-comprehensive.md`
+- Added new persona slice (`49..54`) for revenue operations, support leadership, lifecycle marketing, AI support supervision, enterprise account management, and compliance support audit:
+  - `/Users/ameer/bizing/mind/workspace/documentation/tester-personas.md`
+- Generated and synced saga definitions for these new UC/persona combinations:
+  - command:
+    - `bun run --cwd /Users/ameer/projects/bizing/apps/api sagas:generate -- --uc=UC-280,UC-281,UC-282,UC-283,UC-284,UC-285,UC-286,UC-287,UC-288,UC-289,UC-290,UC-291 --max-personas=2 --overwrite=true --sync=true`
+  - result: `24` new `saga.v1` specs synced.
+- Added canonical customer-ops schema module:
+  - `/Users/ameer/projects/bizing/packages/db/src/schema/customer_ops.ts`
+  - first-class tables for customer-profile linking, timeline events, CRM activities/tasks, support case runtime, customer journeys, and customer playbook automation.
+- Extended canonical customer profile identity spine:
+  - `/Users/ameer/projects/bizing/packages/db/src/schema/external_installations.ts`
+  - added lifecycle/support/acquisition columns and `primary_crm_contact_id`.
+- Added and mounted first-class customer-ops API routes:
+  - `/Users/ameer/projects/bizing/apps/api/src/routes/customer-ops.ts`
+  - mounted in `/Users/ameer/projects/bizing/apps/api/src/routes/core-api.ts`
+  - includes profile, identity, timeline, support case, journey, activity/task, and playbook surfaces.
+- Updated package/schema exports and drizzle schema registration:
+  - `/Users/ameer/projects/bizing/packages/db/src/index.ts`
+  - `/Users/ameer/projects/bizing/packages/db/src/schema/canonical.ts`
+  - `/Users/ameer/projects/bizing/packages/db/drizzle.config.ts`
+- Validation:
+  - `bun run --cwd /Users/ameer/projects/bizing/apps/api build` passed.
+  - `bun run --cwd /Users/ameer/projects/bizing docs:generate:domains` passed.
+  - `bun run --cwd /Users/ameer/projects/bizing docs:check:domains` passed.
+
+## Full saga sweep reliability patch (2026-03-02)
+
+- Full fast saga collect now re-validated at `316/316 passed` after patching two blocker clusters discovered in the full run:
+  - CRM drift/runtime cluster.
+  - deterministic validator coverage cluster for `UC-280..UC-291`.
+- CRM/runtime fixes:
+  - `/Users/ameer/bizing/code/apps/api/src/routes/customer-ops.ts`
+    - `POST /crm-tasks` and `PATCH /crm-tasks/:taskId` now return delegated action errors directly (no thrown response path).
+  - local runtime DB drift fixed by creating missing `crm_tasks` table in the active API database and reapplying canonical partial-index repair.
+  - `/Users/ameer/bizing/code/packages/db/scripts/repair-canonical-indexes.ts`
+    now includes canonical repair for `crm_pipelines_default_per_type_unique`.
+  - `/Users/ameer/bizing/code/packages/db/scripts/verify-bootstrap.ts`
+    now validates presence of `crm_tasks` and `crm_pipelines_default_per_type_unique` as bootstrap invariants.
+- Saga deterministic coverage fixes:
+  - `/Users/ameer/bizing/code/apps/api/src/scripts/rerun-sagas.ts`
+    - extended `runUcNeedContractProbe` applicability from `UC-3..279` to all `UC >= 3`.
+    - added `runPersonaScenarioContractProbe` for `UC-280+` persona scenarios with deterministic endpoint contracts.
+    - fixed CRM intake channel validation fixture logic to read all leads for channel assertions instead of only `sourceType=paid_ads`.
+- Validation commands:
+  - `SAGA_FAST_MODE=1 SAGA_STRICT_EXIT=0 SAGA_KEY=uc-249-the-solo-entrepreneur-sarah bun run --cwd /Users/ameer/bizing/code/apps/api sagas:rerun`
+  - `SAGA_FAST_MODE=1 SAGA_STRICT_EXIT=0 SAGA_KEY=uc-281-the-solo-entrepreneur-sarah bun run --cwd /Users/ameer/bizing/code/apps/api sagas:rerun`
+  - `SAGA_FAST_MODE=1 SAGA_CONCURRENCY=6 bun run --cwd /Users/ameer/bizing/code/apps/api sagas:collect`
+
+## UC coverage endpoint drill-down + schema baseline gap closure (2026-03-02)
+
+- Added endpoint-centric UC coverage drill-down in OODash coverage view:
+  - file:
+    - `/Users/ameer/bizing/code/apps/admin/src/components/sagas/explorer/coverage-page.tsx`
+  - behavior:
+    - aggregates endpoint evidence (`method + normalized path`) across all UC rows
+    - shows per-endpoint supported/missed UC counts
+    - shows status bucket rollups (`2xx/3xx/4xx/5xx`)
+    - endpoint detail dialog lists all mapped UCs with overall/API verdicts and pass-rate context
+- Fixed UC coverage rebuild runtime bug:
+  - file:
+    - `/Users/ameer/bizing/code/apps/api/src/services/sagas.ts`
+  - fix:
+    - added missing `asRecord` helper used by step-payload API call extraction
+    - unblocks `rebuildUcCoverageMatrixReport` when parsing step payload evidence
+- Closed schema baseline gaps for newly added UC domains:
+  - updated source report:
+    - `/Users/ameer/bizing/mind/workspaces/schema coverage report.md`
+  - expanded scored corpus to `UC-301`
+  - added explicit schema coverage rows for:
+    - `UC-280..UC-291` (CRM/support/marketing first-class)
+    - `UC-292..UC-301` (external ecosystem reliability + customer calendar sharing)
+  - updated matrix summaries/totals to match the expanded corpus
+- Re-imported baseline and rebuilt DB-native UC coverage matrix:
+  - import result: `301` UCs, `#full=175`, `#strong=126`, `#gap=0`
+  - rebuilt matrix result: `301` UCs, `0` gaps
+- Validation:
+  - `bun run --cwd /Users/ameer/bizing/code/apps/admin build` passed
+  - `bun run --cwd /Users/ameer/bizing/code/apps/api build` passed
+
+## OODash interconnection pass for UC coverage visibility (2026-03-02)
+
+- Added shared UC coverage snapshot helper for explorer pages:
+  - `/Users/ameer/bizing/code/apps/admin/src/lib/uc-coverage.ts`
+  - fetches latest UC coverage matrix report + detail and exposes fast UC-key lookup
+- Added reusable coverage verdict badge component:
+  - `/Users/ameer/bizing/code/apps/admin/src/components/sagas/explorer/common.tsx`
+- Use-case explorer updates:
+  - `/Users/ameer/bizing/code/apps/admin/src/components/sagas/explorer/use-cases-page.tsx`
+  - list cards now include matrix-derived coverage badges (`overall`, plus schema/API summary)
+  - added top summary cards (`full/strong/partial/gap`) so risk is visible at a glance
+- Use-case detail updates:
+  - `/Users/ameer/bizing/code/apps/admin/src/components/sagas/explorer/use-case-detail-page.tsx`
+  - added direct matrix status panel (`overall/schema/api`, pass-rate, linked run signal)
+  - added deep links to:
+    - `/ooda/coverage?uc=<UC>`
+    - `/ooda/coverage`
+- Definition explorer updates:
+  - `/Users/ameer/bizing/code/apps/admin/src/components/sagas/explorer/definitions-page.tsx`
+  - cards now include source UC coverage signal and link source UC to `/ooda/use-cases/:ucKey`
+- Coverage matrix page interconnection updates:
+  - `/Users/ameer/bizing/code/apps/admin/src/components/sagas/explorer/coverage-page.tsx`
+  - supports deep-link query param `?uc=UC-###` (auto-focuses and opens matching row)
+  - matrix UC cells now link directly to UC detail pages
+  - endpoint-drilldown UC rows also link directly to UC detail pages
+- Dashboard updates:
+  - `/Users/ameer/bizing/code/apps/admin/src/components/sagas/explorer/dashboard-page.tsx`
+  - switched primary coverage card to latest UC coverage matrix (schema + API)
+  - shows `full/strong/gap` totals from report data
+  - highlights unresolved UC hotspots with direct links to UC detail pages
+  - fixed coverage inspect CTA to `/ooda/coverage` (instead of unrelated route)
+- Validation:
+  - `bun run --cwd /Users/ameer/bizing/code/apps/admin build` passed

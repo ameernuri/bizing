@@ -28,6 +28,7 @@ import {
   requireAuth,
   requireBizAccess,
 } from '../middleware/auth.js'
+import { executeCrudRouteAction } from '../services/action-route-bridge.js'
 import { fail, ok } from './_api.js'
 
 const {
@@ -41,7 +42,47 @@ const {
   participantObligationEvents,
   outboundMessages,
   outboundMessageEvents,
+  users,
 } = dbPackage
+
+const ACCESS_SYSTEM_EMAIL = 'system+access@bizing.local'
+let accessSystemActorCache: { id: string; role: string; email: string } | null = null
+
+async function ensureAccessSystemActor() {
+  if (accessSystemActorCache) return accessSystemActorCache
+
+  const existing = await db.query.users.findFirst({
+    where: eq(users.email, ACCESS_SYSTEM_EMAIL),
+  })
+  if (existing) {
+    accessSystemActorCache = {
+      id: existing.id,
+      role: existing.role,
+      email: existing.email,
+    }
+    return accessSystemActorCache
+  }
+
+  const [created] = await db
+    .insert(users)
+    .values({
+      email: ACCESS_SYSTEM_EMAIL,
+      name: 'Access System Actor',
+      role: 'admin',
+      status: 'active',
+      emailVerified: true,
+      emailVerifiedAt: new Date(),
+      metadata: { source: 'routes.access.public' },
+    })
+    .returning()
+
+  accessSystemActorCache = {
+    id: created.id,
+    role: created.role,
+    email: created.email,
+  }
+  return accessSystemActorCache
+}
 
 const issueBookingTicketBodySchema = z.object({
   deliveryChannels: z.array(z.enum(['email', 'app'])).default(['email']),
@@ -145,6 +186,76 @@ function makeTicketQrValue(rawToken: string) {
   return `bizing://ticket/${rawToken}`
 }
 
+async function createAccessRow(
+  c: Parameters<typeof executeCrudRouteAction>[0]['c'],
+  bizId: string | null | undefined,
+  tableKey: string,
+  data: Record<string, unknown>,
+  options?: {
+    subjectType?: string
+    subjectId?: string
+    displayName?: string
+    metadata?: Record<string, unknown>
+  },
+) {
+  const currentUser = getCurrentUser(c)
+  const actor = currentUser ?? (await ensureAccessSystemActor())
+  const authSourceOverride = currentUser ? undefined : 'access_token'
+  const result = await executeCrudRouteAction({
+    c,
+    bizId: bizId ?? null,
+    tableKey,
+    operation: 'create',
+    data,
+    subjectType: options?.subjectType,
+    subjectId: options?.subjectId,
+    displayName: options?.displayName,
+    metadata: options?.metadata,
+    actorOverride: actor,
+    authSourceOverride,
+  })
+  if (!result.ok) {
+    return fail(c, result.code, result.message, result.httpStatus, result.details)
+  }
+  return result.row
+}
+
+async function updateAccessRow(
+  c: Parameters<typeof executeCrudRouteAction>[0]['c'],
+  bizId: string | null | undefined,
+  tableKey: string,
+  id: string,
+  patch: Record<string, unknown>,
+  options?: {
+    subjectType?: string
+    subjectId?: string
+    displayName?: string
+    metadata?: Record<string, unknown>
+  },
+) {
+  const currentUser = getCurrentUser(c)
+  const actor = currentUser ?? (await ensureAccessSystemActor())
+  const authSourceOverride = currentUser ? undefined : 'access_token'
+  const result = await executeCrudRouteAction({
+    c,
+    bizId: bizId ?? null,
+    tableKey,
+    operation: 'update',
+    id,
+    patch,
+    subjectType: options?.subjectType,
+    subjectId: options?.subjectId,
+    displayName: options?.displayName,
+    metadata: options?.metadata,
+    actorOverride: actor,
+    authSourceOverride,
+  })
+  if (!result.ok) {
+    return fail(c, result.code, result.message, result.httpStatus, result.details)
+  }
+  return result.row
+}
+
 /**
  * Store one simulated delivery message for ticket issuance or reissue.
  *
@@ -153,6 +264,7 @@ function makeTicketQrValue(rawToken: string) {
  * customer really receive the digital ticket?" without asking a real provider.
  */
 async function createTicketDeliveryMessage(input: {
+  c: Parameters<typeof executeCrudRouteAction>[0]['c']
   bizId: string
   bookingOrderId: string
   recipientUserId?: string | null
@@ -164,9 +276,11 @@ async function createTicketDeliveryMessage(input: {
   publicCode: string
   qrValue: string
 }) {
-  const [message] = await db
-    .insert(outboundMessages)
-    .values({
+  const message = (await createAccessRow(
+    input.c,
+    input.bizId,
+    'outboundMessages',
+    {
       bizId: input.bizId,
       channel: input.channel,
       purpose: 'transactional',
@@ -191,34 +305,49 @@ async function createTicketDeliveryMessage(input: {
         qrValue: input.qrValue,
         eventType: 'ticket.issued',
       },
-    })
-    .returning()
+    },
+    {
+      subjectType: 'outbound_message',
+      displayName: `Ticket delivery (${input.channel})`,
+      metadata: { source: 'routes.access.createTicketDeliveryMessage' },
+    },
+  )) as Record<string, unknown> | Response
+  if (message instanceof Response) throw new Error('Failed to create ticket delivery outbound message.')
 
-  await db.insert(outboundMessageEvents).values([
+  for (const event of [
     {
       bizId: input.bizId,
-      outboundMessageId: message.id,
+      outboundMessageId: String(message.id),
       eventType: 'queued',
       payload: { channel: input.channel },
     },
     {
       bizId: input.bizId,
-      outboundMessageId: message.id,
+      outboundMessageId: String(message.id),
       eventType: 'sent',
       payload: { channel: input.channel },
     },
     {
       bizId: input.bizId,
-      outboundMessageId: message.id,
+      outboundMessageId: String(message.id),
       eventType: 'delivered',
       payload: { recipientRef: input.recipientRef },
     },
-  ])
+  ]) {
+    const createdEvent = await createAccessRow(input.c, input.bizId, 'outboundMessageEvents', event, {
+      subjectType: 'outbound_message_event',
+      subjectId: String(message.id),
+      displayName: `Outbound message event (${event.eventType})`,
+      metadata: { source: 'routes.access.createTicketDeliveryMessage' },
+    })
+    if (createdEvent instanceof Response) throw new Error('Failed to create outbound message event.')
+  }
 
   return message
 }
 
 async function ensureAttendanceObligation(input: {
+  c: Parameters<typeof executeCrudRouteAction>[0]['c']
   bizId: string
   bookingOrderId: string
   participantUserId?: string | null
@@ -236,9 +365,11 @@ async function ensureAttendanceObligation(input: {
   })
   if (existing) return existing
 
-  const [created] = await db
-    .insert(bookingParticipantObligations)
-    .values({
+  const created = (await createAccessRow(
+    input.c,
+    input.bizId,
+    'bookingParticipantObligations',
+    {
       bizId: input.bizId,
       bookingOrderId: input.bookingOrderId,
       participantUserId: input.participantUserId,
@@ -250,20 +381,38 @@ async function ensureAttendanceObligation(input: {
         accessArtifactId: input.accessArtifactId,
         sourceRoute: 'access.issue_ticket',
       },
-    })
-    .returning()
-
-  await db.insert(participantObligationEvents).values({
-    bizId: input.bizId,
-    bookingParticipantObligationId: created.id,
-    eventType: 'created',
-    actorUserId: null,
-    note: 'Attendance obligation auto-created for ticketed booking.',
-    metadata: {
-      sourceRoute: 'access.issue_ticket',
-      accessArtifactId: input.accessArtifactId,
     },
-  })
+    {
+      subjectType: 'booking_participant_obligation',
+      displayName: 'Attendance obligation',
+      metadata: { source: 'routes.access.ensureAttendanceObligation' },
+    },
+  )) as Record<string, unknown> | Response
+  if (created instanceof Response) throw new Error('Failed to create attendance obligation.')
+
+  const createdEvent = await createAccessRow(
+    input.c,
+    input.bizId,
+    'participantObligationEvents',
+    {
+      bizId: input.bizId,
+      bookingParticipantObligationId: String(created.id),
+      eventType: 'created',
+      actorUserId: null,
+      note: 'Attendance obligation auto-created for ticketed booking.',
+      metadata: {
+        sourceRoute: 'access.issue_ticket',
+        accessArtifactId: input.accessArtifactId,
+      },
+    },
+    {
+      subjectType: 'participant_obligation_event',
+      subjectId: String(created.id),
+      displayName: 'Attendance obligation created',
+      metadata: { source: 'routes.access.ensureAttendanceObligation' },
+    },
+  )
+  if (createdEvent instanceof Response) throw new Error('Failed to create attendance obligation event.')
 
   return created
 }
@@ -360,24 +509,35 @@ accessRoutes.post(
     const bizId = c.req.param('bizId')
     const parsed = createAccessArtifactBodySchema.safeParse(await c.req.json().catch(() => null))
     if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
-    const [row] = await db.insert(accessArtifacts).values({
+    const row = (await createAccessRow(
+      c,
       bizId,
-      artifactType: parsed.data.artifactType,
-      status: parsed.data.status,
-      publicCode: parsed.data.publicCode ?? randomCode('ACC-', 10),
-      holderUserId: parsed.data.holderUserId ?? null,
-      holderGroupAccountId: parsed.data.holderGroupAccountId ?? null,
-      holderSubjectType: parsed.data.holderSubjectType ?? null,
-      holderSubjectId: parsed.data.holderSubjectId ?? null,
-      sellableId: parsed.data.sellableId ?? null,
-      activatedAt: new Date(),
-      expiresAt: parsed.data.expiresAt ? new Date(parsed.data.expiresAt) : null,
-      transferable: parsed.data.transferable,
-      usageGranted: parsed.data.usageGranted ?? null,
-      usageRemaining: parsed.data.usageRemaining ?? parsed.data.usageGranted ?? null,
-      policySnapshot: parsed.data.policySnapshot ?? {},
-      metadata: parsed.data.metadata ?? {},
-    }).returning()
+      'accessArtifacts',
+      {
+        bizId,
+        artifactType: parsed.data.artifactType,
+        status: parsed.data.status,
+        publicCode: parsed.data.publicCode ?? randomCode('ACC-', 10),
+        holderUserId: parsed.data.holderUserId ?? null,
+        holderGroupAccountId: parsed.data.holderGroupAccountId ?? null,
+        holderSubjectType: parsed.data.holderSubjectType ?? null,
+        holderSubjectId: parsed.data.holderSubjectId ?? null,
+        sellableId: parsed.data.sellableId ?? null,
+        activatedAt: new Date(),
+        expiresAt: parsed.data.expiresAt ? new Date(parsed.data.expiresAt) : null,
+        transferable: parsed.data.transferable,
+        usageGranted: parsed.data.usageGranted ?? null,
+        usageRemaining: parsed.data.usageRemaining ?? parsed.data.usageGranted ?? null,
+        policySnapshot: parsed.data.policySnapshot ?? {},
+        metadata: parsed.data.metadata ?? {},
+      },
+      {
+        subjectType: 'access_artifact',
+        displayName: parsed.data.publicCode ?? 'Access Artifact',
+        metadata: { source: 'routes.access.createArtifact' },
+      },
+    )) as Record<string, unknown> | Response
+    if (row instanceof Response) return row
     return ok(c, row, 201)
   },
 )
@@ -409,24 +569,36 @@ accessRoutes.post(
     const bizId = c.req.param('bizId')
     const parsed = createAccessArtifactLinkBodySchema.safeParse(await c.req.json().catch(() => null))
     if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
-    const [row] = await db.insert(accessArtifactLinks).values({
+    const row = (await createAccessRow(
+      c,
       bizId,
-      accessArtifactId: parsed.data.accessArtifactId,
-      linkType: parsed.data.linkType,
-      relationKey: parsed.data.relationKey,
-      sellableId: parsed.data.sellableId ?? null,
-      bookingOrderId: parsed.data.bookingOrderId ?? null,
-      bookingOrderLineId: parsed.data.bookingOrderLineId ?? null,
-      membershipId: parsed.data.membershipId ?? null,
-      entitlementGrantId: parsed.data.entitlementGrantId ?? null,
-      paymentTransactionId: parsed.data.paymentTransactionId ?? null,
-      fulfillmentUnitId: parsed.data.fulfillmentUnitId ?? null,
-      customSubjectType: parsed.data.customSubjectType ?? null,
-      customSubjectId: parsed.data.customSubjectId ?? null,
-      externalReferenceType: parsed.data.externalReferenceType ?? null,
-      externalReferenceId: parsed.data.externalReferenceId ?? null,
-      metadata: parsed.data.metadata ?? {},
-    }).returning()
+      'accessArtifactLinks',
+      {
+        bizId,
+        accessArtifactId: parsed.data.accessArtifactId,
+        linkType: parsed.data.linkType,
+        relationKey: parsed.data.relationKey,
+        sellableId: parsed.data.sellableId ?? null,
+        bookingOrderId: parsed.data.bookingOrderId ?? null,
+        bookingOrderLineId: parsed.data.bookingOrderLineId ?? null,
+        membershipId: parsed.data.membershipId ?? null,
+        entitlementGrantId: parsed.data.entitlementGrantId ?? null,
+        paymentTransactionId: parsed.data.paymentTransactionId ?? null,
+        fulfillmentUnitId: parsed.data.fulfillmentUnitId ?? null,
+        customSubjectType: parsed.data.customSubjectType ?? null,
+        customSubjectId: parsed.data.customSubjectId ?? null,
+        externalReferenceType: parsed.data.externalReferenceType ?? null,
+        externalReferenceId: parsed.data.externalReferenceId ?? null,
+        metadata: parsed.data.metadata ?? {},
+      },
+      {
+        subjectType: 'access_artifact_link',
+        subjectId: parsed.data.accessArtifactId,
+        displayName: 'Access artifact link',
+        metadata: { source: 'routes.access.createArtifactLink' },
+      },
+    )) as Record<string, unknown> | Response
+    if (row instanceof Response) return row
     return ok(c, row, 201)
   },
 )
@@ -441,19 +613,31 @@ accessRoutes.post(
     const parsed = createAccessLinkBodySchema.safeParse(await c.req.json().catch(() => null))
     if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
     const rawToken = randomCode('lnk_', 24)
-    const [token] = await db.insert(accessActionTokens).values({
+    const token = (await createAccessRow(
+      c,
       bizId,
-      accessArtifactId: parsed.data.accessArtifactId,
-      actionType: parsed.data.actionType,
-      tokenType: parsed.data.tokenType,
-      status: 'active',
-      tokenHash: hashToken(rawToken),
-      tokenPreview: rawToken.slice(-6),
-      maxValidationCount: parsed.data.maxValidationCount,
-      expiresAt: new Date(Date.now() + parsed.data.tokenTtlHours * 60 * 60 * 1000),
-      requestKey: parsed.data.requestKey ?? null,
-      metadata: parsed.data.metadata ?? {},
-    }).returning()
+      'accessActionTokens',
+      {
+        bizId,
+        accessArtifactId: parsed.data.accessArtifactId,
+        actionType: parsed.data.actionType,
+        tokenType: parsed.data.tokenType,
+        status: 'active',
+        tokenHash: hashToken(rawToken),
+        tokenPreview: rawToken.slice(-6),
+        maxValidationCount: parsed.data.maxValidationCount,
+        expiresAt: new Date(Date.now() + parsed.data.tokenTtlHours * 60 * 60 * 1000),
+        requestKey: parsed.data.requestKey ?? null,
+        metadata: parsed.data.metadata ?? {},
+      },
+      {
+        subjectType: 'access_action_token',
+        subjectId: parsed.data.accessArtifactId,
+        displayName: 'Access link token',
+        metadata: { source: 'routes.access.createAccessLink' },
+      },
+    )) as Record<string, unknown> | Response
+    if (token instanceof Response) return token
     return ok(c, { token, rawToken }, 201)
   },
 )
@@ -506,21 +690,46 @@ accessRoutes.post(
     ) {
       return fail(c, 'USAGE_EXHAUSTED', 'No remaining downloads are available for this artifact.', 409)
     }
-    const [event] = await db.insert(accessArtifactEvents).values({
-      bizId: artifact.bizId,
-      accessArtifactId: artifact.id,
-      eventType: parsed.data.actionType === 'download' ? 'usage_debited' : 'verified',
-      quantityDelta: parsed.data.actionType === 'download' ? -1 : 0,
-      outcome: 'allowed',
-      requestKey: parsed.data.requestKey ?? null,
-      payload: parsed.data.metadata ?? {},
-      metadata: parsed.data.metadata ?? {},
-    }).returning()
+    const event = (await createAccessRow(
+      c,
+      artifact.bizId,
+      'accessArtifactEvents',
+      {
+        bizId: artifact.bizId,
+        accessArtifactId: artifact.id,
+        eventType: parsed.data.actionType === 'download' ? 'usage_debited' : 'verified',
+        quantityDelta: parsed.data.actionType === 'download' ? -1 : 0,
+        outcome: 'allowed',
+        requestKey: parsed.data.requestKey ?? null,
+        payload: parsed.data.metadata ?? {},
+        metadata: parsed.data.metadata ?? {},
+      },
+      {
+        subjectType: 'access_artifact_event',
+        subjectId: artifact.id,
+        displayName: 'Access consume event',
+        metadata: { source: 'routes.access.consume' },
+      },
+    )) as Record<string, unknown> | Response
+    if (event instanceof Response) return event
     if (parsed.data.actionType === 'download' && typeof artifact.usageRemaining === 'number') {
-      await db.update(accessArtifacts).set({
-        usageRemaining: Math.max(0, artifact.usageRemaining - 1),
-        consumedAt: artifact.usageRemaining - 1 <= 0 ? new Date() : artifact.consumedAt,
-      }).where(and(eq(accessArtifacts.bizId, artifact.bizId), eq(accessArtifacts.id, artifact.id)))
+      const artifactUpdated = await updateAccessRow(
+        c,
+        artifact.bizId,
+        'accessArtifacts',
+        artifact.id,
+        {
+          usageRemaining: Math.max(0, artifact.usageRemaining - 1),
+          consumedAt: artifact.usageRemaining - 1 <= 0 ? new Date() : artifact.consumedAt,
+        },
+        {
+          subjectType: 'access_artifact',
+          subjectId: artifact.id,
+          displayName: 'Access artifact usage update',
+          metadata: { source: 'routes.access.consume' },
+        },
+      )
+      if (artifactUpdated instanceof Response) return artifactUpdated
     }
     return ok(c, { artifactId: artifact.id, event }, 200)
   },
@@ -555,9 +764,11 @@ accessRoutes.post(
     const expiresAt = new Date(Date.now() + parsed.data.tokenTtlHours * 60 * 60 * 1000)
     const actorUserId = getCurrentUser(c)?.id ?? null
 
-    const [artifact] = await db
-      .insert(accessArtifacts)
-      .values({
+    const artifact = (await createAccessRow(
+      c,
+      bizId,
+      'accessArtifacts',
+      {
         bizId,
         artifactType: 'ticket_entitlement',
         status: 'active',
@@ -578,24 +789,44 @@ accessRoutes.post(
           ticketLabel: parsed.data.ticketLabel ?? 'Booking ticket',
           ...parsed.data.metadata,
         },
-      })
-      .returning()
-
-    await db.insert(accessArtifactLinks).values({
-      bizId,
-      accessArtifactId: artifact.id,
-      linkType: 'booking_order',
-      bookingOrderId,
-      metadata: {
-        sourceRoute: 'access.issue_ticket',
       },
-    })
+      {
+        subjectType: 'access_artifact',
+        displayName: `Ticket ${publicCode}`,
+        metadata: { source: 'routes.access.issueTicket' },
+      },
+    )) as Record<string, unknown> | Response
+    if (artifact instanceof Response) return artifact
 
-    const [token] = await db
-      .insert(accessActionTokens)
-      .values({
+    const link = await createAccessRow(
+      c,
+      bizId,
+      'accessArtifactLinks',
+      {
         bizId,
-        accessArtifactId: artifact.id,
+        accessArtifactId: String(artifact.id),
+        linkType: 'booking_order',
+        bookingOrderId,
+        metadata: {
+          sourceRoute: 'access.issue_ticket',
+        },
+      },
+      {
+        subjectType: 'access_artifact_link',
+        subjectId: String(artifact.id),
+        displayName: 'Ticket booking link',
+        metadata: { source: 'routes.access.issueTicket' },
+      },
+    )
+    if (link instanceof Response) return link
+
+    const token = (await createAccessRow(
+      c,
+      bizId,
+      'accessActionTokens',
+      {
+        bizId,
+        accessArtifactId: String(artifact.id),
         actionType: 'verify',
         tokenType: 'qr_code',
         status: 'active',
@@ -609,33 +840,53 @@ accessRoutes.post(
           bookingOrderId,
           sourceRoute: 'access.issue_ticket',
         },
-      })
-      .returning()
+      },
+      {
+        subjectType: 'access_action_token',
+        subjectId: String(artifact.id),
+        displayName: `Ticket token ${publicCode}`,
+        metadata: { source: 'routes.access.issueTicket' },
+      },
+    )) as Record<string, unknown> | Response
+    if (token instanceof Response) return token
 
-    await db.insert(accessArtifactEvents).values({
+    const issuedEvent = await createAccessRow(
+      c,
       bizId,
-      accessArtifactId: artifact.id,
-      eventType: 'issued',
-      happenedAt: new Date(),
-      actorUserId,
-      outcome: 'allowed',
-      reasonCode: 'ticket_issued',
-      payload: {
-        bookingOrderId,
-        actionTokenId: token.id,
+      'accessArtifactEvents',
+      {
+        bizId,
+        accessArtifactId: String(artifact.id),
+        eventType: 'issued',
+        happenedAt: new Date(),
+        actorUserId,
+        outcome: 'allowed',
+        reasonCode: 'ticket_issued',
+        payload: {
+          bookingOrderId,
+          actionTokenId: token.id,
+        },
+        metadata: {
+          sourceRoute: 'access.issue_ticket',
+        },
       },
-      metadata: {
-        sourceRoute: 'access.issue_ticket',
+      {
+        subjectType: 'access_artifact_event',
+        subjectId: String(artifact.id),
+        displayName: 'Ticket issued',
+        metadata: { source: 'routes.access.issueTicket' },
       },
-    })
+    )
+    if (issuedEvent instanceof Response) return issuedEvent
 
     const attendanceObligation =
       parsed.data.autoCreateAttendanceObligation
         ? await ensureAttendanceObligation({
+            c,
             bizId,
             bookingOrderId,
             participantUserId: booking.customerUserId ?? null,
-            accessArtifactId: artifact.id,
+            accessArtifactId: String(artifact.id),
           })
         : null
 
@@ -646,6 +897,7 @@ accessRoutes.post(
     for (const channel of parsed.data.deliveryChannels) {
       deliveryMessages.push(
         await createTicketDeliveryMessage({
+          c,
           bizId,
           bookingOrderId,
           recipientUserId: booking.customerUserId ?? null,
@@ -653,7 +905,7 @@ accessRoutes.post(
           channel: channel === 'app' ? 'push' : 'email',
           subject: `Your ticket for booking ${bookingOrderId}`,
           body: `Present code ${publicCode} or scan the QR ticket to check in.`,
-          accessArtifactId: artifact.id,
+          accessArtifactId: String(artifact.id),
           publicCode,
           qrValue,
         }),
@@ -665,9 +917,9 @@ accessRoutes.post(
       {
         artifact,
         token: {
-          id: token.id,
-          tokenType: token.tokenType,
-          tokenPreview: token.tokenPreview,
+          id: String(token.id),
+          tokenType: token.tokenType as string,
+          tokenPreview: token.tokenPreview as string,
           rawToken,
           qrValue,
           expiresAt,
@@ -729,26 +981,41 @@ accessRoutes.post(
     const context = await loadTicketContext(bizId, accessArtifactId)
     if (!context.booking) return fail(c, 'NOT_FOUND', 'Ticket is not linked to a booking order.', 404)
 
-    await db
-      .update(accessActionTokens)
-      .set({
-        status: 'revoked',
-        revokedAt: new Date(),
-      })
-      .where(
-        and(
-          eq(accessActionTokens.bizId, bizId),
-          eq(accessActionTokens.accessArtifactId, accessArtifactId),
-          eq(accessActionTokens.status, 'active'),
-        ),
+    const activeTokens = await db.query.accessActionTokens.findMany({
+      where: and(
+        eq(accessActionTokens.bizId, bizId),
+        eq(accessActionTokens.accessArtifactId, accessArtifactId),
+        eq(accessActionTokens.status, 'active'),
+      ),
+    })
+    for (const activeToken of activeTokens) {
+      const revoked = await updateAccessRow(
+        c,
+        bizId,
+        'accessActionTokens',
+        activeToken.id,
+        {
+          status: 'revoked',
+          revokedAt: new Date(),
+        },
+        {
+          subjectType: 'access_action_token',
+          subjectId: accessArtifactId,
+          displayName: 'Revoke active ticket token',
+          metadata: { source: 'routes.access.reissueTicket' },
+        },
       )
+      if (revoked instanceof Response) return revoked
+    }
 
     const rawToken = randomCode('qr_', 30)
     const tokenHash = hashToken(rawToken)
     const expiresAt = new Date(Date.now() + parsed.data.tokenTtlHours * 60 * 60 * 1000)
-    const [token] = await db
-      .insert(accessActionTokens)
-      .values({
+    const token = (await createAccessRow(
+      c,
+      bizId,
+      'accessActionTokens',
+      {
         bizId,
         accessArtifactId,
         actionType: 'verify',
@@ -765,25 +1032,44 @@ accessRoutes.post(
           reissueReason: parsed.data.reason,
           ...parsed.data.metadata,
         },
-      })
-      .returning()
+      },
+      {
+        subjectType: 'access_action_token',
+        subjectId: accessArtifactId,
+        displayName: 'Reissued ticket token',
+        metadata: { source: 'routes.access.reissueTicket' },
+      },
+    )) as Record<string, unknown> | Response
+    if (token instanceof Response) return token
 
-    await db.insert(accessArtifactEvents).values({
+    const reissueEvent = await createAccessRow(
+      c,
       bizId,
-      accessArtifactId,
-      eventType: 'reissued',
-      happenedAt: new Date(),
-      actorUserId: getCurrentUser(c)?.id ?? null,
-      outcome: 'allowed',
-      reasonCode: parsed.data.reason,
-      payload: {
-        bookingOrderId: context.booking.id,
-        actionTokenId: token.id,
+      'accessArtifactEvents',
+      {
+        bizId,
+        accessArtifactId,
+        eventType: 'reissued',
+        happenedAt: new Date(),
+        actorUserId: getCurrentUser(c)?.id ?? null,
+        outcome: 'allowed',
+        reasonCode: parsed.data.reason,
+        payload: {
+          bookingOrderId: context.booking.id,
+          actionTokenId: token.id,
+        },
+        metadata: {
+          sourceRoute: 'access.reissue_ticket',
+        },
       },
-      metadata: {
-        sourceRoute: 'access.reissue_ticket',
+      {
+        subjectType: 'access_artifact_event',
+        subjectId: accessArtifactId,
+        displayName: 'Ticket reissued',
+        metadata: { source: 'routes.access.reissueTicket' },
       },
-    })
+    )
+    if (reissueEvent instanceof Response) return reissueEvent
 
     const qrValue = makeTicketQrValue(rawToken)
     const deliveryMessages = []
@@ -792,6 +1078,7 @@ accessRoutes.post(
     for (const channel of parsed.data.deliveryChannels) {
       deliveryMessages.push(
         await createTicketDeliveryMessage({
+          c,
           bizId,
           bookingOrderId: context.booking.id,
           recipientUserId: context.booking.customerUserId ?? null,
@@ -809,8 +1096,8 @@ accessRoutes.post(
     return ok(c, {
       artifact,
       token: {
-        id: token.id,
-        tokenPreview: token.tokenPreview,
+        id: String(token.id),
+        tokenPreview: token.tokenPreview as string,
         rawToken,
         qrValue,
         expiresAt,
@@ -899,36 +1186,61 @@ accessRoutes.post('/public/bizes/:bizId/tickets/scan', async (c) => {
     })
   }
   if (!existingEvent) {
-    await db.insert(accessArtifactEvents).values({
+    const scanEvent = await createAccessRow(
+      c,
       bizId,
-      accessArtifactId: artifact.id,
-      eventType: 'verified',
-      happenedAt: effectiveEventAt,
-      outcome: 'allowed',
-      requestKey: requestKey ?? null,
-      reasonCode: parsed.data.markCheckedIn ? 'ticket_checked_in' : 'ticket_verified',
-      payload: {
-        scannerMode: parsed.data.scannerMode,
-        deviceRef: parsed.data.deviceRef ?? null,
-        offlineCapturedAt: parsed.data.offlineCapturedAt ?? null,
+      'accessArtifactEvents',
+      {
+        bizId,
+        accessArtifactId: artifact.id,
+        eventType: 'verified',
+        happenedAt: effectiveEventAt,
+        outcome: 'allowed',
+        requestKey: requestKey ?? null,
+        reasonCode: parsed.data.markCheckedIn ? 'ticket_checked_in' : 'ticket_verified',
+        payload: {
+          scannerMode: parsed.data.scannerMode,
+          deviceRef: parsed.data.deviceRef ?? null,
+          offlineCapturedAt: parsed.data.offlineCapturedAt ?? null,
+        },
+        metadata: parsed.data.metadata ?? {},
       },
-      metadata: parsed.data.metadata ?? {},
-    })
+      {
+        subjectType: 'access_artifact_event',
+        subjectId: artifact.id,
+        displayName: 'Ticket verified',
+        metadata: { source: 'routes.access.scanTicket' },
+      },
+    )
+    if (scanEvent instanceof Response) return scanEvent
   }
 
-  await db
-    .update(accessActionTokens)
-    .set({
+  const tokenUpdated = await updateAccessRow(
+    c,
+    bizId,
+    'accessActionTokens',
+    token.id,
+    {
       successfulValidationCount: token.successfulValidationCount + 1,
       firstValidatedAt: token.firstValidatedAt ?? effectiveEventAt,
       lastValidatedAt: effectiveEventAt,
-    })
-    .where(and(eq(accessActionTokens.bizId, bizId), eq(accessActionTokens.id, token.id)))
+    },
+    {
+      subjectType: 'access_action_token',
+      subjectId: token.id,
+      displayName: 'Ticket token validation counters',
+      metadata: { source: 'routes.access.scanTicket' },
+    },
+  )
+  if (tokenUpdated instanceof Response) return tokenUpdated
 
   if (parsed.data.markCheckedIn && context.booking) {
-    await db
-      .update(bookingOrders)
-      .set({
+    const bookingUpdated = await updateAccessRow(
+      c,
+      bizId,
+      'bookingOrders',
+      context.booking.id,
+      {
         status: 'checked_in',
         metadata: {
           ...(typeof context.booking.metadata === 'object' && context.booking.metadata ? context.booking.metadata : {}),
@@ -936,13 +1248,23 @@ accessRoutes.post('/public/bizes/:bizId/tickets/scan', async (c) => {
           checkInScannerMode: parsed.data.scannerMode,
           accessArtifactId: artifact.id,
         },
-      })
-      .where(and(eq(bookingOrders.bizId, bizId), eq(bookingOrders.id, context.booking.id)))
+      },
+      {
+        subjectType: 'booking_order',
+        subjectId: context.booking.id,
+        displayName: 'Booking checked in',
+        metadata: { source: 'routes.access.scanTicket' },
+      },
+    )
+    if (bookingUpdated instanceof Response) return bookingUpdated
 
     if (context.attendanceObligation) {
-      await db
-        .update(bookingParticipantObligations)
-        .set({
+      const obligationUpdated = await updateAccessRow(
+        c,
+        bizId,
+        'bookingParticipantObligations',
+        context.attendanceObligation.id,
+        {
           status: 'satisfied',
           satisfiedAt: effectiveEventAt,
           statusReason: 'checked_in',
@@ -953,25 +1275,39 @@ accessRoutes.post('/public/bizes/:bizId/tickets/scan', async (c) => {
             checkedInAt: effectiveEventAt.toISOString(),
             scannerMode: parsed.data.scannerMode,
           },
-        })
-        .where(
-          and(
-            eq(bookingParticipantObligations.bizId, bizId),
-            eq(bookingParticipantObligations.id, context.attendanceObligation.id),
-          ),
-        )
-
-      await db.insert(participantObligationEvents).values({
-        bizId,
-        bookingParticipantObligationId: context.attendanceObligation.id,
-        eventType: 'satisfied',
-        note: 'Attendance obligation satisfied by ticket scan.',
-        metadata: {
-          accessArtifactId: artifact.id,
-          scannerMode: parsed.data.scannerMode,
-          offlineCapturedAt: parsed.data.offlineCapturedAt ?? null,
         },
-      })
+        {
+          subjectType: 'booking_participant_obligation',
+          subjectId: context.attendanceObligation.id,
+          displayName: 'Attendance obligation satisfied',
+          metadata: { source: 'routes.access.scanTicket' },
+        },
+      )
+      if (obligationUpdated instanceof Response) return obligationUpdated
+
+      const obligationEvent = await createAccessRow(
+        c,
+        bizId,
+        'participantObligationEvents',
+        {
+          bizId,
+          bookingParticipantObligationId: context.attendanceObligation.id,
+          eventType: 'satisfied',
+          note: 'Attendance obligation satisfied by ticket scan.',
+          metadata: {
+            accessArtifactId: artifact.id,
+            scannerMode: parsed.data.scannerMode,
+            offlineCapturedAt: parsed.data.offlineCapturedAt ?? null,
+          },
+        },
+        {
+          subjectType: 'participant_obligation_event',
+          subjectId: context.attendanceObligation.id,
+          displayName: 'Obligation satisfied event',
+          metadata: { source: 'routes.access.scanTicket' },
+        },
+      )
+      if (obligationEvent instanceof Response) return obligationEvent
     }
   }
 
@@ -1014,9 +1350,12 @@ accessRoutes.post(
         : null
 
     if (attendanceObligation) {
-      await db
-        .update(bookingParticipantObligations)
-        .set({
+      const overdue = await updateAccessRow(
+        c,
+        bizId,
+        'bookingParticipantObligations',
+        attendanceObligation.id,
+        {
           status: 'overdue',
           statusReason: parsed.data.reason,
           metadata: {
@@ -1026,24 +1365,38 @@ accessRoutes.post(
             noShowAt: happenedAt.toISOString(),
             ...parsed.data.metadata,
           },
-        })
-        .where(
-          and(
-            eq(bookingParticipantObligations.bizId, bizId),
-            eq(bookingParticipantObligations.id, attendanceObligation.id),
-          ),
-        )
-
-      await db.insert(participantObligationEvents).values({
-        bizId,
-        bookingParticipantObligationId: attendanceObligation.id,
-        eventType: 'updated',
-        note: 'Attendance marked as no-show.',
-        metadata: {
-          noShowAt: happenedAt.toISOString(),
-          reason: parsed.data.reason,
         },
-      })
+        {
+          subjectType: 'booking_participant_obligation',
+          subjectId: attendanceObligation.id,
+          displayName: 'Attendance obligation marked overdue',
+          metadata: { source: 'routes.access.markNoShow' },
+        },
+      )
+      if (overdue instanceof Response) return overdue
+
+      const noShowEvent = await createAccessRow(
+        c,
+        bizId,
+        'participantObligationEvents',
+        {
+          bizId,
+          bookingParticipantObligationId: attendanceObligation.id,
+          eventType: 'updated',
+          note: 'Attendance marked as no-show.',
+          metadata: {
+            noShowAt: happenedAt.toISOString(),
+            reason: parsed.data.reason,
+          },
+        },
+        {
+          subjectType: 'participant_obligation_event',
+          subjectId: attendanceObligation.id,
+          displayName: 'No-show obligation event',
+          metadata: { source: 'routes.access.markNoShow' },
+        },
+      )
+      if (noShowEvent instanceof Response) return noShowEvent
     }
 
     const ticketLinks = await db.query.accessArtifactLinks.findMany({
@@ -1055,28 +1408,50 @@ accessRoutes.post(
     })
 
     for (const link of ticketLinks) {
-      await db.insert(accessArtifactEvents).values({
+      const event = await createAccessRow(
+        c,
         bizId,
-        accessArtifactId: link.accessArtifactId,
-        eventType: 'verification_failed',
-        happenedAt,
-        outcome: 'expired',
-        reasonCode: 'no_show',
-        reasonText: parsed.data.reason,
-        payload: parsed.data.metadata ?? {},
-      })
+        'accessArtifactEvents',
+        {
+          bizId,
+          accessArtifactId: link.accessArtifactId,
+          eventType: 'verification_failed',
+          happenedAt,
+          outcome: 'expired',
+          reasonCode: 'no_show',
+          reasonText: parsed.data.reason,
+          payload: parsed.data.metadata ?? {},
+        },
+        {
+          subjectType: 'access_artifact_event',
+          subjectId: link.accessArtifactId,
+          displayName: 'No-show ticket event',
+          metadata: { source: 'routes.access.markNoShow' },
+        },
+      )
+      if (event instanceof Response) return event
     }
 
-    await db
-      .update(bookingOrders)
-      .set({
+    const bookingUpdated = await updateAccessRow(
+      c,
+      bizId,
+      'bookingOrders',
+      bookingOrderId,
+      {
         metadata: {
           ...(typeof booking.metadata === 'object' && booking.metadata ? booking.metadata : {}),
           noShowAt: happenedAt.toISOString(),
           noShowReason: parsed.data.reason,
         },
-      })
-      .where(and(eq(bookingOrders.bizId, bizId), eq(bookingOrders.id, bookingOrderId)))
+      },
+      {
+        subjectType: 'booking_order',
+        subjectId: bookingOrderId,
+        displayName: 'Booking no-show metadata update',
+        metadata: { source: 'routes.access.markNoShow' },
+      },
+    )
+    if (bookingUpdated instanceof Response) return bookingUpdated
 
     return ok(c, {
       bookingOrderId,

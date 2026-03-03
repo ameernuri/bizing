@@ -1,6 +1,5 @@
-import { redirect } from 'next/navigation'
+import { SagaDashboardPage } from '@/components/sagas/explorer/dashboard-page'
 
-export default function OodaRootRedirect() {
-  redirect('/sagas')
+export default function SagasPage() {
+  return <SagaDashboardPage />
 }
-

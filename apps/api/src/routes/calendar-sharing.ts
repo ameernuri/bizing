@@ -17,6 +17,7 @@ import { and, asc, eq } from 'drizzle-orm'
 import { z } from 'zod'
 import dbPackage from '@bizing/db'
 import { getCurrentUser, requireAclPermission, requireAuth, requireBizAccess } from '../middleware/auth.js'
+import { executeCrudRouteAction } from '../services/action-route-bridge.js'
 import { fail, ok } from './_api.js'
 
 const {
@@ -27,6 +28,60 @@ const {
   calendarAccessGrants,
   calendarAccessGrantSources,
 } = dbPackage
+
+async function createCalendarSharingRow<
+  TTableKey extends
+    | 'calendarSyncConnections'
+    | 'externalCalendars'
+    | 'externalCalendarEvents'
+    | 'calendarAccessGrants'
+    | 'calendarAccessGrantSources',
+>(
+  c: Parameters<typeof executeCrudRouteAction>[0]['c'],
+  tableKey: TTableKey,
+  data: Parameters<typeof executeCrudRouteAction>[0]['data'],
+  meta: { subjectType: string; subjectId: string; displayName: string; source: string },
+) {
+  const result = await executeCrudRouteAction({
+    c,
+    bizId: null,
+    tableKey,
+    operation: 'create',
+    data,
+    subjectType: meta.subjectType,
+    subjectId: meta.subjectId,
+    displayName: meta.displayName,
+    metadata: { source: meta.source },
+  })
+  if (!result.ok) throw new Error(result.message ?? `Failed to create ${tableKey}`)
+  if (!result.row) throw new Error(`Missing row for ${tableKey} create`)
+  return result.row
+}
+
+async function updateCalendarGrantRow(
+  c: Parameters<typeof executeCrudRouteAction>[0]['c'],
+  grantId: string,
+  patch: Parameters<typeof executeCrudRouteAction>[0]['patch'],
+) {
+  const result = await executeCrudRouteAction({
+    c,
+    bizId: null,
+    tableKey: 'calendarAccessGrants',
+    operation: 'update',
+    id: grantId,
+    subjectType: 'calendar_access_grant',
+    subjectId: grantId,
+    displayName: 'update grant',
+    patch,
+    metadata: { source: 'routes.calendarSharing.updateGrant' },
+  })
+  if (!result.ok) {
+    if (result.code === 'CRUD_TARGET_NOT_FOUND') return null
+    throw new Error(result.message ?? 'Failed to update calendar access grant')
+  }
+  if (!result.row) return null
+  return result.row
+}
 
 const createConnectionBodySchema = z.object({
   provider: z.enum(['google', 'microsoft', 'apple', 'ical', 'other']),
@@ -112,18 +167,28 @@ calendarSharingRoutes.post('/users/me/calendar-sync-connections', requireAuth, a
   if (!user) return fail(c, 'UNAUTHORIZED', 'Authentication required.', 401)
   const parsed = createConnectionBodySchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
-  const [row] = await db.insert(calendarSyncConnections).values({
-    ownerUserId: user.id,
-    provider: parsed.data.provider,
-    providerAccountRef: parsed.data.providerAccountRef,
-    displayName: parsed.data.displayName ?? null,
-    status: 'active',
-    authSecretRef: parsed.data.authSecretRef,
-    refreshSecretRef: parsed.data.refreshSecretRef ?? null,
-    grantedScopes: parsed.data.grantedScopes,
-    providerTimezone: parsed.data.providerTimezone ?? null,
-    metadata: parsed.data.metadata ?? {},
-  }).returning()
+  const row = await createCalendarSharingRow(
+    c,
+    'calendarSyncConnections',
+    {
+      ownerUserId: user.id,
+      provider: parsed.data.provider,
+      providerAccountRef: parsed.data.providerAccountRef,
+      displayName: parsed.data.displayName ?? null,
+      status: 'active',
+      authSecretRef: parsed.data.authSecretRef,
+      refreshSecretRef: parsed.data.refreshSecretRef ?? null,
+      grantedScopes: parsed.data.grantedScopes,
+      providerTimezone: parsed.data.providerTimezone ?? null,
+      metadata: parsed.data.metadata ?? {},
+    },
+    {
+      subjectType: 'calendar_sync_connection',
+      subjectId: user.id,
+      displayName: parsed.data.provider,
+      source: 'routes.calendarSharing.createConnection',
+    },
+  )
   return ok(c, row, 201)
 })
 
@@ -142,20 +207,30 @@ calendarSharingRoutes.post('/users/me/external-calendars', requireAuth, async (c
   if (!user) return fail(c, 'UNAUTHORIZED', 'Authentication required.', 401)
   const parsed = createExternalCalendarBodySchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
-  const [row] = await db.insert(externalCalendars).values({
-    ownerUserId: user.id,
-    calendarSyncConnectionId: parsed.data.calendarSyncConnectionId,
-    providerCalendarRef: parsed.data.providerCalendarRef,
-    name: parsed.data.name,
-    description: parsed.data.description ?? null,
-    timezone: parsed.data.timezone,
-    color: parsed.data.color ?? null,
-    isPrimary: parsed.data.isPrimary,
-    isSelectedForSync: parsed.data.isSelectedForSync,
-    isReadOnly: parsed.data.isReadOnly,
-    syncState: parsed.data.syncState,
-    metadata: parsed.data.metadata ?? {},
-  }).returning()
+  const row = await createCalendarSharingRow(
+    c,
+    'externalCalendars',
+    {
+      ownerUserId: user.id,
+      calendarSyncConnectionId: parsed.data.calendarSyncConnectionId,
+      providerCalendarRef: parsed.data.providerCalendarRef,
+      name: parsed.data.name,
+      description: parsed.data.description ?? null,
+      timezone: parsed.data.timezone,
+      color: parsed.data.color ?? null,
+      isPrimary: parsed.data.isPrimary,
+      isSelectedForSync: parsed.data.isSelectedForSync,
+      isReadOnly: parsed.data.isReadOnly,
+      syncState: parsed.data.syncState,
+      metadata: parsed.data.metadata ?? {},
+    },
+    {
+      subjectType: 'external_calendar',
+      subjectId: user.id,
+      displayName: parsed.data.name,
+      source: 'routes.calendarSharing.createExternalCalendar',
+    },
+  )
   return ok(c, row, 201)
 })
 
@@ -164,22 +239,32 @@ calendarSharingRoutes.post('/users/me/external-calendar-events', requireAuth, as
   if (!user) return fail(c, 'UNAUTHORIZED', 'Authentication required.', 401)
   const parsed = createExternalEventBodySchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
-  const [row] = await db.insert(externalCalendarEvents).values({
-    ownerUserId: user.id,
-    externalCalendarId: parsed.data.externalCalendarId,
-    providerEventRef: parsed.data.providerEventRef,
-    iCalUid: parsed.data.iCalUid ?? null,
-    eventStatus: parsed.data.eventStatus,
-    busyStatus: parsed.data.busyStatus,
-    title: parsed.data.title ?? null,
-    startsAt: new Date(parsed.data.startsAt),
-    endsAt: new Date(parsed.data.endsAt),
-    isAllDay: parsed.data.isAllDay,
-    sourceCreatedAt: parsed.data.sourceCreatedAt ? new Date(parsed.data.sourceCreatedAt) : null,
-    sourceUpdatedAt: parsed.data.sourceUpdatedAt ? new Date(parsed.data.sourceUpdatedAt) : null,
-    metadata: parsed.data.metadata ?? {},
-    payload: parsed.data.payload ?? {},
-  }).returning()
+  const row = await createCalendarSharingRow(
+    c,
+    'externalCalendarEvents',
+    {
+      ownerUserId: user.id,
+      externalCalendarId: parsed.data.externalCalendarId,
+      providerEventRef: parsed.data.providerEventRef,
+      iCalUid: parsed.data.iCalUid ?? null,
+      eventStatus: parsed.data.eventStatus,
+      busyStatus: parsed.data.busyStatus,
+      title: parsed.data.title ?? null,
+      startsAt: new Date(parsed.data.startsAt),
+      endsAt: new Date(parsed.data.endsAt),
+      isAllDay: parsed.data.isAllDay,
+      sourceCreatedAt: parsed.data.sourceCreatedAt ? new Date(parsed.data.sourceCreatedAt) : null,
+      sourceUpdatedAt: parsed.data.sourceUpdatedAt ? new Date(parsed.data.sourceUpdatedAt) : null,
+      metadata: parsed.data.metadata ?? {},
+      payload: parsed.data.payload ?? {},
+    },
+    {
+      subjectType: 'external_calendar_event',
+      subjectId: parsed.data.externalCalendarId,
+      displayName: parsed.data.providerEventRef,
+      source: 'routes.calendarSharing.createExternalEvent',
+    },
+  )
   return ok(c, row, 201)
 })
 
@@ -198,20 +283,30 @@ calendarSharingRoutes.post('/users/me/calendar-access-grants', requireAuth, asyn
   if (!user) return fail(c, 'UNAUTHORIZED', 'Authentication required.', 401)
   const parsed = createGrantBodySchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
-  const [row] = await db.insert(calendarAccessGrants).values({
-    ownerUserId: user.id,
-    granteeBizId: parsed.data.granteeBizId,
-    status: parsed.data.status,
-    accessLevel: parsed.data.accessLevel,
-    scope: parsed.data.scope,
-    allowAvailabilityComputation: parsed.data.allowAvailabilityComputation,
-    allowConflictDetection: parsed.data.allowConflictDetection,
-    allowWriteBackBusyBlocks: parsed.data.allowWriteBackBusyBlocks,
-    grantedByUserId: user.id,
-    expiresAt: parsed.data.expiresAt ? new Date(parsed.data.expiresAt) : null,
-    reason: parsed.data.reason ?? null,
-    metadata: parsed.data.metadata ?? {},
-  }).returning()
+  const row = await createCalendarSharingRow(
+    c,
+    'calendarAccessGrants',
+    {
+      ownerUserId: user.id,
+      granteeBizId: parsed.data.granteeBizId,
+      status: parsed.data.status,
+      accessLevel: parsed.data.accessLevel,
+      scope: parsed.data.scope,
+      allowAvailabilityComputation: parsed.data.allowAvailabilityComputation,
+      allowConflictDetection: parsed.data.allowConflictDetection,
+      allowWriteBackBusyBlocks: parsed.data.allowWriteBackBusyBlocks,
+      grantedByUserId: user.id,
+      expiresAt: parsed.data.expiresAt ? new Date(parsed.data.expiresAt) : null,
+      reason: parsed.data.reason ?? null,
+      metadata: parsed.data.metadata ?? {},
+    },
+    {
+      subjectType: 'calendar_access_grant',
+      subjectId: user.id,
+      displayName: parsed.data.granteeBizId,
+      source: 'routes.calendarSharing.createGrant',
+    },
+  )
   return ok(c, row, 201)
 })
 
@@ -221,7 +316,7 @@ calendarSharingRoutes.patch('/users/me/calendar-access-grants/:grantId', require
   const grantId = c.req.param('grantId')
   const parsed = createGrantBodySchema.partial().safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
-  const [row] = await db.update(calendarAccessGrants).set({
+  const row = await updateCalendarGrantRow(c, grantId, {
     status: parsed.data.status,
     accessLevel: parsed.data.accessLevel,
     scope: parsed.data.scope,
@@ -232,7 +327,7 @@ calendarSharingRoutes.patch('/users/me/calendar-access-grants/:grantId', require
     expiresAt: parsed.data.expiresAt ? new Date(parsed.data.expiresAt) : undefined,
     reason: parsed.data.reason,
     metadata: parsed.data.metadata,
-  }).where(and(eq(calendarAccessGrants.ownerUserId, user.id), eq(calendarAccessGrants.id, grantId))).returning()
+  })
   if (!row) return fail(c, 'NOT_FOUND', 'Calendar access grant not found.', 404)
   return ok(c, row)
 })
@@ -260,17 +355,27 @@ calendarSharingRoutes.post('/users/me/calendar-access-grant-sources', requireAut
     where: and(eq(calendarAccessGrants.ownerUserId, user.id), eq(calendarAccessGrants.id, parsed.data.calendarAccessGrantId)),
   })
   if (!grant) return fail(c, 'NOT_FOUND', 'Calendar access grant not found.', 404)
-  const [row] = await db.insert(calendarAccessGrantSources).values({
-    ownerUserId: user.id,
-    granteeBizId: grant.granteeBizId,
-    calendarAccessGrantId: grant.id,
-    sourceType: parsed.data.sourceType,
-    externalCalendarId: parsed.data.externalCalendarId ?? null,
-    sourceBizId: parsed.data.sourceBizId ?? null,
-    calendarBindingId: parsed.data.calendarBindingId ?? null,
-    isIncluded: parsed.data.isIncluded,
-    metadata: parsed.data.metadata ?? {},
-  }).returning()
+  const row = await createCalendarSharingRow(
+    c,
+    'calendarAccessGrantSources',
+    {
+      ownerUserId: user.id,
+      granteeBizId: grant.granteeBizId,
+      calendarAccessGrantId: grant.id,
+      sourceType: parsed.data.sourceType,
+      externalCalendarId: parsed.data.externalCalendarId ?? null,
+      sourceBizId: parsed.data.sourceBizId ?? null,
+      calendarBindingId: parsed.data.calendarBindingId ?? null,
+      isIncluded: parsed.data.isIncluded,
+      metadata: parsed.data.metadata ?? {},
+    },
+    {
+      subjectType: 'calendar_access_grant_source',
+      subjectId: grant.id,
+      displayName: parsed.data.sourceType,
+      source: 'routes.calendarSharing.createGrantSource',
+    },
+  )
   return ok(c, row, 201)
 })
 

@@ -3,6 +3,7 @@ import { and, asc, count, desc, eq, ilike, inArray, sql } from 'drizzle-orm'
 import { z } from 'zod'
 import dbPackage from '@bizing/db'
 import { getCurrentUser, requireAuth } from '../middleware/auth.js'
+import { executeCrudRouteAction } from '../services/action-route-bridge.js'
 import { fail, ok, parsePositiveInt } from './_api.js'
 import { createSagaRun, getSagaRunDetail } from '../services/sagas.js'
 import { chatWithLLM } from '../services/llm.js'
@@ -262,6 +263,66 @@ function toLoopKey(title: string) {
   return `loop-${base || 'untitled'}-${suffix}`
 }
 
+async function createOodaRow(
+  c: Parameters<typeof executeCrudRouteAction>[0]['c'],
+  bizId: string | null | undefined,
+  tableKey: string,
+  data: Record<string, unknown>,
+  options?: {
+    subjectType?: string
+    subjectId?: string
+    displayName?: string
+    metadata?: Record<string, unknown>
+  },
+) {
+  const result = await executeCrudRouteAction({
+    c,
+    bizId: bizId ?? null,
+    tableKey,
+    operation: 'create',
+    data,
+    subjectType: options?.subjectType,
+    subjectId: options?.subjectId,
+    displayName: options?.displayName,
+    metadata: options?.metadata,
+  })
+  if (!result.ok) {
+    return fail(c, result.code, result.message, result.httpStatus, result.details)
+  }
+  return result.row
+}
+
+async function updateOodaRow(
+  c: Parameters<typeof executeCrudRouteAction>[0]['c'],
+  bizId: string | null | undefined,
+  tableKey: string,
+  id: string,
+  patch: Record<string, unknown>,
+  options?: {
+    subjectType?: string
+    subjectId?: string
+    displayName?: string
+    metadata?: Record<string, unknown>
+  },
+) {
+  const result = await executeCrudRouteAction({
+    c,
+    bizId: bizId ?? null,
+    tableKey,
+    operation: 'update',
+    id,
+    patch,
+    subjectType: options?.subjectType,
+    subjectId: options?.subjectId,
+    displayName: options?.displayName,
+    metadata: options?.metadata,
+  })
+  if (!result.ok) {
+    return fail(c, result.code, result.message, result.httpStatus, result.details)
+  }
+  return result.row
+}
+
 /**
  * Safely extract a `runId` string from an action result payload.
  *
@@ -279,6 +340,8 @@ function extractRunIdFromResultPayload(resultPayload: unknown): string | null {
  * Ensure one canonical loop->run link exists.
  */
 async function ensureLoopRunOutputLink(input: {
+  c: Parameters<typeof executeCrudRouteAction>[0]['c']
+  bizId?: string | null
   loopId: string
   runId: string
   actorUserId: string
@@ -294,9 +357,11 @@ async function ensureLoopRunOutputLink(input: {
   })
   if (existing) return existing
 
-  const [created] = await db
-    .insert(oodaLoopLinks)
-    .values({
+  const created = (await createOodaRow(
+    input.c,
+    input.bizId ?? null,
+    'oodaLoopLinks',
+    {
       oodaLoopId: input.loopId,
       targetType: 'saga_run',
       targetId: input.runId,
@@ -304,8 +369,15 @@ async function ensureLoopRunOutputLink(input: {
       metadata: { source: 'ooda.loop.run' },
       createdBy: input.actorUserId,
       updatedBy: input.actorUserId,
-    })
-    .returning()
+    },
+    {
+      subjectType: 'ooda_loop_link',
+      subjectId: input.runId,
+      displayName: 'OODA Loop Output Link',
+      metadata: { source: 'routes.ooda.ensureLoopRunOutputLink' },
+    },
+  )) as Record<string, unknown> | Response
+  if (created instanceof Response) throw new Error('Failed to create OODA loop output link.')
   return created
 }
 
@@ -316,7 +388,12 @@ async function ensureLoopRunOutputLink(input: {
  * ELI5:
  * This auto-heals old loop data so dashboards stop showing "stuck" state.
  */
-async function reconcileLoopRunLinkage(input: { loopId: string; actorUserId: string }) {
+async function reconcileLoopRunLinkage(input: {
+  c: Parameters<typeof executeCrudRouteAction>[0]['c']
+  bizId?: string | null
+  loopId: string
+  actorUserId: string
+}) {
   const staleActions = await db
     .select()
     .from(oodaLoopActions)
@@ -330,19 +407,17 @@ async function reconcileLoopRunLinkage(input: { loopId: string; actorUserId: str
   for (const action of staleActions) {
     const runId = extractRunIdFromResultPayload(action.resultPayload)
     if (!runId) {
-      await db
-        .update(oodaLoopActions)
-        .set({
-          status: action.status === 'running' ? 'failed' : action.status,
-          errorMessage:
-            action.errorMessage ??
-            'Action is missing run reference payload. Create a fresh run from this loop.',
-          endedAt:
-            action.status === 'running' && !action.endedAt ? new Date() : action.endedAt,
-          updatedBy: input.actorUserId,
-          updatedAt: new Date(),
-        })
-        .where(eq(oodaLoopActions.id, action.id))
+      const updated = await updateOodaRow(input.c, input.bizId ?? null, 'oodaLoopActions', action.id, {
+        status: action.status === 'running' ? 'failed' : action.status,
+        errorMessage:
+          action.errorMessage ??
+          'Action is missing run reference payload. Create a fresh run from this loop.',
+        endedAt:
+          action.status === 'running' && !action.endedAt ? new Date() : action.endedAt,
+        updatedBy: input.actorUserId,
+        updatedAt: new Date(),
+      })
+      if (updated instanceof Response) throw new Error('Failed to reconcile missing run id action.')
       continue
     }
 
@@ -350,35 +425,33 @@ async function reconcileLoopRunLinkage(input: { loopId: string; actorUserId: str
       where: and(eq(sagaRuns.id, runId), sql`deleted_at IS NULL`),
     })
     if (!run) {
-      await db
-        .update(oodaLoopActions)
-        .set({
-          status: 'failed',
-          errorMessage:
-            'Linked saga run no longer exists (likely pruned during reset). Create a new run from this loop.',
-          endedAt: action.endedAt ?? new Date(),
-          updatedBy: input.actorUserId,
-          updatedAt: new Date(),
-          resultPayload: {
-            ...(action.resultPayload as Record<string, unknown>),
-            runId,
-            staleRunReference: true,
-          },
-        })
-        .where(eq(oodaLoopActions.id, action.id))
+      const updated = await updateOodaRow(input.c, input.bizId ?? null, 'oodaLoopActions', action.id, {
+        status: 'failed',
+        errorMessage:
+          'Linked saga run no longer exists (likely pruned during reset). Create a new run from this loop.',
+        endedAt: action.endedAt ?? new Date(),
+        updatedBy: input.actorUserId,
+        updatedAt: new Date(),
+        resultPayload: {
+          ...(action.resultPayload as Record<string, unknown>),
+          runId,
+          staleRunReference: true,
+        },
+      })
+      if (updated instanceof Response) throw new Error('Failed to mark stale run reference action.')
       continue
     }
 
-    await db
-      .update(oodaLoopActions)
-      .set({
-        linkedSagaRunId: runId,
-        updatedBy: input.actorUserId,
-        updatedAt: new Date(),
-      })
-      .where(eq(oodaLoopActions.id, action.id))
+    const updated = await updateOodaRow(input.c, input.bizId ?? null, 'oodaLoopActions', action.id, {
+      linkedSagaRunId: runId,
+      updatedBy: input.actorUserId,
+      updatedAt: new Date(),
+    })
+    if (updated instanceof Response) throw new Error('Failed to update action linked saga run id.')
 
     await ensureLoopRunOutputLink({
+      c: input.c,
+      bizId: input.bizId,
       loopId: input.loopId,
       runId,
       actorUserId: input.actorUserId,
@@ -404,16 +477,16 @@ async function reconcileLoopRunLinkage(input: { loopId: string; actorUserId: str
     })
     if (!run) continue
 
-    await db
-      .update(oodaLoopEntries)
-      .set({
-        linkedSagaRunId: runId,
-        updatedBy: input.actorUserId,
-        updatedAt: new Date(),
-      })
-      .where(eq(oodaLoopEntries.id, entry.id))
+    const updated = await updateOodaRow(input.c, input.bizId ?? null, 'oodaLoopEntries', entry.id, {
+      linkedSagaRunId: runId,
+      updatedBy: input.actorUserId,
+      updatedAt: new Date(),
+    })
+    if (updated instanceof Response) throw new Error('Failed to update entry linked saga run id.')
 
     await ensureLoopRunOutputLink({
+      c: input.c,
+      bizId: input.bizId,
       loopId: input.loopId,
       runId,
       actorUserId: input.actorUserId,
@@ -571,9 +644,11 @@ oodaRoutes.post('/ooda/loops', requireAuth, async (c) => {
     return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
   }
 
-  const [created] = await db
-    .insert(oodaLoops)
-    .values({
+  const created = (await createOodaRow(
+    c,
+    parsed.data.bizId ?? null,
+    'oodaLoops',
+    {
       loopKey: parsed.data.loopKey ?? toLoopKey(parsed.data.title),
       title: parsed.data.title,
       objective: parsed.data.objective ?? null,
@@ -591,10 +666,16 @@ oodaRoutes.post('/ooda/loops', requireAuth, async (c) => {
       }),
       createdBy: user.id,
       updatedBy: user.id,
-    })
-    .returning()
+    },
+    {
+      subjectType: 'ooda_loop',
+      displayName: parsed.data.title,
+      metadata: { source: 'routes.ooda.createLoop' },
+    },
+  )) as Record<string, unknown> | Response
+  if (created instanceof Response) return created
   emitOodaRealtime({
-    loopId: created.id,
+    loopId: String(created.id),
     requestedByUserId: user.id,
     eventType: 'run.created',
     payload: { entity: 'loop' },
@@ -610,7 +691,12 @@ oodaRoutes.get('/ooda/loops/:loopId', requireAuth, async (c) => {
   const loop = await ensureLoopAccessible(loopId)
   if (!loop) return fail(c, 'NOT_FOUND', 'OODA loop not found.', 404)
 
-  await reconcileLoopRunLinkage({ loopId, actorUserId: user.id })
+  await reconcileLoopRunLinkage({
+    c,
+    bizId: loop.bizId ?? null,
+    loopId,
+    actorUserId: user.id,
+  })
 
   const [links, entries, actions] = await Promise.all([
     db.select().from(oodaLoopLinks).where(and(eq(oodaLoopLinks.oodaLoopId, loopId), sql`deleted_at IS NULL`)),
@@ -641,9 +727,12 @@ oodaRoutes.patch('/ooda/loops/:loopId', requireAuth, async (c) => {
   const existing = await ensureLoopAccessible(loopId)
   if (!existing) return fail(c, 'NOT_FOUND', 'OODA loop not found.', 404)
 
-  const [updated] = await db
-    .update(oodaLoops)
-    .set({
+  const updated = (await updateOodaRow(
+    c,
+    existing.bizId ?? null,
+    'oodaLoops',
+    loopId,
+    {
       loopKey: parsed.data.loopKey ?? undefined,
       title: parsed.data.title ?? undefined,
       objective: parsed.data.objective ?? undefined,
@@ -673,9 +762,15 @@ oodaRoutes.patch('/ooda/loops/:loopId', requireAuth, async (c) => {
           : undefined,
       updatedBy: user.id,
       updatedAt: new Date(),
-    })
-    .where(eq(oodaLoops.id, loopId))
-    .returning()
+    },
+    {
+      subjectType: 'ooda_loop',
+      subjectId: loopId,
+      displayName: parsed.data.title ?? existing.title,
+      metadata: { source: 'routes.ooda.updateLoop' },
+    },
+  )) as Record<string, unknown> | Response
+  if (updated instanceof Response) return updated
   emitOodaRealtime({
     loopId,
     requestedByUserId: user.id,
@@ -693,16 +788,19 @@ oodaRoutes.delete('/ooda/loops/:loopId', requireAuth, async (c) => {
   const loop = await ensureLoopAccessible(loopId)
   if (!loop) return fail(c, 'NOT_FOUND', 'OODA loop not found.', 404)
 
-  await db
-    .update(oodaLoops)
-    .set({
-      status: 'archived',
-      deletedAt: new Date(),
-      deletedBy: user.id,
-      updatedBy: user.id,
-      updatedAt: new Date(),
-    })
-    .where(eq(oodaLoops.id, loopId))
+  const archived = await updateOodaRow(c, loop.bizId ?? null, 'oodaLoops', loopId, {
+    status: 'archived',
+    deletedAt: new Date(),
+    deletedBy: user.id,
+    updatedBy: user.id,
+    updatedAt: new Date(),
+  }, {
+    subjectType: 'ooda_loop',
+    subjectId: loopId,
+    displayName: loop.title,
+    metadata: { source: 'routes.ooda.archiveLoop' },
+  })
+  if (archived instanceof Response) return archived
   emitOodaRealtime({
     loopId,
     requestedByUserId: user.id,
@@ -742,9 +840,11 @@ oodaRoutes.post('/ooda/loops/:loopId/links', requireAuth, async (c) => {
     return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
   }
 
-  const [created] = await db
-    .insert(oodaLoopLinks)
-    .values({
+  const created = (await createOodaRow(
+    c,
+    loop.bizId ?? null,
+    'oodaLoopLinks',
+    {
       oodaLoopId: loopId,
       targetType: parsed.data.targetType,
       targetId: parsed.data.targetId,
@@ -752,8 +852,15 @@ oodaRoutes.post('/ooda/loops/:loopId/links', requireAuth, async (c) => {
       metadata: parsed.data.metadata ?? {},
       createdBy: user.id,
       updatedBy: user.id,
-    })
-    .returning()
+    },
+    {
+      subjectType: 'ooda_loop_link',
+      subjectId: parsed.data.targetId,
+      displayName: 'OODA Loop Link',
+      metadata: { source: 'routes.ooda.createLink' },
+    },
+  )) as Record<string, unknown> | Response
+  if (created instanceof Response) return created
   emitOodaRealtime({
     loopId,
     requestedByUserId: user.id,
@@ -772,18 +879,30 @@ oodaRoutes.delete('/ooda/loops/:loopId/links/:linkId', requireAuth, async (c) =>
   const loop = await ensureLoopAccessible(loopId)
   if (!loop) return fail(c, 'NOT_FOUND', 'OODA loop not found.', 404)
 
-  const [updated] = await db
-    .update(oodaLoopLinks)
-    .set({
+  const target = await db.query.oodaLoopLinks.findFirst({
+    where: and(eq(oodaLoopLinks.id, linkId), eq(oodaLoopLinks.oodaLoopId, loopId), sql`deleted_at IS NULL`),
+  })
+  if (!target) return fail(c, 'NOT_FOUND', 'OODA link not found.', 404)
+  const updated = await updateOodaRow(
+    c,
+    loop.bizId ?? null,
+    'oodaLoopLinks',
+    linkId,
+    {
       deletedAt: new Date(),
       deletedBy: user.id,
       updatedBy: user.id,
       updatedAt: new Date(),
-    })
-    .where(and(eq(oodaLoopLinks.id, linkId), eq(oodaLoopLinks.oodaLoopId, loopId), sql`deleted_at IS NULL`))
-    .returning()
+    },
+    {
+      subjectType: 'ooda_loop_link',
+      subjectId: String(target.targetId),
+      displayName: 'OODA Loop Link',
+      metadata: { source: 'routes.ooda.deleteLink' },
+    },
+  )
 
-  if (!updated) return fail(c, 'NOT_FOUND', 'OODA link not found.', 404)
+  if (updated instanceof Response) return updated
   emitOodaRealtime({
     loopId,
     requestedByUserId: user.id,
@@ -844,9 +963,11 @@ oodaRoutes.post('/ooda/loops/:loopId/entries', requireAuth, async (c) => {
     }
   }
 
-  const [created] = await db
-    .insert(oodaLoopEntries)
-    .values({
+  const created = (await createOodaRow(
+    c,
+    loop.bizId ?? null,
+    'oodaLoopEntries',
+    {
       oodaLoopId: loopId,
       phase: parsed.data.phase,
       entryType: parsed.data.entryType,
@@ -869,17 +990,26 @@ oodaRoutes.post('/ooda/loops/:loopId/entries', requireAuth, async (c) => {
       sortOrder: parsed.data.sortOrder ?? 0,
       createdBy: user.id,
       updatedBy: user.id,
-    })
-    .returning()
+    },
+    {
+      subjectType: 'ooda_loop_entry',
+      displayName: parsed.data.title,
+      metadata: { source: 'routes.ooda.createEntry' },
+    },
+  )) as Record<string, unknown> | Response
+  if (created instanceof Response) return created
 
-  await db
-    .update(oodaLoops)
-    .set({
-      lastSignalAt: new Date(),
-      updatedAt: new Date(),
-      updatedBy: user.id,
-    })
-    .where(eq(oodaLoops.id, loopId))
+  const loopTouched = await updateOodaRow(c, loop.bizId ?? null, 'oodaLoops', loopId, {
+    lastSignalAt: new Date(),
+    updatedAt: new Date(),
+    updatedBy: user.id,
+  }, {
+    subjectType: 'ooda_loop',
+    subjectId: loopId,
+    displayName: loop.title,
+    metadata: { source: 'routes.ooda.touchLoopAfterEntry' },
+  })
+  if (loopTouched instanceof Response) return loopTouched
   emitOodaRealtime({
     loopId,
     requestedByUserId: user.id,
@@ -933,9 +1063,12 @@ oodaRoutes.patch('/ooda/loops/:loopId/entries/:entryId', requireAuth, async (c) 
     }
   }
 
-  const [updated] = await db
-    .update(oodaLoopEntries)
-    .set({
+  const updated = (await updateOodaRow(
+    c,
+    loop.bizId ?? null,
+    'oodaLoopEntries',
+    entryId,
+    {
       phase: parsed.data.phase ?? undefined,
       entryType: parsed.data.entryType ?? undefined,
       title: parsed.data.title ?? undefined,
@@ -960,15 +1093,15 @@ oodaRoutes.patch('/ooda/loops/:loopId/entries/:entryId', requireAuth, async (c) 
       sortOrder: parsed.data.sortOrder ?? undefined,
       updatedBy: user.id,
       updatedAt: new Date(),
-    })
-    .where(
-      and(
-        eq(oodaLoopEntries.id, entryId),
-        eq(oodaLoopEntries.oodaLoopId, loopId),
-        sql`deleted_at IS NULL`,
-      ),
-    )
-    .returning()
+    },
+    {
+      subjectType: 'ooda_loop_entry',
+      subjectId: entryId,
+      displayName: parsed.data.title ?? current.title,
+      metadata: { source: 'routes.ooda.updateEntry' },
+    },
+  )) as Record<string, unknown> | Response
+  if (updated instanceof Response) return updated
   emitOodaRealtime({
     loopId,
     requestedByUserId: user.id,
@@ -1003,9 +1136,11 @@ oodaRoutes.post('/ooda/loops/:loopId/actions', requireAuth, async (c) => {
   if (!parsed.success) {
     return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
   }
-  const [created] = await db
-    .insert(oodaLoopActions)
-    .values({
+  const created = (await createOodaRow(
+    c,
+    loop.bizId ?? null,
+    'oodaLoopActions',
+    {
       oodaLoopId: loopId,
       oodaLoopEntryId: parsed.data.oodaLoopEntryId ?? null,
       actionKey: parsed.data.actionKey,
@@ -1020,8 +1155,14 @@ oodaRoutes.post('/ooda/loops/:loopId/actions', requireAuth, async (c) => {
       errorMessage: parsed.data.errorMessage ?? null,
       createdBy: user.id,
       updatedBy: user.id,
-    })
-    .returning()
+    },
+    {
+      subjectType: 'ooda_loop_action',
+      displayName: parsed.data.actionTitle,
+      metadata: { source: 'routes.ooda.createAction' },
+    },
+  )) as Record<string, unknown> | Response
+  if (created instanceof Response) return created
   emitOodaRealtime({
     loopId,
     requestedByUserId: user.id,
@@ -1043,9 +1184,16 @@ oodaRoutes.patch('/ooda/loops/:loopId/actions/:actionId', requireAuth, async (c)
   if (!parsed.success) {
     return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
   }
-  const [updated] = await db
-    .update(oodaLoopActions)
-    .set({
+  const currentAction = await db.query.oodaLoopActions.findFirst({
+    where: and(eq(oodaLoopActions.id, actionId), eq(oodaLoopActions.oodaLoopId, loopId), sql`deleted_at IS NULL`),
+  })
+  if (!currentAction) return fail(c, 'NOT_FOUND', 'OODA action not found.', 404)
+  const updated = (await updateOodaRow(
+    c,
+    loop.bizId ?? null,
+    'oodaLoopActions',
+    actionId,
+    {
       oodaLoopEntryId: parsed.data.oodaLoopEntryId ?? undefined,
       actionKey: parsed.data.actionKey ?? undefined,
       actionTitle: parsed.data.actionTitle ?? undefined,
@@ -1067,16 +1215,15 @@ oodaRoutes.patch('/ooda/loops/:loopId/actions/:actionId', requireAuth, async (c)
           : undefined,
       updatedBy: user.id,
       updatedAt: new Date(),
-    })
-    .where(
-      and(
-        eq(oodaLoopActions.id, actionId),
-        eq(oodaLoopActions.oodaLoopId, loopId),
-        sql`deleted_at IS NULL`,
-      ),
-    )
-    .returning()
-  if (!updated) return fail(c, 'NOT_FOUND', 'OODA action not found.', 404)
+    },
+    {
+      subjectType: 'ooda_loop_action',
+      subjectId: actionId,
+      displayName: parsed.data.actionTitle ?? currentAction.actionTitle,
+      metadata: { source: 'routes.ooda.updateAction' },
+    },
+  )) as Record<string, unknown> | Response
+  if (updated instanceof Response) return updated
   emitOodaRealtime({
     loopId,
     requestedByUserId: user.id,
@@ -1120,14 +1267,18 @@ oodaRoutes.post('/ooda/loops/:loopId/saga-runs', requireAuth, async (c) => {
   const runId = run.run.id
 
   await ensureLoopRunOutputLink({
+    c,
+    bizId: loop.bizId ?? null,
     loopId,
     runId,
     actorUserId: user.id,
   })
 
-  const [createdAction] = await db
-    .insert(oodaLoopActions)
-    .values({
+  const createdAction = (await createOodaRow(
+    c,
+    loop.bizId ?? null,
+    'oodaLoopActions',
+    {
       oodaLoopId: loopId,
       oodaLoopEntryId: parsed.data.oodaLoopEntryId ?? null,
       actionKey: 'saga.run.create',
@@ -1148,25 +1299,41 @@ oodaRoutes.post('/ooda/loops/:loopId/saga-runs', requireAuth, async (c) => {
       endedAt: parsed.data.autoExecute ? null : undefined,
       createdBy: user.id,
       updatedBy: user.id,
-    })
-    .returning()
+    },
+    {
+      subjectType: 'ooda_loop_action',
+      subjectId: runId,
+      displayName: parsed.data.actionTitle ?? `Run ${parsed.data.sagaKey}`,
+      metadata: { source: 'routes.ooda.createSagaRunAction' },
+    },
+  )) as Record<string, unknown> | Response
+  if (createdAction instanceof Response) return createdAction
 
-  let action = createdAction
+  let action = createdAction as Record<string, unknown>
   if (parsed.data.autoExecute) {
     const cookie = c.req.header('cookie')
     if (!cookie) {
-      const [blockedAction] = await db
-        .update(oodaLoopActions)
-        .set({
+      const blockedAction = await updateOodaRow(
+        c,
+        loop.bizId ?? null,
+        'oodaLoopActions',
+        String(createdAction.id),
+        {
           status: 'failed',
           errorMessage:
             'Run created, but execution could not start because session cookie was missing.',
           endedAt: new Date(),
           updatedAt: new Date(),
           updatedBy: user.id,
-        })
-        .where(eq(oodaLoopActions.id, createdAction.id))
-        .returning()
+        },
+        {
+          subjectType: 'ooda_loop_action',
+          subjectId: String(createdAction.id),
+          displayName: 'Run Saga',
+          metadata: { source: 'routes.ooda.blockedSagaRunAction' },
+        },
+      )
+      if (blockedAction instanceof Response) return blockedAction
       action = blockedAction ?? createdAction
     } else {
       const execution = await executeExistingSagaRun({
@@ -1183,9 +1350,12 @@ oodaRoutes.post('/ooda/loops/:loopId/saga-runs', requireAuth, async (c) => {
       const refreshedRunRow = await db.query.sagaRuns.findFirst({
         where: eq(sagaRuns.id, runId),
       })
-      const [updatedAction] = await db
-        .update(oodaLoopActions)
-        .set({
+      const updatedAction = await updateOodaRow(
+        c,
+        loop.bizId ?? null,
+        'oodaLoopActions',
+        String(createdAction.id),
+        {
           status: execution.ok ? 'succeeded' : 'failed',
           endedAt: new Date(),
           updatedAt: new Date(),
@@ -1200,9 +1370,15 @@ oodaRoutes.post('/ooda/loops/:loopId/saga-runs', requireAuth, async (c) => {
             failureCount: execution.failures.length,
             failures: execution.failures.slice(0, 10),
           },
-        })
-        .where(eq(oodaLoopActions.id, createdAction.id))
-        .returning()
+        },
+        {
+          subjectType: 'ooda_loop_action',
+          subjectId: String(createdAction.id),
+          displayName: 'Run Saga',
+          metadata: { source: 'routes.ooda.finalizeSagaRunAction' },
+        },
+      )
+      if (updatedAction instanceof Response) return updatedAction
       action = updatedAction ?? createdAction
       const refreshedRunDetail = await getSagaRunDetail(runId)
       if (refreshedRunDetail) runDetail = refreshedRunDetail

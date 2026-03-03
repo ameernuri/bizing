@@ -96,6 +96,7 @@ export default defineConfig({
     "./src/schema/gift_delivery.ts",
     "./src/schema/marketing_performance.ts",
     "./src/schema/crm.ts",
+    "./src/schema/customer_ops.ts",
     "./src/schema/supply_batches.ts",
     "./src/schema/ooda.ts",
     "./src/schema/sagas.ts",

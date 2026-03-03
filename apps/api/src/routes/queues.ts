@@ -24,6 +24,7 @@ import {
   requireAuth,
   requireBizAccess,
 } from '../middleware/auth.js'
+import { executeCrudRouteAction } from '../services/action-route-bridge.js'
 import { fail, ok, parsePositiveInt } from './_api.js'
 
 const { db, queues, queueEntries, bizConfigValues } = dbPackage
@@ -172,6 +173,62 @@ const recallQueueEntryBodySchema = z.object({
   metadata: z.record(z.unknown()).optional(),
 })
 
+async function createQueueRow(
+  c: Parameters<typeof executeCrudRouteAction>[0]['c'],
+  bizId: string,
+  tableKey: string,
+  data: Record<string, unknown>,
+  options?: {
+    subjectType?: string
+    subjectId?: string
+    displayName?: string
+    metadata?: Record<string, unknown>
+  },
+) {
+  const result = await executeCrudRouteAction({
+    c,
+    bizId,
+    tableKey,
+    operation: 'create',
+    data,
+    subjectType: options?.subjectType,
+    subjectId: options?.subjectId,
+    displayName: options?.displayName,
+    metadata: options?.metadata,
+  })
+  if (!result.ok) return fail(c, result.code, result.message, result.httpStatus, result.details)
+  return result.row
+}
+
+async function updateQueueRow(
+  c: Parameters<typeof executeCrudRouteAction>[0]['c'],
+  bizId: string,
+  tableKey: string,
+  id: string,
+  patch: Record<string, unknown>,
+  options?: {
+    subjectType?: string
+    subjectId?: string
+    displayName?: string
+    metadata?: Record<string, unknown>
+  },
+) {
+  const result = await executeCrudRouteAction({
+    c,
+    bizId,
+    tableKey,
+    operation: 'update',
+    id,
+    patch,
+    subjectType: options?.subjectType,
+    subjectId: options?.subjectId ?? id,
+    displayName: options?.displayName,
+    metadata: options?.metadata,
+  })
+  if (!result.ok) return fail(c, result.code, result.message, result.httpStatus, result.details)
+  return result.row
+}
+
 function isUniqueViolationForQueueActiveCustomer(error: unknown) {
   if (!error || typeof error !== 'object') return false
   const pgCode = (error as { code?: string }).code
@@ -273,9 +330,7 @@ queueRoutes.post(
       return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
     }
 
-    const [created] = await db
-      .insert(queues)
-      .values({
+    const created = await createQueueRow(c, bizId, 'queues', {
         bizId,
         locationId: parsed.data.locationId,
         name: parsed.data.name,
@@ -289,8 +344,11 @@ queueRoutes.post(
         isSelfJoinEnabled: parsed.data.isSelfJoinEnabled,
         policy: parsed.data.policy ?? {},
         metadata: parsed.data.metadata ?? {},
-      })
-      .returning()
+      }, {
+      subjectType: 'queue',
+      displayName: parsed.data.name,
+    })
+    if (created instanceof Response) return created
 
     return ok(c, created, 201)
   },
@@ -386,13 +444,13 @@ queueRoutes.patch(
     })
     if (!existing) return fail(c, 'NOT_FOUND', 'Queue not found.', 404)
 
-    const [updated] = await db
-      .update(queues)
-      .set({
+    const updated = await updateQueueRow(c, bizId, 'queues', queueId, {
         ...parsed.data,
-      })
-      .where(and(eq(queues.bizId, bizId), eq(queues.id, queueId)))
-      .returning()
+      }, {
+      subjectType: 'queue',
+      displayName: existing.name,
+    })
+    if (updated instanceof Response) return updated
 
     return ok(c, updated)
   },
@@ -411,12 +469,13 @@ queueRoutes.delete(
     })
     if (!existing) return fail(c, 'NOT_FOUND', 'Queue not found.', 404)
 
-    await db
-      .update(queues)
-      .set({
+    const archived = await updateQueueRow(c, bizId, 'queues', queueId, {
         status: 'archived',
-      })
-      .where(and(eq(queues.bizId, bizId), eq(queues.id, queueId)))
+      }, {
+      subjectType: 'queue',
+      displayName: existing.name,
+    })
+    if (archived instanceof Response) return archived
 
     return ok(c, { id: queueId })
   },
@@ -497,9 +556,7 @@ queueRoutes.post(
     }
 
     try {
-      const [created] = await db
-        .insert(queueEntries)
-        .values({
+      const created = await createQueueRow(c, bizId, 'queueEntries', {
           bizId,
           queueId,
           customerUserId: parsed.data.customerUserId,
@@ -520,8 +577,11 @@ queueRoutes.post(
           servedAt: parsed.data.servedAt ? new Date(parsed.data.servedAt) : undefined,
           decisionState: parsed.data.decisionState ?? {},
           metadata: parsed.data.metadata ?? {},
-        })
-        .returning()
+        }, {
+        subjectType: 'queue_entry',
+        displayName: parsed.data.displayCode ?? 'Queue Entry',
+      })
+      if (created instanceof Response) return created
       return ok(c, created, 201)
     } catch (error) {
       if (isUniqueViolationForQueueActiveCustomer(error)) {
@@ -568,9 +628,7 @@ queueRoutes.patch(
       return fail(c, statusConfigValidation.code, statusConfigValidation.message, 409)
     }
 
-    const [updated] = await db
-      .update(queueEntries)
-      .set({
+    const updated = await updateQueueRow(c, bizId, 'queueEntries', queueEntryId, {
         status: parsed.data.status,
         statusConfigValueId:
           parsed.data.statusConfigValueId === undefined ? undefined : parsed.data.statusConfigValueId,
@@ -605,15 +663,11 @@ queueRoutes.patch(
               : null,
         decisionState: parsed.data.decisionState,
         metadata: parsed.data.metadata,
-      })
-      .where(
-        and(
-          eq(queueEntries.bizId, bizId),
-          eq(queueEntries.queueId, queueId),
-          eq(queueEntries.id, queueEntryId),
-        ),
-      )
-      .returning()
+      }, {
+      subjectType: 'queue_entry',
+      displayName: existing.displayCode ?? existing.id,
+    })
+    if (updated instanceof Response) return updated
 
     return ok(c, updated)
   },
@@ -651,9 +705,7 @@ queueRoutes.post(
     if (!existing) return fail(c, 'NOT_FOUND', 'Queue entry not found.', 404)
     if (!targetQueue) return fail(c, 'NOT_FOUND', 'Target queue not found.', 404)
 
-    const [updated] = await db
-      .update(queueEntries)
-      .set({
+    const updated = await updateQueueRow(c, bizId, 'queueEntries', queueEntryId, {
         queueId: parsed.data.targetQueueId,
         priorityScore: parsed.data.preservePriorityScore ? existing.priorityScore : 0,
         metadata: {
@@ -665,9 +717,11 @@ queueRoutes.post(
           },
           ...((parsed.data.metadata ?? {}) as Record<string, unknown>),
         },
-      })
-      .where(and(eq(queueEntries.bizId, bizId), eq(queueEntries.id, queueEntryId)))
-      .returning()
+      }, {
+      subjectType: 'queue_entry',
+      displayName: existing.displayCode ?? existing.id,
+    })
+    if (updated instanceof Response) return updated
 
     return ok(c, updated, 201)
   },
@@ -700,9 +754,7 @@ queueRoutes.post(
 
     const now = new Date()
     const recallCount = Number(((existing.metadata ?? {}) as Record<string, unknown>).recallCount ?? 0) + 1
-    const [updated] = await db
-      .update(queueEntries)
-      .set({
+    const updated = await updateQueueRow(c, bizId, 'queueEntries', queueEntryId, {
         status: 'offered',
         offeredAt: now,
         offerExpiresAt: new Date(now.getTime() + parsed.data.holdMinutes * 60 * 1000),
@@ -713,9 +765,11 @@ queueRoutes.post(
           recallAt: now.toISOString(),
           ...((parsed.data.metadata ?? {}) as Record<string, unknown>),
         },
-      })
-      .where(and(eq(queueEntries.bizId, bizId), eq(queueEntries.id, queueEntryId)))
-      .returning()
+      }, {
+      subjectType: 'queue_entry',
+      displayName: existing.displayCode ?? existing.id,
+    })
+    if (updated instanceof Response) return updated
 
     return ok(c, updated, 201)
   },
@@ -788,17 +842,17 @@ queueRoutes.post(
       ...(parsed.data.metadata ?? {}),
     }
 
-    const [updated] = await db
-      .update(queueEntries)
-      .set({
+    const updated = await updateQueueRow(c, bizId, 'queueEntries', selected.id, {
         status: 'offered',
         offeredAt,
         offerExpiresAt,
         decisionState: nextDecisionState,
         metadata: nextMetadata,
-      })
-      .where(and(eq(queueEntries.bizId, bizId), eq(queueEntries.queueId, queueId), eq(queueEntries.id, selected.id)))
-      .returning()
+      }, {
+      subjectType: 'queue_entry',
+      displayName: selected.displayCode ?? selected.id,
+    })
+    if (updated instanceof Response) return updated
 
     return ok(c, updated, 201)
   },
@@ -864,9 +918,7 @@ queueRoutes.post('/public/bizes/:bizId/queues/:queueId/entries', requireAuth, as
   }
 
   try {
-    const [created] = await db
-      .insert(queueEntries)
-      .values({
+    const created = await createQueueRow(c, bizId, 'queueEntries', {
         bizId,
         queueId,
         customerUserId: user.id,
@@ -876,8 +928,11 @@ queueRoutes.post('/public/bizes/:bizId/queues/:queueId/entries', requireAuth, as
         priorityScore: parsed.data.priorityScore,
         displayCode: parsed.data.displayCode,
         metadata: parsed.data.metadata ?? {},
-      })
-      .returning()
+      }, {
+      subjectType: 'queue_entry',
+      displayName: parsed.data.displayCode ?? 'Public Queue Entry',
+    })
+    if (created instanceof Response) return created
 
     return ok(c, created, 201)
   } catch (error) {
@@ -993,15 +1048,15 @@ queueRoutes.post('/public/bizes/:bizId/queues/:queueId/entries/:queueEntryId/res
     ...(parsed.data.metadata ?? {}),
   }
 
-  const [updated] = await db
-    .update(queueEntries)
-    .set({
+  const updated = await updateQueueRow(c, bizId, 'queueEntries', queueEntryId, {
       status: nextStatus,
       decisionState: nextDecisionState,
       metadata: nextMetadata,
-    })
-    .where(and(eq(queueEntries.bizId, bizId), eq(queueEntries.queueId, queueId), eq(queueEntries.id, queueEntryId)))
-    .returning()
+    }, {
+    subjectType: 'queue_entry',
+    displayName: existing.displayCode ?? existing.id,
+  })
+  if (updated instanceof Response) return updated
 
   return ok(c, updated)
 })

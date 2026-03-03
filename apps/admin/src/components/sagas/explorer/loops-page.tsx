@@ -86,7 +86,7 @@ export function OodaLoopsPage() {
       })
       setCreateOpen(false)
       setForm({ title: '', objective: '' })
-      window.location.href = `/sagas/loops/${created.id}`
+      window.location.href = `/ooda/loops/${created.id}`
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Failed to create OODA loop.')
     } finally {
@@ -126,7 +126,7 @@ export function OodaLoopsPage() {
         ) : (
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {filtered.map((loop) => (
-              <Link key={loop.id} href={`/sagas/loops/${loop.id}`} className="block">
+              <Link key={loop.id} href={`/ooda/loops/${loop.id}`} className="block">
                 <Card className="h-full transition-colors hover:border-primary/40 hover:bg-muted/30">
                   <CardHeader className="space-y-3">
                     <div className="flex items-start justify-between gap-2">

@@ -17,6 +17,7 @@ import { and, asc, desc, eq } from 'drizzle-orm'
 import { z } from 'zod'
 import dbPackage from '@bizing/db'
 import { requireAclPermission, requireAuth, requireBizAccess } from '../middleware/auth.js'
+import { executeCrudRouteAction } from '../services/action-route-bridge.js'
 import { sanitizePlainText, sanitizeUnknown } from '../lib/sanitize.js'
 import { fail, ok } from './_api.js'
 
@@ -95,6 +96,28 @@ const taxCalculationBodySchema = z.object({
 
 export const taxFxRoutes = new Hono()
 
+async function createTaxFxRow<T extends Record<string, unknown>>(input: {
+  c: Parameters<typeof fail>[0]
+  bizId: string
+  tableKey: string
+  subjectType: string
+  data: Record<string, unknown>
+  displayName?: string
+}) {
+  const delegated = await executeCrudRouteAction({
+    c: input.c,
+    bizId: input.bizId,
+    tableKey: input.tableKey,
+    operation: 'create',
+    subjectType: input.subjectType,
+    displayName: input.displayName,
+    data: input.data,
+    metadata: { routeFamily: 'tax-fx' },
+  })
+  if (!delegated.ok) return fail(input.c, delegated.code, delegated.message, delegated.httpStatus, delegated.details)
+  return delegated.row as T
+}
+
 taxFxRoutes.get(
   '/bizes/:bizId/fx-rate-snapshots',
   requireAuth,
@@ -120,7 +143,13 @@ taxFxRoutes.post(
     const parsed = fxRateBodySchema.safeParse(await c.req.json().catch(() => null))
     if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
 
-    const [created] = await db.insert(fxRateSnapshots).values({
+    const created = await createTaxFxRow<typeof fxRateSnapshots.$inferSelect>({
+      c,
+      bizId,
+      tableKey: 'fxRateSnapshots',
+      subjectType: 'fx_rate_snapshot',
+      displayName: `${parsed.data.baseCurrency}/${parsed.data.quoteCurrency}`,
+      data: {
       bizId,
       baseCurrency: parsed.data.baseCurrency,
       quoteCurrency: parsed.data.quoteCurrency,
@@ -130,7 +159,9 @@ taxFxRoutes.post(
       effectiveAt: new Date(parsed.data.effectiveAt),
       expiresAt: parsed.data.expiresAt ? new Date(parsed.data.expiresAt) : null,
       metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
-    }).returning()
+      },
+    })
+    if (created instanceof Response) return created
 
     return ok(c, created, 201)
   },
@@ -161,7 +192,13 @@ taxFxRoutes.post(
     const parsed = taxProfileBodySchema.safeParse(await c.req.json().catch(() => null))
     if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
 
-    const [created] = await db.insert(taxProfiles).values({
+    const created = await createTaxFxRow<typeof taxProfiles.$inferSelect>({
+      c,
+      bizId,
+      tableKey: 'taxProfiles',
+      subjectType: 'tax_profile',
+      displayName: parsed.data.name,
+      data: {
       bizId,
       name: sanitizePlainText(parsed.data.name),
       slug: parsed.data.slug,
@@ -173,7 +210,9 @@ taxFxRoutes.post(
       taxInclusiveDefault: parsed.data.taxInclusiveDefault,
       roundingPolicy: sanitizeUnknown(parsed.data.roundingPolicy ?? {}),
       metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
-    }).returning()
+      },
+    })
+    if (created instanceof Response) return created
 
     return ok(c, created, 201)
   },
@@ -208,7 +247,13 @@ taxFxRoutes.post(
     const parsed = taxRuleBodySchema.safeParse(await c.req.json().catch(() => null))
     if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
 
-    const [created] = await db.insert(taxRuleRefs).values({
+    const created = await createTaxFxRow<typeof taxRuleRefs.$inferSelect>({
+      c,
+      bizId,
+      tableKey: 'taxRuleRefs',
+      subjectType: 'tax_rule_ref',
+      displayName: parsed.data.ruleKey,
+      data: {
       bizId,
       taxProfileId: parsed.data.taxProfileId,
       ruleKey: sanitizePlainText(parsed.data.ruleKey),
@@ -220,7 +265,9 @@ taxFxRoutes.post(
       validFrom: parsed.data.validFrom ? new Date(parsed.data.validFrom) : null,
       validTo: parsed.data.validTo ? new Date(parsed.data.validTo) : null,
       metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
-    }).returning()
+      },
+    })
+    if (created instanceof Response) return created
 
     return ok(c, created, 201)
   },
@@ -251,7 +298,13 @@ taxFxRoutes.post(
     const parsed = taxCalculationBodySchema.safeParse(await c.req.json().catch(() => null))
     if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
 
-    const [created] = await db.insert(taxCalculations).values({
+    const created = await createTaxFxRow<typeof taxCalculations.$inferSelect>({
+      c,
+      bizId,
+      tableKey: 'taxCalculations',
+      subjectType: 'tax_calculation',
+      displayName: parsed.data.bookingOrderId ?? parsed.data.arInvoiceId ?? 'tax_calc',
+      data: {
       bizId,
       taxProfileId: parsed.data.taxProfileId ?? null,
       taxRuleRefId: parsed.data.taxRuleRefId ?? null,
@@ -268,7 +321,9 @@ taxFxRoutes.post(
       inputSnapshot: sanitizeUnknown(parsed.data.inputSnapshot ?? {}),
       outputBreakdown: sanitizeUnknown(parsed.data.outputBreakdown ?? {}),
       metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
-    }).returning()
+      },
+    })
+    if (created instanceof Response) return created
 
     return ok(c, created, 201)
   },

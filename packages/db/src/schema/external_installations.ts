@@ -12,6 +12,7 @@ import { actionRequests } from "./action_backbone";
 import { bizes } from "./bizes";
 import { debugSnapshots } from "./projections";
 import { domainEvents } from "./domain_events";
+import { crmContacts } from "./crm";
 import { users } from "./users";
 import { subjects } from "./subjects";
 
@@ -119,7 +120,9 @@ export const customerProfiles = pgTable(
   "customer_profiles",
   {
     id: idWithTag("customer_profile"),
-    bizId: idRef("biz_id").references(() => bizes.id),
+    bizId: idRef("biz_id")
+      .references(() => bizes.id)
+      .notNull(),
 
     /**
      * Profile lifecycle.
@@ -135,7 +138,20 @@ export const customerProfiles = pgTable(
     primaryEmail: varchar("primary_email", { length: 320 }),
     primaryPhone: varchar("primary_phone", { length: 40 }),
     claimedUserId: idRef("claimed_user_id").references(() => users.id),
+    primaryCrmContactId: idRef("primary_crm_contact_id").references(() => crmContacts.id),
     isVerified: boolean("is_verified").default(false).notNull(),
+    lifecycleStage: varchar("lifecycle_stage", { length: 40 })
+      .default("prospect")
+      .notNull(),
+    supportTier: varchar("support_tier", { length: 40 })
+      .default("standard")
+      .notNull(),
+    acquisitionSourceType: varchar("acquisition_source_type", { length: 80 }),
+    acquisitionSourceRef: varchar("acquisition_source_ref", { length: 220 }),
+    firstSeenAt: timestamp("first_seen_at", { withTimezone: true }).defaultNow().notNull(),
+    lastSeenAt: timestamp("last_seen_at", { withTimezone: true }),
+    lastEngagedAt: timestamp("last_engaged_at", { withTimezone: true }),
+    lastPurchaseAt: timestamp("last_purchase_at", { withTimezone: true }),
     profileData: jsonb("profile_data").default({}).notNull(),
     metadata: jsonb("metadata").default({}).notNull(),
 
@@ -149,7 +165,39 @@ export const customerProfiles = pgTable(
     customerProfilesBizStatusIdx: index("customer_profiles_biz_status_idx").on(
       table.bizId,
       table.status,
+      table.lifecycleStage,
+      table.supportTier,
       table.isVerified,
+    ),
+    customerProfilesBizEmailIdx: index("customer_profiles_biz_email_idx").on(
+      table.bizId,
+      table.primaryEmail,
+    ),
+    customerProfilesBizPhoneIdx: index("customer_profiles_biz_phone_idx").on(
+      table.bizId,
+      table.primaryPhone,
+    ),
+    customerProfilesStageCheck: check(
+      "customer_profiles_stage_check",
+      sql`
+      "lifecycle_stage" IN ('lead', 'prospect', 'customer', 'retained', 'at_risk', 'churned')
+      OR "lifecycle_stage" LIKE 'custom_%'
+      `,
+    ),
+    customerProfilesSupportTierCheck: check(
+      "customer_profiles_support_tier_check",
+      sql`
+      "support_tier" IN ('standard', 'priority', 'vip', 'enterprise')
+      OR "support_tier" LIKE 'custom_%'
+      `,
+    ),
+    customerProfilesTimelineCheck: check(
+      "customer_profiles_timeline_check",
+      sql`
+      ("last_seen_at" IS NULL OR "last_seen_at" >= "first_seen_at")
+      AND ("last_engaged_at" IS NULL OR "last_engaged_at" >= "first_seen_at")
+      AND ("last_purchase_at" IS NULL OR "last_purchase_at" >= "first_seen_at")
+      `,
     ),
   }),
 );

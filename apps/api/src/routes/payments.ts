@@ -23,6 +23,7 @@ import {
   requireAuth,
   requireBizAccess,
 } from '../middleware/auth.js'
+import { executeCrudRouteAction } from '../services/action-route-bridge.js'
 import { fail, ok, parsePositiveInt } from './_api.js'
 
 const {
@@ -92,6 +93,66 @@ const refundPaymentBodySchema = z.object({
   metadata: z.record(z.unknown()).optional(),
 })
 
+async function createPaymentRow(
+  c: Parameters<typeof executeCrudRouteAction>[0]['c'],
+  bizId: string,
+  tableKey: string,
+  data: Record<string, unknown>,
+  options?: {
+    subjectType?: string
+    subjectId?: string
+    displayName?: string
+    metadata?: Record<string, unknown>
+  },
+) {
+  const result = await executeCrudRouteAction({
+    c,
+    bizId,
+    tableKey,
+    operation: 'create',
+    data,
+    subjectType: options?.subjectType,
+    subjectId: options?.subjectId,
+    displayName: options?.displayName,
+    metadata: options?.metadata,
+  })
+  if (!result.ok) {
+    return fail(c, result.code, result.message, result.httpStatus, result.details)
+  }
+  return result.row
+}
+
+async function updatePaymentRow(
+  c: Parameters<typeof executeCrudRouteAction>[0]['c'],
+  bizId: string,
+  tableKey: string,
+  id: string,
+  patch: Record<string, unknown>,
+  options?: {
+    subjectType?: string
+    subjectId?: string
+    displayName?: string
+    metadata?: Record<string, unknown>
+  },
+) {
+  const result = await executeCrudRouteAction({
+    c,
+    bizId,
+    tableKey,
+    operation: 'update',
+    id,
+    patch,
+    subjectType: options?.subjectType,
+    subjectId: options?.subjectId ?? id,
+    displayName: options?.displayName,
+    metadata: options?.metadata,
+  })
+  if (!result.ok) {
+    return fail(c, result.code, result.message, result.httpStatus, result.details)
+  }
+  return result.row
+}
+
 /**
  * Guarantees a deterministic routing account for platform-managed Stripe-like writes.
  *
@@ -101,7 +162,10 @@ const refundPaymentBodySchema = z.object({
  *   default merchant-of-record model: platform-managed Stripe accounts first,
  *   custom processors optional later.
  */
-async function getOrCreateDefaultProcessorAccount(bizId: string) {
+async function getOrCreateDefaultProcessorAccount(
+  c: Parameters<typeof executeCrudRouteAction>[0]['c'],
+  bizId: string,
+): Promise<{ id: string }> {
   const existing = await db.query.paymentProcessorAccounts.findFirst({
     where: and(
       eq(paymentProcessorAccounts.bizId, bizId),
@@ -110,11 +174,14 @@ async function getOrCreateDefaultProcessorAccount(bizId: string) {
     ),
     orderBy: [desc(paymentProcessorAccounts.id)],
   })
-  if (existing) return existing
+  if (existing) return { id: existing.id }
 
-  const [created] = await db
-    .insert(paymentProcessorAccounts)
-    .values({
+  const actionResult = await executeCrudRouteAction({
+    c,
+    bizId,
+    tableKey: 'paymentProcessorAccounts',
+    operation: 'create',
+    data: {
       bizId,
       providerKey: 'stripe',
       processorAccountRef: `stripe-platform-${bizId}`,
@@ -130,10 +197,20 @@ async function getOrCreateDefaultProcessorAccount(bizId: string) {
       configuration: { mode: 'simulated', merchantOfRecord: 'bizing_platform' },
       capabilities: { simulated: true, stripeCompatible: true },
       metadata: { source: 'payments-route', defaultProvider: 'stripe' },
-    })
-    .returning()
-
-  return created
+    },
+    subjectType: 'payment_processor_account',
+    displayName: 'Default Processor Account',
+    metadata: { source: 'payments.getOrCreateDefaultProcessorAccount' },
+  })
+  if (!actionResult.ok) {
+    throw new Error(actionResult.message)
+  }
+  const created = actionResult.row as Record<string, unknown> | null
+  const createdId = created?.id
+  if (typeof createdId !== 'string' || createdId.length === 0) {
+    throw new Error('Failed to create default payment processor account.')
+  }
+  return { id: createdId }
 }
 
 /**
@@ -145,6 +222,7 @@ async function getOrCreateDefaultProcessorAccount(bizId: string) {
  * - we synthesize a canonical base line so payment line allocations are valid.
  */
 async function ensureBaseBookingLine(input: {
+  c: Parameters<typeof executeCrudRouteAction>[0]['c']
   bizId: string
   bookingOrderId: string
   subtotalMinor: number
@@ -164,9 +242,11 @@ async function ensureBaseBookingLine(input: {
   const baseAmount = Math.max(0, input.subtotalMinor || input.totalMinor)
   if (baseAmount <= 0) return rows
 
-  const [created] = await db
-    .insert(bookingOrderLines)
-    .values({
+  const created = (await createPaymentRow(
+    input.c,
+    input.bizId,
+    'bookingOrderLines',
+    {
       bizId: input.bizId,
       bookingOrderId: input.bookingOrderId,
       lineType: 'offer_base',
@@ -175,10 +255,18 @@ async function ensureBaseBookingLine(input: {
       unitAmountMinor: baseAmount,
       lineTotalMinor: baseAmount,
       pricingDetail: { source: 'auto_seed' },
-    })
-    .returning()
+    },
+    {
+      subjectType: 'booking_order_line',
+      displayName: 'Auto Base Booking Line',
+      metadata: { source: 'payments.ensureBaseBookingLine' },
+    },
+  )) as Record<string, unknown> | Response
+  if (created instanceof Response) {
+    throw new Error('Failed to create auto base booking line.')
+  }
 
-  return [created]
+  return [created as (typeof rows)[number]]
 }
 
 type AllocationPlanRow = {
@@ -281,12 +369,14 @@ paymentRoutes.post(
     const tenderTotalMinor = parsed.data.tenders.reduce((sum, row) => sum + row.allocatedMinor, 0)
     const expectedTotalMinor = booking.totalMinor + tipMinor
     const simulatedDeclineTender = parsed.data.tenders.find((row) => row.metadata?.simulateDecline === true)
-    const processor = await getOrCreateDefaultProcessorAccount(bizId)
+    const processor = await getOrCreateDefaultProcessorAccount(c, bizId)
 
     if (simulatedDeclineTender) {
-      const [intent] = await db
-        .insert(paymentIntents)
-        .values({
+      const intent = await createPaymentRow(
+        c,
+        bizId,
+        'paymentIntents',
+        {
           bizId,
           bookingOrderId,
           paymentProcessorAccountId: processor.id,
@@ -304,12 +394,16 @@ paymentRoutes.post(
             simulatedDecline: true,
           },
           metadata: parsed.data.metadata ?? {},
-        })
-        .returning()
+        },
+        { subjectType: 'payment_intent', displayName: 'Declined Payment Intent' },
+      )
+      if (intent instanceof Response) return intent
 
-      const [method] = await db
-        .insert(paymentMethods)
-        .values({
+      const method = await createPaymentRow(
+        c,
+        bizId,
+        'paymentMethods',
+        {
           bizId,
           paymentProcessorAccountId: processor.id,
           type: simulatedDeclineTender.methodType,
@@ -322,32 +416,40 @@ paymentRoutes.post(
             ...(simulatedDeclineTender.metadata ?? {}),
             checkoutUserId: user.id,
           },
-        })
-        .returning()
+        },
+        { subjectType: 'payment_method', displayName: 'Declined Payment Method' },
+      )
+      if (method instanceof Response) return method
 
-      const [intentTender] = await db
-        .insert(paymentIntentTenders)
-        .values({
+      const intentTender = await createPaymentRow(
+        c,
+        bizId,
+        'paymentIntentTenders',
+        {
           bizId,
-          paymentIntentId: intent.id,
-          paymentMethodId: method.id,
+          paymentIntentId: (intent as Record<string, unknown>).id,
+          paymentMethodId: (method as Record<string, unknown>).id,
           methodType: simulatedDeclineTender.methodType,
           allocatedMinor: expectedTotalMinor,
           capturedMinor: 0,
           refundedMinor: 0,
           sortOrder: 1,
           metadata: simulatedDeclineTender.metadata ?? {},
-        })
-        .returning()
+        },
+        { subjectType: 'payment_intent_tender', displayName: 'Declined Intent Tender' },
+      )
+      if (intentTender instanceof Response) return intentTender
 
-      const [transaction] = await db
-        .insert(paymentTransactions)
-        .values({
+      const transaction = await createPaymentRow(
+        c,
+        bizId,
+        'paymentTransactions',
+        {
           bizId,
-          paymentIntentId: intent.id,
+          paymentIntentId: (intent as Record<string, unknown>).id as string,
           bookingOrderId,
-          paymentIntentTenderId: intentTender.id,
-          paymentMethodId: method.id,
+          paymentIntentTenderId: (intentTender as Record<string, unknown>).id as string,
+          paymentMethodId: (method as Record<string, unknown>).id as string,
           paymentProcessorAccountId: processor.id,
           type: 'charge',
           status: 'failed',
@@ -358,30 +460,41 @@ paymentRoutes.post(
           metadata: {
             simulateDecline: true,
           },
-        })
-        .returning()
+        },
+        { subjectType: 'payment_transaction', displayName: 'Declined Charge Transaction' },
+      )
+      if (transaction instanceof Response) return transaction
 
-      await db.insert(paymentIntentEvents).values([
+      for (const eventRow of [
         {
           bizId,
-          paymentIntentId: intent.id,
+          paymentIntentId: (intent as Record<string, unknown>).id as string,
           eventType: 'created',
           actorUserId: user.id,
           details: { source: 'public_checkout' },
         },
         {
           bizId,
-          paymentIntentId: intent.id,
+          paymentIntentId: (intent as Record<string, unknown>).id as string,
           eventType: 'failed',
           previousStatus: 'requires_confirmation',
           nextStatus: 'failed',
           actorUserId: user.id,
-          details: { reason: 'simulated_decline', paymentTransactionId: transaction.id },
+          details: {
+            reason: 'simulated_decline',
+            paymentTransactionId: (transaction as Record<string, unknown>).id as string,
+          },
         },
-      ])
+      ]) {
+        const createdEvent = await createPaymentRow(c, bizId, 'paymentIntentEvents', eventRow, {
+          subjectType: 'payment_intent_event',
+          displayName: `Payment Intent Event ${eventRow.eventType}`,
+        })
+        if (createdEvent instanceof Response) return createdEvent
+      }
 
       return fail(c, 'PAYMENT_DECLINED', 'Primary payment method was declined.', 402, {
-        paymentIntentId: intent.id,
+        paymentIntentId: (intent as Record<string, unknown>).id,
       })
     }
 
@@ -395,6 +508,7 @@ paymentRoutes.post(
     }
 
     const existingLines = await ensureBaseBookingLine({
+      c,
       bizId,
       bookingOrderId,
       subtotalMinor: booking.subtotalMinor,
@@ -404,9 +518,11 @@ paymentRoutes.post(
 
     const allLines = [...existingLines]
     if (tipMinor > 0) {
-      const [tipLine] = await db
-        .insert(bookingOrderLines)
-        .values({
+      const tipLine = await createPaymentRow(
+        c,
+        bizId,
+        'bookingOrderLines',
+        {
           bizId,
           bookingOrderId,
           lineType: 'tip',
@@ -415,9 +531,11 @@ paymentRoutes.post(
           unitAmountMinor: tipMinor,
           lineTotalMinor: tipMinor,
           pricingDetail: { source: 'advanced_payment_tip' },
-        })
-        .returning()
-      allLines.push(tipLine)
+        },
+        { subjectType: 'booking_order_line', displayName: 'Booking Tip Line' },
+      )
+      if (tipLine instanceof Response) return tipLine
+      allLines.push(tipLine as (typeof allLines)[number])
     }
 
     const allocationPlan = buildAllocationPlan({
@@ -425,9 +543,11 @@ paymentRoutes.post(
       lines: allLines.map((line) => ({ id: line.id, lineTotalMinor: line.lineTotalMinor })),
     })
 
-    const [intent] = await db
-      .insert(paymentIntents)
-      .values({
+    const intent = await createPaymentRow(
+      c,
+      bizId,
+      'paymentIntents',
+      {
         bizId,
         bookingOrderId,
         paymentProcessorAccountId: processor.id,
@@ -445,20 +565,22 @@ paymentRoutes.post(
           expectedTotalMinor,
         },
         metadata: parsed.data.metadata ?? {},
-      })
-      .returning()
+      },
+      { subjectType: 'payment_intent', displayName: 'Checkout Payment Intent' },
+    )
+    if (intent instanceof Response) return intent
 
-    await db.insert(paymentIntentEvents).values([
+    for (const eventRow of [
       {
         bizId,
-        paymentIntentId: intent.id,
+        paymentIntentId: (intent as Record<string, unknown>).id as string,
         eventType: 'created',
         actorUserId: user.id,
         details: { source: 'public_checkout' },
       },
       {
         bizId,
-        paymentIntentId: intent.id,
+        paymentIntentId: (intent as Record<string, unknown>).id as string,
         eventType: 'captured',
         previousStatus: 'requires_confirmation',
         nextStatus: 'succeeded',
@@ -467,7 +589,13 @@ paymentRoutes.post(
         actorUserId: user.id,
         details: { source: 'public_checkout' },
       },
-    ])
+    ]) {
+      const createdEvent = await createPaymentRow(c, bizId, 'paymentIntentEvents', eventRow, {
+        subjectType: 'payment_intent_event',
+        displayName: `Payment Intent Event ${eventRow.eventType}`,
+      })
+      if (createdEvent instanceof Response) return createdEvent
+    }
 
     const createdTenders: Array<{
       tenderId: string
@@ -482,9 +610,11 @@ paymentRoutes.post(
       const provider = tender.provider ?? autoProviderForMethod(tender.methodType)
       const providerMethodRef =
         tender.providerMethodRef ?? `${tender.methodType}-${Date.now()}-${index}-${crypto.randomUUID()}`
-      const [method] = await db
-        .insert(paymentMethods)
-        .values({
+      const method = await createPaymentRow(
+        c,
+        bizId,
+        'paymentMethods',
+        {
           bizId,
           /**
            * We intentionally keep checkout-generated methods unowned so this
@@ -507,27 +637,33 @@ paymentRoutes.post(
             ...(tender.metadata ?? {}),
             checkoutUserId: user.id,
           },
-        })
-        .returning()
+        },
+        { subjectType: 'payment_method', displayName: `${tender.methodType} Payment Method` },
+      )
+      if (method instanceof Response) return method
 
-      const [intentTender] = await db
-        .insert(paymentIntentTenders)
-        .values({
+      const intentTender = await createPaymentRow(
+        c,
+        bizId,
+        'paymentIntentTenders',
+        {
           bizId,
-          paymentIntentId: intent.id,
-          paymentMethodId: method.id,
+          paymentIntentId: (intent as Record<string, unknown>).id as string,
+          paymentMethodId: (method as Record<string, unknown>).id as string,
           methodType: tender.methodType,
           allocatedMinor: tender.allocatedMinor,
           capturedMinor: tender.allocatedMinor,
           refundedMinor: 0,
           sortOrder: index + 1,
           metadata: tender.metadata ?? {},
-        })
-        .returning()
+        },
+        { subjectType: 'payment_intent_tender', displayName: 'Payment Tender' },
+      )
+      if (intentTender instanceof Response) return intentTender
 
       createdTenders.push({
-        tenderId: intentTender.id,
-        paymentMethodId: method.id,
+        tenderId: (intentTender as Record<string, unknown>).id as string,
+        paymentMethodId: (method as Record<string, unknown>).id as string,
         methodType: tender.methodType,
         allocatedMinor: tender.allocatedMinor,
         sortOrder: index + 1,
@@ -541,43 +677,49 @@ paymentRoutes.post(
       paymentMethodIdByIndex.set(row.sortOrder - 1, row.paymentMethodId)
     })
 
-    const [lineAllocationRows] = await Promise.all([
-      db
-        .insert(paymentIntentLineAllocations)
-        .values(
-          allocationPlan.map((plan, idx) => ({
-            bizId,
-            paymentIntentId: intent.id,
-            paymentIntentTenderId: tenderIdByIndex.get(plan.tenderIndex)!,
-            bookingOrderId,
-            bookingOrderLineId: plan.bookingOrderLineId,
-            allocatedMinor: plan.allocatedMinor,
-            capturedMinor: plan.allocatedMinor,
-            refundedMinor: 0,
-            sortOrder: idx + 1,
-            metadata: {},
-          })),
-        )
-        .returning(),
-      db
-        .update(bookingOrders)
-        .set({
-          status:
-            booking.status === 'draft' ||
-            booking.status === 'quoted' ||
-            booking.status === 'awaiting_payment'
-              ? 'confirmed'
-              : booking.status,
-        })
-        .where(and(eq(bookingOrders.bizId, bizId), eq(bookingOrders.id, bookingOrderId))),
-    ])
+    const lineAllocationRows: Array<Record<string, unknown>> = []
+    for (const [idx, plan] of allocationPlan.entries()) {
+      const allocationRow = await createPaymentRow(c, bizId, 'paymentIntentLineAllocations', {
+        bizId,
+        paymentIntentId: (intent as Record<string, unknown>).id as string,
+        paymentIntentTenderId: tenderIdByIndex.get(plan.tenderIndex)!,
+        bookingOrderId,
+        bookingOrderLineId: plan.bookingOrderLineId,
+        allocatedMinor: plan.allocatedMinor,
+        capturedMinor: plan.allocatedMinor,
+        refundedMinor: 0,
+        sortOrder: idx + 1,
+        metadata: {},
+      }, {
+        subjectType: 'payment_intent_line_allocation',
+        displayName: 'Intent Line Allocation',
+      })
+      if (allocationRow instanceof Response) return allocationRow
+      lineAllocationRows.push(allocationRow as Record<string, unknown>)
+    }
 
-    const transactionRows = await db
-      .insert(paymentTransactions)
-      .values(
-        parsed.data.tenders.map((tender, index) => ({
+    const bookingStatusUpdate = await updatePaymentRow(
+      c,
+      bizId,
+      'bookingOrders',
+      bookingOrderId,
+      {
+        status:
+          booking.status === 'draft' ||
+          booking.status === 'quoted' ||
+          booking.status === 'awaiting_payment'
+            ? 'confirmed'
+            : booking.status,
+      },
+      { subjectType: 'booking_order', displayName: 'Booking Status Update' },
+    )
+    if (bookingStatusUpdate instanceof Response) return bookingStatusUpdate
+
+    const transactionRows: Array<Record<string, unknown>> = []
+    for (const [index, tender] of parsed.data.tenders.entries()) {
+      const tx = await createPaymentRow(c, bizId, 'paymentTransactions', {
           bizId,
-          paymentIntentId: intent.id,
+          paymentIntentId: (intent as Record<string, unknown>).id as string,
           bookingOrderId,
           paymentIntentTenderId: tenderIdByIndex.get(index)!,
           paymentMethodId: paymentMethodIdByIndex.get(index),
@@ -591,34 +733,40 @@ paymentRoutes.post(
           metadata: {
             tenderIndex: index,
           },
-        })),
-      )
-      .returning()
+        }, {
+          subjectType: 'payment_transaction',
+          displayName: 'Charge Transaction',
+        })
+      if (tx instanceof Response) return tx
+      transactionRows.push(tx as Record<string, unknown>)
+    }
 
     const transactionByTenderId = new Map<string, string>()
     transactionRows.forEach((row) => {
       if (row.paymentIntentTenderId) {
-        transactionByTenderId.set(row.paymentIntentTenderId, row.id)
+        transactionByTenderId.set(String(row.paymentIntentTenderId), String(row.id))
       }
     })
 
     const planByTenderAndLine = new Map<string, string>()
     lineAllocationRows.forEach((row) => {
-      planByTenderAndLine.set(`${row.paymentIntentTenderId}:${row.bookingOrderLineId}`, row.id)
+      planByTenderAndLine.set(
+        `${String(row.paymentIntentTenderId)}:${String(row.bookingOrderLineId)}`,
+        String(row.id),
+      )
     })
 
-    await db.insert(paymentTransactionLineAllocations).values(
-      allocationPlan.map((plan) => {
-        const tenderId = tenderIdByIndex.get(plan.tenderIndex)!
-        const transactionId = transactionByTenderId.get(tenderId)
-        const planId = planByTenderAndLine.get(`${tenderId}:${plan.bookingOrderLineId}`)
-        if (!transactionId || !planId) {
-          throw new Error('Failed to resolve transaction/plan link for line allocation.')
-        }
-        return {
+    for (const plan of allocationPlan) {
+      const tenderId = tenderIdByIndex.get(plan.tenderIndex)!
+      const transactionId = transactionByTenderId.get(tenderId)
+      const planId = planByTenderAndLine.get(`${tenderId}:${plan.bookingOrderLineId}`)
+      if (!transactionId || !planId) {
+        throw new Error('Failed to resolve transaction/plan link for line allocation.')
+      }
+      const txAlloc = await createPaymentRow(c, bizId, 'paymentTransactionLineAllocations', {
           bizId,
           paymentTransactionId: transactionId,
-          paymentIntentId: intent.id,
+          paymentIntentId: (intent as Record<string, unknown>).id as string,
           paymentIntentTenderId: tenderId,
           bookingOrderId,
           bookingOrderLineId: plan.bookingOrderLineId,
@@ -626,19 +774,22 @@ paymentRoutes.post(
           amountMinor: plan.allocatedMinor,
           occurredAt: new Date(),
           metadata: {},
-        }
-      }),
-    )
+        }, {
+          subjectType: 'payment_transaction_line_allocation',
+          displayName: 'Transaction Line Allocation',
+        })
+      if (txAlloc instanceof Response) return txAlloc
+    }
 
     return ok(
       c,
       {
-        paymentIntentId: intent.id,
+        paymentIntentId: (intent as Record<string, unknown>).id,
         bookingOrderId,
-        status: intent.status,
+        status: (intent as Record<string, unknown>).status,
         currency,
-        amountTargetMinor: intent.amountTargetMinor,
-        amountCapturedMinor: intent.amountCapturedMinor,
+        amountTargetMinor: (intent as Record<string, unknown>).amountTargetMinor,
+        amountCapturedMinor: (intent as Record<string, unknown>).amountCapturedMinor,
         tenderCount: createdTenders.length,
         lineAllocationCount: lineAllocationRows.length,
         transactionCount: transactionRows.length,
@@ -691,9 +842,7 @@ paymentRoutes.post(
       const availableForCharge = Math.max(0, Number(charge.amountMinor ?? 0) - alreadyRefunded)
       if (availableForCharge <= 0) continue
       const amountMinor = Math.min(remainingMinor, availableForCharge)
-      const [refundTx] = await db
-        .insert(paymentTransactions)
-        .values({
+      const refundTx = await createPaymentRow(c, bizId, 'paymentTransactions', {
           bizId,
           paymentIntentId,
           bookingOrderId: intent.bookingOrderId,
@@ -712,9 +861,12 @@ paymentRoutes.post(
             fallbackMode: parsed.data.fallbackMode ?? null,
             sourceChargeTransactionId: charge.id,
           },
+        }, {
+          subjectType: 'payment_transaction',
+          displayName: 'Refund Transaction',
         })
-        .returning()
-      refundRows.push({ paymentTransactionId: refundTx.id, amountMinor })
+      if (refundTx instanceof Response) return refundTx
+      refundRows.push({ paymentTransactionId: String((refundTx as Record<string, unknown>).id), amountMinor })
       remainingMinor -= amountMinor
     }
 
@@ -722,16 +874,20 @@ paymentRoutes.post(
     const nextStatus =
       nextRefundedMinor >= Number(intent.amountCapturedMinor ?? 0) ? 'refunded' : intent.status
 
-    const [updatedIntent] = await db
-      .update(paymentIntents)
-      .set({
+    const updatedIntent = await updatePaymentRow(
+      c,
+      bizId,
+      'paymentIntents',
+      paymentIntentId,
+      {
         amountRefundedMinor: nextRefundedMinor,
         status: nextStatus,
-      })
-      .where(and(eq(paymentIntents.bizId, bizId), eq(paymentIntents.id, paymentIntentId)))
-      .returning()
+      },
+      { subjectType: 'payment_intent', displayName: 'Refunded Payment Intent' },
+    )
+    if (updatedIntent instanceof Response) return updatedIntent
 
-    await db.insert(paymentIntentEvents).values({
+    const refundEvent = await createPaymentRow(c, bizId, 'paymentIntentEvents', {
       bizId,
       paymentIntentId,
       eventType: 'refunded',
@@ -745,7 +901,8 @@ paymentRoutes.post(
         reason: parsed.data.reason ?? null,
         fallbackMode: parsed.data.fallbackMode ?? null,
       },
-    })
+    }, { subjectType: 'payment_intent_event', displayName: 'Payment Intent Refunded Event' })
+    if (refundEvent instanceof Response) return refundEvent
 
     return ok(c, {
       paymentIntentId,

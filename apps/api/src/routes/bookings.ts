@@ -14,6 +14,7 @@ import {
 } from '../middleware/auth.js'
 import { sanitizeUnknown } from '../lib/sanitize.js'
 import { createBookingLifecycleMessage } from '../services/booking-lifecycle-messages.js'
+import { executeCrudRouteAction } from '../services/action-route-bridge.js'
 import { fail, ok, parsePositiveInt } from './_api.js'
 
 const {
@@ -140,6 +141,46 @@ function locationMetadataFilter(locationId?: string) {
 
 export const bookingRoutes = new Hono()
 
+async function createBookingRow(
+  c: Parameters<typeof executeCrudRouteAction>[0]['c'],
+  bizId: string | null,
+  data: Record<string, unknown>,
+  displayName: string,
+) {
+  const result = await executeCrudRouteAction({
+    c,
+    bizId,
+    tableKey: 'bookingOrders',
+    operation: 'create',
+    data,
+    subjectType: 'booking_order',
+    displayName,
+  })
+  if (!result.ok) return fail(c, result.code, result.message, result.httpStatus, result.details)
+  return result.row
+}
+
+async function updateBookingRow(
+  c: Parameters<typeof executeCrudRouteAction>[0]['c'],
+  bizId: string | null,
+  bookingOrderId: string,
+  patch: Record<string, unknown>,
+) {
+  const result = await executeCrudRouteAction({
+    c,
+    bizId,
+    tableKey: 'bookingOrders',
+    operation: 'update',
+    id: bookingOrderId,
+    patch,
+    subjectType: 'booking_order',
+    subjectId: bookingOrderId,
+    displayName: bookingOrderId,
+  })
+  if (!result.ok) return fail(c, result.code, result.message, result.httpStatus, result.details)
+  return result.row
+}
+
 /**
  * Public booking surface for authenticated customers.
  *
@@ -239,9 +280,10 @@ bookingRoutes.post('/public/bizes/:bizId/booking-orders', requireAuth, async (c)
     }
   const derivedPolicySnapshot = parsed.data.policySnapshot ?? ((offerVersion.policyModel as Record<string, unknown> | null) ?? {})
 
-  const [created] = await db
-    .insert(bookingOrders)
-    .values({
+  const created = await createBookingRow(
+    c,
+    bizId,
+    {
       bizId,
       offerId: parsed.data.offerId,
       offerVersionId: parsed.data.offerVersionId,
@@ -260,16 +302,18 @@ bookingRoutes.post('/public/bizes/:bizId/booking-orders', requireAuth, async (c)
       pricingSnapshot: derivedPricingSnapshot,
       policySnapshot: derivedPolicySnapshot,
       metadata: withLocationMetadata(parsed.data.metadata ?? {}, parsed.data.locationId),
-    })
-    .returning()
+    },
+    parsed.data.offerId,
+  )
+  if (created instanceof Response) return created
 
   await createBookingLifecycleMessage({
     bizId,
     recipientUserId: user.id,
     recipientRef: user.email ?? `user-${user.id}@unknown.local`,
-    bookingOrderId: created.id,
+    bookingOrderId: String((created as Record<string, unknown>).id),
     subject: 'Booking confirmed',
-    body: `Your booking ${created.id} is confirmed.`,
+    body: `Your booking ${String((created as Record<string, unknown>).id)} is confirmed.`,
     templateSlug: 'booking-confirmed',
     eventType: 'booking.confirmed',
   })
@@ -383,9 +427,10 @@ bookingRoutes.post(
     const derivedPolicySnapshot =
       parsed.data.policySnapshot ?? ((offerVersion.policyModel as Record<string, unknown> | null) ?? {})
 
-    const [created] = await db
-      .insert(bookingOrders)
-      .values({
+    const created = await createBookingRow(
+      c,
+      bizId,
+      {
         bizId,
         offerId: parsed.data.offerId,
         offerVersionId: parsed.data.offerVersionId,
@@ -409,8 +454,10 @@ bookingRoutes.post(
         pricingSnapshot: derivedPricingSnapshot,
         policySnapshot: derivedPolicySnapshot,
         metadata: withLocationMetadata(parsed.data.metadata ?? {}, parsed.data.locationId),
-      })
-      .returning()
+      },
+      parsed.data.offerId,
+    )
+    if (created instanceof Response) return created
 
     if (parsed.data.customerUserId) {
       const recipientUser = await db.query.users.findFirst({
@@ -425,9 +472,9 @@ bookingRoutes.post(
           bizId,
           recipientUserId: recipientUser.id,
           recipientRef: recipientUser.email,
-          bookingOrderId: created.id,
+          bookingOrderId: String((created as Record<string, unknown>).id),
           subject: 'Booking confirmed',
-          body: `Your booking ${created.id} is confirmed.`,
+          body: `Your booking ${String((created as Record<string, unknown>).id)} is confirmed.`,
           templateSlug: 'booking-confirmed',
           eventType: 'booking.confirmed',
         })
@@ -520,9 +567,7 @@ bookingRoutes.patch(
     const discountMinor = parsed.data.discountMinor ?? existing.discountMinor
     const totalMinor = parsed.data.totalMinor ?? computeTotal(subtotalMinor, taxMinor, feeMinor, discountMinor)
 
-    const [updated] = await db
-      .update(bookingOrders)
-      .set({
+    const updated = await updateBookingRow(c, bizId, bookingOrderId, {
         ...parsed.data,
         requestedStartAt:
           parsed.data.requestedStartAt === undefined
@@ -558,8 +603,7 @@ bookingRoutes.patch(
           parsed.data.locationId,
         ),
       })
-      .where(and(eq(bookingOrders.bizId, bizId), eq(bookingOrders.id, bookingOrderId)))
-      .returning()
+    if (updated instanceof Response) return updated
 
     return ok(c, updated)
   },
@@ -580,13 +624,10 @@ bookingRoutes.patch(
       return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
     }
 
-    const [updated] = await db
-      .update(bookingOrders)
-      .set({
+    const updated = await updateBookingRow(c, bizId, bookingOrderId, {
         status: parsed.data.status,
       })
-      .where(and(eq(bookingOrders.bizId, bizId), eq(bookingOrders.id, bookingOrderId)))
-      .returning()
+    if (updated instanceof Response) return updated
 
     if (!updated) return fail(c, 'NOT_FOUND', 'Booking order not found.', 404)
     return ok(c, updated)
@@ -607,13 +648,10 @@ bookingRoutes.delete(
     })
     if (!existing) return fail(c, 'NOT_FOUND', 'Booking order not found.', 404)
 
-    const [updated] = await db
-      .update(bookingOrders)
-      .set({
+    const updated = await updateBookingRow(c, bizId, bookingOrderId, {
         status: 'cancelled',
       })
-      .where(and(eq(bookingOrders.bizId, bizId), eq(bookingOrders.id, bookingOrderId)))
-      .returning()
+    if (updated instanceof Response) return updated
 
     const recipientUser = existing.customerUserId
       ? await db.query.users.findFirst({

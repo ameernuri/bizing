@@ -31,6 +31,7 @@ _No top JSDoc comment found._
 - `POST` `/ooda/sagas/library/reset-reseed`
 - `POST` `/ooda/sagas/schema-coverage/import`
 - `POST` `/ooda/sagas/schema-coverage/reports`
+- `POST` `/ooda/sagas/uc-coverage/rebuild`
 - `GET` `/ooda/sagas/library/overview`
 - `GET` `/ooda/sagas/use-cases`
 - `POST` `/ooda/sagas/use-cases`
@@ -50,6 +51,8 @@ _No top JSDoc comment found._
 - `GET` `/ooda/sagas/run-assessments/reports/:reportId`
 - `GET` `/ooda/sagas/schema-coverage/reports`
 - `GET` `/ooda/sagas/schema-coverage/reports/:reportId`
+- `GET` `/ooda/sagas/uc-coverage/reports`
+- `GET` `/ooda/sagas/uc-coverage/reports/:reportId`
 - `GET` `/ooda/sagas/coverage/reports`
 - `GET` `/ooda/sagas/coverage/reports/:reportId`
 - `GET` `/ooda/sagas/specs`

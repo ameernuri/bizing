@@ -4,16 +4,25 @@ import { useEffect, useMemo, useState } from 'react'
 import { Plus } from 'lucide-react'
 import { sagaApi, type SagaUseCaseDefinition } from '@/lib/sagas-api'
 import { oodaApi } from '@/lib/ooda-api'
+import { fetchLatestUcCoverageSnapshot, type UcCoverageEntry } from '@/lib/uc-coverage'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { EntitySummaryCard, LifecycleBadge, listSummaryFooter, LoadError, LoadingGrid, PageIntro, SearchToolbar, sortByTitle } from './common'
+import { CoverageVerdictBadge, EntitySummaryCard, LifecycleBadge, listSummaryFooter, LoadError, LoadingGrid, PageIntro, SearchToolbar, sortByTitle } from './common'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
 export function SagaUseCasesPage() {
   const [items, setItems] = useState<SagaUseCaseDefinition[]>([])
   const [query, setQuery] = useState('')
+  const [coverageByUc, setCoverageByUc] = useState<Map<string, UcCoverageEntry>>(new Map())
+  const [coverageSummary, setCoverageSummary] = useState({
+    full: 0,
+    strong: 0,
+    partial: 0,
+    gap: 0,
+  })
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [createOpen, setCreateOpen] = useState(false)
@@ -28,7 +37,23 @@ export function SagaUseCasesPage() {
     setIsLoading(true)
     setError(null)
     try {
-      setItems(sortByTitle(await sagaApi.fetchUseCases(), (item) => `${item.ucKey} ${item.title}`))
+      const [useCases, coverageSnapshot] = await Promise.all([
+        sagaApi.fetchUseCases(),
+        fetchLatestUcCoverageSnapshot(),
+      ])
+      setItems(sortByTitle(useCases, (item) => `${item.ucKey} ${item.title}`))
+      setCoverageByUc(coverageSnapshot.byUc)
+      if (coverageSnapshot.detail) {
+        const counts = { full: 0, strong: 0, partial: 0, gap: 0 }
+        for (const item of coverageSnapshot.detail.items) {
+          if (item.itemType !== 'use_case') continue
+          const verdict = (item.verdict ?? 'gap').toLowerCase() as keyof typeof counts
+          if (verdict in counts) counts[verdict] += 1
+        }
+        setCoverageSummary(counts)
+      } else {
+        setCoverageSummary({ full: 0, strong: 0, partial: 0, gap: 0 })
+      }
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Failed to load use cases.')
     } finally {
@@ -87,17 +112,63 @@ export function SagaUseCasesPage() {
         {isLoading ? (
           <LoadingGrid count={9} />
         ) : (
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {filtered.map((item) => (
-              <EntitySummaryCard
-                key={item.id}
-                href={`/sagas/use-cases/${encodeURIComponent(item.ucKey)}`}
-                title={`${item.ucKey} · ${item.title}`}
-                description={item.summary}
-                status={<LifecycleBadge status={item.status} />}
-                footer={listSummaryFooter(item)}
-              />
-            ))}
+          <div className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm text-muted-foreground">Coverage full</CardTitle>
+                </CardHeader>
+                <CardContent className="text-3xl font-semibold">{coverageSummary.full}</CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm text-muted-foreground">Coverage strong</CardTitle>
+                </CardHeader>
+                <CardContent className="text-3xl font-semibold">{coverageSummary.strong}</CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm text-muted-foreground">Coverage partial</CardTitle>
+                </CardHeader>
+                <CardContent className="text-3xl font-semibold">{coverageSummary.partial}</CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm text-muted-foreground">Coverage gap</CardTitle>
+                </CardHeader>
+                <CardContent className="text-3xl font-semibold">{coverageSummary.gap}</CardContent>
+              </Card>
+            </div>
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {filtered.map((item) => {
+                const coverage = coverageByUc.get(item.ucKey.toUpperCase())
+                return (
+                  <EntitySummaryCard
+                    key={item.id}
+                    href={`/ooda/use-cases/${encodeURIComponent(item.ucKey)}`}
+                    title={`${item.ucKey} · ${item.title}`}
+                    description={item.summary}
+                    status={
+                      <div className="flex flex-col items-end gap-1">
+                        <LifecycleBadge status={item.status} />
+                        <CoverageVerdictBadge verdict={coverage?.overallVerdict} />
+                      </div>
+                    }
+                    footer={
+                      <div className="space-y-1">
+                        <div>{listSummaryFooter(item)}</div>
+                        <p>
+                          Schema: {coverage?.schemaVerdict ?? 'unknown'} • API: {coverage?.apiVerdict ?? 'unknown'}
+                        </p>
+                        <p>
+                          API pass rate: {coverage?.apiPassRatePct ?? 0}% • endpoints: {coverage?.endpointsCount ?? 0}
+                        </p>
+                      </div>
+                    }
+                  />
+                )
+              })}
+            </div>
           </div>
         )}
       </div>

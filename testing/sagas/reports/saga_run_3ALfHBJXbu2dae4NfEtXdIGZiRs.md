@@ -1,7 +1,0 @@
-# Auto Saga Report
-
-- sagaKey: `uc-85-the-solo-entrepreneur-sarah`
-- runId: `saga_run_3ALfHBJXbu2dae4NfEtXdIGZiRs`
-- generatedAt: `2026-03-01T14:51:24.222Z`
-
-All lifecycle steps were executed by the API-only auto runner.

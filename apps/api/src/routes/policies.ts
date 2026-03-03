@@ -24,6 +24,7 @@ import {
   requireAuth,
   requireBizAccess,
 } from '../middleware/auth.js'
+import { executeCrudRouteAction } from '../services/action-route-bridge.js'
 import { fail, ok } from './_api.js'
 
 function slugifyPolicyTemplate(value: string) {
@@ -36,6 +37,54 @@ function slugifyPolicyTemplate(value: string) {
 }
 
 const { db, policyTemplates, policyRules, policyBindings } = dbPackage
+
+async function createPolicyRow<
+  TTableKey extends 'policyTemplates' | 'policyRules' | 'policyBindings',
+>(
+  c: Parameters<typeof executeCrudRouteAction>[0]['c'],
+  bizId: string,
+  tableKey: TTableKey,
+  data: Parameters<typeof executeCrudRouteAction>[0]['data'],
+  meta: { subjectType: string; subjectId: string; displayName: string; source: string },
+) {
+  const result = await executeCrudRouteAction({
+    c,
+    bizId,
+    tableKey,
+    operation: 'create',
+    data,
+    subjectType: meta.subjectType,
+    subjectId: meta.subjectId,
+    displayName: meta.displayName,
+    metadata: { source: meta.source },
+  })
+  if (!result.ok) throw new Error(result.message ?? `Failed to create ${tableKey}`)
+  if (!result.row) throw new Error(`Missing row for ${tableKey} create`)
+  return result.row
+}
+
+async function updatePolicyTemplateRow(
+  c: Parameters<typeof executeCrudRouteAction>[0]['c'],
+  bizId: string,
+  policyTemplateId: string,
+  patch: Parameters<typeof executeCrudRouteAction>[0]['patch'],
+) {
+  const result = await executeCrudRouteAction({
+    c,
+    bizId,
+    tableKey: 'policyTemplates',
+    operation: 'update',
+    id: policyTemplateId,
+    patch,
+    subjectType: 'policy_template',
+    subjectId: policyTemplateId,
+    displayName: 'update policy template',
+    metadata: { source: 'routes.policies.updateTemplate' },
+  })
+  if (!result.ok) throw new Error(result.message ?? 'Failed to update policy template')
+  if (!result.row) throw new Error('Missing row for policy template update')
+  return result.row
+}
 
 const lifecycleSchema = z.enum(['draft', 'active', 'inactive', 'archived'])
 
@@ -223,14 +272,17 @@ policyRoutes.post(
       return ok(c, existingDefault, 200, { reused: true })
     }
 
-    const [created] = await db
-      .insert(policyTemplates)
-      .values({
+    const slug =
+      parsed.data.slug ??
+      (slugifyPolicyTemplate(`${parsed.data.domainKey}-${parsed.data.name}`) || `policy-${Date.now()}`)
+    const created = await createPolicyRow(
+      c,
+      bizId,
+      'policyTemplates',
+      {
         bizId,
         name: parsed.data.name,
-        slug:
-          parsed.data.slug ??
-          (slugifyPolicyTemplate(`${parsed.data.domainKey}-${parsed.data.name}`) || `policy-${Date.now()}`),
+        slug,
         status: parsed.data.status,
         domainKey: parsed.data.domainKey,
         description: parsed.data.description ?? null,
@@ -242,8 +294,14 @@ policyRoutes.post(
         evaluationPolicy: parsed.data.evaluationPolicy ?? {},
         consequencePolicy: parsed.data.consequencePolicy ?? {},
         metadata: parsed.data.metadata ?? {},
-      })
-      .returning()
+      },
+      {
+        subjectType: 'policy_template',
+        subjectId: slug,
+        displayName: parsed.data.name,
+        source: 'routes.policies.createTemplate',
+      },
+    )
 
     return ok(c, created, 201)
   },
@@ -284,23 +342,19 @@ policyRoutes.patch(
       return fail(c, 'NOT_FOUND', 'Policy template not found.', 404)
     }
 
-    const [updated] = await db
-      .update(policyTemplates)
-      .set({
-        name: parsed.data.name,
-        status: parsed.data.status,
-        description: parsed.data.description ?? undefined,
-        version: parsed.data.version,
-        aggregationMode: parsed.data.aggregationMode,
-        minPassingRuleCount: parsed.data.minPassingRuleCount ?? undefined,
-        isDefault: parsed.data.isDefault,
-        policySnapshot: parsed.data.policySnapshot,
-        evaluationPolicy: parsed.data.evaluationPolicy,
-        consequencePolicy: parsed.data.consequencePolicy,
-        metadata: parsed.data.metadata,
-      })
-      .where(and(eq(policyTemplates.bizId, bizId), eq(policyTemplates.id, policyTemplateId)))
-      .returning()
+    const updated = await updatePolicyTemplateRow(c, bizId, policyTemplateId, {
+      name: parsed.data.name,
+      status: parsed.data.status,
+      description: parsed.data.description ?? undefined,
+      version: parsed.data.version,
+      aggregationMode: parsed.data.aggregationMode,
+      minPassingRuleCount: parsed.data.minPassingRuleCount ?? undefined,
+      isDefault: parsed.data.isDefault,
+      policySnapshot: parsed.data.policySnapshot,
+      evaluationPolicy: parsed.data.evaluationPolicy,
+      consequencePolicy: parsed.data.consequencePolicy,
+      metadata: parsed.data.metadata,
+    })
 
     return ok(c, updated)
   },
@@ -334,9 +388,11 @@ policyRoutes.post(
       return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
     }
 
-    const [created] = await db
-      .insert(policyRules)
-      .values({
+    const created = await createPolicyRow(
+      c,
+      bizId,
+      'policyRules',
+      {
         bizId,
         policyTemplateId,
         ruleKey: parsed.data.ruleKey,
@@ -356,8 +412,14 @@ policyRoutes.post(
         evidencePolicy: parsed.data.evidencePolicy ?? {},
         consequencePolicy: parsed.data.consequencePolicy ?? {},
         metadata: parsed.data.metadata ?? {},
-      })
-      .returning()
+      },
+      {
+        subjectType: 'policy_rule',
+        subjectId: parsed.data.ruleKey,
+        displayName: parsed.data.name,
+        source: 'routes.policies.createRule',
+      },
+    )
 
     return ok(c, created, 201)
   },
@@ -446,9 +508,11 @@ policyRoutes.post(
       return ok(c, existingBinding, 200, { reused: true })
     }
 
-    const [created] = await db
-      .insert(policyBindings)
-      .values({
+    const created = await createPolicyRow(
+      c,
+      bizId,
+      'policyBindings',
+      {
         bizId,
         policyTemplateId: parsed.data.policyTemplateId,
         targetType: parsed.data.targetType,
@@ -465,8 +529,14 @@ policyRoutes.post(
         isActive: parsed.data.isActive,
         enforcementPolicy: parsed.data.enforcementPolicy ?? {},
         metadata: parsed.data.metadata ?? {},
-      })
-      .returning()
+      },
+      {
+        subjectType: 'policy_binding',
+        subjectId: parsed.data.policyTemplateId,
+        displayName: parsed.data.targetType,
+        source: 'routes.policies.createBinding',
+      },
+    )
 
     return ok(c, created, 201)
   },

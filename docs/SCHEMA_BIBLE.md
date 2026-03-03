@@ -188,7 +188,41 @@ The canonical action/event/projection/debug spine is now expected in most runtim
   - `crm_conversations`
   - `crm_conversation_messages`
   - `crm_merge_decisions`
+- Customer ops runtime (hard-cut first-class CRM/support/marketing):
+  - `customer_profile_crm_links`
+  - `customer_timeline_events`
+  - `crm_activities`
+  - `crm_tasks`
+  - `support_cases`
+  - `support_case_participants`
+  - `support_case_events`
+  - `support_case_links`
+  - `customer_journeys`
+  - `customer_journey_steps`
+  - `customer_journey_enrollments`
+  - `customer_journey_events`
+  - `customer_playbooks`
+  - `customer_playbook_bindings`
+  - `customer_playbook_runs`
 - Marketplace/runtime partner commerce:
+  - `bids`
+  - `cross_biz_contracts`
+  - `cross_biz_orders`
+  - `referral_events`
+  - `reward_grants`
+- Commercial shells / sellable roots:
+  - `products`
+  - `offers`
+  - `offer_versions`
+  - `service_products`
+  - `sellables`
+- Communication + calendar + staffing execution:
+  - `outbound_messages`
+  - `outbound_message_events`
+  - `calendar_sync_connections`
+  - `staffing_demands`
+  - `staffing_responses`
+  - `staffing_assignments`
 
 ## Clean Bootstrap Fixes (Canonical)
 
@@ -211,24 +245,6 @@ ELI5:
 - if one table points at `(tenant_id, row_id)`
 - the target table must promise that `(tenant_id, row_id)` is unique
 - otherwise the schema is only "working by accident" on a dirty local DB
-  - `bids`
-  - `cross_biz_contracts`
-  - `cross_biz_orders`
-  - `referral_events`
-  - `reward_grants`
-- Commercial shells / sellable roots:
-  - `products`
-  - `offers`
-  - `offer_versions`
-  - `service_products`
-  - `sellables`
-- Communication + calendar + staffing execution:
-  - `outbound_messages`
-  - `outbound_message_events`
-  - `calendar_sync_connections`
-  - `staffing_demands`
-  - `staffing_responses`
-  - `staffing_assignments`
 
 ### Design rule clarified
 

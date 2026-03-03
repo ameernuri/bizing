@@ -21,6 +21,7 @@ import { and, asc, eq } from 'drizzle-orm'
 import { z } from 'zod'
 import dbPackage from '@bizing/db'
 import { requireAclPermission, requireAuth, requireBizAccess } from '../middleware/auth.js'
+import { executeCrudRouteAction } from '../services/action-route-bridge.js'
 import { fail, ok } from './_api.js'
 import { sanitizePlainText, sanitizeUnknown } from '../lib/sanitize.js'
 
@@ -127,6 +128,56 @@ const listValuesQuerySchema = z.object({
 
 export const customFieldRoutes = new Hono()
 
+async function createCustomFieldRow<T extends Record<string, unknown>>(input: {
+  c: Parameters<typeof fail>[0]
+  bizId: string
+  tableKey: string
+  subjectType: string
+  data: Record<string, unknown>
+  displayName?: string
+}) {
+  const delegated = await executeCrudRouteAction({
+    c: input.c,
+    bizId: input.bizId,
+    tableKey: input.tableKey,
+    operation: 'create',
+    subjectType: input.subjectType,
+    displayName: input.displayName,
+    data: input.data,
+    metadata: { routeFamily: 'custom-fields' },
+  })
+  if (!delegated.ok) return fail(input.c, delegated.code, delegated.message, delegated.httpStatus, delegated.details)
+  return delegated.row as T
+}
+
+async function updateCustomFieldRow<T extends Record<string, unknown>>(input: {
+  c: Parameters<typeof fail>[0]
+  bizId: string
+  tableKey: string
+  subjectType: string
+  id: string
+  patch: Record<string, unknown>
+  notFoundMessage: string
+}) {
+  const delegated = await executeCrudRouteAction({
+    c: input.c,
+    bizId: input.bizId,
+    tableKey: input.tableKey,
+    operation: 'update',
+    id: input.id,
+    subjectType: input.subjectType,
+    subjectId: input.id,
+    patch: input.patch,
+    metadata: { routeFamily: 'custom-fields' },
+  })
+  if (!delegated.ok) {
+    if (delegated.code === 'CRUD_TARGET_NOT_FOUND') return fail(input.c, 'NOT_FOUND', input.notFoundMessage, 404)
+    return fail(input.c, delegated.code, delegated.message, delegated.httpStatus, delegated.details)
+  }
+  if (!delegated.row) return fail(input.c, 'NOT_FOUND', input.notFoundMessage, 404)
+  return delegated.row as T
+}
+
 customFieldRoutes.get(
   '/bizes/:bizId/custom-field-definitions',
   requireAuth,
@@ -161,7 +212,13 @@ customFieldRoutes.post(
     const parsed = createDefinitionBodySchema.safeParse(await c.req.json().catch(() => null))
     if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
 
-    const [created] = await db.insert(customFieldDefinitions).values({
+    const created = await createCustomFieldRow<typeof customFieldDefinitions.$inferSelect>({
+      c,
+      bizId,
+      tableKey: 'customFieldDefinitions',
+      subjectType: 'custom_field_definition',
+      displayName: parsed.data.fieldKey,
+      data: {
       bizId,
       targetType: parsed.data.targetType,
       scope: parsed.data.scope,
@@ -178,7 +235,9 @@ customFieldRoutes.post(
       defaultValue: parsed.data.defaultValue === undefined ? null : sanitizeUnknown(parsed.data.defaultValue),
       helpText: parsed.data.helpText ? sanitizePlainText(parsed.data.helpText) : null,
       metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
-    }).returning()
+      },
+    })
+    if (created instanceof Response) return created
 
     return ok(c, created, 201)
   },
@@ -212,7 +271,13 @@ customFieldRoutes.post(
     const parsed = createOptionBodySchema.safeParse(await c.req.json().catch(() => null))
     if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
 
-    const [created] = await db.insert(customFieldDefinitionOptions).values({
+    const created = await createCustomFieldRow<typeof customFieldDefinitionOptions.$inferSelect>({
+      c,
+      bizId,
+      tableKey: 'customFieldDefinitionOptions',
+      subjectType: 'custom_field_definition_option',
+      displayName: parsed.data.optionKey,
+      data: {
       bizId,
       customFieldDefinitionId: definitionId,
       optionKey: sanitizePlainText(parsed.data.optionKey),
@@ -221,7 +286,9 @@ customFieldRoutes.post(
       sortOrder: parsed.data.sortOrder,
       status: parsed.data.status,
       metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
-    }).returning()
+      },
+    })
+    if (created instanceof Response) return created
 
     return ok(c, created, 201)
   },
@@ -269,7 +336,14 @@ customFieldRoutes.post(
     })
 
     if (existing) {
-      const [updated] = await db.update(customFieldValues).set({
+      const updated = await updateCustomFieldRow<typeof customFieldValues.$inferSelect>({
+        c,
+        bizId,
+        tableKey: 'customFieldValues',
+        subjectType: 'custom_field_value',
+        id: existing.id,
+        notFoundMessage: 'Custom field value not found.',
+        patch: {
         value: sanitizeUnknown(parsed.data.value),
         valueTextSearch: parsed.data.valueTextSearch === undefined ? undefined : parsed.data.valueTextSearch ? sanitizePlainText(parsed.data.valueTextSearch) : null,
         valueNumberSearch:
@@ -283,11 +357,19 @@ customFieldRoutes.post(
         setByUserId: parsed.data.setByUserId ?? null,
         setAt: new Date(),
         metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
-      }).where(and(eq(customFieldValues.bizId, bizId), eq(customFieldValues.id, existing.id))).returning()
+        },
+      })
+      if (updated instanceof Response) return updated
       return ok(c, updated)
     }
 
-    const [created] = await db.insert(customFieldValues).values({
+    const created = await createCustomFieldRow<typeof customFieldValues.$inferSelect>({
+      c,
+      bizId,
+      tableKey: 'customFieldValues',
+      subjectType: 'custom_field_value',
+      displayName: parsed.data.targetRefId,
+      data: {
       bizId,
       customFieldDefinitionId: parsed.data.customFieldDefinitionId,
       targetType: parsed.data.targetType,
@@ -304,7 +386,9 @@ customFieldRoutes.post(
       source: parsed.data.source,
       setByUserId: parsed.data.setByUserId ?? null,
       metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
-    }).returning()
+      },
+    })
+    if (created instanceof Response) return created
 
     return ok(c, created, 201)
   },

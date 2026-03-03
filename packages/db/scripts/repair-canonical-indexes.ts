@@ -161,6 +161,11 @@ async function loadCanonicalPartialIndexes(): Promise<PartialIndexSpec[]> {
       createSql:
         'CREATE UNIQUE INDEX IF NOT EXISTS "user_credential_documents_primary_per_record_unique" ON "user_credential_documents" ("owner_user_id","user_credential_record_id") WHERE "is_primary" = true AND "deleted_at" IS NULL',
     },
+    {
+      name: "crm_pipelines_default_per_type_unique",
+      createSql:
+        'CREATE UNIQUE INDEX IF NOT EXISTS "crm_pipelines_default_per_type_unique" ON "crm_pipelines" ("biz_id","pipeline_type") WHERE "is_default" = true AND "status" = \'active\' AND "deleted_at" IS NULL',
+    },
   ];
 
   for (const spec of manualSpecs) {

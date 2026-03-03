@@ -18,6 +18,7 @@ import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
 import { z } from "zod";
 import dbPackage from "@bizing/db";
 import { requireAclPermission, requireAuth, requireBizAccess } from "../middleware/auth.js";
+import { executeCrudRouteAction } from "../services/action-route-bridge.js";
 import { fail, ok, parsePositiveInt } from "./_api.js";
 
 const { db, channelAccounts, channelSyncStates, channelEntityLinks, bookingOrders, offerVersions } = dbPackage;
@@ -239,6 +240,62 @@ const listSocialBookingLinksQuerySchema = z.object({
 
 export const channelRoutes = new Hono();
 
+async function createChannelRow(
+  c: Parameters<typeof executeCrudRouteAction>[0]["c"],
+  bizId: string,
+  tableKey: string,
+  data: Record<string, unknown>,
+  options?: {
+    subjectType?: string;
+    subjectId?: string;
+    displayName?: string;
+    metadata?: Record<string, unknown>;
+  },
+) {
+  const result = await executeCrudRouteAction({
+    c,
+    bizId,
+    tableKey,
+    operation: "create",
+    data,
+    subjectType: options?.subjectType,
+    subjectId: options?.subjectId,
+    displayName: options?.displayName,
+    metadata: options?.metadata,
+  });
+  if (!result.ok) return fail(c, result.code, result.message, result.httpStatus, result.details);
+  return result.row;
+}
+
+async function updateChannelRow(
+  c: Parameters<typeof executeCrudRouteAction>[0]["c"],
+  bizId: string,
+  tableKey: string,
+  id: string,
+  patch: Record<string, unknown>,
+  options?: {
+    subjectType?: string;
+    subjectId?: string;
+    displayName?: string;
+    metadata?: Record<string, unknown>;
+  },
+) {
+  const result = await executeCrudRouteAction({
+    c,
+    bizId,
+    tableKey,
+    operation: "update",
+    id,
+    patch,
+    subjectType: options?.subjectType,
+    subjectId: options?.subjectId ?? id,
+    displayName: options?.displayName,
+    metadata: options?.metadata,
+  });
+  if (!result.ok) return fail(c, result.code, result.message, result.httpStatus, result.details);
+  return result.row;
+}
+
 channelRoutes.get(
   "/bizes/:bizId/channel-accounts",
   requireAuth,
@@ -299,9 +356,7 @@ channelRoutes.post(
       return fail(c, "VALIDATION_ERROR", "Invalid request body.", 400, parsed.error.flatten());
     }
 
-    const [created] = await db
-      .insert(channelAccounts)
-      .values({
+    const created = await createChannelRow(c, bizId, "channelAccounts", {
         bizId,
         provider: parsed.data.provider,
         name: parsed.data.name,
@@ -310,8 +365,11 @@ channelRoutes.post(
         scopes: parsed.data.scopes ?? [],
         authConfig: parsed.data.authConfig ?? {},
         metadata: parsed.data.metadata ?? {},
-      })
-      .returning();
+      }, {
+      subjectType: "channel_account",
+      displayName: parsed.data.name,
+    });
+    if (created instanceof Response) return created;
 
     return ok(c, created, 201);
   },
@@ -366,40 +424,43 @@ channelRoutes.post(
     });
     if (!account) return fail(c, "NOT_FOUND", "Channel account not found.", 404);
 
-    const [row] = await db
-      .insert(channelSyncStates)
-      .values({
+    const existingSyncState = await db.query.channelSyncStates.findFirst({
+      where: and(
+        eq(channelSyncStates.bizId, bizId),
+        eq(channelSyncStates.channelAccountId, parsed.data.channelAccountId),
+        eq(channelSyncStates.objectType, parsed.data.objectType),
+        eq(channelSyncStates.direction, parsed.data.direction),
+      ),
+    });
+
+    const syncPatch = {
+      inboundCursor: parsed.data.inboundCursor,
+      outboundCursor: parsed.data.outboundCursor,
+      lastFailure: parsed.data.lastFailure,
+      lastAttemptAt: parsed.data.lastAttemptAt ? new Date(parsed.data.lastAttemptAt) : undefined,
+      lastSuccessAt: parsed.data.lastSuccessAt ? new Date(parsed.data.lastSuccessAt) : undefined,
+      metadata: parsed.data.metadata ?? {},
+    };
+
+    let row: Record<string, unknown> | Response | null = null;
+    if (existingSyncState) {
+      row = await updateChannelRow(c, bizId, "channelSyncStates", existingSyncState.id, syncPatch, {
+        subjectType: "channel_sync_state",
+        displayName: `${parsed.data.objectType}:${parsed.data.direction}`,
+      });
+    } else {
+      row = await createChannelRow(c, bizId, "channelSyncStates", {
         bizId,
         channelAccountId: parsed.data.channelAccountId,
         objectType: parsed.data.objectType,
         direction: parsed.data.direction,
-        inboundCursor: parsed.data.inboundCursor,
-        outboundCursor: parsed.data.outboundCursor,
-        lastFailure: parsed.data.lastFailure,
-        lastAttemptAt: parsed.data.lastAttemptAt ? new Date(parsed.data.lastAttemptAt) : undefined,
-        lastSuccessAt: parsed.data.lastSuccessAt ? new Date(parsed.data.lastSuccessAt) : undefined,
-        metadata: parsed.data.metadata ?? {},
-      })
-      .onConflictDoUpdate({
-        target: [
-          channelSyncStates.channelAccountId,
-          channelSyncStates.objectType,
-          channelSyncStates.direction,
-        ],
-        set: {
-          inboundCursor: parsed.data.inboundCursor,
-          outboundCursor: parsed.data.outboundCursor,
-          lastFailure: parsed.data.lastFailure,
-          lastAttemptAt: parsed.data.lastAttemptAt
-            ? new Date(parsed.data.lastAttemptAt)
-            : undefined,
-          lastSuccessAt: parsed.data.lastSuccessAt
-            ? new Date(parsed.data.lastSuccessAt)
-            : undefined,
-          metadata: parsed.data.metadata ?? {},
-        },
-      })
-      .returning();
+        ...syncPatch,
+      }, {
+        subjectType: "channel_sync_state",
+        displayName: `${parsed.data.objectType}:${parsed.data.direction}`,
+      });
+    }
+    if (row instanceof Response) return row;
 
     return ok(c, row, 201);
   },
@@ -477,9 +538,7 @@ channelRoutes.post(
     });
     if (!account) return fail(c, "NOT_FOUND", "Channel account not found.", 404);
 
-    const [created] = await db
-      .insert(channelEntityLinks)
-      .values({
+    const created = await createChannelRow(c, bizId, "channelEntityLinks", {
         bizId,
         channelAccountId: parsed.data.channelAccountId,
         objectType: parsed.data.objectType,
@@ -493,8 +552,11 @@ channelRoutes.post(
         syncHash: parsed.data.syncHash,
         isActive: parsed.data.isActive,
         metadata: parsed.data.metadata ?? {},
-      })
-      .returning();
+      }, {
+      subjectType: "channel_entity_link",
+      displayName: parsed.data.externalObjectId,
+    });
+    if (created instanceof Response) return created;
 
     return ok(c, created, 201);
   },
@@ -536,9 +598,7 @@ channelRoutes.post(
       return fail(c, "NOT_FOUND", "Offer version not found.", 404);
     }
 
-    const [booking] = await db
-      .insert(bookingOrders)
-      .values({
+    const booking = await createChannelRow(c, bizId, "bookingOrders", {
         bizId,
         offerId: parsed.data.offerId,
         offerVersionId: parsed.data.offerVersionId,
@@ -566,14 +626,19 @@ channelRoutes.post(
           channelAttendanceStatus: "pending",
           ...parsed.data.metadata,
         },
-      })
-      .returning();
+      }, {
+      subjectType: "booking_order",
+      displayName: parsed.data.externalBookingId,
+    });
+    if (booking instanceof Response) return booking;
 
-    await db.insert(channelEntityLinks).values({
+    const linkedBooking = booking as Record<string, unknown>;
+
+    const bookingLink = await createChannelRow(c, bizId, "channelEntityLinks", {
       bizId,
       channelAccountId,
       objectType: "booking_order",
-      bookingOrderId: booking.id,
+      bookingOrderId: linkedBooking.id as string,
       externalObjectId: parsed.data.externalBookingId,
       externalParentId: parsed.data.externalMemberId,
       syncHash: `${parsed.data.externalBookingId}:${parsed.data.externalMemberId}`,
@@ -581,7 +646,11 @@ channelRoutes.post(
       metadata: {
         memberDisplayName: parsed.data.memberDisplayName,
       },
+    }, {
+      subjectType: "channel_entity_link",
+      displayName: parsed.data.externalBookingId,
     });
+    if (bookingLink instanceof Response) return bookingLink;
 
     return ok(c, {
       booking,
@@ -617,9 +686,7 @@ channelRoutes.post(
       return fail(c, "CHANNEL_MISMATCH", "Booking is not linked to this channel account.", 409);
     }
 
-    await db
-      .update(bookingOrders)
-      .set({
+    const attendanceUpdate = await updateChannelRow(c, bizId, "bookingOrders", bookingOrderId, {
         metadata: {
           ...metadata,
           channelAttendanceStatus: parsed.data.attendanceStatus,
@@ -627,8 +694,11 @@ channelRoutes.post(
           channelNoShowPolicy: parsed.data.attendanceStatus === "no_show" ? "partner_defined" : undefined,
           ...parsed.data.metadata,
         },
-      })
-      .where(and(eq(bookingOrders.bizId, bizId), eq(bookingOrders.id, bookingOrderId)));
+      }, {
+      subjectType: "booking_order",
+      displayName: bookingOrderId,
+    });
+    if (attendanceUpdate instanceof Response) return attendanceUpdate;
 
     return ok(c, {
       bookingOrderId,
@@ -752,9 +822,7 @@ channelRoutes.post(
 
     const sourceTag = account.provider === 'meta_messenger' ? 'facebook' : account.provider
     const externalObjectId = `${parsed.data.surface}-${parsed.data.offerVersionId}`
-    const [link] = await db
-      .insert(channelEntityLinks)
-      .values({
+    const link = await createChannelRow(c, bizId, "channelEntityLinks", {
         bizId,
         channelAccountId,
         objectType: 'custom',
@@ -778,8 +846,11 @@ channelRoutes.post(
           messengerEntryPoint: parsed.data.surface === 'facebook_messenger' ? `messenger:${externalObjectId}` : null,
           ...parsed.data.metadata,
         },
-      })
-      .returning()
+      }, {
+      subjectType: "channel_entity_link",
+      displayName: externalObjectId,
+    })
+    if (link instanceof Response) return link
 
     return ok(c, link, 201)
   },

@@ -16,6 +16,7 @@ import {
   requireAuth,
   requireBizAccess,
 } from '../middleware/auth.js'
+import { executeCrudRouteAction } from '../services/action-route-bridge.js'
 import { ok } from './_api.js'
 
 const {
@@ -32,6 +33,29 @@ const {
   fulfillmentUnits,
   fulfillmentAssignments,
 } = dbPackage
+
+async function createOperationsRow<TTableKey extends 'operationalDemands' | 'operationalAssignments'>(
+  c: Parameters<typeof executeCrudRouteAction>[0]['c'],
+  bizId: string,
+  tableKey: TTableKey,
+  data: Parameters<typeof executeCrudRouteAction>[0]['data'],
+  meta: { subjectType: string; subjectId: string; displayName: string; source: string },
+) {
+  const result = await executeCrudRouteAction({
+    c,
+    bizId,
+    tableKey,
+    operation: 'create',
+    data,
+    subjectType: meta.subjectType,
+    subjectId: meta.subjectId,
+    displayName: meta.displayName,
+    metadata: { source: meta.source },
+  })
+  if (!result.ok) throw new Error(result.message ?? `Failed to create ${tableKey}`)
+  if (!result.row) throw new Error(`Missing row for ${tableKey} create`)
+  return result.row
+}
 
 const createOperationalDemandBodySchema = z.object({
   sourceType: z.enum(['fulfillment_unit', 'staffing_demand', 'custom_subject']),
@@ -138,20 +162,31 @@ operationsRoutes.post(
     const bizId = c.req.param('bizId')
     const parsed = createOperationalDemandBodySchema.safeParse(await c.req.json().catch(() => null))
     if (!parsed.success) return c.json({ success: false, error: { code: 'VALIDATION_ERROR', message: 'Invalid request body.', details: parsed.error.flatten() } }, 400)
-    const [row] = await db.insert(operationalDemands).values({
+    const row = await createOperationsRow(
+      c,
       bizId,
-      sourceType: parsed.data.sourceType,
-      fulfillmentUnitId: parsed.data.fulfillmentUnitId ?? null,
-      staffingDemandId: parsed.data.staffingDemandId ?? null,
-      customSubjectType: parsed.data.customSubjectType ?? null,
-      customSubjectId: parsed.data.customSubjectId ?? null,
-      status: parsed.data.status,
-      sourceStatus: parsed.data.sourceStatus,
-      startsAt: parsed.data.startsAt ? new Date(parsed.data.startsAt) : null,
-      endsAt: parsed.data.endsAt ? new Date(parsed.data.endsAt) : null,
-      priority: parsed.data.priority,
-      metadata: parsed.data.metadata ?? {},
-    }).returning()
+      'operationalDemands',
+      {
+        bizId,
+        sourceType: parsed.data.sourceType,
+        fulfillmentUnitId: parsed.data.fulfillmentUnitId ?? null,
+        staffingDemandId: parsed.data.staffingDemandId ?? null,
+        customSubjectType: parsed.data.customSubjectType ?? null,
+        customSubjectId: parsed.data.customSubjectId ?? null,
+        status: parsed.data.status,
+        sourceStatus: parsed.data.sourceStatus,
+        startsAt: parsed.data.startsAt ? new Date(parsed.data.startsAt) : null,
+        endsAt: parsed.data.endsAt ? new Date(parsed.data.endsAt) : null,
+        priority: parsed.data.priority,
+        metadata: parsed.data.metadata ?? {},
+      },
+      {
+        subjectType: 'operational_demand',
+        subjectId: parsed.data.customSubjectId ?? parsed.data.fulfillmentUnitId ?? parsed.data.staffingDemandId ?? 'custom',
+        displayName: parsed.data.sourceType,
+        source: 'routes.operations.createDemand',
+      },
+    )
     return ok(c, row, 201)
   },
 )
@@ -184,21 +219,32 @@ operationsRoutes.post(
     const bizId = c.req.param('bizId')
     const parsed = createOperationalAssignmentBodySchema.safeParse(await c.req.json().catch(() => null))
     if (!parsed.success) return c.json({ success: false, error: { code: 'VALIDATION_ERROR', message: 'Invalid request body.', details: parsed.error.flatten() } }, 400)
-    const [row] = await db.insert(operationalAssignments).values({
+    const row = await createOperationsRow(
+      c,
       bizId,
-      operationalDemandId: parsed.data.operationalDemandId,
-      resourceId: parsed.data.resourceId,
-      sourceType: parsed.data.sourceType,
-      fulfillmentAssignmentId: parsed.data.fulfillmentAssignmentId ?? null,
-      staffingAssignmentId: parsed.data.staffingAssignmentId ?? null,
-      customSubjectType: parsed.data.customSubjectType ?? null,
-      customSubjectId: parsed.data.customSubjectId ?? null,
-      status: parsed.data.status,
-      sourceStatus: parsed.data.sourceStatus,
-      startsAt: new Date(parsed.data.startsAt),
-      endsAt: parsed.data.endsAt ? new Date(parsed.data.endsAt) : null,
-      metadata: parsed.data.metadata ?? {},
-    }).returning()
+      'operationalAssignments',
+      {
+        bizId,
+        operationalDemandId: parsed.data.operationalDemandId,
+        resourceId: parsed.data.resourceId,
+        sourceType: parsed.data.sourceType,
+        fulfillmentAssignmentId: parsed.data.fulfillmentAssignmentId ?? null,
+        staffingAssignmentId: parsed.data.staffingAssignmentId ?? null,
+        customSubjectType: parsed.data.customSubjectType ?? null,
+        customSubjectId: parsed.data.customSubjectId ?? null,
+        status: parsed.data.status,
+        sourceStatus: parsed.data.sourceStatus,
+        startsAt: new Date(parsed.data.startsAt),
+        endsAt: parsed.data.endsAt ? new Date(parsed.data.endsAt) : null,
+        metadata: parsed.data.metadata ?? {},
+      },
+      {
+        subjectType: 'operational_assignment',
+        subjectId: parsed.data.resourceId,
+        displayName: parsed.data.sourceType,
+        source: 'routes.operations.createAssignment',
+      },
+    )
     return ok(c, row, 201)
   },
 )

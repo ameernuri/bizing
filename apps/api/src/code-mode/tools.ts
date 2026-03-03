@@ -2305,7 +2305,7 @@ export const apiTools: ApiToolDefinition[] = [
     name: 'bizing.sagas.specs.list',
     description: 'List available saga definitions (file-synced test lifecycles).',
     method: 'GET',
-    path: '/api/v1/sagas/specs',
+    path: '/api/v1/ooda/sagas/specs',
     tags: ['sagas', 'specs'],
     parameters: {
       type: 'object',
@@ -2320,7 +2320,7 @@ export const apiTools: ApiToolDefinition[] = [
     name: 'bizing.sagas.specs.generate',
     description: 'Generate saga JSON specs from use-case + persona markdown sources.',
     method: 'POST',
-    path: '/api/v1/sagas/specs/generate',
+    path: '/api/v1/ooda/sagas/specs/generate',
     tags: ['sagas', 'specs', 'generator'],
     parameters: {
       type: 'object',
@@ -2339,7 +2339,7 @@ export const apiTools: ApiToolDefinition[] = [
     description:
       'Import and normalize use-cases/personas from markdown docs into DB loop tables, then link saga definitions.',
     method: 'POST',
-    path: '/api/v1/sagas/library/sync-docs',
+    path: '/api/v1/ooda/sagas/library/sync-docs',
     tags: ['sagas', 'library', 'sync'],
     parameters: {
       type: 'object',
@@ -2354,7 +2354,7 @@ export const apiTools: ApiToolDefinition[] = [
     name: 'bizing.sagas.library.overview',
     description: 'Get aggregate loop counts (UCs/personas/sagas/runs/coverage).',
     method: 'GET',
-    path: '/api/v1/sagas/library/overview',
+    path: '/api/v1/ooda/sagas/library/overview',
     tags: ['sagas', 'library'],
     parameters: {
       type: 'object',
@@ -2365,7 +2365,7 @@ export const apiTools: ApiToolDefinition[] = [
     name: 'bizing.sagas.useCases.list',
     description: 'List normalized UC entities used by saga loop.',
     method: 'GET',
-    path: '/api/v1/sagas/use-cases',
+    path: '/api/v1/ooda/sagas/use-cases',
     tags: ['sagas', 'library', 'use-cases'],
     parameters: {
       type: 'object',
@@ -2379,7 +2379,7 @@ export const apiTools: ApiToolDefinition[] = [
     name: 'bizing.sagas.useCases.create',
     description: 'Create one top-level use-case definition.',
     method: 'POST',
-    path: '/api/v1/sagas/use-cases',
+    path: '/api/v1/ooda/sagas/use-cases',
     tags: ['sagas', 'library', 'use-cases'],
     parameters: {
       type: 'object',
@@ -2398,7 +2398,7 @@ export const apiTools: ApiToolDefinition[] = [
     name: 'bizing.sagas.useCases.get',
     description: 'Get one use-case with full version history.',
     method: 'GET',
-    path: '/api/v1/sagas/use-cases/{ucKey}',
+    path: '/api/v1/ooda/sagas/use-cases/{ucKey}',
     tags: ['sagas', 'library', 'use-cases'],
     parameters: {
       type: 'object',
@@ -2412,7 +2412,7 @@ export const apiTools: ApiToolDefinition[] = [
     name: 'bizing.sagas.useCases.update',
     description: 'Update top-level use-case metadata.',
     method: 'PATCH',
-    path: '/api/v1/sagas/use-cases/{ucKey}',
+    path: '/api/v1/ooda/sagas/use-cases/{ucKey}',
     tags: ['sagas', 'library', 'use-cases'],
     parameters: {
       type: 'object',
@@ -2431,7 +2431,7 @@ export const apiTools: ApiToolDefinition[] = [
     name: 'bizing.sagas.useCases.versions.create',
     description: 'Create one immutable use-case version snapshot.',
     method: 'POST',
-    path: '/api/v1/sagas/use-cases/{ucKey}/versions',
+    path: '/api/v1/ooda/sagas/use-cases/{ucKey}/versions',
     tags: ['sagas', 'library', 'use-cases'],
     parameters: {
       type: 'object',
@@ -2451,7 +2451,7 @@ export const apiTools: ApiToolDefinition[] = [
     name: 'bizing.sagas.useCases.delete',
     description: 'Delete one use-case definition and its versions.',
     method: 'DELETE',
-    path: '/api/v1/sagas/use-cases/{ucKey}',
+    path: '/api/v1/ooda/sagas/use-cases/{ucKey}',
     tags: ['sagas', 'library', 'use-cases'],
     parameters: {
       type: 'object',
@@ -2465,7 +2465,7 @@ export const apiTools: ApiToolDefinition[] = [
     name: 'bizing.sagas.personas.list',
     description: 'List normalized persona entities used by saga loop.',
     method: 'GET',
-    path: '/api/v1/sagas/personas',
+    path: '/api/v1/ooda/sagas/personas',
     tags: ['sagas', 'library', 'personas'],
     parameters: {
       type: 'object',
@@ -2479,7 +2479,7 @@ export const apiTools: ApiToolDefinition[] = [
     name: 'bizing.sagas.personas.create',
     description: 'Create one top-level persona definition.',
     method: 'POST',
-    path: '/api/v1/sagas/personas',
+    path: '/api/v1/ooda/sagas/personas',
     tags: ['sagas', 'library', 'personas'],
     parameters: {
       type: 'object',
@@ -2498,7 +2498,7 @@ export const apiTools: ApiToolDefinition[] = [
     name: 'bizing.sagas.personas.get',
     description: 'Get one persona with full version history.',
     method: 'GET',
-    path: '/api/v1/sagas/personas/{personaKey}',
+    path: '/api/v1/ooda/sagas/personas/{personaKey}',
     tags: ['sagas', 'library', 'personas'],
     parameters: {
       type: 'object',
@@ -2512,7 +2512,7 @@ export const apiTools: ApiToolDefinition[] = [
     name: 'bizing.sagas.personas.update',
     description: 'Update top-level persona metadata.',
     method: 'PATCH',
-    path: '/api/v1/sagas/personas/{personaKey}',
+    path: '/api/v1/ooda/sagas/personas/{personaKey}',
     tags: ['sagas', 'library', 'personas'],
     parameters: {
       type: 'object',
@@ -2531,7 +2531,7 @@ export const apiTools: ApiToolDefinition[] = [
     name: 'bizing.sagas.personas.versions.create',
     description: 'Create one immutable persona version snapshot.',
     method: 'POST',
-    path: '/api/v1/sagas/personas/{personaKey}/versions',
+    path: '/api/v1/ooda/sagas/personas/{personaKey}/versions',
     tags: ['sagas', 'library', 'personas'],
     parameters: {
       type: 'object',
@@ -2552,7 +2552,7 @@ export const apiTools: ApiToolDefinition[] = [
     name: 'bizing.sagas.personas.delete',
     description: 'Delete one persona definition and its versions.',
     method: 'DELETE',
-    path: '/api/v1/sagas/personas/{personaKey}',
+    path: '/api/v1/ooda/sagas/personas/{personaKey}',
     tags: ['sagas', 'library', 'personas'],
     parameters: {
       type: 'object',
@@ -2567,7 +2567,7 @@ export const apiTools: ApiToolDefinition[] = [
     description:
       'Get one UC/persona node and all linked saga definitions (design-to-execution mapping).',
     method: 'GET',
-    path: '/api/v1/sagas/library/related',
+    path: '/api/v1/ooda/sagas/library/related',
     tags: ['sagas', 'library', 'relations'],
     parameters: {
       type: 'object',
@@ -2582,7 +2582,7 @@ export const apiTools: ApiToolDefinition[] = [
     name: 'bizing.sagas.definitions.links.get',
     description: 'Get linked UC/persona versions for one saga definition.',
     method: 'GET',
-    path: '/api/v1/sagas/definitions/{sagaKey}/links',
+    path: '/api/v1/ooda/sagas/definitions/{sagaKey}/links',
     tags: ['sagas', 'links'],
     parameters: {
       type: 'object',
@@ -2596,7 +2596,7 @@ export const apiTools: ApiToolDefinition[] = [
     name: 'bizing.sagas.runAssessments.reports.list',
     description: 'List run-assessment coverage reports generated from saga executions.',
     method: 'GET',
-    path: '/api/v1/sagas/run-assessments/reports',
+    path: '/api/v1/ooda/sagas/run-assessments/reports',
     tags: ['sagas', 'run-assessment'],
     parameters: {
       type: 'object',
@@ -2611,7 +2611,7 @@ export const apiTools: ApiToolDefinition[] = [
     name: 'bizing.sagas.runAssessments.reports.get',
     description: 'Get one run-assessment coverage report with normalized coverage items and tags.',
     method: 'GET',
-    path: '/api/v1/sagas/run-assessments/reports/{reportId}',
+    path: '/api/v1/ooda/sagas/run-assessments/reports/{reportId}',
     tags: ['sagas', 'run-assessment'],
     parameters: {
       type: 'object',
@@ -2626,7 +2626,7 @@ export const apiTools: ApiToolDefinition[] = [
     description:
       'List schema-baseline coverage reports imported from markdown (not from run execution).',
     method: 'GET',
-    path: '/api/v1/sagas/schema-coverage/reports',
+    path: '/api/v1/ooda/sagas/schema-coverage/reports',
     tags: ['sagas', 'schema-coverage'],
     parameters: {
       type: 'object',
@@ -2639,7 +2639,7 @@ export const apiTools: ApiToolDefinition[] = [
     name: 'bizing.sagas.schemaCoverage.reports.get',
     description: 'Get one schema-baseline coverage report with normalized UC coverage items and tags.',
     method: 'GET',
-    path: '/api/v1/sagas/schema-coverage/reports/{reportId}',
+    path: '/api/v1/ooda/sagas/schema-coverage/reports/{reportId}',
     tags: ['sagas', 'schema-coverage'],
     parameters: {
       type: 'object',
@@ -2654,7 +2654,7 @@ export const apiTools: ApiToolDefinition[] = [
     description:
       'Legacy alias for run-assessment coverage list. Prefer bizing.sagas.runAssessments.reports.list.',
     method: 'GET',
-    path: '/api/v1/sagas/coverage/reports',
+    path: '/api/v1/ooda/sagas/coverage/reports',
     tags: ['sagas', 'coverage', 'legacy'],
     parameters: {
       type: 'object',
@@ -2671,7 +2671,7 @@ export const apiTools: ApiToolDefinition[] = [
     description:
       'Legacy alias for coverage detail. Prefer runAssessments/schemaCoverage endpoints.',
     method: 'GET',
-    path: '/api/v1/sagas/coverage/reports/{reportId}',
+    path: '/api/v1/ooda/sagas/coverage/reports/{reportId}',
     tags: ['sagas', 'coverage', 'legacy'],
     parameters: {
       type: 'object',
@@ -2686,7 +2686,7 @@ export const apiTools: ApiToolDefinition[] = [
     description:
       'Import schema coverage markdown into normalized report/items/tags for dashboard filtering.',
     method: 'POST',
-    path: '/api/v1/sagas/schema-coverage/import',
+    path: '/api/v1/ooda/sagas/schema-coverage/import',
     tags: ['sagas', 'schema-coverage', 'admin'],
     parameters: {
       type: 'object',
@@ -2701,7 +2701,7 @@ export const apiTools: ApiToolDefinition[] = [
     description:
       'Dangerous admin operation: wipe loop data (UC/persona/sagas/runs/coverage/tags) and reseed from canonical docs.',
     method: 'POST',
-    path: '/api/v1/sagas/library/reset-reseed',
+    path: '/api/v1/ooda/sagas/library/reset-reseed',
     tags: ['sagas', 'library', 'admin'],
     parameters: {
       type: 'object',
@@ -2721,7 +2721,7 @@ export const apiTools: ApiToolDefinition[] = [
     name: 'bizing.sagas.runs.create',
     description: 'Create one saga run from a saga definition key.',
     method: 'POST',
-    path: '/api/v1/sagas/runs',
+    path: '/api/v1/ooda/sagas/runs',
     tags: ['sagas', 'runs'],
     parameters: {
       type: 'object',
@@ -2739,7 +2739,7 @@ export const apiTools: ApiToolDefinition[] = [
     name: 'bizing.sagas.runs.list',
     description: 'List saga runs for the current user context.',
     method: 'GET',
-    path: '/api/v1/sagas/runs',
+    path: '/api/v1/ooda/sagas/runs',
     tags: ['sagas', 'runs'],
     parameters: {
       type: 'object',
@@ -2755,7 +2755,7 @@ export const apiTools: ApiToolDefinition[] = [
     name: 'bizing.sagas.runs.archive',
     description: 'Soft-archive one saga run so it is hidden from default run lists.',
     method: 'POST',
-    path: '/api/v1/sagas/runs/{runId}/archive',
+    path: '/api/v1/ooda/sagas/runs/{runId}/archive',
     tags: ['sagas', 'runs', 'archive'],
     parameters: {
       type: 'object',
@@ -2769,7 +2769,7 @@ export const apiTools: ApiToolDefinition[] = [
     name: 'bizing.sagas.runs.archiveBulk',
     description: 'Soft-archive multiple saga runs in one request.',
     method: 'POST',
-    path: '/api/v1/sagas/runs/archive',
+    path: '/api/v1/ooda/sagas/runs/archive',
     tags: ['sagas', 'runs', 'archive'],
     parameters: {
       type: 'object',
@@ -2783,7 +2783,7 @@ export const apiTools: ApiToolDefinition[] = [
     name: 'bizing.sagas.runs.get',
     description: 'Get full saga run detail including steps and artifacts.',
     method: 'GET',
-    path: '/api/v1/sagas/runs/{runId}',
+    path: '/api/v1/ooda/sagas/runs/{runId}',
     tags: ['sagas', 'runs'],
     parameters: {
       type: 'object',
@@ -2798,7 +2798,7 @@ export const apiTools: ApiToolDefinition[] = [
     description:
       'Execute one pending/running saga run server-side using deterministic runner logic.',
     method: 'POST',
-    path: '/api/v1/sagas/runs/{runId}/execute',
+    path: '/api/v1/ooda/sagas/runs/{runId}/execute',
     tags: ['sagas', 'runs', 'executor'],
     parameters: {
       type: 'object',
@@ -2812,7 +2812,7 @@ export const apiTools: ApiToolDefinition[] = [
     name: 'bizing.sagas.runs.clock.get',
     description: 'Get virtual/realtime simulation clock state for one saga run.',
     method: 'GET',
-    path: '/api/v1/sagas/runs/{runId}/clock',
+    path: '/api/v1/ooda/sagas/runs/{runId}/clock',
     tags: ['sagas', 'runs', 'clock'],
     parameters: {
       type: 'object',
@@ -2827,7 +2827,7 @@ export const apiTools: ApiToolDefinition[] = [
     description:
       'Advance one saga run simulation clock (virtual time) by milliseconds or set absolute timestamp.',
     method: 'POST',
-    path: '/api/v1/sagas/runs/{runId}/clock/advance',
+    path: '/api/v1/ooda/sagas/runs/{runId}/clock/advance',
     tags: ['sagas', 'runs', 'clock'],
     parameters: {
       type: 'object',
@@ -2845,7 +2845,7 @@ export const apiTools: ApiToolDefinition[] = [
     name: 'bizing.sagas.runs.schedulerJobs.list',
     description: 'List scheduler jobs for one saga run.',
     method: 'GET',
-    path: '/api/v1/sagas/runs/{runId}/scheduler/jobs',
+    path: '/api/v1/ooda/sagas/runs/{runId}/scheduler/jobs',
     tags: ['sagas', 'runs', 'scheduler'],
     parameters: {
       type: 'object',
@@ -2865,7 +2865,7 @@ export const apiTools: ApiToolDefinition[] = [
     name: 'bizing.sagas.runs.schedulerJobs.create',
     description: 'Create one scheduler job row for a saga run.',
     method: 'POST',
-    path: '/api/v1/sagas/runs/{runId}/scheduler/jobs',
+    path: '/api/v1/ooda/sagas/runs/{runId}/scheduler/jobs',
     tags: ['sagas', 'runs', 'scheduler'],
     parameters: {
       type: 'object',
@@ -2891,7 +2891,7 @@ export const apiTools: ApiToolDefinition[] = [
     name: 'bizing.sagas.runs.schedulerJobs.update',
     description: 'Update one scheduler job status/result for a saga run.',
     method: 'PATCH',
-    path: '/api/v1/sagas/runs/{runId}/scheduler/jobs/{jobId}',
+    path: '/api/v1/ooda/sagas/runs/{runId}/scheduler/jobs/{jobId}',
     tags: ['sagas', 'runs', 'scheduler'],
     parameters: {
       type: 'object',
@@ -2918,7 +2918,7 @@ export const apiTools: ApiToolDefinition[] = [
     description:
       'Get server coverage verdict (full/partial/gap), failing step reasons, and missing evidence for one run.',
     method: 'GET',
-    path: '/api/v1/sagas/runs/{runId}/coverage',
+    path: '/api/v1/ooda/sagas/runs/{runId}/coverage',
     tags: ['sagas', 'runs', 'coverage'],
     parameters: {
       type: 'object',
@@ -2932,7 +2932,7 @@ export const apiTools: ApiToolDefinition[] = [
     name: 'bizing.sagas.runs.actors.list',
     description: 'List run actor virtual identities (email/phone) for one saga run.',
     method: 'GET',
-    path: '/api/v1/sagas/runs/{runId}/actors',
+    path: '/api/v1/ooda/sagas/runs/{runId}/actors',
     tags: ['sagas', 'runs', 'actors'],
     parameters: {
       type: 'object',
@@ -2946,7 +2946,7 @@ export const apiTools: ApiToolDefinition[] = [
     name: 'bizing.sagas.runs.messages.list',
     description: 'List simulated actor messages for one run.',
     method: 'GET',
-    path: '/api/v1/sagas/runs/{runId}/messages',
+    path: '/api/v1/ooda/sagas/runs/{runId}/messages',
     tags: ['sagas', 'runs', 'messages'],
     parameters: {
       type: 'object',
@@ -2961,7 +2961,7 @@ export const apiTools: ApiToolDefinition[] = [
     name: 'bizing.sagas.runs.messages.create',
     description: 'Create one simulated actor message (email/sms/push/in-app) for a run.',
     method: 'POST',
-    path: '/api/v1/sagas/runs/{runId}/messages',
+    path: '/api/v1/ooda/sagas/runs/{runId}/messages',
     tags: ['sagas', 'runs', 'messages'],
     parameters: {
       type: 'object',
@@ -2983,7 +2983,7 @@ export const apiTools: ApiToolDefinition[] = [
     name: 'bizing.sagas.steps.reportResult',
     description: 'Update one saga run step status/result payload.',
     method: 'POST',
-    path: '/api/v1/sagas/runs/{runId}/steps/{stepKey}/result',
+    path: '/api/v1/ooda/sagas/runs/{runId}/steps/{stepKey}/result',
     tags: ['sagas', 'steps'],
     parameters: {
       type: 'object',
@@ -3006,7 +3006,7 @@ export const apiTools: ApiToolDefinition[] = [
     description:
       'Attach one snapshot to saga run. Preferred: snapshot.v1 `view` blocks that represent what user saw.',
     method: 'POST',
-    path: '/api/v1/sagas/runs/{runId}/snapshots',
+    path: '/api/v1/ooda/sagas/runs/{runId}/snapshots',
     tags: ['sagas', 'artifacts', 'snapshots'],
     parameters: {
       type: 'object',
@@ -3047,7 +3047,7 @@ export const apiTools: ApiToolDefinition[] = [
     name: 'bizing.sagas.artifacts.addApiTrace',
     description: 'Attach one API trace artifact to a saga run (optionally step-scoped).',
     method: 'POST',
-    path: '/api/v1/sagas/runs/{runId}/traces',
+    path: '/api/v1/ooda/sagas/runs/{runId}/traces',
     tags: ['sagas', 'artifacts', 'traces'],
     parameters: {
       type: 'object',
@@ -3065,7 +3065,7 @@ export const apiTools: ApiToolDefinition[] = [
     name: 'bizing.sagas.artifacts.submitReport',
     description: 'Attach final markdown report to saga run.',
     method: 'POST',
-    path: '/api/v1/sagas/runs/{runId}/report',
+    path: '/api/v1/ooda/sagas/runs/{runId}/report',
     tags: ['sagas', 'artifacts', 'reports'],
     parameters: {
       type: 'object',
@@ -3081,7 +3081,7 @@ export const apiTools: ApiToolDefinition[] = [
     name: 'bizing.sagas.testMode.next',
     description: 'Get next actionable saga step for agent test-mode sessions.',
     method: 'GET',
-    path: '/api/v1/sagas/test-mode/next',
+    path: '/api/v1/ooda/sagas/test-mode/next',
     tags: ['sagas', 'test-mode'],
     parameters: {
       type: 'object',

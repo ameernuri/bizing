@@ -21,6 +21,7 @@ import dbPackage from '@bizing/db'
 import { requireAclPermission, requireAuth, requireBizAccess } from '../middleware/auth.js'
 import { fail, ok } from './_api.js'
 import { sanitizeUnknown } from '../lib/sanitize.js'
+import { executeCrudRouteAction } from '../services/action-route-bridge.js'
 
 const {
   db,
@@ -36,6 +37,62 @@ const {
   staffingResponses,
   staffingAssignments,
 } = dbPackage
+
+async function createStaffingRow(
+  c: Parameters<typeof executeCrudRouteAction>[0]['c'],
+  bizId: string,
+  tableKey: string,
+  data: Record<string, unknown>,
+  options?: {
+    subjectType?: string
+    subjectId?: string
+    displayName?: string
+    metadata?: Record<string, unknown>
+  },
+) {
+  const result = await executeCrudRouteAction({
+    c,
+    bizId,
+    tableKey,
+    operation: 'create',
+    data,
+    subjectType: options?.subjectType,
+    subjectId: options?.subjectId,
+    displayName: options?.displayName,
+    metadata: options?.metadata,
+  })
+  if (!result.ok) return fail(c, result.code, result.message, result.httpStatus, result.details)
+  return result.row
+}
+
+async function updateStaffingRow(
+  c: Parameters<typeof executeCrudRouteAction>[0]['c'],
+  bizId: string,
+  tableKey: string,
+  id: string,
+  patch: Record<string, unknown>,
+  options?: {
+    subjectType?: string
+    subjectId?: string
+    displayName?: string
+    metadata?: Record<string, unknown>
+  },
+) {
+  const result = await executeCrudRouteAction({
+    c,
+    bizId,
+    tableKey,
+    operation: 'update',
+    id,
+    patch,
+    subjectType: options?.subjectType,
+    subjectId: options?.subjectId ?? id,
+    displayName: options?.displayName,
+    metadata: options?.metadata,
+  })
+  if (!result.ok) return fail(c, result.code, result.message, result.httpStatus, result.details)
+  return result.row
+}
 
 function cleanMetadata(value: Record<string, unknown> | undefined) {
   return sanitizeUnknown(value ?? {}) as Record<string, unknown>
@@ -178,7 +235,7 @@ const createAssignmentBodySchema = z
     }
   })
 
-async function createLifecycleMessage(input: {
+async function createLifecycleMessage(c: Parameters<typeof executeCrudRouteAction>[0]['c'], input: {
   bizId: string
   recipientUserId?: string | null
   recipientRef: string
@@ -189,9 +246,7 @@ async function createLifecycleMessage(input: {
   eventType: string
   metadata?: Record<string, unknown>
 }) {
-  const [message] = await db
-    .insert(outboundMessages)
-    .values({
+  const message = await createStaffingRow(c, input.bizId, 'outboundMessages', {
       bizId: input.bizId,
       channel: input.channel,
       purpose: input.purpose,
@@ -211,31 +266,45 @@ async function createLifecycleMessage(input: {
         eventType: input.eventType,
         ...(input.metadata ?? {}),
       },
-    })
-    .returning()
+    }, {
+    subjectType: 'outbound_message',
+    displayName: input.subject,
+  })
+  if (message instanceof Response || !message) throw new Error('Failed to create outbound message.')
+  const messageRow = message as Record<string, unknown>
+  const messageId = messageRow.id
+  if (typeof messageId !== 'string' || messageId.length === 0) {
+    throw new Error('Outbound message id missing.')
+  }
 
-  await db.insert(outboundMessageEvents).values([
+  for (const eventRow of [
     {
       bizId: input.bizId,
-      outboundMessageId: message.id,
+      outboundMessageId: messageId,
       eventType: 'queued',
       payload: { eventType: input.eventType },
     },
     {
       bizId: input.bizId,
-      outboundMessageId: message.id,
+      outboundMessageId: messageId,
       eventType: 'sent',
       payload: { channel: input.channel },
     },
     {
       bizId: input.bizId,
-      outboundMessageId: message.id,
+      outboundMessageId: messageId,
       eventType: 'delivered',
       payload: { recipientRef: input.recipientRef },
     },
-  ])
+  ]) {
+    const event = await createStaffingRow(c, input.bizId, 'outboundMessageEvents', eventRow, {
+      subjectType: 'outbound_message_event',
+      displayName: eventRow.eventType,
+    })
+    if (event instanceof Response) throw new Error('Failed to create outbound message event.')
+  }
 
-  return message
+  return messageRow
 }
 
 async function loadDemandGraph(bizId: string, demandId: string) {
@@ -427,9 +496,7 @@ staffingRoutes.post(
     const parsed = capabilityTemplateBodySchema.safeParse(await c.req.json().catch(() => null))
     if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
 
-    const [created] = await db
-      .insert(resourceCapabilityTemplates)
-      .values({
+    const created = await createStaffingRow(c, bizId, 'resourceCapabilityTemplates', {
         bizId,
         locationId: parsed.data.locationId,
         scope: parsed.data.scope,
@@ -438,8 +505,11 @@ staffingRoutes.post(
         description: parsed.data.description,
         isActive: parsed.data.isActive ?? true,
         metadata: cleanMetadata(parsed.data.metadata),
-      })
-      .returning()
+      }, {
+      subjectType: 'resource_capability_template',
+      displayName: parsed.data.name,
+    })
+    if (created instanceof Response) return created
 
     return ok(c, created, 201)
   },
@@ -476,9 +546,7 @@ staffingRoutes.post(
     const parsed = capabilityAssignmentBodySchema.safeParse(await c.req.json().catch(() => null))
     if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
 
-    const [created] = await db
-      .insert(resourceCapabilityAssignments)
-      .values({
+    const created = await createStaffingRow(c, bizId, 'resourceCapabilityAssignments', {
         bizId,
         resourceId: parsed.data.resourceId,
         capabilityTemplateId: parsed.data.capabilityTemplateId,
@@ -487,8 +555,11 @@ staffingRoutes.post(
         validFrom: parsed.data.validFrom ? new Date(parsed.data.validFrom) : null,
         validTo: parsed.data.validTo ? new Date(parsed.data.validTo) : null,
         metadata: cleanMetadata(parsed.data.metadata),
-      })
-      .returning()
+      }, {
+      subjectType: 'resource_capability_assignment',
+      displayName: parsed.data.resourceId,
+    })
+    if (created instanceof Response) return created
 
     return ok(c, created, 201)
   },
@@ -521,10 +592,7 @@ staffingRoutes.post(
     const parsed = staffingDemandBodySchema.safeParse(await c.req.json().catch(() => null))
     if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
 
-    const result = await db.transaction(async (tx) => {
-      const [demand] = await tx
-        .insert(staffingDemands)
-        .values({
+    const demand = await createStaffingRow(c, bizId, 'staffingDemands', {
           bizId,
           staffingPoolId: parsed.data.staffingPoolId,
           demandType: parsed.data.demandType ?? 'open_shift',
@@ -550,16 +618,18 @@ staffingRoutes.post(
           sourceRefId: parsed.data.sourceRefId,
           policy: cleanMetadata(parsed.data.policy),
           metadata: cleanMetadata(parsed.data.metadata),
-        })
-        .returning()
+        }, {
+      subjectType: 'staffing_demand',
+      displayName: parsed.data.title,
+    })
+    if (demand instanceof Response) return demand
 
-      const requirementsCreated: Array<{ id: string; selectorsCreated: number }> = []
-      for (const requirement of parsed.data.requirements) {
-        const [createdRequirement] = await tx
-          .insert(staffingDemandRequirements)
-          .values({
+    const demandId = (demand as Record<string, unknown>).id as string
+    const requirementsCreated: Array<{ id: string; selectorsCreated: number }> = []
+    for (const requirement of parsed.data.requirements) {
+      const createdRequirement = await createStaffingRow(c, bizId, 'staffingDemandRequirements', {
             bizId,
-            staffingDemandId: demand.id,
+            staffingDemandId: demandId,
             name: requirement.name,
             slug: requirement.slug,
             targetResourceType: requirement.targetResourceType,
@@ -571,14 +641,18 @@ staffingRoutes.post(
             sortOrder: requirement.sortOrder ?? 100,
             description: requirement.description,
             metadata: cleanMetadata(requirement.metadata),
-          })
-          .returning()
+          }, {
+        subjectType: 'staffing_demand_requirement',
+        displayName: requirement.name,
+      })
+      if (createdRequirement instanceof Response) return createdRequirement
 
-        if (requirement.selectors.length > 0) {
-          await tx.insert(staffingDemandSelectors).values(
-            requirement.selectors.map((selector) => ({
+      const requirementId = (createdRequirement as Record<string, unknown>).id as string
+      if (requirement.selectors.length > 0) {
+        for (const selector of requirement.selectors) {
+          const selectorRow = await createStaffingRow(c, bizId, 'staffingDemandSelectors', {
               bizId,
-              staffingDemandRequirementId: createdRequirement.id,
+              staffingDemandRequirementId: requirementId,
               selectorType: selector.selectorType,
               isIncluded: selector.isIncluded ?? true,
               resourceId: selector.resourceId,
@@ -590,15 +664,16 @@ staffingRoutes.post(
               sortOrder: selector.sortOrder ?? 100,
               description: selector.description,
               metadata: cleanMetadata(selector.metadata),
-            })),
-          )
+            }, {
+            subjectType: 'staffing_demand_selector',
+            displayName: selector.selectorType,
+          })
+          if (selectorRow instanceof Response) return selectorRow
         }
-
-        requirementsCreated.push({ id: createdRequirement.id, selectorsCreated: requirement.selectors.length })
       }
-
-      return { demand, requirementsCreated }
-    })
+      requirementsCreated.push({ id: requirementId, selectorsCreated: requirement.selectors.length })
+    }
+    const result = { demand, requirementsCreated }
 
     return ok(c, result, 201)
   },
@@ -654,29 +729,31 @@ staffingRoutes.post(
       where: and(eq(resources.bizId, bizId), inArray(resources.id, selectedIds)),
     })
 
-    const [responsesCreated, messages] = await db.transaction(async (tx) => {
-      const responseRows = await tx
-        .insert(staffingResponses)
-        .values(
-          candidateResources.map((resource, index) => ({
-            bizId,
-            staffingDemandId: demandId,
-            candidateResourceId: resource.id,
-            responseMode: parsed.data.responseMode,
-            status: 'pending' as const,
-            rankOrder: index + 1,
-            offeredAt: new Date(),
-            metadata: {
-              dispatchSource: 'staffing.dispatch',
-            },
-          })),
-        )
-        .returning()
+    const responsesCreated: Array<Record<string, unknown>> = []
+    for (const [index, resource] of candidateResources.entries()) {
+      const responseRow = await createStaffingRow(c, bizId, 'staffingResponses', {
+        bizId,
+        staffingDemandId: demandId,
+        candidateResourceId: resource.id,
+        responseMode: parsed.data.responseMode,
+        status: 'pending',
+        rankOrder: index + 1,
+        offeredAt: new Date(),
+        metadata: {
+          dispatchSource: 'staffing.dispatch',
+        },
+      }, {
+        subjectType: 'staffing_response',
+        displayName: resource.name,
+      })
+      if (responseRow instanceof Response) return responseRow
+      responsesCreated.push(responseRow as Record<string, unknown>)
+    }
 
-      const notificationRows = []
-      for (const resource of candidateResources) {
-        if (!resource.hostUserId) continue
-        const message = await createLifecycleMessage({
+    const messages: Array<Record<string, unknown>> = []
+    for (const resource of candidateResources) {
+      if (!resource.hostUserId) continue
+      const message = await createLifecycleMessage(c, {
           bizId,
           recipientUserId: resource.hostUserId,
           recipientRef: resource.hostUserId,
@@ -690,11 +767,8 @@ staffingRoutes.post(
             candidateResourceId: resource.id,
           },
         })
-        notificationRows.push(message)
-      }
-
-      return [responseRows, notificationRows] as const
-    })
+      messages.push(message)
+    }
 
     return ok(c, {
       demandId,
@@ -755,9 +829,7 @@ staffingRoutes.patch(
       return fail(c, 'RATE_ABOVE_MAX', 'Proposed rate is above the staffing demand max rate.', 409)
     }
 
-    const [updated] = await db
-      .update(staffingResponses)
-      .set({
+    const updated = await updateStaffingRow(c, bizId, 'staffingResponses', responseId, {
         status: parsed.data.status,
         responseReason: parsed.data.responseReason,
         respondedAt: parsed.data.respondedAt ? new Date(parsed.data.respondedAt) : new Date(),
@@ -765,9 +837,11 @@ staffingRoutes.patch(
         proposedTotalMinor: parsed.data.proposedTotalMinor,
         respondedByUserId: c.get('user')?.id ?? null,
         metadata: parsed.data.metadata === undefined ? undefined : cleanMetadata(parsed.data.metadata),
-      })
-      .where(and(eq(staffingResponses.bizId, bizId), eq(staffingResponses.id, responseId)))
-      .returning()
+      }, {
+      subjectType: 'staffing_response',
+      displayName: existing.id,
+    })
+    if (updated instanceof Response) return updated
     return ok(c, updated)
   },
 )
@@ -801,9 +875,7 @@ staffingRoutes.post(
     })
     if (!resource) return fail(c, 'NOT_FOUND', 'Resource not found.', 404)
 
-    const [assignment] = await db
-      .insert(staffingAssignments)
-      .values({
+    const assignment = await createStaffingRow(c, bizId, 'staffingAssignments', {
         bizId,
         staffingDemandId: demandId,
         resourceId,
@@ -817,43 +889,52 @@ staffingRoutes.post(
         compensationRateMinor: parsed.data.compensationRateMinor ?? graph.demand.baseRateMinor ?? null,
         assignedByUserId: c.get('user')?.id ?? null,
         metadata: cleanMetadata(parsed.data.metadata),
-      })
-      .returning()
+      }, {
+      subjectType: 'staffing_assignment',
+      displayName: resource.name,
+    })
+    if (assignment instanceof Response) return assignment
 
-    await db
-      .update(staffingDemands)
-      .set({
+    const demandUpdated = await updateStaffingRow(c, bizId, 'staffingDemands', demandId, {
         status: 'filled',
         filledCount: Math.min((graph.demand.filledCount ?? 0) + 1, graph.demand.requiredCount),
         assignedResourceId: resourceId,
-      })
-      .where(and(eq(staffingDemands.bizId, bizId), eq(staffingDemands.id, demandId)))
+      }, {
+      subjectType: 'staffing_demand',
+      displayName: graph.demand.title,
+    })
+    if (demandUpdated instanceof Response) return demandUpdated
 
     if (response) {
-      await db
-        .update(staffingResponses)
-        .set({
+      const acceptedResponse = await updateStaffingRow(c, bizId, 'staffingResponses', response.id, {
           status: response.status === 'accepted' ? response.status : 'accepted',
           respondedAt: response.respondedAt ?? new Date(),
-        })
-        .where(and(eq(staffingResponses.bizId, bizId), eq(staffingResponses.id, response.id)))
+        }, {
+        subjectType: 'staffing_response',
+        displayName: response.id,
+      })
+      if (acceptedResponse instanceof Response) return acceptedResponse
 
       if (graph.demand.fillMode === 'auction') {
-        await db
-          .update(staffingResponses)
-          .set({
+        const losers = await db.query.staffingResponses.findMany({
+          where: and(
+            eq(staffingResponses.bizId, bizId),
+            eq(staffingResponses.staffingDemandId, demandId),
+            inArray(staffingResponses.status, ['pending', 'accepted']),
+          ),
+        })
+        for (const loser of losers) {
+          if (loser.id === response.id) continue
+          const lostResponse = await updateStaffingRow(c, bizId, 'staffingResponses', loser.id, {
             status: 'lost',
-            respondedAt: sql`coalesce(${staffingResponses.respondedAt}, now())`,
-            responseReason: sql`coalesce(${staffingResponses.responseReason}, 'lost_after_award')`,
+            respondedAt: loser.respondedAt ?? new Date(),
+            responseReason: loser.responseReason ?? 'lost_after_award',
+          }, {
+            subjectType: 'staffing_response',
+            displayName: loser.id,
           })
-          .where(
-            and(
-              eq(staffingResponses.bizId, bizId),
-              eq(staffingResponses.staffingDemandId, demandId),
-              sql`${staffingResponses.id} <> ${response.id}`,
-              inArray(staffingResponses.status, ['pending', 'accepted']),
-            ),
-          )
+          if (lostResponse instanceof Response) return lostResponse
+        }
       }
     }
 
@@ -863,7 +944,7 @@ staffingRoutes.post(
         where: and(eq(bookingOrders.bizId, bizId), eq(bookingOrders.id, graph.demand.sourceRefId)),
       })
       if (booking?.customerUserId) {
-        const message = await createLifecycleMessage({
+        const message = await createLifecycleMessage(c, {
           bizId,
           recipientUserId: booking.customerUserId,
           recipientRef: booking.customerUserId,
@@ -874,12 +955,12 @@ staffingRoutes.post(
           eventType: 'staffing.assignment_client_notified',
           metadata: {
             staffingDemandId: demandId,
-            staffingAssignmentId: assignment.id,
+            staffingAssignmentId: (assignment as Record<string, unknown>).id as string,
             bookingOrderId: booking.id,
             resourceId,
           },
         })
-        clientMessageId = message.id
+        clientMessageId = String(message.id)
       }
     }
 

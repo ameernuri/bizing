@@ -18,6 +18,7 @@ import { and, asc, desc, eq, sql } from 'drizzle-orm'
 import { z } from 'zod'
 import dbPackage from '@bizing/db'
 import { requireAclPermission, requireAuth, requireBizAccess } from '../middleware/auth.js'
+import { executeCrudRouteAction } from '../services/action-route-bridge.js'
 import { fail, ok, parsePositiveInt } from './_api.js'
 import { sanitizePlainText, sanitizeUnknown } from '../lib/sanitize.js'
 
@@ -123,6 +124,56 @@ const createCertificationAwardBodySchema = z.object({
   metadata: z.record(z.unknown()).optional(),
 })
 
+async function createEducationRow<T extends Record<string, unknown>>(input: {
+  c: Parameters<typeof fail>[0]
+  bizId: string
+  tableKey: string
+  subjectType: string
+  data: Record<string, unknown>
+  displayName?: string
+}) {
+  const delegated = await executeCrudRouteAction({
+    c: input.c,
+    bizId: input.bizId,
+    tableKey: input.tableKey,
+    operation: 'create',
+    subjectType: input.subjectType,
+    displayName: input.displayName,
+    data: input.data,
+    metadata: { routeFamily: 'education' },
+  })
+  if (!delegated.ok) return fail(input.c, delegated.code, delegated.message, delegated.httpStatus, delegated.details)
+  return delegated.row as T
+}
+
+async function updateEducationRow<T extends Record<string, unknown>>(input: {
+  c: Parameters<typeof fail>[0]
+  bizId: string
+  tableKey: string
+  subjectType: string
+  id: string
+  patch: Record<string, unknown>
+  notFoundMessage: string
+}) {
+  const delegated = await executeCrudRouteAction({
+    c: input.c,
+    bizId: input.bizId,
+    tableKey: input.tableKey,
+    operation: 'update',
+    id: input.id,
+    subjectType: input.subjectType,
+    subjectId: input.id,
+    patch: input.patch,
+    metadata: { routeFamily: 'education' },
+  })
+  if (!delegated.ok) {
+    if (delegated.code === 'CRUD_TARGET_NOT_FOUND') return fail(input.c, 'NOT_FOUND', input.notFoundMessage, 404)
+    return fail(input.c, delegated.code, delegated.message, delegated.httpStatus, delegated.details)
+  }
+  if (!delegated.row) return fail(input.c, 'NOT_FOUND', input.notFoundMessage, 404)
+  return delegated.row as T
+}
+
 export const educationRoutes = new Hono()
 
 educationRoutes.get('/bizes/:bizId/programs', requireAuth, requireBizAccess('bizId'), requireAclPermission('bizes.read', { bizIdParam: 'bizId' }), async (c) => {
@@ -141,19 +192,28 @@ educationRoutes.post('/bizes/:bizId/programs', requireAuth, requireBizAccess('bi
   const bizId = c.req.param('bizId')
   const parsed = createProgramBodySchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
-  const [created] = await db.insert(programs).values({
+  const createdOrResponse = await createEducationRow<typeof programs.$inferSelect>({
+    c,
     bizId,
-    name: sanitizePlainText(parsed.data.name),
-    slug: sanitizePlainText(parsed.data.slug),
-    status: parsed.data.status,
-    offerVersionId: parsed.data.offerVersionId ?? null,
-    calendarBindingId: parsed.data.calendarBindingId ?? null,
-    expectedDurationDays: parsed.data.expectedDurationDays ?? null,
-    requiredAttendanceBps: parsed.data.requiredAttendanceBps,
-    curriculum: sanitizeUnknown(parsed.data.curriculum ?? {}),
-    policy: sanitizeUnknown({ minEnrollmentCount: parsed.data.minEnrollmentCount ?? 0, ...(parsed.data.policy ?? {}) }),
-    metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
-  }).returning()
+    tableKey: 'programs',
+    subjectType: 'program',
+    displayName: parsed.data.name,
+    data: {
+      bizId,
+      name: sanitizePlainText(parsed.data.name),
+      slug: sanitizePlainText(parsed.data.slug),
+      status: parsed.data.status,
+      offerVersionId: parsed.data.offerVersionId ?? null,
+      calendarBindingId: parsed.data.calendarBindingId ?? null,
+      expectedDurationDays: parsed.data.expectedDurationDays ?? null,
+      requiredAttendanceBps: parsed.data.requiredAttendanceBps,
+      curriculum: sanitizeUnknown(parsed.data.curriculum ?? {}),
+      policy: sanitizeUnknown({ minEnrollmentCount: parsed.data.minEnrollmentCount ?? 0, ...(parsed.data.policy ?? {}) }),
+      metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
+    },
+  })
+  if (createdOrResponse instanceof Response) return createdOrResponse
+  const created = createdOrResponse
   return ok(c, created, 201)
 })
 
@@ -170,22 +230,31 @@ educationRoutes.post('/bizes/:bizId/program-cohorts', requireAuth, requireBizAcc
   const bizId = c.req.param('bizId')
   const parsed = createCohortBodySchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
-  const [created] = await db.insert(programCohorts).values({
+  const createdOrResponse = await createEducationRow<typeof programCohorts.$inferSelect>({
+    c,
     bizId,
-    programId: parsed.data.programId,
-    code: sanitizePlainText(parsed.data.code),
-    name: sanitizePlainText(parsed.data.name),
-    status: parsed.data.status,
-    enrollmentOpensAt: parsed.data.enrollmentOpensAt ? new Date(parsed.data.enrollmentOpensAt) : null,
-    enrollmentClosesAt: parsed.data.enrollmentClosesAt ? new Date(parsed.data.enrollmentClosesAt) : null,
-    locationId: parsed.data.locationId ?? null,
-    leadResourceId: parsed.data.leadResourceId ?? null,
-    startsAt: new Date(parsed.data.startsAt),
-    endsAt: new Date(parsed.data.endsAt),
-    capacity: parsed.data.capacity ?? null,
-    minEnrollment: parsed.data.minEnrollment ?? null,
-    metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
-  }).returning()
+    tableKey: 'programCohorts',
+    subjectType: 'program_cohort',
+    displayName: parsed.data.name,
+    data: {
+      bizId,
+      programId: parsed.data.programId,
+      code: sanitizePlainText(parsed.data.code),
+      name: sanitizePlainText(parsed.data.name),
+      status: parsed.data.status,
+      enrollmentOpensAt: parsed.data.enrollmentOpensAt ? new Date(parsed.data.enrollmentOpensAt) : null,
+      enrollmentClosesAt: parsed.data.enrollmentClosesAt ? new Date(parsed.data.enrollmentClosesAt) : null,
+      locationId: parsed.data.locationId ?? null,
+      leadResourceId: parsed.data.leadResourceId ?? null,
+      startsAt: new Date(parsed.data.startsAt),
+      endsAt: new Date(parsed.data.endsAt),
+      capacity: parsed.data.capacity ?? null,
+      minEnrollment: parsed.data.minEnrollment ?? null,
+      metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
+    },
+  })
+  if (createdOrResponse instanceof Response) return createdOrResponse
+  const created = createdOrResponse
   return ok(c, created, 201)
 })
 
@@ -193,16 +262,25 @@ educationRoutes.post('/bizes/:bizId/program-sessions', requireAuth, requireBizAc
   const bizId = c.req.param('bizId')
   const parsed = createSessionBodySchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
-  const [created] = await db.insert(programCohortSessions).values({
+  const createdOrResponse = await createEducationRow<typeof programCohortSessions.$inferSelect>({
+    c,
     bizId,
-    cohortId: parsed.data.cohortId,
-    sequence: parsed.data.sequence,
-    name: sanitizePlainText(parsed.data.name),
-    status: parsed.data.status,
-    startsAt: new Date(parsed.data.startsAt),
-    endsAt: new Date(parsed.data.endsAt),
-    metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
-  }).returning()
+    tableKey: 'programCohortSessions',
+    subjectType: 'program_session',
+    displayName: parsed.data.name,
+    data: {
+      bizId,
+      cohortId: parsed.data.cohortId,
+      sequence: parsed.data.sequence,
+      name: sanitizePlainText(parsed.data.name),
+      status: parsed.data.status,
+      startsAt: new Date(parsed.data.startsAt),
+      endsAt: new Date(parsed.data.endsAt),
+      metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
+    },
+  })
+  if (createdOrResponse instanceof Response) return createdOrResponse
+  const created = createdOrResponse
   return ok(c, created, 201)
 })
 
@@ -220,13 +298,23 @@ educationRoutes.patch('/bizes/:bizId/program-sessions/:sessionId', requireAuth, 
     where: and(eq(programCohortSessions.bizId, bizId), eq(programCohortSessions.id, sessionId)),
   })
   if (!existing) return fail(c, 'NOT_FOUND', 'Program session not found.', 404)
-  const [updated] = await db.update(programCohortSessions).set({
-    name: parsed.data.name === undefined ? undefined : sanitizePlainText(parsed.data.name),
-    status: parsed.data.status ?? undefined,
-    startsAt: parsed.data.startsAt ? new Date(parsed.data.startsAt) : undefined,
-    endsAt: parsed.data.endsAt ? new Date(parsed.data.endsAt) : undefined,
-    metadata: parsed.data.metadata === undefined ? undefined : sanitizeUnknown(parsed.data.metadata),
-  }).where(and(eq(programCohortSessions.bizId, bizId), eq(programCohortSessions.id, sessionId))).returning()
+  const updatedOrResponse = await updateEducationRow<typeof programCohortSessions.$inferSelect>({
+    c,
+    bizId,
+    tableKey: 'programCohortSessions',
+    subjectType: 'program_session',
+    id: sessionId,
+    notFoundMessage: 'Program session not found.',
+    patch: {
+      name: parsed.data.name === undefined ? undefined : sanitizePlainText(parsed.data.name),
+      status: parsed.data.status ?? undefined,
+      startsAt: parsed.data.startsAt ? new Date(parsed.data.startsAt) : undefined,
+      endsAt: parsed.data.endsAt ? new Date(parsed.data.endsAt) : undefined,
+      metadata: parsed.data.metadata === undefined ? undefined : sanitizeUnknown(parsed.data.metadata),
+    },
+  })
+  if (updatedOrResponse instanceof Response) return updatedOrResponse
+  const updated = updatedOrResponse
   return ok(c, updated)
 })
 
@@ -234,14 +322,22 @@ educationRoutes.post('/bizes/:bizId/cohort-enrollments', requireAuth, requireBiz
   const bizId = c.req.param('bizId')
   const parsed = createEnrollmentBodySchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
-  const [created] = await db.insert(cohortEnrollments).values({
+  const createdOrResponse = await createEducationRow<typeof cohortEnrollments.$inferSelect>({
+    c,
     bizId,
-    cohortId: parsed.data.cohortId,
-    learnerUserId: parsed.data.learnerUserId,
-    bookingOrderId: parsed.data.bookingOrderId ?? null,
-    status: parsed.data.status,
-    metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
-  }).returning()
+    tableKey: 'cohortEnrollments',
+    subjectType: 'cohort_enrollment',
+    data: {
+      bizId,
+      cohortId: parsed.data.cohortId,
+      learnerUserId: parsed.data.learnerUserId,
+      bookingOrderId: parsed.data.bookingOrderId ?? null,
+      status: parsed.data.status,
+      metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
+    },
+  })
+  if (createdOrResponse instanceof Response) return createdOrResponse
+  const created = createdOrResponse
   return ok(c, created, 201)
 })
 
@@ -255,27 +351,49 @@ educationRoutes.post('/bizes/:bizId/session-attendance-records', requireAuth, re
   const bizId = c.req.param('bizId')
   const parsed = createAttendanceBodySchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
-  const [created] = await db.insert(sessionAttendanceRecords).values({
-    bizId,
-    sessionId: parsed.data.sessionId,
-    enrollmentId: parsed.data.enrollmentId,
-    status: parsed.data.status,
-    checkedInAt: parsed.data.checkedInAt ? new Date(parsed.data.checkedInAt) : null,
-    checkedOutAt: parsed.data.checkedOutAt ? new Date(parsed.data.checkedOutAt) : null,
-    attendedMinutes: parsed.data.attendedMinutes ?? null,
-    notes: parsed.data.notes ? sanitizePlainText(parsed.data.notes) : null,
-    metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
-  }).onConflictDoUpdate({
-    target: [sessionAttendanceRecords.sessionId, sessionAttendanceRecords.enrollmentId],
-    set: {
-      status: parsed.data.status,
-      checkedInAt: parsed.data.checkedInAt ? new Date(parsed.data.checkedInAt) : null,
-      checkedOutAt: parsed.data.checkedOutAt ? new Date(parsed.data.checkedOutAt) : null,
-      attendedMinutes: parsed.data.attendedMinutes ?? null,
-      notes: parsed.data.notes ? sanitizePlainText(parsed.data.notes) : null,
-      metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
-    },
-  }).returning()
+  const existingAttendance = await db.query.sessionAttendanceRecords.findFirst({
+    where: and(
+      eq(sessionAttendanceRecords.bizId, bizId),
+      eq(sessionAttendanceRecords.sessionId, parsed.data.sessionId),
+      eq(sessionAttendanceRecords.enrollmentId, parsed.data.enrollmentId),
+    ),
+  })
+  const createdOrResponse = existingAttendance
+    ? await updateEducationRow<typeof sessionAttendanceRecords.$inferSelect>({
+        c,
+        bizId,
+        tableKey: 'sessionAttendanceRecords',
+        subjectType: 'session_attendance_record',
+        id: existingAttendance.id,
+        notFoundMessage: 'Session attendance record not found.',
+        patch: {
+          status: parsed.data.status,
+          checkedInAt: parsed.data.checkedInAt ? new Date(parsed.data.checkedInAt) : null,
+          checkedOutAt: parsed.data.checkedOutAt ? new Date(parsed.data.checkedOutAt) : null,
+          attendedMinutes: parsed.data.attendedMinutes ?? null,
+          notes: parsed.data.notes ? sanitizePlainText(parsed.data.notes) : null,
+          metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
+        },
+      })
+    : await createEducationRow<typeof sessionAttendanceRecords.$inferSelect>({
+        c,
+        bizId,
+        tableKey: 'sessionAttendanceRecords',
+        subjectType: 'session_attendance_record',
+        data: {
+          bizId,
+          sessionId: parsed.data.sessionId,
+          enrollmentId: parsed.data.enrollmentId,
+          status: parsed.data.status,
+          checkedInAt: parsed.data.checkedInAt ? new Date(parsed.data.checkedInAt) : null,
+          checkedOutAt: parsed.data.checkedOutAt ? new Date(parsed.data.checkedOutAt) : null,
+          attendedMinutes: parsed.data.attendedMinutes ?? null,
+          notes: parsed.data.notes ? sanitizePlainText(parsed.data.notes) : null,
+          metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
+        },
+      })
+  if (createdOrResponse instanceof Response) return createdOrResponse
+  const created = createdOrResponse
   return ok(c, created, 201)
 })
 
@@ -343,16 +461,25 @@ educationRoutes.post('/bizes/:bizId/certification-templates', requireAuth, requi
   const bizId = c.req.param('bizId')
   const parsed = createCertificationTemplateBodySchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
-  const [created] = await db.insert(certificationTemplates).values({
+  const createdOrResponse = await createEducationRow<typeof certificationTemplates.$inferSelect>({
+    c,
     bizId,
-    programId: parsed.data.programId,
-    name: sanitizePlainText(parsed.data.name),
-    slug: sanitizePlainText(parsed.data.slug),
-    criteria: sanitizeUnknown(parsed.data.criteria),
-    validForDays: parsed.data.validForDays ?? null,
-    isActive: parsed.data.isActive,
-    metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
-  }).returning()
+    tableKey: 'certificationTemplates',
+    subjectType: 'certification_template',
+    displayName: parsed.data.name,
+    data: {
+      bizId,
+      programId: parsed.data.programId,
+      name: sanitizePlainText(parsed.data.name),
+      slug: sanitizePlainText(parsed.data.slug),
+      criteria: sanitizeUnknown(parsed.data.criteria),
+      validForDays: parsed.data.validForDays ?? null,
+      isActive: parsed.data.isActive,
+      metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
+    },
+  })
+  if (createdOrResponse instanceof Response) return createdOrResponse
+  const created = createdOrResponse
   return ok(c, created, 201)
 })
 
@@ -360,18 +487,27 @@ educationRoutes.post('/bizes/:bizId/certification-awards', requireAuth, requireB
   const bizId = c.req.param('bizId')
   const parsed = createCertificationAwardBodySchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
-  const [created] = await db.insert(certificationAwards).values({
+  const createdOrResponse = await createEducationRow<typeof certificationAwards.$inferSelect>({
+    c,
     bizId,
-    certificationTemplateId: parsed.data.certificationTemplateId,
-    enrollmentId: parsed.data.enrollmentId,
-    learnerUserId: parsed.data.learnerUserId,
-    status: parsed.data.status,
-    awardedAt: parsed.data.awardedAt ? new Date(parsed.data.awardedAt) : new Date(),
-    expiresAt: parsed.data.expiresAt ? new Date(parsed.data.expiresAt) : null,
-    certificateCode: parsed.data.certificateCode ? sanitizePlainText(parsed.data.certificateCode) : null,
-    evidence: sanitizeUnknown(parsed.data.evidence ?? {}),
-    metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
-  }).returning()
+    tableKey: 'certificationAwards',
+    subjectType: 'certification_award',
+    displayName: parsed.data.certificateCode,
+    data: {
+      bizId,
+      certificationTemplateId: parsed.data.certificationTemplateId,
+      enrollmentId: parsed.data.enrollmentId,
+      learnerUserId: parsed.data.learnerUserId,
+      status: parsed.data.status,
+      awardedAt: parsed.data.awardedAt ? new Date(parsed.data.awardedAt) : new Date(),
+      expiresAt: parsed.data.expiresAt ? new Date(parsed.data.expiresAt) : null,
+      certificateCode: parsed.data.certificateCode ? sanitizePlainText(parsed.data.certificateCode) : null,
+      evidence: sanitizeUnknown(parsed.data.evidence ?? {}),
+      metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
+    },
+  })
+  if (createdOrResponse instanceof Response) return createdOrResponse
+  const created = createdOrResponse
   return ok(c, created, 201)
 })
 

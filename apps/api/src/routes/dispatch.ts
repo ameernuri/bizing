@@ -15,6 +15,7 @@ import { and, asc, desc, eq, gte, lte, sql } from 'drizzle-orm'
 import { z } from 'zod'
 import dbPackage from '@bizing/db'
 import { requireAclPermission, requireAuth, requireBizAccess } from '../middleware/auth.js'
+import { executeCrudRouteAction } from '../services/action-route-bridge.js'
 import { fail, ok } from './_api.js'
 import { sanitizePlainText, sanitizeUnknown } from '../lib/sanitize.js'
 
@@ -92,6 +93,28 @@ const etaEventBodySchema = z.object({
 
 export const dispatchRoutes = new Hono()
 
+async function createDispatchRow<T extends Record<string, unknown>>(input: {
+  c: Parameters<typeof fail>[0]
+  bizId: string
+  tableKey: string
+  subjectType: string
+  data: Record<string, unknown>
+  displayName?: string
+}) {
+  const delegated = await executeCrudRouteAction({
+    c: input.c,
+    bizId: input.bizId,
+    tableKey: input.tableKey,
+    operation: 'create',
+    subjectType: input.subjectType,
+    displayName: input.displayName,
+    data: input.data,
+    metadata: { routeFamily: 'dispatch' },
+  })
+  if (!delegated.ok) return fail(input.c, delegated.code, delegated.message, delegated.httpStatus, delegated.details)
+  return delegated.row as T
+}
+
 dispatchRoutes.get(
   '/bizes/:bizId/dispatch/routes',
   requireAuth,
@@ -116,7 +139,13 @@ dispatchRoutes.post(
     const bizId = c.req.param('bizId')
     const parsed = routeBodySchema.safeParse(await c.req.json().catch(() => null))
     if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
-    const [created] = await db.insert(transportRoutes).values({
+    const created = await createDispatchRow<typeof transportRoutes.$inferSelect>({
+      c,
+      bizId,
+      tableKey: 'transportRoutes',
+      subjectType: 'transport_route',
+      displayName: parsed.data.name,
+      data: {
       bizId,
       name: sanitizePlainText(parsed.data.name),
       slug: sanitizePlainText(parsed.data.slug),
@@ -126,7 +155,9 @@ dispatchRoutes.post(
       timezone: sanitizePlainText(parsed.data.timezone),
       policy: sanitizeUnknown(parsed.data.policy),
       metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
-    }).returning()
+      },
+    })
+    if (created instanceof Response) return created
     return ok(c, created, 201)
   },
 )
@@ -140,7 +171,13 @@ dispatchRoutes.post(
     const { bizId, routeId } = c.req.param()
     const parsed = routeStopBodySchema.safeParse(await c.req.json().catch(() => null))
     if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
-    const [created] = await db.insert(transportRouteStops).values({
+    const created = await createDispatchRow<typeof transportRouteStops.$inferSelect>({
+      c,
+      bizId,
+      tableKey: 'transportRouteStops',
+      subjectType: 'transport_route_stop',
+      displayName: parsed.data.name,
+      data: {
       bizId,
       routeId,
       stopOrder: parsed.data.stopOrder,
@@ -151,7 +188,9 @@ dispatchRoutes.post(
       offsetFromStartMin: parsed.data.offsetFromStartMin ?? null,
       dwellMin: parsed.data.dwellMin ?? null,
       metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
-    }).returning()
+      },
+    })
+    if (created instanceof Response) return created
     return ok(c, created, 201)
   },
 )
@@ -165,7 +204,13 @@ dispatchRoutes.post(
     const bizId = c.req.param('bizId')
     const parsed = tripBodySchema.safeParse(await c.req.json().catch(() => null))
     if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
-    const [created] = await db.insert(transportTrips).values({
+    const created = await createDispatchRow<typeof transportTrips.$inferSelect>({
+      c,
+      bizId,
+      tableKey: 'transportTrips',
+      subjectType: 'transport_trip',
+      displayName: parsed.data.routeId,
+      data: {
       bizId,
       routeId: parsed.data.routeId,
       offerVersionId: parsed.data.offerVersionId ?? null,
@@ -180,7 +225,9 @@ dispatchRoutes.post(
       overbookSeats: parsed.data.overbookSeats,
       policy: sanitizeUnknown(parsed.data.policy),
       metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
-    }).returning()
+      },
+    })
+    if (created instanceof Response) return created
     return ok(c, created, 201)
   },
 )
@@ -220,7 +267,13 @@ dispatchRoutes.post(
     const bizId = c.req.param('bizId')
     const parsed = dispatchTaskBodySchema.safeParse(await c.req.json().catch(() => null))
     if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
-    const [created] = await db.insert(dispatchTasks).values({
+    const created = await createDispatchRow<typeof dispatchTasks.$inferSelect>({
+      c,
+      bizId,
+      tableKey: 'dispatchTasks',
+      subjectType: 'dispatch_task',
+      displayName: parsed.data.title,
+      data: {
       bizId,
       tripId: parsed.data.tripId ?? null,
       assignedResourceId: parsed.data.assignedResourceId ?? null,
@@ -231,7 +284,9 @@ dispatchRoutes.post(
       startedAt: parsed.data.startedAt ? new Date(parsed.data.startedAt) : null,
       completedAt: parsed.data.completedAt ? new Date(parsed.data.completedAt) : null,
       metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
-    }).returning()
+      },
+    })
+    if (created instanceof Response) return created
     return ok(c, created, 201)
   },
 )
@@ -245,7 +300,13 @@ dispatchRoutes.post(
     const { bizId, tripId } = c.req.param()
     const parsed = etaEventBodySchema.safeParse(await c.req.json().catch(() => null))
     if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
-    const [created] = await db.insert(etaEvents).values({
+    const created = await createDispatchRow<typeof etaEvents.$inferSelect>({
+      c,
+      bizId,
+      tableKey: 'etaEvents',
+      subjectType: 'eta_event',
+      displayName: parsed.data.eventType,
+      data: {
       bizId,
       tripId,
       routeStopId: parsed.data.routeStopId ?? null,
@@ -254,7 +315,9 @@ dispatchRoutes.post(
       etaAt: parsed.data.etaAt ? new Date(parsed.data.etaAt) : null,
       actualAt: parsed.data.actualAt ? new Date(parsed.data.actualAt) : null,
       payload: sanitizeUnknown(parsed.data.payload),
-    }).returning()
+      },
+    })
+    if (created instanceof Response) return created
     return ok(c, created, 201)
   },
 )

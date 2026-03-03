@@ -22,6 +22,7 @@ import { and, asc, eq } from 'drizzle-orm'
 import { z } from 'zod'
 import dbPackage from '@bizing/db'
 import { requireAclPermission, requireAuth, requireBizAccess } from '../middleware/auth.js'
+import { executeCrudRouteAction } from '../services/action-route-bridge.js'
 import { fail, ok } from './_api.js'
 import { sanitizePlainText, sanitizeUnknown } from '../lib/sanitize.js'
 
@@ -54,6 +55,56 @@ const createGroupAccountMemberBodySchema = z.object({
 
 export const groupAccountRoutes = new Hono()
 
+async function createGroupAccountRow<T extends Record<string, unknown>>(input: {
+  c: Parameters<typeof fail>[0]
+  bizId: string
+  tableKey: string
+  subjectType: string
+  data: Record<string, unknown>
+  displayName?: string
+}) {
+  const delegated = await executeCrudRouteAction({
+    c: input.c,
+    bizId: input.bizId,
+    tableKey: input.tableKey,
+    operation: 'create',
+    subjectType: input.subjectType,
+    displayName: input.displayName,
+    data: input.data,
+    metadata: { routeFamily: 'group-accounts' },
+  })
+  if (!delegated.ok) return fail(input.c, delegated.code, delegated.message, delegated.httpStatus, delegated.details)
+  return delegated.row as T
+}
+
+async function updateGroupAccountRow<T extends Record<string, unknown>>(input: {
+  c: Parameters<typeof fail>[0]
+  bizId: string
+  tableKey: string
+  subjectType: string
+  id: string
+  patch: Record<string, unknown>
+  notFoundMessage: string
+}) {
+  const delegated = await executeCrudRouteAction({
+    c: input.c,
+    bizId: input.bizId,
+    tableKey: input.tableKey,
+    operation: 'update',
+    id: input.id,
+    subjectType: input.subjectType,
+    subjectId: input.id,
+    patch: input.patch,
+    metadata: { routeFamily: 'group-accounts' },
+  })
+  if (!delegated.ok) {
+    if (delegated.code === 'CRUD_TARGET_NOT_FOUND') return fail(input.c, 'NOT_FOUND', input.notFoundMessage, 404)
+    return fail(input.c, delegated.code, delegated.message, delegated.httpStatus, delegated.details)
+  }
+  if (!delegated.row) return fail(input.c, 'NOT_FOUND', input.notFoundMessage, 404)
+  return delegated.row as T
+}
+
 groupAccountRoutes.get(
   '/bizes/:bizId/group-accounts',
   requireAuth,
@@ -79,7 +130,13 @@ groupAccountRoutes.post(
     const parsed = createGroupAccountBodySchema.safeParse(await c.req.json().catch(() => null))
     if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
 
-    const [created] = await db.insert(groupAccounts).values({
+    const created = await createGroupAccountRow<typeof groupAccounts.$inferSelect>({
+      c,
+      bizId,
+      tableKey: 'groupAccounts',
+      subjectType: 'group_account',
+      displayName: parsed.data.name,
+      data: {
       bizId,
       name: sanitizePlainText(parsed.data.name),
       type: parsed.data.type,
@@ -87,7 +144,9 @@ groupAccountRoutes.post(
       profile: sanitizeUnknown(parsed.data.profile ?? {}),
       status: parsed.data.status,
       settings: sanitizeUnknown(parsed.data.settings ?? {}),
-    }).returning()
+      },
+    })
+    if (created instanceof Response) return created
 
     return ok(c, created, 201)
   },
@@ -103,14 +162,23 @@ groupAccountRoutes.patch(
     const parsed = patchGroupAccountBodySchema.safeParse(await c.req.json().catch(() => null))
     if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
 
-    const [updated] = await db.update(groupAccounts).set({
+    const updated = await updateGroupAccountRow<typeof groupAccounts.$inferSelect>({
+      c,
+      bizId,
+      tableKey: 'groupAccounts',
+      subjectType: 'group_account',
+      id: groupAccountId,
+      notFoundMessage: 'Group account not found.',
+      patch: {
       name: parsed.data.name !== undefined ? sanitizePlainText(parsed.data.name) : undefined,
       type: parsed.data.type,
       primaryContactUserId: parsed.data.primaryContactUserId === undefined ? undefined : parsed.data.primaryContactUserId ?? null,
       profile: parsed.data.profile === undefined ? undefined : sanitizeUnknown(parsed.data.profile),
       status: parsed.data.status,
       settings: parsed.data.settings === undefined ? undefined : sanitizeUnknown(parsed.data.settings),
-    }).where(and(eq(groupAccounts.bizId, bizId), eq(groupAccounts.id, groupAccountId))).returning()
+      },
+    })
+    if (updated instanceof Response) return updated
 
     if (!updated) return fail(c, 'NOT_FOUND', 'Group account not found.', 404)
     return ok(c, updated)
@@ -148,7 +216,13 @@ groupAccountRoutes.post(
     })
     if (!user) return fail(c, 'NOT_FOUND', 'User not found.', 404)
 
-    const [created] = await db.insert(groupAccountMembers).values({
+    const created = await createGroupAccountRow<typeof groupAccountMembers.$inferSelect>({
+      c,
+      bizId,
+      tableKey: 'groupAccountMembers',
+      subjectType: 'group_account_member',
+      displayName: parsed.data.userId,
+      data: {
       bizId,
       groupAccountId,
       userId: parsed.data.userId,
@@ -158,7 +232,9 @@ groupAccountRoutes.post(
       managedBy: sanitizeUnknown(parsed.data.managedBy ?? []),
       dateOfBirth: parsed.data.dateOfBirth ?? null,
       status: parsed.data.status,
-    }).returning()
+      },
+    })
+    if (created instanceof Response) return created
 
     return ok(c, created, 201)
   },

@@ -12,10 +12,57 @@ import {
   requireAuth,
   requireBizAccess,
 } from '../middleware/auth.js'
+import { executeCrudRouteAction } from '../services/action-route-bridge.js'
 import { sanitizePlainText, sanitizeUnknown } from '../lib/sanitize.js'
 import { fail, ok, parsePositiveInt } from './_api.js'
 
 const { db, locations } = dbPackage
+
+async function createLocationRow(
+  c: Parameters<typeof executeCrudRouteAction>[0]['c'],
+  bizId: string,
+  data: Record<string, unknown>,
+  source: string,
+) {
+  const result = await executeCrudRouteAction({
+    c,
+    bizId,
+    tableKey: 'locations',
+    operation: 'create',
+    data,
+    subjectType: 'location',
+    subjectId: String((data.slug as string | undefined) ?? ''),
+    displayName: String((data.name as string | undefined) ?? 'location'),
+    metadata: { source },
+  })
+  if (!result.ok) throw new Error(result.message ?? 'Failed to create location')
+  if (!result.row) throw new Error('Missing row for location create')
+  return result.row
+}
+
+async function updateLocationRow(
+  c: Parameters<typeof executeCrudRouteAction>[0]['c'],
+  bizId: string,
+  locationId: string,
+  patch: Parameters<typeof executeCrudRouteAction>[0]['patch'],
+  source: string,
+) {
+  const result = await executeCrudRouteAction({
+    c,
+    bizId,
+    tableKey: 'locations',
+    operation: 'update',
+    id: locationId,
+    patch,
+    subjectType: 'location',
+    subjectId: locationId,
+    displayName: 'update location',
+    metadata: { source },
+  })
+  if (!result.ok) throw new Error(result.message ?? 'Failed to update location')
+  if (!result.row) throw new Error('Missing row for location update')
+  return result.row
+}
 
 const listQuerySchema = z.object({
   page: z.string().optional(),
@@ -120,9 +167,10 @@ locationRoutes.post(
       return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
     }
 
-    const [created] = await db
-      .insert(locations)
-      .values({
+    const created = await createLocationRow(
+      c,
+      bizId,
+      {
         bizId,
         name: sanitizePlainText(parsed.data.name),
         slug: parsed.data.slug,
@@ -135,8 +183,9 @@ locationRoutes.post(
         serviceArea: sanitizeUnknown(parsed.data.serviceArea ?? {}),
         isDefault: parsed.data.isDefault ?? false,
         metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
-      })
-      .returning()
+      },
+      'routes.locations.create',
+    )
 
     return ok(c, created, 201)
   },
@@ -178,9 +227,11 @@ locationRoutes.patch(
     })
     if (!existing) return fail(c, 'NOT_FOUND', 'Location not found.', 404)
 
-    const [updated] = await db
-      .update(locations)
-      .set({
+    const updated = await updateLocationRow(
+      c,
+      bizId,
+      locationId,
+      {
         ...parsed.data,
         name: parsed.data.name ? sanitizePlainText(parsed.data.name) : undefined,
         address: parsed.data.address ? sanitizeUnknown(parsed.data.address) : undefined,
@@ -189,9 +240,9 @@ locationRoutes.patch(
         serviceArea: parsed.data.serviceArea ? sanitizeUnknown(parsed.data.serviceArea) : undefined,
         metadata: parsed.data.metadata ? sanitizeUnknown(parsed.data.metadata) : undefined,
         updatedAt: new Date(),
-      })
-      .where(and(eq(locations.bizId, bizId), eq(locations.id, locationId)))
-      .returning()
+      },
+      'routes.locations.patch',
+    )
 
     return ok(c, updated)
   },
@@ -211,14 +262,24 @@ locationRoutes.delete(
     })
     if (!existing) return fail(c, 'NOT_FOUND', 'Location not found.', 404)
 
-    await db
-      .update(locations)
-      .set({
+    const delegated = await executeCrudRouteAction({
+      c,
+      bizId,
+      tableKey: 'locations',
+      operation: 'update',
+      id: locationId,
+      subjectType: 'location',
+      subjectId: locationId,
+      patch: {
         status: 'archived',
         deletedAt: new Date(),
         updatedAt: new Date(),
-      })
-      .where(and(eq(locations.bizId, bizId), eq(locations.id, locationId)))
+      },
+      metadata: { source: 'routes.locations.archive' },
+    })
+    if (!delegated.ok) {
+      return fail(c, delegated.code, delegated.message, delegated.httpStatus, delegated.details)
+    }
 
     return ok(c, { id: locationId })
   },

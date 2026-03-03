@@ -18,6 +18,7 @@ import {
   requireAuth,
   requireBizAccess,
 } from '../middleware/auth.js'
+import { executeCrudRouteAction } from '../services/action-route-bridge.js'
 import { fail, ok } from './_api.js'
 
 const {
@@ -156,6 +157,62 @@ const buildPayRunBodySchema = z.object({
   finalize: z.boolean().default(false),
 })
 
+async function createCompensationRow(
+  c: Parameters<typeof executeCrudRouteAction>[0]['c'],
+  bizId: string,
+  tableKey: string,
+  data: Record<string, unknown>,
+  options?: {
+    subjectType?: string
+    subjectId?: string
+    displayName?: string
+    metadata?: Record<string, unknown>
+  },
+) {
+  const result = await executeCrudRouteAction({
+    c,
+    bizId,
+    tableKey,
+    operation: 'create',
+    data,
+    subjectType: options?.subjectType,
+    subjectId: options?.subjectId,
+    displayName: options?.displayName,
+    metadata: options?.metadata,
+  })
+  if (!result.ok) return fail(c, result.code, result.message, result.httpStatus, result.details)
+  return result.row
+}
+
+async function updateCompensationRow(
+  c: Parameters<typeof executeCrudRouteAction>[0]['c'],
+  bizId: string,
+  tableKey: string,
+  id: string,
+  patch: Record<string, unknown>,
+  options?: {
+    subjectType?: string
+    subjectId?: string
+    displayName?: string
+    metadata?: Record<string, unknown>
+  },
+) {
+  const result = await executeCrudRouteAction({
+    c,
+    bizId,
+    tableKey,
+    operation: 'update',
+    id,
+    patch,
+    subjectType: options?.subjectType,
+    subjectId: options?.subjectId ?? id,
+    displayName: options?.displayName,
+    metadata: options?.metadata,
+  })
+  if (!result.ok) return fail(c, result.code, result.message, result.httpStatus, result.details)
+  return result.row
+}
+
 function clampAmount(
   amountMinor: number,
   minimumPayoutMinor: number | null | undefined,
@@ -220,9 +277,7 @@ compensationRoutes.post(
     const parsed = createRoleTemplateBodySchema.safeParse(await c.req.json().catch(() => null))
     if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
 
-    const [row] = await db
-      .insert(compensationRoleTemplates)
-      .values({
+    const row = await createCompensationRow(c, bizId, 'compensationRoleTemplates', {
         bizId,
         locationId: parsed.data.locationId,
         name: parsed.data.name,
@@ -231,8 +286,11 @@ compensationRoutes.post(
         status: parsed.data.status,
         sortOrder: parsed.data.sortOrder,
         metadata: parsed.data.metadata ?? {},
-      })
-      .returning()
+      }, {
+      subjectType: 'compensation_role_template',
+      displayName: parsed.data.name,
+    })
+    if (row instanceof Response) return row
 
     return ok(c, row, 201)
   },
@@ -248,9 +306,7 @@ compensationRoutes.post(
     const parsed = createPlanBodySchema.safeParse(await c.req.json().catch(() => null))
     if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
 
-    const [row] = await db
-      .insert(compensationPlans)
-      .values({
+    const row = await createCompensationRow(c, bizId, 'compensationPlans', {
         bizId,
         name: parsed.data.name,
         slug: parsed.data.slug,
@@ -264,8 +320,11 @@ compensationRoutes.post(
         priority: parsed.data.priority,
         policy: parsed.data.policy ?? {},
         metadata: parsed.data.metadata ?? {},
-      })
-      .returning()
+      }, {
+      subjectType: 'compensation_plan',
+      displayName: parsed.data.name,
+    })
+    if (row instanceof Response) return row
 
     return ok(c, row, 201)
   },
@@ -281,9 +340,7 @@ compensationRoutes.post(
     const parsed = createPlanVersionBodySchema.safeParse(await c.req.json().catch(() => null))
     if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
 
-    const [row] = await db
-      .insert(compensationPlanVersions)
-      .values({
+    const row = await createCompensationRow(c, bizId, 'compensationPlanVersions', {
         bizId,
         compensationPlanId: parsed.data.compensationPlanId,
         versionNumber: parsed.data.versionNumber,
@@ -294,8 +351,11 @@ compensationRoutes.post(
         notes: parsed.data.notes,
         calculationPolicy: parsed.data.calculationPolicy ?? {},
         metadata: parsed.data.metadata ?? {},
-      })
-      .returning()
+      }, {
+      subjectType: 'compensation_plan_version',
+      displayName: `Plan Version ${parsed.data.versionNumber}`,
+    })
+    if (row instanceof Response) return row
 
     return ok(c, row, 201)
   },
@@ -311,9 +371,7 @@ compensationRoutes.post(
     const parsed = createPlanRuleBodySchema.safeParse(await c.req.json().catch(() => null))
     if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
 
-    const [row] = await db
-      .insert(compensationPlanRules)
-      .values({
+    const row = await createCompensationRow(c, bizId, 'compensationPlanRules', {
         bizId,
         compensationPlanVersionId: parsed.data.compensationPlanVersionId,
         name: parsed.data.name,
@@ -339,8 +397,11 @@ compensationRoutes.post(
         effectiveFromAt: parsed.data.effectiveFromAt ? new Date(parsed.data.effectiveFromAt) : null,
         effectiveToAt: parsed.data.effectiveToAt ? new Date(parsed.data.effectiveToAt) : null,
         metadata: parsed.data.metadata ?? {},
-      })
-      .returning()
+      }, {
+      subjectType: 'compensation_plan_rule',
+      displayName: parsed.data.name,
+    })
+    if (row instanceof Response) return row
 
     return ok(c, row, 201)
   },
@@ -439,11 +500,28 @@ compensationRoutes.post(
       return fail(c, 'NO_MATCHING_RULES', 'No matching compensation rules were found for this fulfillment unit.', 409)
     }
 
-    const inserted = await db
-      .insert(compensationLedgerEntries)
-      .values(ledgerRows)
-      .onConflictDoNothing({ target: [compensationLedgerEntries.bizId, compensationLedgerEntries.idempotencyKey] })
-      .returning()
+    const inserted: Array<Record<string, unknown>> = []
+    for (const row of ledgerRows) {
+      const idempotencyKey = row.idempotencyKey ?? null
+      if (idempotencyKey) {
+        const existing = await db.query.compensationLedgerEntries.findFirst({
+          where: and(
+            eq(compensationLedgerEntries.bizId, bizId),
+            eq(compensationLedgerEntries.idempotencyKey, String(idempotencyKey)),
+          ),
+        })
+        if (existing) {
+          inserted.push(existing as unknown as Record<string, unknown>)
+          continue
+        }
+      }
+      const created = await createCompensationRow(c, bizId, 'compensationLedgerEntries', row as unknown as Record<string, unknown>, {
+        subjectType: 'compensation_ledger_entry',
+        displayName: 'Resolved Compensation Accrual',
+      })
+      if (created instanceof Response) return created
+      inserted.push(created as Record<string, unknown>)
+    }
 
     return ok(c, inserted, 201)
   },
@@ -482,7 +560,7 @@ compensationRoutes.post(
     const parsed = createLedgerEntryBodySchema.safeParse(await c.req.json().catch(() => null))
     if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
 
-    const [row] = await db.insert(compensationLedgerEntries).values({
+    const row = await createCompensationRow(c, bizId, 'compensationLedgerEntries', {
       bizId,
       payeeResourceId: parsed.data.payeeResourceId,
       roleTemplateId: parsed.data.roleTemplateId ?? null,
@@ -501,7 +579,11 @@ compensationRoutes.post(
       description: parsed.data.description ?? null,
       idempotencyKey: parsed.data.idempotencyKey ?? null,
       metadata: parsed.data.metadata ?? {},
-    }).returning()
+    }, {
+      subjectType: 'compensation_ledger_entry',
+      displayName: parsed.data.description ?? 'Compensation Ledger Entry',
+    })
+    if (row instanceof Response) return row
 
     return ok(c, row, 201)
   },
@@ -521,7 +603,7 @@ compensationRoutes.post(
     })
     if (!entry) return fail(c, 'NOT_FOUND', 'Compensation ledger entry not found.', 404)
 
-    const [reversal] = await db.insert(compensationLedgerEntries).values({
+    const reversal = await createCompensationRow(c, bizId, 'compensationLedgerEntries', {
       bizId,
       payeeResourceId: entry.payeeResourceId,
       roleTemplateId: entry.roleTemplateId,
@@ -543,7 +625,11 @@ compensationRoutes.post(
         reversedEntryId: entry.id,
         reversalReason: parsed.data.reason,
       },
-    }).returning()
+    }, {
+      subjectType: 'compensation_ledger_entry',
+      displayName: `Reversal ${entry.id}`,
+    })
+    if (reversal instanceof Response) return reversal
 
     return ok(c, reversal, 201)
   },
@@ -573,7 +659,7 @@ compensationRoutes.post(
     const bizId = c.req.param('bizId')
     const parsed = createPayRunBodySchema.safeParse(await c.req.json().catch(() => null))
     if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
-    const [row] = await db.insert(compensationPayRuns).values({
+    const row = await createCompensationRow(c, bizId, 'compensationPayRuns', {
       bizId,
       name: parsed.data.name,
       status: 'draft',
@@ -583,7 +669,11 @@ compensationRoutes.post(
       scheduledPayAt: parsed.data.scheduledPayAt ? new Date(parsed.data.scheduledPayAt) : null,
       notes: parsed.data.notes ?? null,
       metadata: parsed.data.metadata ?? {},
-    }).returning()
+    }, {
+      subjectType: 'compensation_pay_run',
+      displayName: parsed.data.name,
+    })
+    if (row instanceof Response) return row
     return ok(c, row, 201)
   },
 )
@@ -625,34 +715,86 @@ compensationRoutes.post(
       const adjustmentMinor = rows.filter((r) => ['adjustment', 'reversal'].includes(r.entryType)).reduce((sum, r) => sum + r.amountMinor, 0)
       const deductionMinor = rows.filter((r) => r.entryType === 'hold').reduce((sum, r) => sum + Math.abs(r.amountMinor), 0)
       const netMinor = accrualMinor + adjustmentMinor - deductionMinor
-      const [item] = await db.insert(compensationPayRunItems).values({
-        bizId,
-        compensationPayRunId: payRunId,
-        payeeResourceId,
-        status: parsed.data.finalize ? 'approved' : 'pending',
-        currency: run.currency,
+      const existingItem = await db.query.compensationPayRunItems.findFirst({
+        where: and(
+          eq(compensationPayRunItems.bizId, bizId),
+          eq(compensationPayRunItems.compensationPayRunId, payRunId),
+          eq(compensationPayRunItems.payeeResourceId, payeeResourceId),
+        ),
+      })
+      const itemPatch = {
         accrualMinor,
         adjustmentMinor,
         deductionMinor,
         netMinor,
         entryCount: rows.length,
-      }).onConflictDoUpdate({
-        target: [compensationPayRunItems.compensationPayRunId, compensationPayRunItems.payeeResourceId],
-        set: { accrualMinor, adjustmentMinor, deductionMinor, netMinor, entryCount: rows.length, status: parsed.data.finalize ? 'approved' : 'pending' },
-      }).returning()
+        status: parsed.data.finalize ? 'approved' : 'pending',
+      }
+      let item: Record<string, unknown> | null = null
+      if (existingItem) {
+        const updatedItem = await updateCompensationRow(
+          c,
+          bizId,
+          'compensationPayRunItems',
+          existingItem.id,
+          itemPatch,
+          { subjectType: 'compensation_pay_run_item', displayName: `Pay Run Item ${payeeResourceId}` },
+        )
+        if (updatedItem instanceof Response) return updatedItem
+        item = updatedItem as Record<string, unknown>
+      } else {
+        const createdItem = await createCompensationRow(c, bizId, 'compensationPayRunItems', {
+          bizId,
+          compensationPayRunId: payRunId,
+          payeeResourceId,
+          status: parsed.data.finalize ? 'approved' : 'pending',
+          currency: run.currency,
+          accrualMinor,
+          adjustmentMinor,
+          deductionMinor,
+          netMinor,
+          entryCount: rows.length,
+        }, {
+          subjectType: 'compensation_pay_run_item',
+          displayName: `Pay Run Item ${payeeResourceId}`,
+        })
+        if (createdItem instanceof Response) return createdItem
+        item = createdItem as Record<string, unknown>
+      }
       items.push(item)
       for (const row of rows) {
-        await db.insert(compensationPayRunItemEntries).values({
-          bizId,
-          compensationPayRunItemId: item.id,
-          compensationLedgerEntryId: row.id,
-          includedAmountMinor: row.amountMinor,
-        }).onConflictDoNothing()
+        const existingEntry = await db.query.compensationPayRunItemEntries.findFirst({
+          where: and(
+            eq(compensationPayRunItemEntries.bizId, bizId),
+            eq(compensationPayRunItemEntries.compensationPayRunItemId, String(item.id)),
+            eq(compensationPayRunItemEntries.compensationLedgerEntryId, row.id),
+          ),
+        })
+        if (!existingEntry) {
+          const createdEntry = await createCompensationRow(c, bizId, 'compensationPayRunItemEntries', {
+            bizId,
+            compensationPayRunItemId: String(item.id),
+            compensationLedgerEntryId: row.id,
+            includedAmountMinor: row.amountMinor,
+          }, {
+            subjectType: 'compensation_pay_run_item_entry',
+            displayName: `Pay Run Item Entry ${row.id}`,
+          })
+          if (createdEntry instanceof Response) return createdEntry
+        }
       }
     }
 
     if (parsed.data.finalize) {
-      await db.update(compensationPayRuns).set({ status: 'approved', finalizedAt: new Date(), approvedAt: new Date() }).where(and(eq(compensationPayRuns.bizId, bizId), eq(compensationPayRuns.id, payRunId)))
+      const updatedRun = await updateCompensationRow(
+        c,
+        bizId,
+        'compensationPayRuns',
+        payRunId,
+        { status: 'approved', finalizedAt: new Date(), approvedAt: new Date() },
+        { subjectType: 'compensation_pay_run', displayName: run.name },
+      )
+      if (updatedRun instanceof Response) return updatedRun
     }
 
     return ok(c, { payRunId, itemCount: items.length, items }, 201)

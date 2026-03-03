@@ -77,8 +77,17 @@ ELI5:
 - `GET /api/v1/agents/tools`
 - `GET /api/v1/agents/search`
 - `POST /api/v1/agents/execute`
+- `GET /api/v1/agents/openapi/catalog`
+- `GET /api/v1/agents/openapi.json`
 - `bizing.api.raw` tool is available for authenticated, safe `/api/v1/*` passthrough
   when a dedicated named tool has not been added yet.
+
+OODash API explorer compatibility notes:
+- the runtime catalog now advertises versioned health endpoints for operator testing:
+  - `GET /api/v1/health`
+  - `GET /api/v1/health/db`
+- admin rewrites also proxy `/health*` to the API origin so process-health checks
+  still work when invoked from the admin app host.
 
 Implementation:
 - `/Users/ameer/bizing/code/apps/api/src/routes/core-api.ts`
@@ -208,6 +217,7 @@ Current delegated write route families:
 - supply operations (usage, maintenance, condition, production batches)
 - receivables (billing accounts, invoices/events, installments, autopay/autocollection)
 - CRM (pipelines/stages, contacts, leads/intake, opportunities)
+- customer ops (profile-centric CRM/support/journey/playbook runtime)
 - HIPAA/PHI controls (policies, access events, reviews, BAAs, disclosures, incidents, breach notifications)
 - education/program lifecycle (programs, cohorts/sessions, enrollments, attendance, certifications)
 - queue counters / assignments / ticket calls
@@ -283,11 +293,24 @@ Intentional exception (still direct SQL update):
   - Schema baseline read: `/api/v1/ooda/sagas/schema-coverage/reports*`
   - Schema baseline write: `POST /api/v1/ooda/sagas/schema-coverage/reports`
   - Markdown import bridge: `POST /api/v1/ooda/sagas/schema-coverage/import`
+  - Unified UC matrix rebuild (schema + API evidence): `POST /api/v1/ooda/sagas/uc-coverage/rebuild`
+  - Unified UC matrix read: `/api/v1/ooda/sagas/uc-coverage/reports*`
 
 Notes:
-- Schema coverage is now canonical in DB and powers dashboard reads directly.
+- Coverage is now canonical in DB and powers dashboard reads directly.
 - Import endpoint is a convenience bridge from markdown into DB; it no longer requires platform-admin role.
+- Unified UC matrix rows are API-native and include:
+  - schema verdict + explanation
+  - inferred supporting tables and table-to-table connection hints
+  - API verdict from latest saga execution evidence
+  - concrete endpoint list (`method + normalized path + status buckets`)
 - Deterministic validation now prefers concrete API proofs over vague exploratory verdicts for covered flows.
+- Deterministic UC-need contract probing now applies across the full UC range
+  (including `UC-280+`), not only legacy UC slices.
+- Persona scenario validation for `UC-280+` now has deterministic contract probes
+  (AI-support governance, support ops, CRM-account strategy, marketing analytics,
+  compliance audit) so new CRM/support/marketing sagas do not fall back to
+  exploratory-only blockers.
 - Exploratory validation is advisory only:
   - if a step has no deterministic executable contract, runner reports `blocked`
   - exploratory LLM output is attached as evidence and never auto-passes a step
@@ -426,12 +449,28 @@ Admin explorer UI:
   - `/ooda` for current health and recent failures
   - `/ooda/studio` for full lifecycle operations simulation (owner/member/customer)
   - `/ooda/lab` for operator-grade endpoint + UC proving
+  - `/ooda/api` for full endpoint explorer + code-mode interaction
+  - `/ooda/coverage` for DB/API-native UC coverage matrix (schema + endpoint evidence)
   - `/ooda/loops` and `/ooda/loops/:loopId`
   - `/ooda/use-cases` and `/ooda/use-cases/:ucKey`
   - `/ooda/personas` and `/ooda/personas/:personaKey`
   - `/ooda/definitions` and `/ooda/definitions/:sagaKey`
   - `/ooda/runs` and `/ooda/runs/:runId`
 - The intent is simple: every loop object gets its own detail page, and links between use cases, personas, definitions, and runs stay clickable instead of being buried in one stateful screen.
+- Coverage explorer intent:
+  - per-UC matrix is still the primary truth view
+  - endpoint-centric drill-down now rolls up `method + normalized path` across UCs
+  - each endpoint row shows supported/missed UCs, call volume, and status buckets
+  - endpoint detail dialog shows exactly which UCs currently pass/miss through that endpoint
+  - deep-link support:
+    - `/ooda/coverage?uc=UC-###` auto-focuses and opens that UC row in matrix detail
+  - matrix rows and endpoint UC rows now link directly to `/ooda/use-cases/:ucKey`
+    so operators can jump from evidence to canonical UC text without context switching
+- Interconnected explorer behavior:
+  - use-case list/detail pages now show latest UC coverage verdicts and API pass-rate
+  - definition list cards now include source-UC coverage signal for quick triage
+  - dashboard highlights unresolved UC hotspots from latest coverage matrix and links
+    directly to the affected UC detail pages
 - QA Lab intent:
   - expose a manual endpoint workbench for authenticated `/api/v1/*` calls
   - expose a deterministic endpoint smoke pack for fast baseline checks
@@ -623,6 +662,51 @@ These are the backbone routes the saga runner now uses to prove:
   throttling has an in-memory fallback so local/fresh-reset environments do not degrade into 500s.
 
 ### Additional v0 proof/ops routes
+
+- Customer ops:
+  - `GET /api/v1/bizes/:bizId/customer-profiles`
+  - `POST /api/v1/bizes/:bizId/customer-profiles`
+  - `GET /api/v1/bizes/:bizId/customer-profiles/:customerProfileId`
+  - `PATCH /api/v1/bizes/:bizId/customer-profiles/:customerProfileId`
+  - `GET /api/v1/bizes/:bizId/customer-profiles/:customerProfileId/identities`
+  - `POST /api/v1/bizes/:bizId/customer-profiles/:customerProfileId/identities`
+  - `GET /api/v1/bizes/:bizId/customer-profiles/:customerProfileId/crm-links`
+  - `POST /api/v1/bizes/:bizId/customer-profiles/:customerProfileId/crm-links`
+  - `GET /api/v1/bizes/:bizId/customer-profiles/:customerProfileId/timeline`
+  - `POST /api/v1/bizes/:bizId/customer-profiles/:customerProfileId/timeline`
+  - `GET /api/v1/bizes/:bizId/support-cases`
+  - `POST /api/v1/bizes/:bizId/support-cases`
+  - `GET /api/v1/bizes/:bizId/support-cases/:caseId`
+  - `PATCH /api/v1/bizes/:bizId/support-cases/:caseId`
+  - `GET /api/v1/bizes/:bizId/support-cases/:caseId/events`
+  - `POST /api/v1/bizes/:bizId/support-cases/:caseId/events`
+  - `GET /api/v1/bizes/:bizId/support-cases/:caseId/participants`
+  - `POST /api/v1/bizes/:bizId/support-cases/:caseId/participants`
+  - `GET /api/v1/bizes/:bizId/support-cases/:caseId/links`
+  - `POST /api/v1/bizes/:bizId/support-cases/:caseId/links`
+  - `GET /api/v1/bizes/:bizId/customer-profile-merges`
+  - `POST /api/v1/bizes/:bizId/customer-profile-merges`
+  - `GET /api/v1/bizes/:bizId/customer-journeys`
+  - `POST /api/v1/bizes/:bizId/customer-journeys`
+  - `PATCH /api/v1/bizes/:bizId/customer-journeys/:journeyId`
+  - `GET /api/v1/bizes/:bizId/customer-journeys/:journeyId/steps`
+  - `POST /api/v1/bizes/:bizId/customer-journeys/:journeyId/steps`
+  - `GET /api/v1/bizes/:bizId/customer-journey-enrollments`
+  - `POST /api/v1/bizes/:bizId/customer-journey-enrollments`
+  - `PATCH /api/v1/bizes/:bizId/customer-journey-enrollments/:enrollmentId`
+  - `POST /api/v1/bizes/:bizId/customer-journey-enrollments/:enrollmentId/events`
+  - `GET /api/v1/bizes/:bizId/crm-activities`
+  - `POST /api/v1/bizes/:bizId/crm-activities`
+  - `GET /api/v1/bizes/:bizId/crm-tasks`
+    - query filters: `assignedUserId`, `crmLeadId`, `status`, `priority`, plus paging
+  - `POST /api/v1/bizes/:bizId/crm-tasks`
+  - `PATCH /api/v1/bizes/:bizId/crm-tasks/:taskId`
+  - `GET /api/v1/bizes/:bizId/customer-playbooks`
+  - `POST /api/v1/bizes/:bizId/customer-playbooks`
+  - `PATCH /api/v1/bizes/:bizId/customer-playbooks/:playbookId`
+  - `POST /api/v1/bizes/:bizId/customer-playbooks/:playbookId/bindings`
+  - `GET /api/v1/bizes/:bizId/customer-playbook-runs`
+  - `POST /api/v1/bizes/:bizId/customer-playbook-runs`
 
 - Policies:
   - `GET /api/v1/bizes/:bizId/policies/templates`

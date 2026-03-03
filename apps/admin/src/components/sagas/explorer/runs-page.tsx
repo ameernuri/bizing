@@ -136,10 +136,10 @@ export function SagaRunsPage() {
                   </div>
                   <div className="flex gap-2">
                     <Button className="flex-1" asChild>
-                      <Link href={`/sagas/runs/${group.latest.id}`}>Open latest run</Link>
+                      <Link href={`/ooda/runs/${group.latest.id}`}>Open latest run</Link>
                     </Button>
                     <Button variant="outline" className="flex-1" asChild>
-                      <Link href={`/sagas/definitions/${encodeURIComponent(group.sagaKey)}`}>Definition</Link>
+                      <Link href={`/ooda/definitions/${encodeURIComponent(group.sagaKey)}`}>Definition</Link>
                     </Button>
                   </div>
                 </CardContent>

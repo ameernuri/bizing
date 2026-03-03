@@ -20,6 +20,7 @@ import { and, asc, eq } from 'drizzle-orm'
 import { z } from 'zod'
 import dbPackage from '@bizing/db'
 import { requireAclPermission, requireAuth, requireBizAccess } from '../middleware/auth.js'
+import { executeCrudRouteAction } from '../services/action-route-bridge.js'
 import { fail, ok } from './_api.js'
 
 const {
@@ -81,6 +82,28 @@ async function ensureSellableInBiz(bizId: string, sellableId: string) {
 
 export const sellableVariantRoutes = new Hono()
 
+async function createSellableVariantRow<T extends Record<string, unknown>>(input: {
+  c: Parameters<typeof fail>[0]
+  bizId: string
+  tableKey: string
+  subjectType: string
+  data: Record<string, unknown>
+  displayName?: string
+}) {
+  const delegated = await executeCrudRouteAction({
+    c: input.c,
+    bizId: input.bizId,
+    tableKey: input.tableKey,
+    operation: 'create',
+    subjectType: input.subjectType,
+    displayName: input.displayName,
+    data: input.data,
+    metadata: { routeFamily: 'sellable-variants' },
+  })
+  if (!delegated.ok) return fail(input.c, delegated.code, delegated.message, delegated.httpStatus, delegated.details)
+  return delegated.row as T
+}
+
 sellableVariantRoutes.get(
   '/bizes/:bizId/sellables/:sellableId/variant-dimensions',
   requireAuth,
@@ -111,11 +134,19 @@ sellableVariantRoutes.post(
     if (parsed.data.baseSellableId !== sellableId) return fail(c, 'VALIDATION_ERROR', 'Sellable id mismatch.', 400)
     const baseSellable = await ensureSellableInBiz(bizId, sellableId)
     if (!baseSellable) return fail(c, 'NOT_FOUND', 'Base sellable not found.', 404)
-    const [row] = await db.insert(sellableVariantDimensions).values({
+    const row = await createSellableVariantRow<typeof sellableVariantDimensions.$inferSelect>({
+      c,
+      bizId,
+      tableKey: 'sellableVariantDimensions',
+      subjectType: 'sellable_variant_dimension',
+      displayName: parsed.data.dimensionKey,
+      data: {
       bizId,
       ...parsed.data,
       metadata: parsed.data.metadata ?? {},
-    }).returning()
+      },
+    })
+    if (row instanceof Response) return row
     return ok(c, row, 201)
   },
 )
@@ -164,11 +195,19 @@ sellableVariantRoutes.post(
       ),
     })
     if (!dimension) return fail(c, 'NOT_FOUND', 'Variant dimension not found.', 404)
-    const [row] = await db.insert(sellableVariantDimensionValues).values({
+    const row = await createSellableVariantRow<typeof sellableVariantDimensionValues.$inferSelect>({
+      c,
+      bizId,
+      tableKey: 'sellableVariantDimensionValues',
+      subjectType: 'sellable_variant_dimension_value',
+      displayName: parsed.data.valueKey,
+      data: {
       bizId,
       ...parsed.data,
       metadata: parsed.data.metadata ?? {},
-    }).returning()
+      },
+    })
+    if (row instanceof Response) return row
     return ok(c, row, 201)
   },
 )
@@ -207,11 +246,19 @@ sellableVariantRoutes.post(
     ])
     if (!baseSellable) return fail(c, 'NOT_FOUND', 'Base sellable not found.', 404)
     if (!variantSellable) return fail(c, 'NOT_FOUND', 'Variant sellable not found.', 404)
-    const [row] = await db.insert(sellableVariants).values({
+    const row = await createSellableVariantRow<typeof sellableVariants.$inferSelect>({
+      c,
+      bizId,
+      tableKey: 'sellableVariants',
+      subjectType: 'sellable_variant',
+      displayName: parsed.data.displayLabel ?? parsed.data.variantSellableId,
+      data: {
       bizId,
       ...parsed.data,
       metadata: parsed.data.metadata ?? {},
-    }).returning()
+      },
+    })
+    if (row instanceof Response) return row
     return ok(c, row, 201)
   },
 )
@@ -248,11 +295,19 @@ sellableVariantRoutes.post(
       where: and(eq(sellableVariants.bizId, bizId), eq(sellableVariants.id, variantId)),
     })
     if (!variant) return fail(c, 'NOT_FOUND', 'Sellable variant not found.', 404)
-    const [row] = await db.insert(sellableVariantSelections).values({
+    const row = await createSellableVariantRow<typeof sellableVariantSelections.$inferSelect>({
+      c,
+      bizId,
+      tableKey: 'sellableVariantSelections',
+      subjectType: 'sellable_variant_selection',
+      displayName: parsed.data.sellableVariantDimensionValueId,
+      data: {
       bizId,
       ...parsed.data,
       metadata: parsed.data.metadata ?? {},
-    }).returning()
+      },
+    })
+    if (row instanceof Response) return row
     return ok(c, row, 201)
   },
 )

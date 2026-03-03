@@ -77,5 +77,6 @@ export * from "./shipment_schedules";
 export * from "./gift_delivery";
 export * from "./marketing_performance";
 export * from "./crm";
+export * from "./customer_ops";
 export * from "./supply_batches";
 export * from "./sagas";

@@ -17,12 +17,18 @@ import { and, asc, desc, eq, sql } from 'drizzle-orm'
 import { z } from 'zod'
 import dbPackage from '@bizing/db'
 import { requireAclPermission, requireAuth, requireBizAccess } from '../middleware/auth.js'
+import { executeCrudRouteAction } from '../services/action-route-bridge.js'
+import {
+  getLifecycleDeliveryWorkerHealth,
+  processLifecycleDeliveryQueueAcrossBizes,
+  processLifecycleDeliveryQueueForBiz,
+} from '../services/lifecycle-delivery-worker.js'
 import { sanitizePlainText, sanitizeUnknown } from '../lib/sanitize.js'
 import { fail, ok, parsePositiveInt } from './_api.js'
 
 const {
   db,
-  lifecycleEvents,
+  domainEvents,
   lifecycleEventSubscriptions,
   lifecycleEventDeliveries,
 } = dbPackage
@@ -35,6 +41,30 @@ function pagination(input: { page?: string; perPage?: string }) {
 
 function cleanMetadata(value: Record<string, unknown> | undefined) {
   return sanitizeUnknown(value ?? {}) as Record<string, unknown>
+}
+
+function toLegacyLifecycleEventShape(row: {
+  eventKey: string
+  subjectType: string
+  subjectId: string
+  eventFamily: string
+  actorType: string | null
+  causationId: string | null
+  metadata: unknown
+}) {
+  const metadata = (row.metadata ?? {}) as Record<string, unknown>
+  return {
+    ...row,
+    eventName: row.eventKey,
+    entityType: row.subjectType,
+    entityId: row.subjectId,
+    sourceType: row.actorType ?? row.eventFamily,
+    eventVersion: Number(metadata.eventVersion ?? 1),
+    aggregateType: (metadata.aggregateType as string | undefined) ?? null,
+    aggregateId: (metadata.aggregateId as string | undefined) ?? null,
+    causationEventId: row.causationId ?? null,
+    idempotencyKey: (metadata.idempotencyKey as string | undefined) ?? null,
+  }
 }
 
 const listEventQuerySchema = z.object({
@@ -129,6 +159,9 @@ const createDeliveryBodySchema = z.object({
 })
 
 const updateDeliveryBodySchema = createDeliveryBodySchema.partial()
+const processDeliveriesBodySchema = z.object({
+  limit: z.number().int().min(1).max(500).optional(),
+})
 
 const testSubscriptionBodySchema = z.object({
   eventName: z.string().min(1).max(200).default('test.event'),
@@ -142,6 +175,56 @@ const testSubscriptionBodySchema = z.object({
 
 export const lifecycleHookRoutes = new Hono()
 
+async function createLifecycleHookRow<T extends Record<string, unknown>>(input: {
+  c: Parameters<typeof fail>[0]
+  bizId: string
+  tableKey: string
+  subjectType: string
+  data: Record<string, unknown>
+  displayName?: string
+}) {
+  const delegated = await executeCrudRouteAction({
+    c: input.c,
+    bizId: input.bizId,
+    tableKey: input.tableKey,
+    operation: 'create',
+    subjectType: input.subjectType,
+    displayName: input.displayName,
+    data: input.data,
+    metadata: { routeFamily: 'lifecycle-hooks' },
+  })
+  if (!delegated.ok) return fail(input.c, delegated.code, delegated.message, delegated.httpStatus, delegated.details)
+  return delegated.row as T
+}
+
+async function updateLifecycleHookRow<T extends Record<string, unknown>>(input: {
+  c: Parameters<typeof fail>[0]
+  bizId: string
+  tableKey: string
+  subjectType: string
+  id: string
+  patch: Record<string, unknown>
+  notFoundMessage: string
+}) {
+  const delegated = await executeCrudRouteAction({
+    c: input.c,
+    bizId: input.bizId,
+    tableKey: input.tableKey,
+    operation: 'update',
+    id: input.id,
+    subjectType: input.subjectType,
+    subjectId: input.id,
+    patch: input.patch,
+    metadata: { routeFamily: 'lifecycle-hooks' },
+  })
+  if (!delegated.ok) {
+    if (delegated.code === 'CRUD_TARGET_NOT_FOUND') return fail(input.c, 'NOT_FOUND', input.notFoundMessage, 404)
+    return fail(input.c, delegated.code, delegated.message, delegated.httpStatus, delegated.details)
+  }
+  if (!delegated.row) return fail(input.c, 'NOT_FOUND', input.notFoundMessage, 404)
+  return delegated.row as T
+}
+
 lifecycleHookRoutes.get(
   '/bizes/:bizId/lifecycle-events',
   requireAuth,
@@ -153,21 +236,21 @@ lifecycleHookRoutes.get(
     if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid query parameters.', 400, parsed.error.flatten())
     const pageInfo = pagination(parsed.data)
     const where = and(
-      eq(lifecycleEvents.bizId, bizId),
-      parsed.data.eventName ? eq(lifecycleEvents.eventName, parsed.data.eventName) : undefined,
-      parsed.data.entityType ? eq(lifecycleEvents.entityType, parsed.data.entityType) : undefined,
-      parsed.data.entityId ? eq(lifecycleEvents.entityId, parsed.data.entityId) : undefined,
+      eq(domainEvents.bizId, bizId),
+      parsed.data.eventName ? eq(domainEvents.eventKey, parsed.data.eventName) : undefined,
+      parsed.data.entityType ? eq(domainEvents.subjectType, parsed.data.entityType) : undefined,
+      parsed.data.entityId ? eq(domainEvents.subjectId, parsed.data.entityId) : undefined,
     )
     const [rows, countRows] = await Promise.all([
-      db.query.lifecycleEvents.findMany({
+      db.query.domainEvents.findMany({
         where,
-        orderBy: [desc(lifecycleEvents.occurredAt)],
+        orderBy: [desc(domainEvents.occurredAt)],
         limit: pageInfo.perPage,
         offset: pageInfo.offset,
       }),
-      db.select({ count: sql<number>`count(*)`.mapWith(Number) }).from(lifecycleEvents).where(where),
+      db.select({ count: sql<number>`count(*)`.mapWith(Number) }).from(domainEvents).where(where),
     ])
-    return ok(c, rows, 200, {
+    return ok(c, rows.map(toLegacyLifecycleEventShape), 200, {
       pagination: {
         page: pageInfo.page,
         perPage: pageInfo.perPage,
@@ -182,29 +265,42 @@ lifecycleHookRoutes.post(
   '/bizes/:bizId/lifecycle-events',
   requireAuth,
   requireBizAccess('bizId'),
-  requireAclPermission('events.read', { bizIdParam: 'bizId' }),
+  requireAclPermission('events.write', { bizIdParam: 'bizId' }),
   async (c) => {
     const bizId = c.req.param('bizId')
     const parsed = createEventBodySchema.safeParse(await c.req.json().catch(() => null))
     if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
-    const [created] = await db.insert(lifecycleEvents).values({
+    const created = await createLifecycleHookRow<typeof domainEvents.$inferSelect>({
+      c,
       bizId,
-      sourceType: parsed.data.sourceType,
-      eventName: sanitizePlainText(parsed.data.eventName),
-      eventVersion: parsed.data.eventVersion,
-      entityType: sanitizePlainText(parsed.data.entityType),
-      entityId: parsed.data.entityId,
-      aggregateType: parsed.data.aggregateType ?? null,
-      aggregateId: parsed.data.aggregateId ?? null,
+      tableKey: 'domainEvents',
+      subjectType: 'domain_event',
+      displayName: parsed.data.eventName,
+      data: {
+      bizId,
+      eventKey: sanitizePlainText(parsed.data.eventName),
+      eventFamily: sanitizePlainText(
+        parsed.data.aggregateType ?? parsed.data.sourceType ?? parsed.data.eventName.split('.')[0] ?? 'general',
+      ),
+      subjectType: sanitizePlainText(parsed.data.entityType),
+      subjectId: parsed.data.entityId,
+      actorType: parsed.data.sourceType,
       occurredAt: parsed.data.occurredAt ? new Date(parsed.data.occurredAt) : new Date(),
       actorUserId: parsed.data.actorUserId ?? null,
       correlationId: parsed.data.correlationId ?? null,
-      causationEventId: parsed.data.causationEventId ?? null,
-      idempotencyKey: parsed.data.idempotencyKey ?? null,
+      causationId: parsed.data.causationEventId ?? null,
       payload: cleanMetadata(parsed.data.payload),
-      metadata: cleanMetadata(parsed.data.metadata),
-    }).returning()
-    return ok(c, created, 201)
+      metadata: cleanMetadata({
+        eventVersion: parsed.data.eventVersion,
+        aggregateType: parsed.data.aggregateType ?? null,
+        aggregateId: parsed.data.aggregateId ?? null,
+        idempotencyKey: parsed.data.idempotencyKey ?? null,
+        ...(parsed.data.metadata ?? {}),
+      }),
+      },
+    })
+    if (created instanceof Response) return created
+    return ok(c, toLegacyLifecycleEventShape(created), 201)
   },
 )
 
@@ -212,7 +308,7 @@ lifecycleHookRoutes.get(
   '/bizes/:bizId/lifecycle-event-subscriptions',
   requireAuth,
   requireBizAccess('bizId'),
-  requireAclPermission('events.read', { bizIdParam: 'bizId' }),
+  requireAclPermission('events.write', { bizIdParam: 'bizId' }),
   async (c) => {
     const bizId = c.req.param('bizId')
     const parsed = listSubscriptionQuerySchema.safeParse(c.req.query())
@@ -248,12 +344,18 @@ lifecycleHookRoutes.post(
   '/bizes/:bizId/lifecycle-event-subscriptions',
   requireAuth,
   requireBizAccess('bizId'),
-  requireAclPermission('events.read', { bizIdParam: 'bizId' }),
+  requireAclPermission('events.write', { bizIdParam: 'bizId' }),
   async (c) => {
     const bizId = c.req.param('bizId')
     const parsed = createSubscriptionBodySchema.safeParse(await c.req.json().catch(() => null))
     if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
-    const [created] = await db.insert(lifecycleEventSubscriptions).values({
+    const created = await createLifecycleHookRow<typeof lifecycleEventSubscriptions.$inferSelect>({
+      c,
+      bizId,
+      tableKey: 'lifecycleEventSubscriptions',
+      subjectType: 'lifecycle_event_subscription',
+      displayName: parsed.data.name,
+      data: {
       bizId,
       bizExtensionInstallId: parsed.data.bizExtensionInstallId ?? null,
       name: sanitizePlainText(parsed.data.name),
@@ -269,7 +371,9 @@ lifecycleHookRoutes.post(
       retryPolicy: cleanMetadata(parsed.data.retryPolicy),
       filter: cleanMetadata(parsed.data.filter),
       metadata: cleanMetadata(parsed.data.metadata),
-    }).returning()
+      },
+    })
+    if (created instanceof Response) return created
     return ok(c, created, 201)
   },
 )
@@ -278,7 +382,7 @@ lifecycleHookRoutes.patch(
   '/bizes/:bizId/lifecycle-event-subscriptions/:subscriptionId',
   requireAuth,
   requireBizAccess('bizId'),
-  requireAclPermission('events.read', { bizIdParam: 'bizId' }),
+  requireAclPermission('events.write', { bizIdParam: 'bizId' }),
   async (c) => {
     const bizId = c.req.param('bizId')
     const subscriptionId = c.req.param('subscriptionId')
@@ -288,7 +392,14 @@ lifecycleHookRoutes.patch(
       where: and(eq(lifecycleEventSubscriptions.bizId, bizId), eq(lifecycleEventSubscriptions.id, subscriptionId)),
     })
     if (!existing) return fail(c, 'NOT_FOUND', 'Lifecycle event subscription not found.', 404)
-    const [updated] = await db.update(lifecycleEventSubscriptions).set({
+    const updated = await updateLifecycleHookRow<typeof lifecycleEventSubscriptions.$inferSelect>({
+      c,
+      bizId,
+      tableKey: 'lifecycleEventSubscriptions',
+      subjectType: 'lifecycle_event_subscription',
+      id: subscriptionId,
+      notFoundMessage: 'Lifecycle event subscription not found.',
+      patch: {
       bizExtensionInstallId: parsed.data.bizExtensionInstallId === undefined ? existing.bizExtensionInstallId : (parsed.data.bizExtensionInstallId ?? null),
       name: parsed.data.name === undefined ? existing.name : sanitizePlainText(parsed.data.name),
       status: parsed.data.status ?? existing.status,
@@ -303,7 +414,9 @@ lifecycleHookRoutes.patch(
       retryPolicy: parsed.data.retryPolicy === undefined ? existing.retryPolicy : cleanMetadata(parsed.data.retryPolicy),
       filter: parsed.data.filter === undefined ? existing.filter : cleanMetadata(parsed.data.filter),
       metadata: parsed.data.metadata === undefined ? existing.metadata : cleanMetadata(parsed.data.metadata),
-    }).where(and(eq(lifecycleEventSubscriptions.bizId, bizId), eq(lifecycleEventSubscriptions.id, subscriptionId))).returning()
+      },
+    })
+    if (updated instanceof Response) return updated
     return ok(c, updated)
   },
 )
@@ -312,7 +425,7 @@ lifecycleHookRoutes.get(
   '/bizes/:bizId/lifecycle-event-deliveries',
   requireAuth,
   requireBizAccess('bizId'),
-  requireAclPermission('events.read', { bizIdParam: 'bizId' }),
+  requireAclPermission('events.write', { bizIdParam: 'bizId' }),
   async (c) => {
     const bizId = c.req.param('bizId')
     const parsed = listDeliveryQuerySchema.safeParse(c.req.query())
@@ -353,7 +466,13 @@ lifecycleHookRoutes.post(
     const bizId = c.req.param('bizId')
     const parsed = createDeliveryBodySchema.safeParse(await c.req.json().catch(() => null))
     if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
-    const [created] = await db.insert(lifecycleEventDeliveries).values({
+    const created = await createLifecycleHookRow<typeof lifecycleEventDeliveries.$inferSelect>({
+      c,
+      bizId,
+      tableKey: 'lifecycleEventDeliveries',
+      subjectType: 'lifecycle_event_delivery',
+      displayName: parsed.data.lifecycleEventId,
+      data: {
       bizId,
       lifecycleEventId: parsed.data.lifecycleEventId,
       lifecycleEventSubscriptionId: parsed.data.lifecycleEventSubscriptionId,
@@ -370,7 +489,9 @@ lifecycleHookRoutes.post(
       responsePayload: parsed.data.responsePayload ? cleanMetadata(parsed.data.responsePayload) : null,
       idempotencyKey: parsed.data.idempotencyKey ?? null,
       metadata: cleanMetadata(parsed.data.metadata),
-    }).returning()
+      },
+    })
+    if (created instanceof Response) return created
     return ok(c, created, 201)
   },
 )
@@ -389,7 +510,14 @@ lifecycleHookRoutes.patch(
       where: and(eq(lifecycleEventDeliveries.bizId, bizId), eq(lifecycleEventDeliveries.id, deliveryId)),
     })
     if (!existing) return fail(c, 'NOT_FOUND', 'Lifecycle event delivery not found.', 404)
-    const [updated] = await db.update(lifecycleEventDeliveries).set({
+    const updated = await updateLifecycleHookRow<typeof lifecycleEventDeliveries.$inferSelect>({
+      c,
+      bizId,
+      tableKey: 'lifecycleEventDeliveries',
+      subjectType: 'lifecycle_event_delivery',
+      id: deliveryId,
+      notFoundMessage: 'Lifecycle event delivery not found.',
+      patch: {
       lifecycleEventId: parsed.data.lifecycleEventId ?? existing.lifecycleEventId,
       lifecycleEventSubscriptionId: parsed.data.lifecycleEventSubscriptionId ?? existing.lifecycleEventSubscriptionId,
       status: parsed.data.status ?? existing.status,
@@ -405,7 +533,9 @@ lifecycleHookRoutes.patch(
       responsePayload: parsed.data.responsePayload === undefined ? existing.responsePayload : cleanMetadata(parsed.data.responsePayload),
       idempotencyKey: parsed.data.idempotencyKey === undefined ? existing.idempotencyKey : parsed.data.idempotencyKey,
       metadata: parsed.data.metadata === undefined ? existing.metadata : cleanMetadata(parsed.data.metadata),
-    }).where(and(eq(lifecycleEventDeliveries.bizId, bizId), eq(lifecycleEventDeliveries.id, deliveryId))).returning()
+      },
+    })
+    if (updated instanceof Response) return updated
     return ok(c, updated)
   },
 )
@@ -426,26 +556,49 @@ lifecycleHookRoutes.post(
     })
     if (!subscription) return fail(c, 'NOT_FOUND', 'Lifecycle event subscription not found.', 404)
 
-    const [event] = await db.insert(lifecycleEvents).values({
+    const requestPayload = cleanMetadata(parsed.data.requestPayload)
+    const event = await createLifecycleHookRow<typeof domainEvents.$inferSelect>({
+      c,
       bizId,
-      sourceType: 'manual',
-      eventName: sanitizePlainText(parsed.data.eventName),
-      eventVersion: 1,
-      entityType: sanitizePlainText(parsed.data.entityType),
-      entityId: parsed.data.entityId,
-      payload: cleanMetadata(parsed.data.requestPayload),
+      tableKey: 'domainEvents',
+      subjectType: 'domain_event',
+      displayName: parsed.data.eventName,
+      data: {
+      bizId,
+      eventKey: sanitizePlainText(parsed.data.eventName),
+      eventFamily: 'manual',
+      subjectType: sanitizePlainText(parsed.data.entityType),
+      subjectId: parsed.data.entityId,
+      actorType: 'manual',
+      payload: requestPayload,
       metadata: cleanMetadata({
         testMode: true,
+        eventVersion: 1,
         generatedFromSubscriptionId: subscription.id,
         ...(parsed.data.metadata ?? {}),
       }),
-    }).returning()
+      },
+    })
+    if (event instanceof Response) return event
 
     const attemptCount = parsed.data.simulateStatus === 'published' ? 1 : 0
     const now = new Date()
-    const [delivery] = await db.insert(lifecycleEventDeliveries).values({
+    const lifecycleEventId = typeof event.id === 'string' && event.id.length > 0 ? event.id : null
+    if (!lifecycleEventId) {
+      return fail(c, 'INTERNAL_ERROR', 'Lifecycle test event creation did not return a valid id.', 500, {
+        event,
+      })
+    }
+
+    const delivery = await createLifecycleHookRow<typeof lifecycleEventDeliveries.$inferSelect>({
+      c,
       bizId,
-      lifecycleEventId: event.id,
+      tableKey: 'lifecycleEventDeliveries',
+      subjectType: 'lifecycle_event_delivery',
+      displayName: subscription.name,
+      data: {
+      bizId,
+      lifecycleEventId,
       lifecycleEventSubscriptionId: subscription.id,
       status: parsed.data.simulateStatus,
       attemptCount,
@@ -464,9 +617,11 @@ lifecycleHookRoutes.post(
         retryPolicy: subscription.retryPolicy,
         ...(parsed.data.metadata ?? {}),
       }),
-    }).returning()
+      },
+    })
+    if (delivery instanceof Response) return delivery
 
-    return ok(c, { event, subscription, delivery }, 201)
+    return ok(c, { event: toLegacyLifecycleEventShape(event), subscription, delivery }, 201)
   },
 )
 
@@ -474,7 +629,7 @@ lifecycleHookRoutes.post(
   '/bizes/:bizId/lifecycle-event-deliveries/:deliveryId/retry',
   requireAuth,
   requireBizAccess('bizId'),
-  requireAclPermission('events.read', { bizIdParam: 'bizId' }),
+  requireAclPermission('events.write', { bizIdParam: 'bizId' }),
   async (c) => {
     const bizId = c.req.param('bizId')
     const deliveryId = c.req.param('deliveryId')
@@ -486,7 +641,14 @@ lifecycleHookRoutes.post(
     const nextAttemptCount = (existing.attemptCount ?? 0) + 1
     const backoffMinutes = Math.max(1, 2 ** Math.max(0, nextAttemptCount - 1))
     const nextAttemptAt = new Date(Date.now() + backoffMinutes * 60 * 1000)
-    const [updated] = await db.update(lifecycleEventDeliveries).set({
+    const updated = await updateLifecycleHookRow<typeof lifecycleEventDeliveries.$inferSelect>({
+      c,
+      bizId,
+      tableKey: 'lifecycleEventDeliveries',
+      subjectType: 'lifecycle_event_delivery',
+      id: deliveryId,
+      notFoundMessage: 'Lifecycle event delivery not found.',
+      patch: {
       status: 'pending',
       attemptCount: nextAttemptCount,
       nextAttemptAt,
@@ -499,11 +661,66 @@ lifecycleHookRoutes.post(
         manualRetryRequested: true,
         nextBackoffMinutes: backoffMinutes,
       }),
-    }).where(and(eq(lifecycleEventDeliveries.bizId, bizId), eq(lifecycleEventDeliveries.id, deliveryId))).returning()
+      },
+    })
+    if (updated instanceof Response) return updated
 
     return ok(c, {
       delivery: updated,
       backoffMinutes,
     })
+  },
+)
+
+lifecycleHookRoutes.get(
+  '/bizes/:bizId/lifecycle-event-deliveries/worker-health',
+  requireAuth,
+  requireBizAccess('bizId'),
+  requireAclPermission('events.read', { bizIdParam: 'bizId' }),
+  async (c) => {
+    const bizId = c.req.param('bizId')
+    const health = getLifecycleDeliveryWorkerHealth()
+    const due = await db
+      .select({ count: sql<number>`count(*)`.mapWith(Number) })
+      .from(lifecycleEventDeliveries)
+      .where(
+        and(
+          eq(lifecycleEventDeliveries.bizId, bizId),
+          eq(lifecycleEventDeliveries.status, 'pending'),
+        ),
+      )
+    return ok(c, {
+      ...health,
+      bizId,
+      pendingCount: due[0]?.count ?? 0,
+    })
+  },
+)
+
+lifecycleHookRoutes.post(
+  '/bizes/:bizId/lifecycle-event-deliveries/process',
+  requireAuth,
+  requireBizAccess('bizId'),
+  requireAclPermission('events.write', { bizIdParam: 'bizId' }),
+  async (c) => {
+    const bizId = c.req.param('bizId')
+    const parsed = processDeliveriesBodySchema.safeParse(await c.req.json().catch(() => ({})))
+    if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
+
+    const stats = await processLifecycleDeliveryQueueForBiz({
+      bizId,
+      limit: parsed.data.limit,
+    })
+    return ok(c, stats)
+  },
+)
+
+lifecycleHookRoutes.post(
+  '/lifecycle-event-deliveries/process-all',
+  requireAuth,
+  requireAclPermission('events.write'),
+  async (c) => {
+    const summary = await processLifecycleDeliveryQueueAcrossBizes()
+    return ok(c, summary)
   },
 )

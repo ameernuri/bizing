@@ -17,9 +17,33 @@ import { and, desc, eq } from 'drizzle-orm'
 import { z } from 'zod'
 import dbPackage from '@bizing/db'
 import { getCurrentUser, requireAclPermission, requireAuth, requireBizAccess } from '../middleware/auth.js'
+import { executeCrudRouteAction } from '../services/action-route-bridge.js'
 import { fail, ok } from './_api.js'
 
 const { db, accessSecuritySignals, accessSecurityDecisions } = dbPackage
+
+async function createAccessSecurityRow<TTableKey extends 'accessSecuritySignals' | 'accessSecurityDecisions'>(
+  c: Parameters<typeof executeCrudRouteAction>[0]['c'],
+  bizId: string,
+  tableKey: TTableKey,
+  data: Parameters<typeof executeCrudRouteAction>[0]['data'],
+  meta: { subjectType: string; subjectId: string; displayName: string; source: string },
+) {
+  const result = await executeCrudRouteAction({
+    c,
+    bizId,
+    tableKey,
+    operation: 'create',
+    data,
+    subjectType: meta.subjectType,
+    subjectId: meta.subjectId,
+    displayName: meta.displayName,
+    metadata: { source: meta.source },
+  })
+  if (!result.ok) return fail(c, result.code, result.message, result.httpStatus, result.details)
+  if (!result.row) return fail(c, 'ACTION_EXECUTION_FAILED', `Missing row for ${tableKey} create.`, 500)
+  return result.row
+}
 
 const signalBodySchema = z.object({
   accessArtifactId: z.string().optional().nullable(),
@@ -72,22 +96,34 @@ accessSecurityRoutes.post('/bizes/:bizId/access-security-signals', requireAuth, 
   const bizId = c.req.param('bizId')
   const parsed = signalBodySchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
-  const [row] = await db.insert(accessSecuritySignals).values({
+  const row = await createAccessSecurityRow(
+    c,
     bizId,
-    accessArtifactId: parsed.data.accessArtifactId ?? null,
-    accessActionTokenId: parsed.data.accessActionTokenId ?? null,
-    accessActivityLogId: parsed.data.accessActivityLogId ?? null,
-    signalType: parsed.data.signalType,
-    status: parsed.data.status,
-    severity: parsed.data.severity,
-    confidence: parsed.data.confidence ?? null,
-    sourceSubjectType: parsed.data.sourceSubjectType ?? null,
-    sourceSubjectId: parsed.data.sourceSubjectId ?? null,
-    detectedAt: parsed.data.detectedAt ? new Date(parsed.data.detectedAt) : new Date(),
-    resolvedAt: parsed.data.resolvedAt ? new Date(parsed.data.resolvedAt) : null,
-    details: parsed.data.details ?? {},
-    metadata: parsed.data.metadata ?? {},
-  }).returning()
+    'accessSecuritySignals',
+    {
+      bizId,
+      accessArtifactId: parsed.data.accessArtifactId ?? null,
+      accessActionTokenId: parsed.data.accessActionTokenId ?? null,
+      accessActivityLogId: parsed.data.accessActivityLogId ?? null,
+      signalType: parsed.data.signalType,
+      status: parsed.data.status,
+      severity: parsed.data.severity,
+      confidence: parsed.data.confidence ?? null,
+      sourceSubjectType: parsed.data.sourceSubjectType ?? null,
+      sourceSubjectId: parsed.data.sourceSubjectId ?? null,
+      detectedAt: parsed.data.detectedAt ? new Date(parsed.data.detectedAt) : new Date(),
+      resolvedAt: parsed.data.resolvedAt ? new Date(parsed.data.resolvedAt) : null,
+      details: parsed.data.details ?? {},
+      metadata: parsed.data.metadata ?? {},
+    },
+    {
+      subjectType: 'access_security_signal',
+      subjectId: parsed.data.accessArtifactId ?? parsed.data.accessActionTokenId ?? parsed.data.accessActivityLogId ?? 'custom',
+      displayName: parsed.data.signalType,
+      source: 'routes.accessSecurity.createSignal',
+    },
+  )
+  if (row instanceof Response) return row
   return ok(c, row, 201)
 })
 
@@ -107,26 +143,38 @@ accessSecurityRoutes.post('/bizes/:bizId/access-security-decisions', requireAuth
   if (!user) return fail(c, 'UNAUTHORIZED', 'Authentication required.', 401)
   const parsed = decisionBodySchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
-  const [row] = await db.insert(accessSecurityDecisions).values({
+  const row = await createAccessSecurityRow(
+    c,
     bizId,
-    accessSecuritySignalId: parsed.data.accessSecuritySignalId ?? null,
-    accessArtifactId: parsed.data.accessArtifactId ?? null,
-    accessActionTokenId: parsed.data.accessActionTokenId ?? null,
-    accessActivityLogId: parsed.data.accessActivityLogId ?? null,
-    outcome: parsed.data.outcome,
-    status: parsed.data.status,
-    decidedAt: parsed.data.decidedAt ? new Date(parsed.data.decidedAt) : new Date(),
-    effectiveFrom: parsed.data.effectiveFrom ? new Date(parsed.data.effectiveFrom) : new Date(),
-    effectiveUntil: parsed.data.effectiveUntil ? new Date(parsed.data.effectiveUntil) : null,
-    revertedAt: parsed.data.revertedAt ? new Date(parsed.data.revertedAt) : null,
-    decidedByUserId:
-      parsed.data.decidedBySubjectType || parsed.data.decidedBySubjectId ? null : user.id,
-    decidedBySubjectType: parsed.data.decidedBySubjectType ?? null,
-    decidedBySubjectId: parsed.data.decidedBySubjectId ?? null,
-    reasonCode: parsed.data.reasonCode ?? null,
-    reasonText: parsed.data.reasonText ?? null,
-    policySnapshot: parsed.data.policySnapshot ?? {},
-    metadata: parsed.data.metadata ?? {},
-  }).returning()
+    'accessSecurityDecisions',
+    {
+      bizId,
+      accessSecuritySignalId: parsed.data.accessSecuritySignalId ?? null,
+      accessArtifactId: parsed.data.accessArtifactId ?? null,
+      accessActionTokenId: parsed.data.accessActionTokenId ?? null,
+      accessActivityLogId: parsed.data.accessActivityLogId ?? null,
+      outcome: parsed.data.outcome,
+      status: parsed.data.status,
+      decidedAt: parsed.data.decidedAt ? new Date(parsed.data.decidedAt) : new Date(),
+      effectiveFrom: parsed.data.effectiveFrom ? new Date(parsed.data.effectiveFrom) : new Date(),
+      effectiveUntil: parsed.data.effectiveUntil ? new Date(parsed.data.effectiveUntil) : null,
+      revertedAt: parsed.data.revertedAt ? new Date(parsed.data.revertedAt) : null,
+      decidedByUserId:
+        parsed.data.decidedBySubjectType || parsed.data.decidedBySubjectId ? null : user.id,
+      decidedBySubjectType: parsed.data.decidedBySubjectType ?? null,
+      decidedBySubjectId: parsed.data.decidedBySubjectId ?? null,
+      reasonCode: parsed.data.reasonCode ?? null,
+      reasonText: parsed.data.reasonText ?? null,
+      policySnapshot: parsed.data.policySnapshot ?? {},
+      metadata: parsed.data.metadata ?? {},
+    },
+    {
+      subjectType: 'access_security_decision',
+      subjectId: parsed.data.accessSecuritySignalId ?? parsed.data.accessArtifactId ?? 'custom',
+      displayName: parsed.data.outcome,
+      source: 'routes.accessSecurity.createDecision',
+    },
+  )
+  if (row instanceof Response) return row
   return ok(c, row, 201)
 })

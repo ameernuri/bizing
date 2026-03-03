@@ -18,6 +18,7 @@ import { and, asc, desc, eq, inArray, or, sql } from 'drizzle-orm'
 import { z } from 'zod'
 import dbPackage from '@bizing/db'
 import { getCurrentUser, requireAclPermission, requireAuth, requireBizAccess } from '../middleware/auth.js'
+import { executeCrudRouteAction } from '../services/action-route-bridge.js'
 import { sanitizePlainText, sanitizeUnknown } from '../lib/sanitize.js'
 import { fail, ok, parsePositiveInt } from './_api.js'
 
@@ -224,6 +225,62 @@ function sanitizeText(value?: string | null) {
   return sanitizePlainText(value)
 }
 
+async function createCredentialRow(
+  c: Parameters<typeof executeCrudRouteAction>[0]['c'],
+  bizId: string | null | undefined,
+  tableKey: string,
+  data: Record<string, unknown>,
+  options?: {
+    subjectType?: string
+    subjectId?: string
+    displayName?: string
+    metadata?: Record<string, unknown>
+  },
+) {
+  const result = await executeCrudRouteAction({
+    c,
+    bizId: bizId ?? null,
+    tableKey,
+    operation: 'create',
+    data,
+    subjectType: options?.subjectType,
+    subjectId: options?.subjectId,
+    displayName: options?.displayName,
+    metadata: options?.metadata,
+  })
+  if (!result.ok) return fail(c, result.code, result.message, result.httpStatus, result.details)
+  return result.row
+}
+
+async function updateCredentialRow(
+  c: Parameters<typeof executeCrudRouteAction>[0]['c'],
+  bizId: string | null | undefined,
+  tableKey: string,
+  id: string,
+  patch: Record<string, unknown>,
+  options?: {
+    subjectType?: string
+    subjectId?: string
+    displayName?: string
+    metadata?: Record<string, unknown>
+  },
+) {
+  const result = await executeCrudRouteAction({
+    c,
+    bizId: bizId ?? null,
+    tableKey,
+    operation: 'update',
+    id,
+    patch,
+    subjectType: options?.subjectType,
+    subjectId: options?.subjectId,
+    displayName: options?.displayName,
+    metadata: options?.metadata,
+  })
+  if (!result.ok) return fail(c, result.code, result.message, result.httpStatus, result.details)
+  return result.row
+}
+
 async function requireExistingUser(userId: string) {
   return db.query.users.findFirst({ where: eq(users.id, userId) })
 }
@@ -260,8 +317,32 @@ credentialExchangeRoutes.put('/me/credential-profile', requireAuth, async (c) =>
     metadata: cleanRecord(parsed.data.metadata),
   }
   const row = existing
-    ? (await db.update(userCredentialProfiles).set(values).where(eq(userCredentialProfiles.id, existing.id)).returning())[0]
-    : (await db.insert(userCredentialProfiles).values(values).returning())[0]
+    ? ((await updateCredentialRow(
+        c,
+        null,
+        'userCredentialProfiles',
+        existing.id,
+        values,
+        {
+          subjectType: 'credential_profile',
+          subjectId: existing.id,
+          displayName: user.email ?? user.id,
+          metadata: { source: 'routes.credentialExchange.upsertProfile' },
+        },
+      )) as Record<string, unknown> | Response)
+    : ((await createCredentialRow(
+        c,
+        null,
+        'userCredentialProfiles',
+        values,
+        {
+          subjectType: 'credential_profile',
+          subjectId: user.id,
+          displayName: user.email ?? user.id,
+          metadata: { source: 'routes.credentialExchange.upsertProfile' },
+        },
+      )) as Record<string, unknown> | Response)
+  if (row instanceof Response) return row
   return ok(c, row, existing ? 200 : 201)
 })
 
@@ -288,7 +369,7 @@ credentialExchangeRoutes.post('/me/credentials', requireAuth, async (c) => {
   if (!user) return fail(c, 'UNAUTHORIZED', 'Authentication required.', 401)
   const parsed = credentialRecordBodySchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid credential record body.', 400, parsed.error.flatten())
-  const [row] = await db.insert(userCredentialRecords).values({
+  const row = (await createCredentialRow(c, null, 'userCredentialRecords', {
     ownerUserId: user.id,
     credentialTypeDefinitionId: parsed.data.credentialTypeDefinitionId ?? null,
     credentialTypeKey: sanitizePlainText(parsed.data.credentialTypeKey),
@@ -309,7 +390,13 @@ credentialExchangeRoutes.post('/me/credentials', requireAuth, async (c) => {
     summary: cleanRecord(parsed.data.summary),
     attributes: cleanRecord(parsed.data.attributes),
     metadata: cleanRecord(parsed.data.metadata),
-  }).returning()
+  }, {
+    subjectType: 'credential_record',
+    subjectId: user.id,
+    displayName: parsed.data.credentialKey,
+    metadata: { source: 'routes.credentialExchange.createCredentialRecord' },
+  })) as Record<string, unknown> | Response
+  if (row instanceof Response) return row
   return ok(c, row, 201)
 })
 
@@ -333,7 +420,7 @@ credentialExchangeRoutes.patch('/me/credentials/:recordId', requireAuth, async (
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid credential record body.', 400, parsed.error.flatten())
   const existing = await db.query.userCredentialRecords.findFirst({ where: and(eq(userCredentialRecords.ownerUserId, user.id), eq(userCredentialRecords.id, c.req.param('recordId'))) })
   if (!existing) return fail(c, 'NOT_FOUND', 'Credential record not found.', 404)
-  const [row] = await db.update(userCredentialRecords).set({
+  const row = (await updateCredentialRow(c, null, 'userCredentialRecords', existing.id, {
     credentialTypeDefinitionId: parsed.data.credentialTypeDefinitionId ?? existing.credentialTypeDefinitionId,
     credentialTypeKey: parsed.data.credentialTypeKey ? sanitizePlainText(parsed.data.credentialTypeKey) : existing.credentialTypeKey,
     credentialKey: parsed.data.credentialKey ? sanitizePlainText(parsed.data.credentialKey) : existing.credentialKey,
@@ -355,7 +442,13 @@ credentialExchangeRoutes.patch('/me/credentials/:recordId', requireAuth, async (
     attributes:
       parsed.data.attributes === undefined ? (existing.attributes as Record<string, unknown> ?? {}) : cleanRecord(parsed.data.attributes),
     metadata: parsed.data.metadata === undefined ? (existing.metadata as Record<string, unknown> ?? {}) : cleanRecord(parsed.data.metadata),
-  }).where(eq(userCredentialRecords.id, existing.id)).returning()
+  }, {
+    subjectType: 'credential_record',
+    subjectId: existing.id,
+    displayName: existing.credentialKey,
+    metadata: { source: 'routes.credentialExchange.updateCredentialRecord' },
+  })) as Record<string, unknown> | Response
+  if (row instanceof Response) return row
   return ok(c, row)
 })
 
@@ -367,7 +460,7 @@ credentialExchangeRoutes.post('/me/credentials/:recordId/documents', requireAuth
   if (!record) return fail(c, 'NOT_FOUND', 'Credential record not found.', 404)
   const parsed = credentialDocumentBodySchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid credential document body.', 400, parsed.error.flatten())
-  const [row] = await db.insert(userCredentialDocuments).values({
+  const row = (await createCredentialRow(c, null, 'userCredentialDocuments', {
     ownerUserId: user.id,
     userCredentialRecordId: record.id,
     documentType: sanitizePlainText(parsed.data.documentType),
@@ -383,7 +476,13 @@ credentialExchangeRoutes.post('/me/credentials/:recordId/documents', requireAuth
     isPrimary: parsed.data.isPrimary ?? false,
     status: (parsed.data.status ?? 'active') as 'active' | 'draft' | 'inactive' | 'suspended' | 'archived',
     metadata: cleanRecord(parsed.data.metadata),
-  }).returning()
+  }, {
+    subjectType: 'credential_document',
+    subjectId: record.id,
+    displayName: parsed.data.documentType,
+    metadata: { source: 'routes.credentialExchange.createCredentialDocument' },
+  })) as Record<string, unknown> | Response
+  if (row instanceof Response) return row
   return ok(c, row, 201)
 })
 
@@ -395,7 +494,7 @@ credentialExchangeRoutes.post('/me/credentials/:recordId/facts', requireAuth, as
   if (!record) return fail(c, 'NOT_FOUND', 'Credential record not found.', 404)
   const parsed = credentialFactBodySchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid credential fact body.', 400, parsed.error.flatten())
-  const [row] = await db.insert(userCredentialFacts).values({
+  const row = (await createCredentialRow(c, null, 'userCredentialFacts', {
     ownerUserId: user.id,
     userCredentialRecordId: record.id,
     factKey: sanitizePlainText(parsed.data.factKey),
@@ -408,7 +507,13 @@ credentialExchangeRoutes.post('/me/credentials/:recordId/facts', requireAuth, as
     visibilityMode: parsed.data.visibilityMode ?? 'grant_required',
     isFilterable: parsed.data.isFilterable ?? true,
     metadata: cleanRecord(parsed.data.metadata),
-  }).returning()
+  }, {
+    subjectType: 'credential_fact',
+    subjectId: record.id,
+    displayName: parsed.data.factKey,
+    metadata: { source: 'routes.credentialExchange.createCredentialFact' },
+  })) as Record<string, unknown> | Response
+  if (row instanceof Response) return row
   return ok(c, row, 201)
 })
 
@@ -420,7 +525,7 @@ credentialExchangeRoutes.post('/me/credentials/:recordId/verifications', require
   if (!record) return fail(c, 'NOT_FOUND', 'Credential record not found.', 404)
   const parsed = credentialVerificationBodySchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid credential verification body.', 400, parsed.error.flatten())
-  const [row] = await db.insert(userCredentialVerifications).values({
+  const row = (await createCredentialRow(c, null, 'userCredentialVerifications', {
     ownerUserId: user.id,
     userCredentialRecordId: record.id,
     userCredentialDocumentId: parsed.data.userCredentialDocumentId ?? null,
@@ -437,7 +542,13 @@ credentialExchangeRoutes.post('/me/credentials/:recordId/verifications', require
     summary: sanitizeText(parsed.data.summary),
     evidence: cleanRecord(parsed.data.evidence),
     metadata: cleanRecord(parsed.data.metadata),
-  }).returning()
+  }, {
+    subjectType: 'credential_verification',
+    subjectId: record.id,
+    displayName: parsed.data.method ?? 'manual_review',
+    metadata: { source: 'routes.credentialExchange.createCredentialVerification' },
+  })) as Record<string, unknown> | Response
+  if (row instanceof Response) return row
   return ok(c, row, 201)
 })
 
@@ -509,7 +620,7 @@ credentialExchangeRoutes.post('/bizes/:bizId/credential-share-grants', requireAu
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid credential share grant body.', 400, parsed.error.flatten())
   const owner = await requireExistingUser(parsed.data.ownerUserId)
   if (!owner) return fail(c, 'NOT_FOUND', 'Credential owner user not found.', 404)
-  const [row] = await db.insert(bizCredentialShareGrants).values({
+  const row = (await createCredentialRow(c, bizId, 'bizCredentialShareGrants', {
     ownerUserId: parsed.data.ownerUserId,
     granteeBizId: bizId,
     status: parsed.data.status ?? 'granted',
@@ -526,7 +637,13 @@ credentialExchangeRoutes.post('/bizes/:bizId/credential-share-grants', requireAu
     expiresAt: asDate(parsed.data.expiresAt),
     reason: sanitizeText(parsed.data.reason),
     metadata: cleanRecord(parsed.data.metadata),
-  }).returning()
+  }, {
+    subjectType: 'credential_share_grant',
+    subjectId: parsed.data.ownerUserId,
+    displayName: `grant:${bizId}`,
+    metadata: { source: 'routes.credentialExchange.createShareGrant' },
+  })) as Record<string, unknown> | Response
+  if (row instanceof Response) return row
   return ok(c, row, 201)
 })
 
@@ -536,7 +653,7 @@ credentialExchangeRoutes.patch('/bizes/:bizId/credential-share-grants/:grantId',
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid credential share grant body.', 400, parsed.error.flatten())
   const existing = await db.query.bizCredentialShareGrants.findFirst({ where: and(eq(bizCredentialShareGrants.granteeBizId, bizId), eq(bizCredentialShareGrants.id, grantId)) })
   if (!existing) return fail(c, 'NOT_FOUND', 'Credential share grant not found.', 404)
-  const [row] = await db.update(bizCredentialShareGrants).set({
+  const row = (await updateCredentialRow(c, bizId, 'bizCredentialShareGrants', existing.id, {
     status: parsed.data.status ?? existing.status,
     accessLevel: parsed.data.accessLevel ?? existing.accessLevel,
     scope: parsed.data.scope ?? existing.scope,
@@ -551,7 +668,13 @@ credentialExchangeRoutes.patch('/bizes/:bizId/credential-share-grants/:grantId',
     expiresAt: parsed.data.expiresAt === undefined ? existing.expiresAt : asDate(parsed.data.expiresAt),
     reason: parsed.data.reason === undefined ? existing.reason : sanitizeText(parsed.data.reason),
     metadata: parsed.data.metadata === undefined ? (existing.metadata as Record<string, unknown> ?? {}) : cleanRecord(parsed.data.metadata),
-  }).where(eq(bizCredentialShareGrants.id, existing.id)).returning()
+  }, {
+    subjectType: 'credential_share_grant',
+    subjectId: existing.id,
+    displayName: `grant:${existing.ownerUserId}`,
+    metadata: { source: 'routes.credentialExchange.updateShareGrant' },
+  })) as Record<string, unknown> | Response
+  if (row instanceof Response) return row
   return ok(c, row)
 })
 
@@ -568,7 +691,7 @@ credentialExchangeRoutes.post('/bizes/:bizId/credential-share-grants/:grantId/se
   const { bizId, grantId } = c.req.param()
   const parsed = shareGrantSelectorBodySchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid credential share grant selector body.', 400, parsed.error.flatten())
-  const [row] = await db.insert(bizCredentialShareGrantSelectors).values({
+  const row = (await createCredentialRow(c, bizId, 'bizCredentialShareGrantSelectors', {
     ownerUserId: parsed.data.ownerUserId,
     granteeBizId: bizId,
     bizCredentialShareGrantId: grantId,
@@ -578,7 +701,13 @@ credentialExchangeRoutes.post('/bizes/:bizId/credential-share-grants/:grantId/se
     credentialTypeKey: sanitizeText(parsed.data.credentialTypeKey),
     factKey: sanitizeText(parsed.data.factKey),
     metadata: cleanRecord(parsed.data.metadata),
-  }).returning()
+  }, {
+    subjectType: 'credential_share_selector',
+    subjectId: grantId,
+    displayName: parsed.data.selectorType,
+    metadata: { source: 'routes.credentialExchange.createShareGrantSelector' },
+  })) as Record<string, unknown> | Response
+  if (row instanceof Response) return row
   return ok(c, row, 201)
 })
 
@@ -596,7 +725,7 @@ credentialExchangeRoutes.post('/bizes/:bizId/credential-requests', requireAuth, 
   const bizId = c.req.param('bizId')
   const parsed = credentialRequestBodySchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid credential request body.', 400, parsed.error.flatten())
-  const [row] = await db.insert(bizCredentialRequests).values({
+  const row = (await createCredentialRow(c, bizId, 'bizCredentialRequests', {
     bizId,
     candidateUserId: parsed.data.candidateUserId,
     requestedByUserId: parsed.data.requestedByUserId ?? null,
@@ -612,7 +741,13 @@ credentialExchangeRoutes.post('/bizes/:bizId/credential-requests', requireAuth, 
     requestKey: sanitizeText(parsed.data.requestKey),
     policy: cleanRecord(parsed.data.policy),
     metadata: cleanRecord(parsed.data.metadata),
-  }).returning()
+  }, {
+    subjectType: 'credential_request',
+    subjectId: parsed.data.candidateUserId,
+    displayName: parsed.data.title,
+    metadata: { source: 'routes.credentialExchange.createCredentialRequest' },
+  })) as Record<string, unknown> | Response
+  if (row instanceof Response) return row
   return ok(c, row, 201)
 })
 
@@ -622,7 +757,7 @@ credentialExchangeRoutes.patch('/bizes/:bizId/credential-requests/:requestId', r
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid credential request body.', 400, parsed.error.flatten())
   const existing = await db.query.bizCredentialRequests.findFirst({ where: and(eq(bizCredentialRequests.bizId, bizId), eq(bizCredentialRequests.id, requestId)) })
   if (!existing) return fail(c, 'NOT_FOUND', 'Credential request not found.', 404)
-  const [row] = await db.update(bizCredentialRequests).set({
+  const row = (await updateCredentialRow(c, bizId, 'bizCredentialRequests', existing.id, {
     candidateUserId: parsed.data.candidateUserId ?? existing.candidateUserId,
     requestedByUserId: parsed.data.requestedByUserId === undefined ? existing.requestedByUserId : parsed.data.requestedByUserId,
     status: parsed.data.status ?? existing.status,
@@ -637,7 +772,13 @@ credentialExchangeRoutes.patch('/bizes/:bizId/credential-requests/:requestId', r
     requestKey: parsed.data.requestKey === undefined ? existing.requestKey : sanitizeText(parsed.data.requestKey),
     policy: parsed.data.policy === undefined ? (existing.policy as Record<string, unknown> ?? {}) : cleanRecord(parsed.data.policy),
     metadata: parsed.data.metadata === undefined ? (existing.metadata as Record<string, unknown> ?? {}) : cleanRecord(parsed.data.metadata),
-  }).where(eq(bizCredentialRequests.id, existing.id)).returning()
+  }, {
+    subjectType: 'credential_request',
+    subjectId: existing.id,
+    displayName: existing.title,
+    metadata: { source: 'routes.credentialExchange.updateCredentialRequest' },
+  })) as Record<string, unknown> | Response
+  if (row instanceof Response) return row
   return ok(c, row)
 })
 
@@ -654,7 +795,7 @@ credentialExchangeRoutes.post('/bizes/:bizId/credential-requests/:requestId/item
   const { bizId, requestId } = c.req.param()
   const parsed = credentialRequestItemBodySchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid credential request item body.', 400, parsed.error.flatten())
-  const [row] = await db.insert(bizCredentialRequestItems).values({
+  const row = (await createCredentialRow(c, bizId, 'bizCredentialRequestItems', {
     bizId,
     bizCredentialRequestId: requestId,
     candidateUserId: parsed.data.candidateUserId,
@@ -669,7 +810,13 @@ credentialExchangeRoutes.post('/bizes/:bizId/credential-requests/:requestId/item
     isSatisfied: parsed.data.isSatisfied ?? false,
     notes: sanitizeText(parsed.data.notes),
     metadata: cleanRecord(parsed.data.metadata),
-  }).returning()
+  }, {
+    subjectType: 'credential_request_item',
+    subjectId: requestId,
+    displayName: parsed.data.selectorType,
+    metadata: { source: 'routes.credentialExchange.createCredentialRequestItem' },
+  })) as Record<string, unknown> | Response
+  if (row instanceof Response) return row
   return ok(c, row, 201)
 })
 
@@ -696,7 +843,7 @@ credentialExchangeRoutes.post('/bizes/:bizId/credential-disclosure-events', requ
   const bizId = c.req.param('bizId')
   const parsed = disclosureEventBodySchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid credential disclosure event body.', 400, parsed.error.flatten())
-  const [row] = await db.insert(credentialDisclosureEvents).values({
+  const row = (await createCredentialRow(c, bizId, 'credentialDisclosureEvents', {
     ownerUserId: parsed.data.ownerUserId,
     granteeBizId: bizId,
     bizCredentialShareGrantId: parsed.data.bizCredentialShareGrantId ?? null,
@@ -710,6 +857,12 @@ credentialExchangeRoutes.post('/bizes/:bizId/credential-disclosure-events', requ
     requestRef: sanitizeText(parsed.data.requestRef),
     details: cleanRecord(parsed.data.details),
     metadata: cleanRecord(parsed.data.metadata),
-  }).returning()
+  }, {
+    subjectType: 'credential_disclosure_event',
+    subjectId: parsed.data.ownerUserId,
+    displayName: parsed.data.eventType,
+    metadata: { source: 'routes.credentialExchange.createDisclosureEvent' },
+  })) as Record<string, unknown> | Response
+  if (row instanceof Response) return row
   return ok(c, row, 201)
 })

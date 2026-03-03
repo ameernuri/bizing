@@ -19,6 +19,7 @@ import {
   ensureCanonicalSellableForOfferVersion,
   persistCanonicalAction,
 } from '../services/action-runtime.js'
+import { executeCrudRouteAction } from '../services/action-route-bridge.js'
 import { fail, ok, parsePositiveInt } from './_api.js'
 
 const { db, bizes, offers, offerVersions, offerVersionAdmissionModes, bookingOrders } = dbPackage
@@ -326,6 +327,51 @@ function resolveDateAvailabilityPolicy(policyModel: unknown) {
 }
 
 export const offerRoutes = new Hono()
+
+async function createOfferCrudRow(
+  c: Parameters<typeof executeCrudRouteAction>[0]['c'],
+  bizId: string,
+  tableKey: string,
+  data: Record<string, unknown>,
+  subjectType: string,
+  displayName: string,
+) {
+  const result = await executeCrudRouteAction({
+    c,
+    bizId,
+    tableKey,
+    operation: 'create',
+    data,
+    subjectType,
+    displayName,
+  })
+  if (!result.ok) return fail(c, result.code, result.message, result.httpStatus, result.details)
+  return result.row
+}
+
+async function updateOfferCrudRow(
+  c: Parameters<typeof executeCrudRouteAction>[0]['c'],
+  bizId: string,
+  tableKey: string,
+  id: string,
+  patch: Record<string, unknown>,
+  subjectType: string,
+  displayName: string,
+) {
+  const result = await executeCrudRouteAction({
+    c,
+    bizId,
+    tableKey,
+    operation: 'update',
+    id,
+    patch,
+    subjectType,
+    subjectId: id,
+    displayName,
+  })
+  if (!result.ok) return fail(c, result.code, result.message, result.httpStatus, result.details)
+  return result.row
+}
 
 /**
  * Public catalog surface.
@@ -756,9 +802,7 @@ offerRoutes.patch(
     })
     if (!existing) return fail(c, 'NOT_FOUND', 'Offer version not found.', 404)
 
-    const [updated] = await db
-      .update(offerVersions)
-      .set({
+    const updated = await updateOfferCrudRow(c, bizId, 'offerVersions', offerVersionId, {
         status: parsed.data.status,
         publishAt: parsed.data.publishAt ? new Date(parsed.data.publishAt) : undefined,
         retireAt: parsed.data.retireAt ? new Date(parsed.data.retireAt) : undefined,
@@ -774,15 +818,8 @@ offerRoutes.patch(
         capacityModel: parsed.data.capacityModel,
         revisionHash: parsed.data.revisionHash,
         metadata: parsed.data.metadata,
-      })
-      .where(
-        and(
-          eq(offerVersions.bizId, bizId),
-          eq(offerVersions.offerId, offerId),
-          eq(offerVersions.id, offerVersionId),
-        ),
-      )
-      .returning()
+      }, 'offer_version', `${offerId}:${offerVersionId}`)
+    if (updated instanceof Response) return updated
 
     return ok(c, updated)
   },
@@ -918,9 +955,24 @@ offerRoutes.post(
     })
 
     if (parsed.data.isPrimary) {
-      await db.update(offerVersionAdmissionModes).set({ isPrimary: false }).where(
-        and(eq(offerVersionAdmissionModes.bizId, bizId), eq(offerVersionAdmissionModes.offerVersionId, offerVersionId)),
-      )
+      const existingPrimary = await db.query.offerVersionAdmissionModes.findMany({
+        where: and(
+          eq(offerVersionAdmissionModes.bizId, bizId),
+          eq(offerVersionAdmissionModes.offerVersionId, offerVersionId),
+        ),
+      })
+      for (const modeRow of existingPrimary) {
+        const cleared = await updateOfferCrudRow(
+          c,
+          bizId,
+          'offerVersionAdmissionModes',
+          modeRow.id,
+          { isPrimary: false },
+          'offer_admission_mode',
+          modeRow.mode,
+        )
+        if (cleared instanceof Response) return cleared
+      }
     }
 
     const values = {
@@ -935,21 +987,30 @@ offerRoutes.post(
       metadata: parsed.data.metadata ?? {},
     }
 
-    const [saved] = existing
-      ? await db
-          .update(offerVersionAdmissionModes)
-          .set(values)
-          .where(and(eq(offerVersionAdmissionModes.bizId, bizId), eq(offerVersionAdmissionModes.id, existing.id)))
-          .returning()
-      : await db
-          .insert(offerVersionAdmissionModes)
-          .values({
+    const saved = existing
+      ? await updateOfferCrudRow(
+          c,
+          bizId,
+          'offerVersionAdmissionModes',
+          existing.id,
+          values,
+          'offer_admission_mode',
+          parsed.data.mode,
+        )
+      : await createOfferCrudRow(
+          c,
+          bizId,
+          'offerVersionAdmissionModes',
+          {
             bizId,
             offerVersionId,
             mode: parsed.data.mode,
             ...values,
-          })
-          .returning()
+          },
+          'offer_admission_mode',
+          parsed.data.mode,
+        )
+    if (saved instanceof Response) return saved
 
     return ok(c, saved, 201)
   },
@@ -975,9 +1036,11 @@ offerRoutes.post(
     })
     if (!parent) return fail(c, 'NOT_FOUND', 'Offer not found.', 404)
 
-    const [created] = await db
-      .insert(offerVersions)
-      .values({
+    const created = await createOfferCrudRow(
+      c,
+      bizId,
+      'offerVersions',
+      {
         bizId,
         offerId,
         version: parsed.data.version,
@@ -996,16 +1059,19 @@ offerRoutes.post(
         capacityModel: parsed.data.capacityModel ?? {},
         revisionHash: parsed.data.revisionHash,
         metadata: parsed.data.metadata ?? {},
-      })
-      .returning()
+      },
+      'offer_version',
+      `${offerId}:v${parsed.data.version}`,
+    )
+    if (created instanceof Response) return created
 
     await ensureCanonicalSellableForOfferVersion({
       bizId,
-      offerVersionId: created.id,
-      displayName: `${parent.name} v${created.version}`,
-      slug: `${parent.slug}-v${created.version}`,
-      currency: created.currency,
-      status: created.status,
+      offerVersionId: String((created as Record<string, unknown>).id),
+      displayName: `${parent.name} v${String((created as Record<string, unknown>).version)}`,
+      slug: `${parent.slug}-v${String((created as Record<string, unknown>).version)}`,
+      currency: String((created as Record<string, unknown>).currency),
+      status: String((created as Record<string, unknown>).status),
     })
 
     return ok(c, created, 201)

@@ -15,9 +15,9 @@ Design goals:
 ## Canonical Modules
 Active modules in `packages/db/src/schema`:
 
-- Core identity/tenant: `bizes.ts`, `users.ts`, `auth.ts`, `memberships.ts`, `group_accounts.ts`, `locations.ts`, `subjects.ts`
+- Core identity/tenant: `bizes.ts`, `users.ts`, `auth.ts`, `group_accounts.ts`, `locations.ts`, `subjects.ts`
 - Core catalog/supply: `services.ts`, `service_products.ts`, `products.ts`, `product_commerce.ts`, `assets.ts`, `venues.ts`, `resources.ts`
-- Canonical booking domains: `offers.ts`, `supply.ts`, `time_availability.ts`, `calendar_sync.ts`, `credential_exchange.ts`, `fulfillment.ts`, `payments.ts`, `compensation.ts`, `product_commerce.ts`, `sellable_variants.ts`, `demand_pricing.ts`, `entitlements.ts`, `channels.ts`, `intelligence.ts`, `education.ts`, `progression.ts`, `audit.ts`, `extensions.ts`, `access_rights.ts`, `checkout.ts`, `session_interactions.ts`, `instruments.ts`, `communications.ts`, `promotions.ts`, `work_management.ts`, `notes.ts`, `queue.ts`, `transportation.ts`, `marketplace.ts`, `operations_backbone.ts`, `enterprise.ts`, `governance.ts`, `hipaa.ts`, `compliance_programs.ts`, `bizings.ts`, `workflows.ts`, `ar.ts`, `commitments.ts`, `sla.ts`, `tax_fx.ts`, `leave.ts`, `offline.ts`, `reporting.ts`, `auth_observability.ts`
+- Canonical booking domains: `offers.ts`, `supply.ts`, `time_availability.ts`, `calendar_sync.ts`, `credential_exchange.ts`, `fulfillment.ts`, `payments.ts`, `compensation.ts`, `product_commerce.ts`, `sellable_variants.ts`, `demand_pricing.ts`, `entitlements.ts`, `channels.ts`, `intelligence.ts`, `education.ts`, `progression.ts`, `audit.ts`, `extensions.ts`, `access_rights.ts`, `checkout.ts`, `session_interactions.ts`, `instruments.ts`, `communications.ts`, `promotions.ts`, `work_management.ts`, `notes.ts`, `queue.ts`, `transportation.ts`, `marketplace.ts`, `operations_backbone.ts`, `enterprise.ts`, `governance.ts`, `hipaa.ts`, `compliance_programs.ts`, `bizings.ts`, `workflows.ts`, `ar.ts`, `commitments.ts`, `sla.ts`, `tax_fx.ts`, `leave.ts`, `offline.ts`, `reporting.ts`, `auth_observability.ts`, `customer_ops.ts`
 - Backbone modules introduced by the redesign: `action_backbone.ts`, `domain_events.ts`, `external_installations.ts`, `schedule_subjects.ts`, `projections.ts`
 - Integration: `stripe.ts`
 - Shared primitives: `_common.ts`, `enums.ts`, `canonical.ts`
@@ -80,7 +80,9 @@ ELI5:
     are being rewired to point back to this backbone directly
 - Domain event backbone:
   - `domain_events` stores meaningful business facts
-  - `event_subscriptions` + `event_deliveries` normalize internal/external reaction flows
+  - lifecycle hook subscription/delivery control-plane rows live in
+    `extensions.ts` (`lifecycle_event_subscriptions`,
+    `lifecycle_event_deliveries`) but reference canonical `domain_events`
   - exported schema symbol is `eventProjectionCheckpoints`
   - physical table name is `event_projection_consumers` for event-consumer progress
   - this supports deterministic projection rebuilds
@@ -203,6 +205,13 @@ ELI5:
   - checklist templates/instances with item-level status,
   - communication consent + quiet-hour policies + template/send telemetry,
   - campaign journey primitives, survey templates/responses, and discount ledgers.
+- Customer-ops runtime backbone:
+  - `customer_profile_crm_links` ties profile identity and CRM cards without duplication.
+  - `customer_timeline_events` gives one lifecycle story feed for support, marketing, CRM, bookings, and payments.
+  - `crm_activities` and `crm_tasks` normalize human/agent activity execution and follow-up queues.
+  - `support_cases` + participants/events/links provide support workflow with direct pointers to orders/messages/transactions.
+  - `customer_journeys` + steps/enrollments/events model lifecycle automation in one reusable shape.
+  - `customer_playbooks` + bindings/runs model reusable customer operations automations across sales/support/marketing flows.
 - Unified operations backbone:
   - generic work templates/runs/steps/entries/artifacts/approvals/time-segments
     to model field ops, inspections, timesheets, and multi-party sign-offs
@@ -223,7 +232,7 @@ extensions can plug in without schema rewrites.
 - Tenant grants/denies (scoped): `biz_extension_permission_grants`
 
 2. Event production and subscription
-- Domain events are appended to: `lifecycle_events`
+- Domain events are appended to: `domain_events`
 - Subscribers are configured in: `lifecycle_event_subscriptions`
 - Per-subscription delivery state is tracked in: `lifecycle_event_deliveries`
 
@@ -238,7 +247,7 @@ extensions can plug in without schema rewrites.
 - Documents are namespaced (`namespace`, `document_key`) and scoped
   (`biz`/`location`/`custom_subject`) for safe multi-tenant usage.
 - Optimistic revisioning (`revision`) + checkpoint pointer
-  (`last_lifecycle_event_id`) supports replay/rebuild behavior.
+  (`last_lifecycle_event_id`, now referencing canonical `domain_events`) supports replay/rebuild behavior.
 - Platform projection control-plane state lives in: `projection_checkpoints`
 - Event-consumer cursor progress lives in: `event_projection_consumers`
   for internal + extension projection lag/health visibility.
@@ -250,7 +259,7 @@ extensions can plug in without schema rewrites.
   `custom_field_values`
 
 6. Execution example (ELI5)
-- "Booking created" event is written to `lifecycle_events`.
+- "Booking created" event is written to `domain_events`.
 - Matching subscription row is found in `lifecycle_event_subscriptions`.
 - A delivery row is queued in `lifecycle_event_deliveries`.
 - Worker executes handler/webhook with retry/idempotency policy.

@@ -22,6 +22,7 @@ import { and, asc, desc, eq } from 'drizzle-orm'
 import { z } from 'zod'
 import dbPackage from '@bizing/db'
 import { requireAclPermission, requireAuth, requireBizAccess } from '../middleware/auth.js'
+import { executeCrudRouteAction } from '../services/action-route-bridge.js'
 import { fail, ok, parsePositiveInt } from './_api.js'
 import { sanitizePlainText, sanitizeUnknown } from '../lib/sanitize.js'
 
@@ -199,7 +200,58 @@ function instrumentRunBelongsToCurrentUser(run: {
   return run.assigneeSubjectType === 'user' && run.assigneeSubjectId === userId
 }
 
+async function createInstrumentRow<T extends Record<string, unknown>>(input: {
+  c: Parameters<typeof fail>[0]
+  bizId: string
+  tableKey: string
+  subjectType: string
+  data: Record<string, unknown>
+  displayName?: string
+}) {
+  const delegated = await executeCrudRouteAction({
+    c: input.c,
+    bizId: input.bizId,
+    tableKey: input.tableKey,
+    operation: 'create',
+    subjectType: input.subjectType,
+    displayName: input.displayName,
+    data: input.data,
+    metadata: { routeFamily: 'instruments' },
+  })
+  if (!delegated.ok) return fail(input.c, delegated.code, delegated.message, delegated.httpStatus, delegated.details)
+  return delegated.row as T
+}
+
+async function updateInstrumentRow<T extends Record<string, unknown>>(input: {
+  c: Parameters<typeof fail>[0]
+  bizId: string
+  tableKey: string
+  subjectType: string
+  id: string
+  patch: Record<string, unknown>
+  notFoundMessage: string
+}) {
+  const delegated = await executeCrudRouteAction({
+    c: input.c,
+    bizId: input.bizId,
+    tableKey: input.tableKey,
+    operation: 'update',
+    id: input.id,
+    subjectType: input.subjectType,
+    subjectId: input.id,
+    patch: input.patch,
+    metadata: { routeFamily: 'instruments' },
+  })
+  if (!delegated.ok) {
+    if (delegated.code === 'CRUD_TARGET_NOT_FOUND') return fail(input.c, 'NOT_FOUND', input.notFoundMessage, 404)
+    return fail(input.c, delegated.code, delegated.message, delegated.httpStatus, delegated.details)
+  }
+  if (!delegated.row) return fail(input.c, 'NOT_FOUND', input.notFoundMessage, 404)
+  return delegated.row as T
+}
+
 async function ensureInstrumentSubject(params: {
+  c: Parameters<typeof fail>[0]
   bizId: string
   subjectType: string
   subjectId: string
@@ -212,9 +264,13 @@ async function ensureInstrumentSubject(params: {
   const existing = await db.query.subjects.findFirst({ where })
   if (existing) return existing
 
-  await db
-    .insert(subjects)
-    .values({
+  const created = await createInstrumentRow<typeof subjects.$inferSelect>({
+    c: params.c,
+    bizId: params.bizId,
+    tableKey: 'subjects',
+    subjectType: 'subject',
+    displayName: params.subjectType === 'user' ? 'Instrument assignee' : params.subjectType,
+    data: {
       bizId: params.bizId,
       subjectType: params.subjectType,
       subjectId: params.subjectId,
@@ -223,8 +279,9 @@ async function ensureInstrumentSubject(params: {
       isLinkable: true,
       displayName: params.subjectType === 'user' ? 'Instrument assignee' : undefined,
       metadata: sanitizeUnknown({ source: 'instrument-runs' }),
-    })
-    .onConflictDoNothing()
+    },
+  })
+  if (created instanceof Response) return null
 
   return db.query.subjects.findFirst({ where })
 }
@@ -269,7 +326,13 @@ instrumentRoutes.post(
     const parsed = createInstrumentBodySchema.safeParse(await c.req.json().catch(() => null))
     if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
 
-    const [row] = await db.insert(instruments).values({
+    const row = await createInstrumentRow<typeof instruments.$inferSelect>({
+      c,
+      bizId,
+      tableKey: 'instruments',
+      subjectType: 'instrument',
+      displayName: parsed.data.name,
+      data: {
       bizId,
       name: sanitizePlainText(parsed.data.name),
       slug: sanitizePlainText(parsed.data.slug),
@@ -288,7 +351,9 @@ instrumentRoutes.post(
       attemptDurationSeconds: parsed.data.attemptDurationSeconds ?? null,
       requiresSignature: parsed.data.requiresSignature,
       metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
-    }).returning()
+      },
+    })
+    if (row instanceof Response) return row
 
     return ok(c, row, 201)
   },
@@ -324,7 +389,14 @@ instrumentRoutes.patch(
     })
     if (!existing) return fail(c, 'NOT_FOUND', 'Instrument not found.', 404)
 
-    const [row] = await db.update(instruments).set({
+    const row = await updateInstrumentRow<typeof instruments.$inferSelect>({
+      c,
+      bizId,
+      tableKey: 'instruments',
+      subjectType: 'instrument',
+      id: instrumentId,
+      notFoundMessage: 'Instrument not found.',
+      patch: {
       name: parsed.data.name !== undefined ? sanitizePlainText(parsed.data.name) : undefined,
       slug: parsed.data.slug !== undefined ? sanitizePlainText(parsed.data.slug) : undefined,
       version: parsed.data.version,
@@ -342,7 +414,9 @@ instrumentRoutes.patch(
       attemptDurationSeconds: parsed.data.attemptDurationSeconds,
       requiresSignature: parsed.data.requiresSignature,
       metadata: parsed.data.metadata ? sanitizeUnknown(parsed.data.metadata) : undefined,
-    }).where(and(eq(instruments.bizId, bizId), eq(instruments.id, instrumentId))).returning()
+      },
+    })
+    if (row instanceof Response) return row
 
     return ok(c, row)
   },
@@ -373,7 +447,13 @@ instrumentRoutes.post(
     const parsed = createInstrumentItemBodySchema.safeParse(await c.req.json().catch(() => null))
     if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
 
-    const [row] = await db.insert(instrumentItems).values({
+    const row = await createInstrumentRow<typeof instrumentItems.$inferSelect>({
+      c,
+      bizId,
+      tableKey: 'instrumentItems',
+      subjectType: 'instrument_item',
+      displayName: parsed.data.itemKey,
+      data: {
       bizId,
       instrumentId,
       itemKey: sanitizePlainText(parsed.data.itemKey),
@@ -385,7 +465,9 @@ instrumentRoutes.post(
       maxScore: parsed.data.maxScore,
       config: sanitizeUnknown(parsed.data.config ?? {}),
       metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
-    }).returning()
+      },
+    })
+    if (row instanceof Response) return row
 
     return ok(c, row, 201)
   },
@@ -416,7 +498,13 @@ instrumentRoutes.post(
     const parsed = createInstrumentBindingBodySchema.safeParse(await c.req.json().catch(() => null))
     if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
 
-    const [row] = await db.insert(instrumentBindings).values({
+    const row = await createInstrumentRow<typeof instrumentBindings.$inferSelect>({
+      c,
+      bizId,
+      tableKey: 'instrumentBindings',
+      subjectType: 'instrument_binding',
+      displayName: parsed.data.targetType,
+      data: {
       bizId,
       instrumentId: parsed.data.instrumentId,
       targetType: parsed.data.targetType,
@@ -431,7 +519,9 @@ instrumentRoutes.post(
       conditionExpr: sanitizeUnknown(parsed.data.conditionExpr ?? {}),
       isActive: parsed.data.isActive,
       metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
-    }).returning()
+      },
+    })
+    if (row instanceof Response) return row
 
     return ok(c, row, 201)
   },
@@ -467,6 +557,7 @@ instrumentRoutes.post(
     if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
 
     const subject = await ensureInstrumentSubject({
+      c,
       bizId: parsed.data.assigneeSubjectBizId,
       subjectType: sanitizePlainText(parsed.data.assigneeSubjectType),
       subjectId: parsed.data.assigneeSubjectId,
@@ -477,13 +568,20 @@ instrumentRoutes.post(
 
     const actorSubject = c.get('user')?.id
       ? await ensureInstrumentSubject({
+          c,
           bizId,
           subjectType: 'user',
           subjectId: c.get('user')?.id,
         })
       : null
 
-    const [row] = await db.insert(instrumentRuns).values({
+    const row = await createInstrumentRow<typeof instrumentRuns.$inferSelect>({
+      c,
+      bizId,
+      tableKey: 'instrumentRuns',
+      subjectType: 'instrument_run',
+      displayName: parsed.data.targetType,
+      data: {
       bizId,
       instrumentId: parsed.data.instrumentId,
       targetType: parsed.data.targetType,
@@ -497,9 +595,17 @@ instrumentRoutes.post(
       expiresAt: parsed.data.expiresAt ? new Date(parsed.data.expiresAt) : null,
       responsePayload: sanitizeUnknown(parsed.data.responsePayload ?? {}),
       metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
-    }).returning()
+      },
+    })
+    if (row instanceof Response) return row
 
-    await db.insert(instrumentEvents).values({
+    const createdEvent = await createInstrumentRow<typeof instrumentEvents.$inferSelect>({
+      c,
+      bizId,
+      tableKey: 'instrumentEvents',
+      subjectType: 'instrument_event',
+      displayName: 'run_created',
+      data: {
       bizId,
       instrumentRunId: row.id,
       eventType: 'run_created',
@@ -508,7 +614,9 @@ instrumentRoutes.post(
       actorSubjectType: actorSubject?.subjectType ?? null,
       actorSubjectId: actorSubject?.subjectId ?? null,
       metadata: { source: 'api' },
+      },
     })
+    if (createdEvent instanceof Response) return createdEvent
 
     return ok(c, row, 201)
   },
@@ -560,41 +668,58 @@ instrumentRoutes.get(
 )
 
 async function appendResponsesAndMaybeMergeRun(params: {
+  c: Parameters<typeof fail>[0]
   bizId: string
   instrumentRunId: string
   instrumentId: string
   responses: z.infer<typeof appendInstrumentResponsesBodySchema>['responses']
   mergeIntoRunPayload: boolean
 }) {
-  const createdRows = await db.insert(instrumentResponses).values(
-    params.responses.map((response) => ({
+  const createdRows: Array<typeof instrumentResponses.$inferSelect> = []
+  for (const response of params.responses) {
+    const created = await createInstrumentRow<typeof instrumentResponses.$inferSelect>({
+      c: params.c,
       bizId: params.bizId,
-      instrumentRunId: params.instrumentRunId,
-      instrumentId: params.instrumentId,
-      instrumentItemId: response.instrumentItemId ?? null,
-      itemKey: sanitizePlainText(response.itemKey),
-      value: sanitizeUnknown(response.value),
-      normalizedText: response.normalizedText ? sanitizePlainText(response.normalizedText) : null,
-      normalizedNumber: response.normalizedNumber ?? null,
-      normalizedBoolean: response.normalizedBoolean ?? null,
-      score: response.score ?? null,
-      feedback: response.feedback ? sanitizePlainText(response.feedback) : null,
-      isFinal: response.isFinal,
-      metadata: sanitizeUnknown(response.metadata ?? {}),
-    })),
-  ).returning()
+      tableKey: 'instrumentResponses',
+      subjectType: 'instrument_response',
+      displayName: response.itemKey,
+      data: {
+        bizId: params.bizId,
+        instrumentRunId: params.instrumentRunId,
+        instrumentId: params.instrumentId,
+        instrumentItemId: response.instrumentItemId ?? null,
+        itemKey: sanitizePlainText(response.itemKey),
+        value: sanitizeUnknown(response.value),
+        normalizedText: response.normalizedText ? sanitizePlainText(response.normalizedText) : null,
+        normalizedNumber: response.normalizedNumber ?? null,
+        normalizedBoolean: response.normalizedBoolean ?? null,
+        score: response.score ?? null,
+        feedback: response.feedback ? sanitizePlainText(response.feedback) : null,
+        isFinal: response.isFinal,
+        metadata: sanitizeUnknown(response.metadata ?? {}),
+      },
+    })
+    if (created instanceof Response) return created
+    createdRows.push(created)
+  }
 
   if (params.mergeIntoRunPayload) {
     const payload = Object.fromEntries(
       params.responses.map((response) => [response.itemKey, sanitizeUnknown(response.value)]),
     )
-    await db
-      .update(instrumentRuns)
-      .set({
+    const updatedRun = await updateInstrumentRow<typeof instrumentRuns.$inferSelect>({
+      c: params.c,
+      bizId: params.bizId,
+      tableKey: 'instrumentRuns',
+      subjectType: 'instrument_run',
+      id: params.instrumentRunId,
+      notFoundMessage: 'Instrument run not found.',
+      patch: {
         responsePayload: payload,
         status: 'in_progress',
-      })
-      .where(and(eq(instrumentRuns.bizId, params.bizId), eq(instrumentRuns.id, params.instrumentRunId)))
+      },
+    })
+    if (updatedRun instanceof Response) return updatedRun
   }
 
   return createdRows
@@ -607,6 +732,7 @@ async function loadBizInstrumentRun(bizId: string, instrumentRunId: string) {
 }
 
 async function appendInstrumentEvent(params: {
+  c: Parameters<typeof fail>[0]
   bizId: string
   instrumentRunId: string
   eventType: string
@@ -614,7 +740,13 @@ async function appendInstrumentEvent(params: {
   payload?: Record<string, unknown>
   metadata?: Record<string, unknown>
 }) {
-  await db.insert(instrumentEvents).values({
+  const created = await createInstrumentRow<typeof instrumentEvents.$inferSelect>({
+    c: params.c,
+    bizId: params.bizId,
+    tableKey: 'instrumentEvents',
+    subjectType: 'instrument_event',
+    displayName: params.eventType,
+    data: {
     bizId: params.bizId,
     instrumentRunId: params.instrumentRunId,
     eventType: params.eventType,
@@ -623,7 +755,10 @@ async function appendInstrumentEvent(params: {
     actorSubjectId: params.actorSubjectId ?? null,
     payload: sanitizeUnknown(params.payload ?? {}),
     metadata: sanitizeUnknown(params.metadata ?? {}),
+    },
   })
+  if (created instanceof Response) return created
+  return created
 }
 
 instrumentRoutes.post(
@@ -640,14 +775,17 @@ instrumentRoutes.post(
     if (!run) return fail(c, 'NOT_FOUND', 'Instrument run not found.', 404)
 
     const rows = await appendResponsesAndMaybeMergeRun({
+      c,
       bizId,
       instrumentRunId,
       instrumentId: run.instrumentId,
       responses: parsed.data.responses,
       mergeIntoRunPayload: parsed.data.mergeIntoRunPayload,
     })
+    if (rows instanceof Response) return rows
 
-    await appendInstrumentEvent({
+    const appended = await appendInstrumentEvent({
+      c,
       bizId,
       instrumentRunId,
       eventType: 'responses_appended',
@@ -655,6 +793,7 @@ instrumentRoutes.post(
       payload: { itemCount: parsed.data.responses.length },
       metadata: { source: 'api' },
     })
+    if (appended instanceof Response) return appended
 
     return ok(c, rows, 201)
   },
@@ -673,19 +812,25 @@ instrumentRoutes.post(
     const run = await loadBizInstrumentRun(bizId, instrumentRunId)
     if (!run) return fail(c, 'NOT_FOUND', 'Instrument run not found.', 404)
 
-    const [row] = await db
-      .update(instrumentRuns)
-      .set({
+    const row = await updateInstrumentRow<typeof instrumentRuns.$inferSelect>({
+      c,
+      bizId,
+      tableKey: 'instrumentRuns',
+      subjectType: 'instrument_run',
+      id: instrumentRunId,
+      notFoundMessage: 'Instrument run not found.',
+      patch: {
         status: 'submitted',
         submittedAt: new Date(),
         responsePayload: parsed.data.responsePayload ? sanitizeUnknown(parsed.data.responsePayload) : run.responsePayload,
         evaluationSummary: parsed.data.evaluationSummary ? sanitizePlainText(parsed.data.evaluationSummary) : run.evaluationSummary,
         metadata: parsed.data.metadata ? sanitizeUnknown(parsed.data.metadata) : run.metadata,
-      })
-      .where(and(eq(instrumentRuns.bizId, bizId), eq(instrumentRuns.id, instrumentRunId)))
-      .returning()
+      },
+    })
+    if (row instanceof Response) return row
 
-    await appendInstrumentEvent({
+    const appended = await appendInstrumentEvent({
+      c,
       bizId,
       instrumentRunId,
       eventType: 'submitted',
@@ -693,6 +838,7 @@ instrumentRoutes.post(
       payload: { status: row.status },
       metadata: { source: 'api' },
     })
+    if (appended instanceof Response) return appended
 
     return ok(c, row)
   },
@@ -711,9 +857,14 @@ instrumentRoutes.post(
     const run = await loadBizInstrumentRun(bizId, instrumentRunId)
     if (!run) return fail(c, 'NOT_FOUND', 'Instrument run not found.', 404)
 
-    const [row] = await db
-      .update(instrumentRuns)
-      .set({
+    const row = await updateInstrumentRow<typeof instrumentRuns.$inferSelect>({
+      c,
+      bizId,
+      tableKey: 'instrumentRuns',
+      subjectType: 'instrument_run',
+      id: instrumentRunId,
+      notFoundMessage: 'Instrument run not found.',
+      patch: {
         status: parsed.data.status,
         evaluatedAt: new Date(),
         completedAt: parsed.data.status === 'completed' ? new Date() : run.completedAt,
@@ -722,11 +873,12 @@ instrumentRoutes.post(
         resultStatus: parsed.data.resultStatus ?? run.resultStatus,
         evaluationSummary: parsed.data.evaluationSummary ? sanitizePlainText(parsed.data.evaluationSummary) : run.evaluationSummary,
         metadata: parsed.data.metadata ? sanitizeUnknown(parsed.data.metadata) : run.metadata,
-      })
-      .where(and(eq(instrumentRuns.bizId, bizId), eq(instrumentRuns.id, instrumentRunId)))
-      .returning()
+      },
+    })
+    if (row instanceof Response) return row
 
-    await appendInstrumentEvent({
+    const appended = await appendInstrumentEvent({
+      c,
       bizId,
       instrumentRunId,
       eventType: 'evaluated',
@@ -734,6 +886,7 @@ instrumentRoutes.post(
       payload: { resultStatus: row.resultStatus, scorePercent: row.scorePercent },
       metadata: { source: 'api' },
     })
+    if (appended instanceof Response) return appended
 
     return ok(c, row)
   },
@@ -762,14 +915,17 @@ instrumentRoutes.post('/public/bizes/:bizId/instrument-runs/:instrumentRunId/res
   }
 
   const rows = await appendResponsesAndMaybeMergeRun({
+    c,
     bizId,
     instrumentRunId,
     instrumentId: run.instrumentId,
     responses: parsed.data.responses,
     mergeIntoRunPayload: parsed.data.mergeIntoRunPayload,
   })
+  if (rows instanceof Response) return rows
 
-  await appendInstrumentEvent({
+  const appended = await appendInstrumentEvent({
+    c,
     bizId,
     instrumentRunId,
     eventType: 'responses_appended',
@@ -777,6 +933,7 @@ instrumentRoutes.post('/public/bizes/:bizId/instrument-runs/:instrumentRunId/res
     payload: { itemCount: parsed.data.responses.length },
     metadata: { source: 'public_api' },
   })
+  if (appended instanceof Response) return appended
 
   return ok(c, rows, 201)
 })
@@ -792,19 +949,25 @@ instrumentRoutes.post('/public/bizes/:bizId/instrument-runs/:instrumentRunId/sub
     return fail(c, 'FORBIDDEN', 'You do not own this instrument run.', 403)
   }
 
-  const [row] = await db
-    .update(instrumentRuns)
-    .set({
+  const row = await updateInstrumentRow<typeof instrumentRuns.$inferSelect>({
+    c,
+    bizId,
+    tableKey: 'instrumentRuns',
+    subjectType: 'instrument_run',
+    id: instrumentRunId,
+    notFoundMessage: 'Instrument run not found.',
+    patch: {
       status: 'submitted',
       submittedAt: new Date(),
       responsePayload: parsed.data.responsePayload ? sanitizeUnknown(parsed.data.responsePayload) : run.responsePayload,
       evaluationSummary: parsed.data.evaluationSummary ? sanitizePlainText(parsed.data.evaluationSummary) : run.evaluationSummary,
       metadata: parsed.data.metadata ? sanitizeUnknown(parsed.data.metadata) : run.metadata,
-    })
-    .where(and(eq(instrumentRuns.bizId, bizId), eq(instrumentRuns.id, instrumentRunId)))
-    .returning()
+    },
+  })
+  if (row instanceof Response) return row
 
-  await appendInstrumentEvent({
+  const appended = await appendInstrumentEvent({
+    c,
     bizId,
     instrumentRunId,
     eventType: 'submitted',
@@ -812,6 +975,7 @@ instrumentRoutes.post('/public/bizes/:bizId/instrument-runs/:instrumentRunId/sub
     payload: { status: row.status },
     metadata: { source: 'public_api' },
   })
+  if (appended instanceof Response) return appended
 
   return ok(c, row)
 })

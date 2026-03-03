@@ -16,6 +16,7 @@ import { and, asc, desc, eq, gte, lte } from 'drizzle-orm'
 import { z } from 'zod'
 import dbPackage from '@bizing/db'
 import { requireAclPermission, requireAuth, requireBizAccess } from '../middleware/auth.js'
+import { executeCrudRouteAction } from '../services/action-route-bridge.js'
 import { sanitizePlainText, sanitizeUnknown } from '../lib/sanitize.js'
 import { fail, ok } from './_api.js'
 
@@ -127,6 +128,28 @@ const overviewQuerySchema = z.object({
 
 export const marketingPerformanceRoutes = new Hono()
 
+async function createMarketingPerformanceRow<T extends Record<string, unknown>>(input: {
+  c: Parameters<typeof fail>[0]
+  bizId: string
+  tableKey: string
+  subjectType: string
+  data: Record<string, unknown>
+  displayName?: string
+}) {
+  const delegated = await executeCrudRouteAction({
+    c: input.c,
+    bizId: input.bizId,
+    tableKey: input.tableKey,
+    operation: 'create',
+    subjectType: input.subjectType,
+    displayName: input.displayName,
+    data: input.data,
+    metadata: { routeFamily: 'marketing-performance' },
+  })
+  if (!delegated.ok) return fail(input.c, delegated.code, delegated.message, delegated.httpStatus, delegated.details)
+  return delegated.row as T
+}
+
 marketingPerformanceRoutes.get(
   '/bizes/:bizId/marketing/audience-segments',
   requireAuth,
@@ -151,7 +174,13 @@ marketingPerformanceRoutes.post(
     const bizId = c.req.param('bizId')
     const parsed = segmentBodySchema.safeParse(await c.req.json().catch(() => null))
     if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid audience segment body.', 400, parsed.error.flatten())
-    const [created] = await db.insert(marketingAudienceSegments).values({
+    const created = await createMarketingPerformanceRow<typeof marketingAudienceSegments.$inferSelect>({
+      c,
+      bizId,
+      tableKey: 'marketingAudienceSegments',
+      subjectType: 'marketing_audience_segment',
+      displayName: parsed.data.name,
+      data: {
       bizId,
       name: sanitizePlainText(parsed.data.name),
       slug: sanitizePlainText(parsed.data.slug),
@@ -163,7 +192,9 @@ marketingPerformanceRoutes.post(
       lastMaterializedAt: parsed.data.lastMaterializedAt ? new Date(parsed.data.lastMaterializedAt) : null,
       memberCount: parsed.data.memberCount,
       metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
-    }).returning()
+      },
+    })
+    if (created instanceof Response) return created
     return ok(c, created, 201)
   },
 )
@@ -195,7 +226,13 @@ marketingPerformanceRoutes.post(
     const { bizId, segmentId } = c.req.param()
     const parsed = segmentMembershipBodySchema.safeParse(await c.req.json().catch(() => null))
     if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid audience membership body.', 400, parsed.error.flatten())
-    const [created] = await db.insert(marketingAudienceSegmentMemberships).values({
+    const created = await createMarketingPerformanceRow<typeof marketingAudienceSegmentMemberships.$inferSelect>({
+      c,
+      bizId,
+      tableKey: 'marketingAudienceSegmentMemberships',
+      subjectType: 'marketing_audience_segment_membership',
+      displayName: parsed.data.memberSubjectId ?? parsed.data.memberCrmContactId ?? 'membership',
+      data: {
       bizId,
       marketingAudienceSegmentId: segmentId,
       memberCrmContactId: parsed.data.memberCrmContactId ?? null,
@@ -208,7 +245,9 @@ marketingPerformanceRoutes.post(
       addedAt: parsed.data.addedAt ? new Date(parsed.data.addedAt) : new Date(),
       removedAt: parsed.data.removedAt ? new Date(parsed.data.removedAt) : null,
       metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
-    }).returning()
+      },
+    })
+    if (created instanceof Response) return created
     return ok(c, created, 201)
   },
 )
@@ -241,7 +280,13 @@ marketingPerformanceRoutes.post(
     const bizId = c.req.param('bizId')
     const parsed = syncRunBodySchema.safeParse(await c.req.json().catch(() => null))
     if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid audience sync run body.', 400, parsed.error.flatten())
-    const [created] = await db.insert(marketingAudienceSyncRuns).values({
+    const created = await createMarketingPerformanceRow<typeof marketingAudienceSyncRuns.$inferSelect>({
+      c,
+      bizId,
+      tableKey: 'marketingAudienceSyncRuns',
+      subjectType: 'marketing_audience_sync_run',
+      displayName: parsed.data.provider,
+      data: {
       bizId,
       marketingAudienceSegmentId: parsed.data.marketingAudienceSegmentId,
       channelAccountId: parsed.data.channelAccountId ?? null,
@@ -261,7 +306,9 @@ marketingPerformanceRoutes.post(
       errorSummary: parsed.data.errorSummary ? sanitizePlainText(parsed.data.errorSummary) : null,
       payload: sanitizeUnknown(parsed.data.payload ?? {}),
       metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
-    }).returning()
+      },
+    })
+    if (created instanceof Response) return created
     return ok(c, created, 201)
   },
 )
@@ -297,7 +344,13 @@ marketingPerformanceRoutes.post(
     const bizId = c.req.param('bizId')
     const parsed = adSpendBodySchema.safeParse(await c.req.json().catch(() => null))
     if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid ad spend fact body.', 400, parsed.error.flatten())
-    const [created] = await db.insert(adSpendDailyFacts).values({
+    const created = await createMarketingPerformanceRow<typeof adSpendDailyFacts.$inferSelect>({
+      c,
+      bizId,
+      tableKey: 'adSpendDailyFacts',
+      subjectType: 'ad_spend_daily_fact',
+      displayName: `${parsed.data.provider}:${parsed.data.factDate}`,
+      data: {
       bizId,
       factDate: parsed.data.factDate,
       provider: sanitizePlainText(parsed.data.provider),
@@ -318,7 +371,9 @@ marketingPerformanceRoutes.post(
       conversionValueMinor: parsed.data.conversionValueMinor ?? null,
       attributedRevenueMinor: parsed.data.attributedRevenueMinor ?? null,
       metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
-    }).returning()
+      },
+    })
+    if (created instanceof Response) return created
     return ok(c, created, 201)
   },
 )
@@ -347,7 +402,13 @@ marketingPerformanceRoutes.post(
     const bizId = c.req.param('bizId')
     const parsed = offlineConversionBodySchema.safeParse(await c.req.json().catch(() => null))
     if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid offline conversion body.', 400, parsed.error.flatten())
-    const [created] = await db.insert(offlineConversionPushes).values({
+    const created = await createMarketingPerformanceRow<typeof offlineConversionPushes.$inferSelect>({
+      c,
+      bizId,
+      tableKey: 'offlineConversionPushes',
+      subjectType: 'offline_conversion_push',
+      displayName: parsed.data.provider,
+      data: {
       bizId,
       channelAccountId: parsed.data.channelAccountId ?? null,
       provider: sanitizePlainText(parsed.data.provider),
@@ -368,7 +429,9 @@ marketingPerformanceRoutes.post(
       errorMessage: parsed.data.errorMessage ? sanitizePlainText(parsed.data.errorMessage) : null,
       payload: sanitizeUnknown(parsed.data.payload ?? {}),
       metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
-    }).returning()
+      },
+    })
+    if (created instanceof Response) return created
     return ok(c, created, 201)
   },
 )

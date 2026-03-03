@@ -257,8 +257,11 @@ export type SagaRunDetail = {
 export type SagaCoverageDetail = {
   report: {
     id: string
+    scopeType?: string
     title?: string | null
     coveragePct?: number | null
+    strongPct?: number | null
+    fullPct?: number | null
     summary?: string | null
     reportData?: Record<string, unknown> | null
   }
@@ -271,6 +274,8 @@ export type SagaCoverageDetail = {
     nativeToHacky?: string | null
     coreToExtension?: string | null
     explanation?: string | null
+    evidence?: Record<string, unknown> | null
+    metadata?: Record<string, unknown> | null
     tags?: string[]
   }>
   tags: Array<{ id: string; tagKey: string }>
@@ -278,6 +283,11 @@ export type SagaCoverageDetail = {
 
 export type SchemaCoverageReport = {
   id: string
+  scopeType?: string
+  status?: string
+  coveragePct?: number | null
+  strongPct?: number | null
+  fullPct?: number | null
   title?: string | null
   summary?: string | null
   reportData?: Record<string, unknown> | null
@@ -305,10 +315,10 @@ async function fetchApi<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export const sagaApi = {
-  fetchLibraryOverview: () => fetchApi<SagaLibraryOverview>('/api/v1/sagas/library/overview'),
-  fetchUseCases: () => fetchApi<SagaUseCaseDefinition[]>('/api/v1/sagas/use-cases?limit=5000'),
+  fetchLibraryOverview: () => fetchApi<SagaLibraryOverview>('/api/v1/ooda/sagas/library/overview'),
+  fetchUseCases: () => fetchApi<SagaUseCaseDefinition[]>('/api/v1/ooda/sagas/use-cases?limit=5000'),
   fetchUseCaseDetail: (ucKey: string) =>
-    fetchApi<SagaUseCaseDetail>(`/api/v1/sagas/use-cases/${encodeURIComponent(ucKey)}`),
+    fetchApi<SagaUseCaseDetail>(`/api/v1/ooda/sagas/use-cases/${encodeURIComponent(ucKey)}`),
   updateUseCase: (
     ucKey: string,
     patch: Partial<{
@@ -319,7 +329,7 @@ export const sagaApi = {
       sourceRef: string | null
     }>,
   ) =>
-    fetchApi<SagaUseCaseDefinition>(`/api/v1/sagas/use-cases/${encodeURIComponent(ucKey)}`, {
+    fetchApi<SagaUseCaseDefinition>(`/api/v1/ooda/sagas/use-cases/${encodeURIComponent(ucKey)}`, {
       method: 'PATCH',
       body: JSON.stringify(patch),
     }),
@@ -335,19 +345,19 @@ export const sagaApi = {
     },
   ) =>
     fetchApi<SagaUseCaseVersion>(
-      `/api/v1/sagas/use-cases/${encodeURIComponent(ucKey)}/versions`,
+      `/api/v1/ooda/sagas/use-cases/${encodeURIComponent(ucKey)}/versions`,
       {
         method: 'POST',
         body: JSON.stringify(input),
       },
     ),
   deleteUseCase: (ucKey: string) =>
-    fetchApi<{ deleted: true }>(`/api/v1/sagas/use-cases/${encodeURIComponent(ucKey)}`, {
+    fetchApi<{ deleted: true }>(`/api/v1/ooda/sagas/use-cases/${encodeURIComponent(ucKey)}`, {
       method: 'DELETE',
     }),
-  fetchPersonas: () => fetchApi<SagaPersonaDefinition[]>('/api/v1/sagas/personas?limit=5000'),
+  fetchPersonas: () => fetchApi<SagaPersonaDefinition[]>('/api/v1/ooda/sagas/personas?limit=5000'),
   fetchPersonaDetail: (personaKey: string) =>
-    fetchApi<SagaPersonaDetail>(`/api/v1/sagas/personas/${encodeURIComponent(personaKey)}`),
+    fetchApi<SagaPersonaDetail>(`/api/v1/ooda/sagas/personas/${encodeURIComponent(personaKey)}`),
   updatePersona: (
     personaKey: string,
     patch: Partial<{
@@ -359,7 +369,7 @@ export const sagaApi = {
     }>,
   ) =>
     fetchApi<SagaPersonaDefinition>(
-      `/api/v1/sagas/personas/${encodeURIComponent(personaKey)}`,
+      `/api/v1/ooda/sagas/personas/${encodeURIComponent(personaKey)}`,
       {
         method: 'PATCH',
         body: JSON.stringify(patch),
@@ -378,26 +388,26 @@ export const sagaApi = {
     },
   ) =>
     fetchApi<SagaPersonaVersion>(
-      `/api/v1/sagas/personas/${encodeURIComponent(personaKey)}/versions`,
+      `/api/v1/ooda/sagas/personas/${encodeURIComponent(personaKey)}/versions`,
       {
         method: 'POST',
         body: JSON.stringify(input),
       },
     ),
   deletePersona: (personaKey: string) =>
-    fetchApi<{ deleted: true }>(`/api/v1/sagas/personas/${encodeURIComponent(personaKey)}`, {
+    fetchApi<{ deleted: true }>(`/api/v1/ooda/sagas/personas/${encodeURIComponent(personaKey)}`, {
       method: 'DELETE',
     }),
-  fetchDefinitions: () => fetchApi<SagaDefinitionSummary[]>('/api/v1/sagas/specs?limit=5000'),
+  fetchDefinitions: () => fetchApi<SagaDefinitionSummary[]>('/api/v1/ooda/sagas/specs?limit=5000'),
   fetchDefinitionDetail: (sagaKey: string) =>
-    fetchApi<SagaDefinitionDetail>(`/api/v1/sagas/specs/${encodeURIComponent(sagaKey)}`),
+    fetchApi<SagaDefinitionDetail>(`/api/v1/ooda/sagas/specs/${encodeURIComponent(sagaKey)}`),
   fetchDefinitionRevisions: (sagaKey: string) =>
-    fetchApi<{ definition: SagaDefinitionSummary; revisions: SagaDefinitionRevision[] }>(`/api/v1/sagas/specs/${encodeURIComponent(sagaKey)}/revisions?limit=100`),
+    fetchApi<{ definition: SagaDefinitionSummary; revisions: SagaDefinitionRevision[] }>(`/api/v1/ooda/sagas/specs/${encodeURIComponent(sagaKey)}/revisions?limit=100`),
   fetchDefinitionLinks: (sagaKey: string) =>
-    fetchApi<SagaDefinitionLinksDetail>(`/api/v1/sagas/definitions/${encodeURIComponent(sagaKey)}/links`),
+    fetchApi<SagaDefinitionLinksDetail>(`/api/v1/ooda/sagas/definitions/${encodeURIComponent(sagaKey)}/links`),
   fetchLibraryRelations: (kind: 'use_case' | 'persona', key: string) =>
     fetchApi<SagaLibraryRelations>(
-      `/api/v1/sagas/library/related?kind=${encodeURIComponent(kind)}&key=${encodeURIComponent(key)}`,
+      `/api/v1/ooda/sagas/library/related?kind=${encodeURIComponent(kind)}&key=${encodeURIComponent(key)}`,
     ),
   updateDefinitionSpec: (
     sagaKey: string,
@@ -411,7 +421,7 @@ export const sagaApi = {
       revisionMetadata?: Record<string, unknown>
     },
   ) =>
-    fetchApi<SagaDefinitionDetail>(`/api/v1/sagas/specs/${encodeURIComponent(sagaKey)}`, {
+    fetchApi<SagaDefinitionDetail>(`/api/v1/ooda/sagas/specs/${encodeURIComponent(sagaKey)}`, {
       method: 'PUT',
       body: JSON.stringify(input),
     }),
@@ -427,14 +437,14 @@ export const sagaApi = {
     },
   ) =>
     fetchApi<SagaDefinitionDetail>(
-      `/api/v1/sagas/specs/${encodeURIComponent(sagaKey)}/revisions`,
+      `/api/v1/ooda/sagas/specs/${encodeURIComponent(sagaKey)}/revisions`,
       {
         method: 'POST',
         body: JSON.stringify(input),
       },
     ),
   deleteDefinition: (sagaKey: string) =>
-    fetchApi<{ archived: true }>(`/api/v1/sagas/specs/${encodeURIComponent(sagaKey)}`, {
+    fetchApi<{ archived: true }>(`/api/v1/ooda/sagas/specs/${encodeURIComponent(sagaKey)}`, {
       method: 'DELETE',
     }),
   fetchRuns: (params?: { sagaKey?: string; limit?: number; includeArchived?: boolean; mineOnly?: boolean }) => {
@@ -443,23 +453,44 @@ export const sagaApi = {
     if (params?.limit) search.set('limit', String(params.limit))
     if (params?.includeArchived) search.set('includeArchived', 'true')
     if (params?.mineOnly === false) search.set('mineOnly', 'false')
-    return fetchApi<SagaRunSummary[]>(`/api/v1/sagas/runs${search.size ? `?${search.toString()}` : ''}`)
+    return fetchApi<SagaRunSummary[]>(`/api/v1/ooda/sagas/runs${search.size ? `?${search.toString()}` : ''}`)
   },
-  fetchRunDetail: (runId: string) => fetchApi<SagaRunDetail>(`/api/v1/sagas/runs/${encodeURIComponent(runId)}`),
-  fetchRunCoverage: (runId: string) => fetchApi<SagaCoverageDetail>(`/api/v1/sagas/runs/${encodeURIComponent(runId)}/coverage`),
+  fetchRunDetail: (runId: string) => fetchApi<SagaRunDetail>(`/api/v1/ooda/sagas/runs/${encodeURIComponent(runId)}`),
+  fetchRunCoverage: (runId: string) => fetchApi<SagaCoverageDetail>(`/api/v1/ooda/sagas/runs/${encodeURIComponent(runId)}/coverage`),
   fetchArtifactContent: (runId: string, artifactId: string) =>
-    fetchApi<SagaArtifactContent>(`/api/v1/sagas/runs/${encodeURIComponent(runId)}/artifacts/${encodeURIComponent(artifactId)}/content`),
+    fetchApi<SagaArtifactContent>(`/api/v1/ooda/sagas/runs/${encodeURIComponent(runId)}/artifacts/${encodeURIComponent(artifactId)}/content`),
   createRun: (input: { sagaKey: string; mode?: 'dry_run' | 'live'; bizId?: string; runnerLabel?: string }) =>
-    fetchApi<SagaRunDetail>('/api/v1/sagas/runs', {
+    fetchApi<SagaRunDetail>('/api/v1/ooda/sagas/runs', {
       method: 'POST',
       body: JSON.stringify(input),
     }),
   fetchSchemaCoverageReports: () =>
-    fetchApi<SchemaCoverageReport[]>('/api/v1/sagas/schema-coverage/reports?limit=5'),
+    fetchApi<SchemaCoverageReport[]>('/api/v1/ooda/sagas/schema-coverage/reports?limit=5'),
   fetchSchemaCoverageReportDetail: (reportId: string) =>
-    fetchApi<SagaCoverageDetail>(`/api/v1/sagas/schema-coverage/reports/${encodeURIComponent(reportId)}`),
+    fetchApi<SagaCoverageDetail>(`/api/v1/ooda/sagas/schema-coverage/reports/${encodeURIComponent(reportId)}`),
+  fetchUcCoverageReports: (limit = 20) =>
+    fetchApi<SchemaCoverageReport[]>(`/api/v1/ooda/sagas/uc-coverage/reports?limit=${Math.min(Math.max(limit, 1), 200)}`),
+  fetchUcCoverageReportDetail: (reportId: string) =>
+    fetchApi<SagaCoverageDetail>(`/api/v1/ooda/sagas/uc-coverage/reports/${encodeURIComponent(reportId)}`),
+  rebuildUcCoverageReport: (input?: {
+    sourceSchemaReportId?: string
+    replaceExisting?: boolean
+    coverageFile?: string
+    bizId?: string | null
+  }) =>
+    fetchApi<{
+      reportId: string
+      scopeType: string
+      totalUseCases: number
+      summaryCounts: Record<string, number>
+      avgN2h: number
+      avgC2e: number
+    }>('/api/v1/ooda/sagas/uc-coverage/rebuild', {
+      method: 'POST',
+      body: JSON.stringify(input ?? {}),
+    }),
   executeRun: (runId: string) =>
-    fetchApi<{ runId: string; status: string }>(`/api/v1/sagas/runs/${encodeURIComponent(runId)}/execute`, {
+    fetchApi<{ runId: string; status: string }>(`/api/v1/ooda/sagas/runs/${encodeURIComponent(runId)}/execute`, {
       method: 'POST',
       body: JSON.stringify({}),
     }),

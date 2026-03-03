@@ -24,6 +24,7 @@ import {
   requireAuth,
   requireBizAccess,
 } from '../middleware/auth.js'
+import { executeCrudRouteAction } from '../services/action-route-bridge.js'
 import { evaluatePermission } from '../services/acl.js'
 import { fail, ok } from './_api.js'
 
@@ -42,6 +43,54 @@ const createComplianceConsentBodySchema = z.object({
   signedAt: z.string().datetime().optional(),
   metadata: z.record(z.unknown()).optional(),
 })
+
+async function createComplianceRow<
+  TTableKey extends 'bookingParticipantObligations' | 'participantObligationEvents',
+>(
+  c: Parameters<typeof executeCrudRouteAction>[0]['c'],
+  bizId: string,
+  tableKey: TTableKey,
+  data: Parameters<typeof executeCrudRouteAction>[0]['data'],
+  meta: { subjectType: string; subjectId: string; displayName: string; source: string },
+) {
+  const result = await executeCrudRouteAction({
+    c,
+    bizId,
+    tableKey,
+    operation: 'create',
+    data,
+    subjectType: meta.subjectType,
+    subjectId: meta.subjectId,
+    displayName: meta.displayName,
+    metadata: { source: meta.source },
+  })
+  if (!result.ok) throw new Error(result.message ?? `Failed to create ${tableKey}`)
+  if (!result.row) throw new Error(`Missing row for ${tableKey} create`)
+  return result.row
+}
+
+async function updateComplianceObligation(
+  c: Parameters<typeof executeCrudRouteAction>[0]['c'],
+  bizId: string,
+  obligationId: string,
+  patch: Parameters<typeof executeCrudRouteAction>[0]['patch'],
+) {
+  const result = await executeCrudRouteAction({
+    c,
+    bizId,
+    tableKey: 'bookingParticipantObligations',
+    operation: 'update',
+    id: obligationId,
+    patch,
+    subjectType: 'booking_participant_obligation',
+    subjectId: obligationId,
+    displayName: 'compliance consent',
+    metadata: { source: 'routes.compliance.updateConsentObligation' },
+  })
+  if (!result.ok) throw new Error(result.message ?? 'Failed to update booking participant obligation')
+  if (!result.row) throw new Error('Missing row for booking participant obligation update')
+  return result.row
+}
 
 function isMissingRelationError(error: unknown) {
   const code = (error as { code?: string })?.code
@@ -222,16 +271,16 @@ complianceRoutes.post(
     }
 
     const obligation = existing
-      ? (await db.update(bookingParticipantObligations)
-          .set({
-            status: 'satisfied',
-            satisfiedAt: new Date(consentMetadata.signedAt),
-            metadata: consentMetadata,
-          })
-          .where(and(eq(bookingParticipantObligations.bizId, bizId), eq(bookingParticipantObligations.id, existing.id)))
-          .returning())[0]
-      : (await db.insert(bookingParticipantObligations)
-          .values({
+      ? await updateComplianceObligation(c, bizId, existing.id, {
+          status: 'satisfied',
+          satisfiedAt: new Date(consentMetadata.signedAt),
+          metadata: consentMetadata,
+        })
+      : await createComplianceRow(
+          c,
+          bizId,
+          'bookingParticipantObligations',
+          {
             bizId,
             bookingOrderId,
             participantUserId: parsed.data.participantUserId,
@@ -246,17 +295,34 @@ complianceRoutes.post(
             satisfiedAt: new Date(consentMetadata.signedAt),
             statusReason: 'consent_signed',
             metadata: consentMetadata,
-          })
-          .returning())[0]
+          },
+          {
+            subjectType: 'booking_participant_obligation',
+            subjectId: bookingOrderId,
+            displayName: 'consent obligation',
+            source: 'routes.compliance.createConsentObligation',
+          },
+        )
 
-    const [event] = await db.insert(participantObligationEvents).values({
+    const event = await createComplianceRow(
+      c,
       bizId,
-      bookingParticipantObligationId: obligation.id,
-      eventType: 'satisfied',
-      actorUserId: actor?.id ?? null,
-      note: 'Consent captured through compliance API.',
-      metadata: consentMetadata,
-    }).returning()
+      'participantObligationEvents',
+      {
+        bizId,
+        bookingParticipantObligationId: String((obligation as { id?: string }).id ?? ''),
+        eventType: 'satisfied',
+        actorUserId: actor?.id ?? null,
+        note: 'Consent captured through compliance API.',
+        metadata: consentMetadata,
+      },
+      {
+        subjectType: 'participant_obligation_event',
+        subjectId: String((obligation as { id?: string }).id ?? ''),
+        displayName: 'satisfied',
+        source: 'routes.compliance.createConsentEvent',
+      },
+    )
 
     return ok(c, { obligation, event }, 201)
   },

@@ -80,6 +80,7 @@ import { wishlistRoutes } from './wishlists.js'
 import { salesQuoteRoutes } from './sales-quotes.js'
 import { giftDeliveryRoutes } from './gift-delivery.js'
 import { marketingPerformanceRoutes } from './marketing-performance.js'
+import { customerOpsRoutes } from './customer-ops.js'
 import { oodaRoutes } from './ooda.js'
 import testRoutes from './test-failures.js'
 
@@ -155,6 +156,7 @@ coreApiRoutes.route('/', wishlistRoutes)
 coreApiRoutes.route('/', salesQuoteRoutes)
 coreApiRoutes.route('/', giftDeliveryRoutes)
 coreApiRoutes.route('/', marketingPerformanceRoutes)
+coreApiRoutes.route('/', customerOpsRoutes)
 coreApiRoutes.route('/', oodaRoutes)
 coreApiRoutes.route('/', sagaRoutes)
 coreApiRoutes.route('/', authzRoutes)

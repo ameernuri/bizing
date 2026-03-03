@@ -10,7 +10,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { idRef, idWithTag, withAuditRefs } from "./_common";
 import { bizes } from "./bizes";
-import { lifecycleEvents } from "./extensions";
+import { domainEvents } from "./domain_events";
 import {
   factRefreshStatusEnum,
   operationalDemandSourceTypeEnum,
@@ -448,9 +448,9 @@ export const projectionCheckpoints = pgTable(
     /** Monotonic revision of this projection state. */
     revision: integer("revision").default(0).notNull(),
 
-    /** Latest lifecycle-event cursor consumed by this projection, if event-driven. */
+    /** Latest domain-event cursor consumed by this projection, if event-driven. */
     lastLifecycleEventId: idRef("last_lifecycle_event_id").references(
-      () => lifecycleEvents.id,
+      () => domainEvents.id,
     ),
 
     /** Business occurrence time of the last consumed event. */
@@ -556,10 +556,10 @@ export const projectionCheckpoints = pgTable(
       name: "projection_checkpoints_biz_subject_fk",
     }),
 
-    /** Tenant-safe FK to optional lifecycle-event cursor. */
+    /** Tenant-safe FK to optional domain-event cursor. */
     projectionCheckpointsBizLifecycleEventFk: foreignKey({
       columns: [table.bizId, table.lastLifecycleEventId],
-      foreignColumns: [lifecycleEvents.bizId, lifecycleEvents.id],
+      foreignColumns: [domainEvents.bizId, domainEvents.id],
       name: "projection_checkpoints_biz_lifecycle_event_fk",
     }),
 

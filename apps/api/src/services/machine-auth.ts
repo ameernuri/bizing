@@ -301,7 +301,7 @@ export async function createApiCredential(input: CreateApiCredentialInput) {
       keyHash,
       keyPreview: preview,
       scopes: normalizeScopes(input.scopes),
-      allowDirectApiKeyAuth: input.allowDirectApiKeyAuth ?? false,
+      allowDirectApiKeyAuth: input.allowDirectApiKeyAuth ?? true,
       status: "active",
       expiresAt: input.expiresAt ?? null,
       metadata: input.metadata ?? {},

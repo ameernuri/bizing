@@ -31,10 +31,10 @@ export function sanitizePlainText(value: string) {
 
 export function sanitizeUnknown(value: unknown): unknown {
   if (typeof value === 'string') return sanitizePlainText(value)
+  if (value instanceof Date) return value.toISOString()
   if (Array.isArray(value)) return value.map((entry) => sanitizeUnknown(entry))
   if (!value || typeof value !== 'object') return value
   return Object.fromEntries(
     Object.entries(value as Record<string, unknown>).map(([key, entry]) => [key, sanitizeUnknown(entry)]),
   )
 }
-

@@ -1,19 +1,22 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import Link from 'next/link'
 import { Plus } from 'lucide-react'
 import { sagaApi, type SagaDefinitionSummary, type SagaRunSummary } from '@/lib/sagas-api'
 import { oodaApi } from '@/lib/ooda-api'
+import { fetchLatestUcCoverageSnapshot, type UcCoverageEntry } from '@/lib/uc-coverage'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { EntitySummaryCard, getLatestRun, LifecycleBadge, LoadError, LoadingGrid, PageIntro, RunStatusBadge, SearchToolbar, summarizeRuns } from './common'
+import { CoverageVerdictBadge, EntitySummaryCard, getLatestRun, LifecycleBadge, LoadError, LoadingGrid, PageIntro, RunStatusBadge, SearchToolbar, summarizeRuns } from './common'
 
 export function SagaDefinitionsPage() {
   const [definitions, setDefinitions] = useState<SagaDefinitionSummary[]>([])
   const [runs, setRuns] = useState<SagaRunSummary[]>([])
+  const [coverageByUc, setCoverageByUc] = useState<Map<string, UcCoverageEntry>>(new Map())
   const [query, setQuery] = useState('')
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -29,12 +32,14 @@ export function SagaDefinitionsPage() {
     setIsLoading(true)
     setError(null)
     try {
-      const [nextDefinitions, allRuns] = await Promise.all([
+      const [nextDefinitions, allRuns, coverageSnapshot] = await Promise.all([
         sagaApi.fetchDefinitions(),
         sagaApi.fetchRuns({ limit: 5000, mineOnly: false, includeArchived: true }),
+        fetchLatestUcCoverageSnapshot(),
       ])
       setDefinitions([...nextDefinitions].sort((a, b) => a.sagaKey.localeCompare(b.sagaKey)))
       setRuns(allRuns)
+      setCoverageByUc(coverageSnapshot.byUc)
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Failed to load saga definitions.')
     } finally {
@@ -98,18 +103,38 @@ export function SagaDefinitionsPage() {
               const definitionRuns = runs.filter((run) => run.sagaKey === definition.sagaKey)
               const latestRun = getLatestRun(definitionRuns)
               const summary = summarizeRuns(definitionRuns)
+              const ucCoverage = definition.sourceUseCaseRef
+                ? coverageByUc.get(definition.sourceUseCaseRef.toUpperCase())
+                : null
               return (
                 <EntitySummaryCard
                   key={definition.id}
-                  href={`/sagas/definitions/${encodeURIComponent(definition.sagaKey)}`}
+                  href={`/ooda/definitions/${encodeURIComponent(definition.sagaKey)}`}
                   title={`${definition.sagaKey} · ${definition.title}`}
                   description={definition.description}
                   status={latestRun ? <RunStatusBadge status={latestRun.status} /> : <LifecycleBadge status={definition.status} />}
                   footer={
                     <div className="space-y-1">
                       <p>{summary.passed}/{summary.total} runs passed</p>
-                      <p>Use case: {definition.sourceUseCaseRef ?? 'not linked'}</p>
+                      {definition.sourceUseCaseRef ? (
+                        <p>
+                          Use case:{' '}
+                          <Link
+                            href={`/ooda/use-cases/${encodeURIComponent(definition.sourceUseCaseRef)}`}
+                            className="underline underline-offset-2"
+                          >
+                            {definition.sourceUseCaseRef}
+                          </Link>
+                        </p>
+                      ) : (
+                        <p>Use case: not linked</p>
+                      )}
                       <p>Persona: {definition.sourcePersonaRef ?? 'not linked'}</p>
+                      {ucCoverage ? (
+                        <div className="pt-1">
+                          <CoverageVerdictBadge verdict={ucCoverage.overallVerdict} prefix="uc coverage" />
+                        </div>
+                      ) : null}
                     </div>
                   }
                 />

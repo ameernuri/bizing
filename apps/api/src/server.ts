@@ -55,6 +55,8 @@ import {
 import { installSagaWebSocketServer } from "./services/saga-ws.js";
 import { appendAuditEvent, createOperationalAlert } from "./lib/audit-log.js";
 import { sanitizePlainText, sanitizeUnknown } from "./lib/sanitize.js";
+import { getRuntimeAssuranceMode, isStrictRuntimeAssuranceMode } from "./lib/runtime-assurance.js";
+import { startLifecycleDeliveryWorker } from "./services/lifecycle-delivery-worker.js";
 
 const {
   db,
@@ -1298,32 +1300,32 @@ app.get("/api/v1/agent/testing/openapi.json", requireAuth, (c) => {
       "/api/v1/agent/translate": {
         post: { summary: "Natural language to pseudo-request translator" },
       },
-      "/api/v1/sagas/docs": {
+      "/api/v1/ooda/sagas/docs": {
         get: { summary: "Saga testing contract and filesystem layout" },
       },
-      "/api/v1/sagas/specs": {
+      "/api/v1/ooda/sagas/specs": {
         get: { summary: "List synced saga definitions" },
       },
-      "/api/v1/sagas/specs/generate": {
+      "/api/v1/ooda/sagas/specs/generate": {
         post: { summary: "Generate saga spec files from UC/persona markdown" },
       },
-      "/api/v1/sagas/runs": {
+      "/api/v1/ooda/sagas/runs": {
         get: { summary: "List saga runs" },
         post: { summary: "Create saga run from definition key" },
       },
-      "/api/v1/sagas/runs/{runId}": {
+      "/api/v1/ooda/sagas/runs/{runId}": {
         get: { summary: "Get full saga run detail" },
       },
-      "/api/v1/sagas/runs/{runId}/coverage": {
+      "/api/v1/ooda/sagas/runs/{runId}/coverage": {
         get: { summary: "Get server-side saga coverage verdict for one run" },
       },
-      "/api/v1/sagas/runs/{runId}/archive": {
+      "/api/v1/ooda/sagas/runs/{runId}/archive": {
         post: { summary: "Soft-archive one saga run" },
       },
-      "/api/v1/sagas/runs/archive": {
+      "/api/v1/ooda/sagas/runs/archive": {
         post: { summary: "Soft-archive multiple saga runs" },
       },
-      "/api/v1/sagas/test-mode/next": {
+      "/api/v1/ooda/sagas/test-mode/next": {
         get: { summary: "Get next actionable saga step for agent execution" },
       },
       "/api/v1/public/bizes/{bizId}/offers": {
@@ -1788,6 +1790,9 @@ app.get("/api/v1/brain/activity", requireAuth, requirePlatformAdmin, (c) => {
 // ============================================
 
 app.onError((err, c) => {
+  if (err instanceof Response) {
+    return err
+  }
   log(`ERROR: ${err.message}`);
   return c.json({ success: false, error: { message: err.message } }, 500);
 });
@@ -1801,6 +1806,22 @@ app.notFound((c) => {
 // ============================================
 
 const PORT = Number(process.env.PORT) || 6129;
+
+async function assertStrictRuntimeDependencies() {
+  if (!isStrictRuntimeAssuranceMode()) return
+  try {
+    await db.execute(sql`SELECT 1 FROM auth_access_events LIMIT 1`)
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
+    console.error(
+      `[runtime-assurance] strict mode (${getRuntimeAssuranceMode()}) failed boot dependency check: auth_access_events unavailable: ${message}`,
+    )
+    process.exit(1)
+  }
+}
+
+void assertStrictRuntimeDependencies()
+startLifecycleDeliveryWorker()
 
 const httpServer = serve(
   {

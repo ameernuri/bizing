@@ -14,6 +14,14 @@ import { auth } from '../auth.js'
 import { evaluatePermission } from '../services/acl.js'
 import { detectAuthAttemptFromHeaders, recordRequestAuthEvent } from '../services/auth-observability.js'
 import { resolveMachineAuthFromHeaders } from '../services/machine-auth.js'
+import {
+  resolveRouteClass,
+  routeClassAllowsMachine,
+  routeClassAllowsUnauthenticated,
+  routeClassIsInternalOnly,
+  routeClassRequiresSession,
+  type RouteClass,
+} from './route-class-matrix.js'
 
 const { db } = dbPackage
 
@@ -51,10 +59,35 @@ declare module 'hono' {
     authSource: AuthSource
     authScopes: string[]
     authCredentialId: string
+    routeClass: RouteClass
+    routeClassRuleKey: string
     bizId: string
     membershipId: string
     membershipRole: BizRole
   }
+}
+
+function resolveAndAttachRouteClass(c: Context) {
+  const resolved = resolveRouteClass(c.req.path, c.req.method)
+  c.set('routeClass', resolved.routeClass)
+  c.set('routeClassRuleKey', resolved.ruleKey)
+  c.header('x-route-class', resolved.routeClass)
+  return resolved
+}
+
+function forbiddenByRouteClass(c: Context, code: string, message: string) {
+  return c.json(
+    {
+      success: false,
+      error: { code, message },
+      meta: {
+        requestId: c.get('requestId') ?? crypto.randomUUID(),
+        timestamp: new Date().toISOString(),
+        routeClass: c.get('routeClass') ?? null,
+      },
+    },
+    403,
+  )
 }
 
 /**
@@ -113,10 +146,25 @@ function emitAuthEventSafe(headers: Headers, input: Parameters<typeof recordRequ
  * Attach user/session when present, but do not enforce auth.
  */
 export async function optionalAuth(c: Context, next: Next) {
+  const routeClass = resolveAndAttachRouteClass(c)
   const machinePrincipal = await resolveMachineAuthFromHeaders(c.req.raw.headers, {
-    allowDirectApiKey: false,
+    allowDirectApiKey: true,
   })
   if (machinePrincipal) {
+    if (routeClassRequiresSession(routeClass.routeClass)) {
+      return forbiddenByRouteClass(
+        c,
+        'SESSION_REQUIRED_FOR_ROUTE_CLASS',
+        'This endpoint requires interactive session authentication.',
+      )
+    }
+    if (routeClassIsInternalOnly(routeClass.routeClass)) {
+      return forbiddenByRouteClass(
+        c,
+        'INTERNAL_ROUTE_REQUIRES_SESSION_ADMIN',
+        'This endpoint is internal-only and requires platform-admin interactive session authentication.',
+      )
+    }
     attachAuthContext(c, {
       user: machinePrincipal.user,
       session: machinePrincipal.session,
@@ -130,6 +178,16 @@ export async function optionalAuth(c: Context, next: Next) {
 
   const session = await getSession(c)
   if (session?.user && session?.session) {
+    if (routeClassIsInternalOnly(routeClass.routeClass)) {
+      const role = (session.user as { role?: string | null }).role ?? null
+      if (role !== 'admin') {
+        return forbiddenByRouteClass(
+          c,
+          'INTERNAL_ROUTE_REQUIRES_PLATFORM_ADMIN',
+          'This endpoint is internal-only and requires platform admin role.',
+        )
+      }
+    }
     attachAuthContext(c, {
       user: {
         id: String(session.user.id),
@@ -145,6 +203,10 @@ export async function optionalAuth(c: Context, next: Next) {
       authScopes: ['*'],
     })
   }
+  if (!routeClassAllowsUnauthenticated(routeClass.routeClass)) {
+    // optional auth can still be mounted on protected routes; do not auto-deny here
+    // because downstream middleware may intentionally enforce stricter semantics.
+  }
   await next()
 }
 
@@ -152,10 +214,18 @@ export async function optionalAuth(c: Context, next: Next) {
  * Require authenticated user session.
  */
 export async function requireAuth(c: Context, next: Next) {
+  const routeClass = resolveAndAttachRouteClass(c)
   const machinePrincipal = await resolveMachineAuthFromHeaders(c.req.raw.headers, {
-    allowDirectApiKey: false,
+    allowDirectApiKey: true,
   })
   if (machinePrincipal) {
+    if (!routeClassAllowsMachine(routeClass.routeClass)) {
+      return forbiddenByRouteClass(
+        c,
+        'MACHINE_AUTH_NOT_ALLOWED_FOR_ROUTE_CLASS',
+        'Machine authentication is not allowed for this endpoint.',
+      )
+    }
     attachAuthContext(c, {
       user: machinePrincipal.user,
       session: machinePrincipal.session,
@@ -221,6 +291,17 @@ export async function requireAuth(c: Context, next: Next) {
     )
   }
 
+  if (routeClassIsInternalOnly(routeClass.routeClass)) {
+    const role = (session.user as { role?: string | null }).role ?? null
+    if (role !== 'admin') {
+      return forbiddenByRouteClass(
+        c,
+        'INTERNAL_ROUTE_REQUIRES_PLATFORM_ADMIN',
+        'This endpoint is internal-only and requires platform admin role.',
+      )
+    }
+  }
+
   attachAuthContext(c, {
     user: {
       id: String(session.user.id),
@@ -260,6 +341,14 @@ export async function requireAuth(c: Context, next: Next) {
  * in an interactive session, not by another machine credential.
  */
 export async function requireSessionAuth(c: Context, next: Next) {
+  const routeClass = resolveAndAttachRouteClass(c)
+  if (routeClassAllowsUnauthenticated(routeClass.routeClass) && !routeClassRequiresSession(routeClass.routeClass)) {
+    return forbiddenByRouteClass(
+      c,
+      'SESSION_GUARD_ON_PUBLIC_ROUTE',
+      'Session guard is mounted on a route class that is not session-oriented.',
+    )
+  }
   const session = await getSession(c)
   if (!session?.user || !session?.session) {
     const attempted = detectAuthAttemptFromHeaders(c.req.raw.headers)
@@ -292,6 +381,17 @@ export async function requireSessionAuth(c: Context, next: Next) {
       },
       401,
     )
+  }
+
+  if (routeClassIsInternalOnly(routeClass.routeClass)) {
+    const role = (session.user as { role?: string | null }).role ?? null
+    if (role !== 'admin') {
+      return forbiddenByRouteClass(
+        c,
+        'INTERNAL_ROUTE_REQUIRES_PLATFORM_ADMIN',
+        'This endpoint is internal-only and requires platform admin role.',
+      )
+    }
   }
 
   attachAuthContext(c, {

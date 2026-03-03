@@ -16,10 +16,12 @@ import { and, asc, desc, eq } from 'drizzle-orm'
 import { z } from 'zod'
 import dbPackage from '@bizing/db'
 import { requireAclPermission, requireAuth, requireBizAccess } from '../middleware/auth.js'
+import { executeCrudRouteAction } from '../services/action-route-bridge.js'
 import { fail, ok } from './_api.js'
 
 const {
   db,
+  users,
   sellables,
   discountCampaigns,
   checkoutSessions,
@@ -27,6 +29,122 @@ const {
   checkoutSessionEvents,
   checkoutRecoveryLinks,
 } = dbPackage
+
+const CHECKOUT_SYSTEM_EMAIL = 'system+checkout@bizing.local'
+let checkoutSystemActorCache: { id: string; role: string; email: string } | null = null
+
+/**
+ * Resolve a concrete users-table actor for unauthenticated public checkout
+ * mutations (recovery consume, etc).
+ *
+ * ELI5:
+ * Canonical action rows require `actor_user_id` to reference a real user row.
+ * Public routes have no signed-in user, so we keep one deterministic system
+ * actor account and use it whenever the route is acting on behalf of the
+ * platform.
+ */
+async function ensureCheckoutSystemActor() {
+  if (checkoutSystemActorCache) return checkoutSystemActorCache
+  const existing = await db.query.users.findFirst({
+    where: eq(users.email, CHECKOUT_SYSTEM_EMAIL),
+  })
+  if (existing) {
+    checkoutSystemActorCache = {
+      id: existing.id,
+      role: existing.role,
+      email: existing.email,
+    }
+    return checkoutSystemActorCache
+  }
+  const [created] = await db
+    .insert(users)
+    .values({
+      email: CHECKOUT_SYSTEM_EMAIL,
+      name: 'Checkout System',
+      role: 'staff',
+      status: 'active',
+      emailVerified: true,
+      metadata: { source: 'routes.checkout.system-actor' },
+    })
+    .onConflictDoNothing()
+    .returning()
+  const resolved =
+    created ??
+    (await db.query.users.findFirst({
+      where: eq(users.email, CHECKOUT_SYSTEM_EMAIL),
+    }))
+  if (!resolved) {
+    throw new Error('Failed to resolve checkout system actor user.')
+  }
+  checkoutSystemActorCache = {
+    id: resolved.id,
+    role: resolved.role,
+    email: resolved.email,
+  }
+  return checkoutSystemActorCache
+}
+
+async function createCheckoutRow<
+  TTableKey extends 'checkoutSessions' | 'checkoutSessionItems' | 'checkoutSessionEvents' | 'checkoutRecoveryLinks',
+>(
+  c: Parameters<typeof executeCrudRouteAction>[0]['c'],
+  bizId: string,
+  tableKey: TTableKey,
+  data: Parameters<typeof executeCrudRouteAction>[0]['data'],
+  meta: { subjectType: string; subjectId: string; displayName: string; source: string; system?: boolean },
+) {
+  const actor = meta.system ? await ensureCheckoutSystemActor() : undefined
+  const result = await executeCrudRouteAction({
+    c,
+    bizId,
+    tableKey,
+    operation: 'create',
+    data,
+    subjectType: meta.subjectType,
+    subjectId: meta.subjectId,
+    displayName: meta.displayName,
+    metadata: { source: meta.source },
+    actorOverride: actor,
+    authSourceOverride: meta.system ? 'session' : undefined,
+  })
+  if (!result.ok) return result
+  if (!result.row) {
+    return { ok: false as const, httpStatus: 500, code: 'ACTION_EXECUTION_FAILED', message: `Missing row for ${tableKey} create` }
+  }
+  return result
+}
+
+async function updateCheckoutRow<
+  TTableKey extends 'checkoutSessions' | 'checkoutRecoveryLinks' | 'apiAccessTokens',
+>(
+  c: Parameters<typeof executeCrudRouteAction>[0]['c'],
+  bizId: string,
+  tableKey: TTableKey,
+  id: string,
+  patch: Parameters<typeof executeCrudRouteAction>[0]['patch'],
+  meta: { subjectType: string; subjectId: string; displayName: string; source: string; system?: boolean },
+) {
+  const actor = meta.system ? await ensureCheckoutSystemActor() : undefined
+  const result = await executeCrudRouteAction({
+    c,
+    bizId,
+    tableKey,
+    operation: 'update',
+    id,
+    patch,
+    subjectType: meta.subjectType,
+    subjectId: meta.subjectId,
+    displayName: meta.displayName,
+    metadata: { source: meta.source },
+    actorOverride: actor,
+    authSourceOverride: meta.system ? 'session' : undefined,
+  })
+  if (!result.ok) return result
+  if (!result.row) {
+    return { ok: false as const, httpStatus: 500, code: 'ACTION_EXECUTION_FAILED', message: `Missing row for ${tableKey} update` }
+  }
+  return result
+}
 
 const sessionBodySchema = z.object({
   status: z.enum(['active', 'abandoned', 'recovery_sent', 'recovered', 'completed', 'expired', 'cancelled']).default('active'),
@@ -113,7 +231,7 @@ checkoutRoutes.post('/bizes/:bizId/checkout-sessions', requireAuth, requireBizAc
   const bizId = c.req.param('bizId')
   const parsed = sessionBodySchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
-  const [row] = await db.insert(checkoutSessions).values({
+  const rowResult = await createCheckoutRow(c, bizId, 'checkoutSessions', {
     bizId,
     ...parsed.data,
     startedAt: parsed.data.startedAt ? new Date(parsed.data.startedAt) : undefined,
@@ -125,7 +243,15 @@ checkoutRoutes.post('/bizes/:bizId/checkout-sessions', requireAuth, requireBizAc
     cancelledAt: parsed.data.cancelledAt ? new Date(parsed.data.cancelledAt) : null,
     policySnapshot: parsed.data.policySnapshot ?? {},
     metadata: parsed.data.metadata ?? {},
-  }).returning()
+  }, {
+    subjectType: 'checkout_session',
+    subjectId: bizId,
+    displayName: 'create checkout session',
+    source: 'routes.checkout.createSession',
+  })
+  if (!rowResult.ok) return fail(c, rowResult.code, rowResult.message, rowResult.httpStatus, rowResult.details)
+  if (!rowResult.row) return fail(c, 'ACTION_EXECUTION_FAILED', 'Checkout session create returned no row.', 500)
+  const row = rowResult.row
   return ok(c, row, 201)
 })
 
@@ -151,14 +277,22 @@ checkoutRoutes.post('/bizes/:bizId/checkout-sessions/:checkoutSessionId/items', 
     const sellable = await db.query.sellables.findFirst({ where: and(eq(sellables.bizId, bizId), eq(sellables.id, parsed.data.sellableId)) })
     if (!sellable) return fail(c, 'NOT_FOUND', 'Sellable not found.', 404)
   }
-  const [row] = await db.insert(checkoutSessionItems).values({
+  const rowResult = await createCheckoutRow(c, bizId, 'checkoutSessionItems', {
     bizId,
     checkoutSessionId,
     ...parsed.data,
     requestedStartAt: parsed.data.requestedStartAt ? new Date(parsed.data.requestedStartAt) : null,
     requestedEndAt: parsed.data.requestedEndAt ? new Date(parsed.data.requestedEndAt) : null,
     metadata: parsed.data.metadata ?? {},
-  }).returning()
+  }, {
+    subjectType: 'checkout_session_item',
+    subjectId: checkoutSessionId,
+    displayName: parsed.data.displayName,
+    source: 'routes.checkout.createSessionItem',
+  })
+  if (!rowResult.ok) return fail(c, rowResult.code, rowResult.message, rowResult.httpStatus, rowResult.details)
+  if (!rowResult.row) return fail(c, 'ACTION_EXECUTION_FAILED', 'Checkout item create returned no row.', 500)
+  const row = rowResult.row
   return ok(c, row, 201)
 })
 
@@ -172,15 +306,23 @@ checkoutRoutes.post('/bizes/:bizId/checkout-sessions/:checkoutSessionId/events',
     })
     if (existing) return ok(c, existing)
   }
-  const [row] = await db.insert(checkoutSessionEvents).values({
+  const rowResult = await createCheckoutRow(c, bizId, 'checkoutSessionEvents', {
     bizId,
     checkoutSessionId,
     ...parsed.data,
     eventAt: parsed.data.eventAt ? new Date(parsed.data.eventAt) : undefined,
     payload: parsed.data.payload ?? {},
     metadata: parsed.data.metadata ?? {},
-  }).returning()
-  await db.update(checkoutSessions).set({
+  }, {
+    subjectType: 'checkout_session_event',
+    subjectId: checkoutSessionId,
+    displayName: parsed.data.eventType,
+    source: 'routes.checkout.createEvent',
+  })
+  if (!rowResult.ok) return fail(c, rowResult.code, rowResult.message, rowResult.httpStatus, rowResult.details)
+  if (!rowResult.row) return fail(c, 'ACTION_EXECUTION_FAILED', 'Checkout event create returned no row.', 500)
+  const row = rowResult.row
+  const sessionUpdateResult = await updateCheckoutRow(c, bizId, 'checkoutSessions', checkoutSessionId, {
     status: parsed.data.eventType === 'abandoned'
       ? 'abandoned'
       : parsed.data.eventType === 'recovery_sent'
@@ -194,12 +336,18 @@ checkoutRoutes.post('/bizes/:bizId/checkout-sessions/:checkoutSessionId/events',
               : parsed.data.eventType === 'cancelled'
                 ? 'cancelled'
                 : undefined,
-    lastActivityAt: row.eventAt,
-    abandonedAt: parsed.data.eventType === 'abandoned' ? row.eventAt : undefined,
-    recoveredAt: parsed.data.eventType === 'recovered' ? row.eventAt : undefined,
-    completedAt: parsed.data.eventType === 'completed' ? row.eventAt : undefined,
-    cancelledAt: parsed.data.eventType === 'cancelled' ? row.eventAt : undefined,
-  }).where(and(eq(checkoutSessions.bizId, bizId), eq(checkoutSessions.id, checkoutSessionId)))
+    lastActivityAt: row.eventAt as Date,
+    abandonedAt: parsed.data.eventType === 'abandoned' ? (row.eventAt as Date) : undefined,
+    recoveredAt: parsed.data.eventType === 'recovered' ? (row.eventAt as Date) : undefined,
+    completedAt: parsed.data.eventType === 'completed' ? (row.eventAt as Date) : undefined,
+    cancelledAt: parsed.data.eventType === 'cancelled' ? (row.eventAt as Date) : undefined,
+  }, {
+    subjectType: 'checkout_session',
+    subjectId: checkoutSessionId,
+    displayName: 'sync status from event',
+    source: 'routes.checkout.syncStatusFromEvent',
+  })
+  if (!sessionUpdateResult.ok) return fail(c, sessionUpdateResult.code, sessionUpdateResult.message, sessionUpdateResult.httpStatus, sessionUpdateResult.details)
   return ok(c, row, 201)
 })
 
@@ -229,7 +377,7 @@ checkoutRoutes.post('/bizes/:bizId/checkout-sessions/:checkoutSessionId/recovery
     if (!campaign) return fail(c, 'NOT_FOUND', 'Discount campaign not found.', 404)
   }
   const rawToken = `recovery_${crypto.randomUUID().replace(/-/g, '')}`
-  const [row] = await db.insert(checkoutRecoveryLinks).values({
+  const rowResult = await createCheckoutRow(c, bizId, 'checkoutRecoveryLinks', {
     bizId,
     checkoutSessionId,
     ...parsed.data,
@@ -237,8 +385,22 @@ checkoutRoutes.post('/bizes/:bizId/checkout-sessions/:checkoutSessionId/recovery
     tokenPreview: rawToken.slice(-8),
     expiresAt: parsed.data.expiresAt ? new Date(parsed.data.expiresAt) : null,
     metadata: parsed.data.metadata ?? {},
-  }).returning()
-  await db.update(checkoutSessions).set({ status: 'recovery_sent' }).where(and(eq(checkoutSessions.bizId, bizId), eq(checkoutSessions.id, checkoutSessionId)))
+  }, {
+    subjectType: 'checkout_recovery_link',
+    subjectId: checkoutSessionId,
+    displayName: 'create recovery link',
+    source: 'routes.checkout.createRecoveryLink',
+  })
+  if (!rowResult.ok) return fail(c, rowResult.code, rowResult.message, rowResult.httpStatus, rowResult.details)
+  if (!rowResult.row) return fail(c, 'ACTION_EXECUTION_FAILED', 'Recovery link create returned no row.', 500)
+  const row = rowResult.row
+  const recoveryStatusResult = await updateCheckoutRow(c, bizId, 'checkoutSessions', checkoutSessionId, { status: 'recovery_sent' }, {
+    subjectType: 'checkout_session',
+    subjectId: checkoutSessionId,
+    displayName: 'mark recovery sent',
+    source: 'routes.checkout.markRecoverySent',
+  })
+  if (!recoveryStatusResult.ok) return fail(c, recoveryStatusResult.code, recoveryStatusResult.message, recoveryStatusResult.httpStatus, recoveryStatusResult.details)
   return ok(c, { ...row, token: { rawToken, tokenPreview: row.tokenPreview } }, 201)
 })
 
@@ -269,23 +431,48 @@ checkoutRoutes.post('/public/bizes/:bizId/checkout-recovery/consume', async (c) 
   if (row.usedCount >= row.maxUseCount) return fail(c, 'CONFLICT', 'Recovery link usage limit reached.', 409)
   const usedAt = new Date()
   const nextUsedCount = row.usedCount + 1
-  const [updated] = await db.update(checkoutRecoveryLinks).set({
+  const updatedResult = await updateCheckoutRow(c, bizId, 'checkoutRecoveryLinks', row.id, {
     usedCount: nextUsedCount,
     usedAt,
     status: nextUsedCount >= row.maxUseCount ? 'used' : row.status,
-  }).where(and(eq(checkoutRecoveryLinks.bizId, bizId), eq(checkoutRecoveryLinks.id, row.id))).returning()
-  await db.update(checkoutSessions).set({
+  }, {
+    subjectType: 'checkout_recovery_link',
+    subjectId: row.id,
+    displayName: 'consume recovery link',
+    source: 'routes.checkout.consumeRecoveryLink',
+    system: true,
+  })
+  if (!updatedResult.ok) return fail(c, updatedResult.code, updatedResult.message, updatedResult.httpStatus, updatedResult.details)
+  if (!updatedResult.row) return fail(c, 'ACTION_EXECUTION_FAILED', 'Recovery link update returned no row.', 500)
+  const updated = updatedResult.row
+  const recoveredSessionResult = await updateCheckoutRow(c, bizId, 'checkoutSessions', row.checkoutSessionId, {
     status: 'recovered',
     recoveredAt: usedAt,
     lastActivityAt: usedAt,
-  }).where(and(eq(checkoutSessions.bizId, bizId), eq(checkoutSessions.id, row.checkoutSessionId)))
-  const [event] = await db.insert(checkoutSessionEvents).values({
+  }, {
+    subjectType: 'checkout_session',
+    subjectId: row.checkoutSessionId,
+    displayName: 'mark recovered from link',
+    source: 'routes.checkout.consumeRecoveryMarkSession',
+    system: true,
+  })
+  if (!recoveredSessionResult.ok) return fail(c, recoveredSessionResult.code, recoveredSessionResult.message, recoveredSessionResult.httpStatus, recoveredSessionResult.details)
+  const eventResult = await createCheckoutRow(c, bizId, 'checkoutSessionEvents', {
     bizId,
     checkoutSessionId: row.checkoutSessionId,
     eventType: 'recovered',
     eventAt: usedAt,
     payload: { recoveryLinkId: row.id },
     metadata: { source: 'checkout-recovery-consume' },
-  }).returning()
+  }, {
+    subjectType: 'checkout_session_event',
+    subjectId: row.checkoutSessionId,
+    displayName: 'recovered',
+    source: 'routes.checkout.consumeRecoveryCreateEvent',
+    system: true,
+  })
+  if (!eventResult.ok) return fail(c, eventResult.code, eventResult.message, eventResult.httpStatus, eventResult.details)
+  if (!eventResult.row) return fail(c, 'ACTION_EXECUTION_FAILED', 'Recovery consume event create returned no row.', 500)
+  const event = eventResult.row
   return ok(c, { recovery: updated, event })
 })

@@ -9,6 +9,17 @@ const nextConfig = {
   async rewrites() {
     return [
       {
+        // API explorer includes process-level health endpoints in addition to
+        // versioned `/api/*` routes. Proxy `/health*` so the explorer can run
+        // those checks from the admin origin without CORS/config surprises.
+        source: "/health",
+        destination: `${apiOrigin}/health`,
+      },
+      {
+        source: "/health/:path*",
+        destination: `${apiOrigin}/health/:path*`,
+      },
+      {
         source: "/api/:path*",
         destination: `${apiOrigin}/api/:path*`,
       },

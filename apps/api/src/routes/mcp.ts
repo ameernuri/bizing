@@ -13,6 +13,8 @@ import { getCurrentAuthCredentialId, getCurrentAuthSource, getCurrentUser, requi
 import { fail, ok } from './_api.js'
 import { apiTools, findTool, searchTools } from '../code-mode/tools.js'
 import { ensureBizMembership, saveSagaArtifact } from '../services/sagas.js'
+import { isStrictRuntimeAssuranceMode } from '../lib/runtime-assurance.js'
+import { buildApiExplorerCatalog, buildApiExplorerOpenApiDocument } from '../services/openapi-explorer.js'
 
 const { db, policyTemplates, policyBindings, authAccessEvents } = dbPackage
 
@@ -129,6 +131,16 @@ codeModeRoutes.get('/search', requireAuth, (c) => {
   })
 })
 
+codeModeRoutes.get('/openapi/catalog', requireAuth, async (c) => {
+  const catalog = await buildApiExplorerCatalog()
+  return ok(c, catalog)
+})
+
+codeModeRoutes.get('/openapi.json', requireAuth, async (c) => {
+  const openapi = await buildApiExplorerOpenApiDocument()
+  return c.json(openapi)
+})
+
 codeModeRoutes.post('/execute', requireAuth, async (c) => {
   const user = getCurrentUser(c)
   if (!user) {
@@ -203,15 +215,18 @@ codeModeRoutes.post('/execute', requireAuth, async (c) => {
         }
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error)
+        const missingObservabilityTable = /auth_access_events|does not exist/i.test(message)
+        if (!missingObservabilityTable) {
+          throw error
+        }
+
         /**
-         * Some local databases can lag the canonical schema during fresh-reset
-         * testing. Missing observability tables must never crash the agent API.
+         * Strict assurance mode is fail-fast:
+         * we do not allow agent execution without observability dependencies.
          *
-         * We intentionally degrade to "policy present but audit counter
-         * unavailable" rather than returning 500. Kill-switch enforcement still
-         * works because it depends only on governance templates/bindings.
+         * Relaxed dev mode keeps graceful degradation for local iteration.
          */
-        if (!/auth_access_events|does not exist/i.test(message)) {
+        if (isStrictRuntimeAssuranceMode()) {
           throw error
         }
       }

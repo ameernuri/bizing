@@ -23,9 +23,57 @@ import {
   requireAuth,
   requireBizAccess,
 } from '../middleware/auth.js'
+import { executeCrudRouteAction } from '../services/action-route-bridge.js'
 import { fail, ok } from './_api.js'
 
 const { db, bookingOrders, bookingParticipantObligations, participantObligationEvents } = dbPackage
+
+async function createParticipantRow<TTableKey extends 'bookingParticipantObligations' | 'participantObligationEvents'>(
+  c: Parameters<typeof executeCrudRouteAction>[0]['c'],
+  bizId: string,
+  tableKey: TTableKey,
+  data: Parameters<typeof executeCrudRouteAction>[0]['data'],
+  meta: { subjectType: string; subjectId: string; displayName: string; source: string },
+) {
+  const result = await executeCrudRouteAction({
+    c,
+    bizId,
+    tableKey,
+    operation: 'create',
+    data,
+    subjectType: meta.subjectType,
+    subjectId: meta.subjectId,
+    displayName: meta.displayName,
+    metadata: { source: meta.source },
+  })
+  if (!result.ok) throw new Error(result.message ?? `Failed to create ${tableKey}`)
+  if (!result.row) throw new Error(`Missing row for ${tableKey} create`)
+  return result.row
+}
+
+async function updateParticipantRow(
+  c: Parameters<typeof executeCrudRouteAction>[0]['c'],
+  bizId: string,
+  id: string,
+  patch: Parameters<typeof executeCrudRouteAction>[0]['patch'],
+  meta: { subjectType: string; subjectId: string; displayName: string; source: string },
+) {
+  const result = await executeCrudRouteAction({
+    c,
+    bizId,
+    tableKey: 'bookingParticipantObligations',
+    operation: 'update',
+    id,
+    patch,
+    subjectType: meta.subjectType,
+    subjectId: meta.subjectId,
+    displayName: meta.displayName,
+    metadata: { source: meta.source },
+  })
+  if (!result.ok) throw new Error(result.message ?? 'Failed to update bookingParticipantObligations')
+  if (!result.row) throw new Error('Missing row for bookingParticipantObligations update')
+  return result.row
+}
 
 const baseParticipantBodySchema = z.object({
   participantUserId: z.string().optional(),
@@ -106,9 +154,11 @@ bookingParticipantRoutes.post(
       return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
     }
 
-    const [created] = await db
-      .insert(bookingParticipantObligations)
-      .values({
+    const created = await createParticipantRow(
+      c,
+      bizId,
+      'bookingParticipantObligations',
+      {
         bizId,
         bookingOrderId,
         bookingOrderLineId: parsed.data.bookingOrderLineId ?? null,
@@ -123,17 +173,34 @@ bookingParticipantRoutes.post(
         satisfiedAt: parsed.data.satisfiedAt ? new Date(parsed.data.satisfiedAt) : null,
         statusReason: parsed.data.statusReason ?? null,
         metadata: parsed.data.metadata ?? {},
-      })
-      .returning()
+      },
+      {
+        subjectType: 'booking_participant_obligation',
+        subjectId: bookingOrderId,
+        displayName: 'create participant obligation',
+        source: 'routes.bookingParticipants.create',
+      },
+    )
 
-    await db.insert(participantObligationEvents).values({
+    await createParticipantRow(
+      c,
       bizId,
-      bookingParticipantObligationId: created.id,
-      eventType: 'created',
-      actorUserId: getCurrentUser(c)?.id ?? null,
-      note: 'Participant obligation created through API.',
-      metadata: { source: 'booking_participants.create' },
-    })
+      'participantObligationEvents',
+      {
+        bizId,
+        bookingParticipantObligationId: created.id,
+        eventType: 'created',
+        actorUserId: getCurrentUser(c)?.id ?? null,
+        note: 'Participant obligation created through API.',
+        metadata: { source: 'booking_participants.create' },
+      },
+      {
+        subjectType: 'participant_obligation_event',
+        subjectId: String(created.id),
+        displayName: 'created',
+        source: 'routes.bookingParticipants.createEvent',
+      },
+    )
 
     return ok(c, created, 201)
   },
@@ -160,9 +227,11 @@ bookingParticipantRoutes.patch(
       return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
     }
 
-    const [updated] = await db
-      .update(bookingParticipantObligations)
-      .set({
+    const updated = await updateParticipantRow(
+      c,
+      bizId,
+      obligationId,
+      {
         participantUserId: parsed.data.participantUserId ?? undefined,
         participantGroupAccountId: parsed.data.participantGroupAccountId ?? undefined,
         bookingOrderLineId: parsed.data.bookingOrderLineId ?? undefined,
@@ -180,18 +249,34 @@ bookingParticipantRoutes.patch(
               : null,
         statusReason: parsed.data.statusReason ?? undefined,
         metadata: parsed.data.metadata ?? undefined,
-      })
-      .where(and(eq(bookingParticipantObligations.bizId, bizId), eq(bookingParticipantObligations.id, obligationId)))
-      .returning()
+      },
+      {
+        subjectType: 'booking_participant_obligation',
+        subjectId: obligationId,
+        displayName: 'update participant obligation',
+        source: 'routes.bookingParticipants.patch',
+      },
+    )
 
-    await db.insert(participantObligationEvents).values({
+    await createParticipantRow(
+      c,
       bizId,
-      bookingParticipantObligationId: obligationId,
-      eventType: 'updated',
-      actorUserId: getCurrentUser(c)?.id ?? null,
-      note: 'Participant obligation updated through API.',
-      metadata: { source: 'booking_participants.patch', patch: parsed.data },
-    })
+      'participantObligationEvents',
+      {
+        bizId,
+        bookingParticipantObligationId: obligationId,
+        eventType: 'updated',
+        actorUserId: getCurrentUser(c)?.id ?? null,
+        note: 'Participant obligation updated through API.',
+        metadata: { source: 'booking_participants.patch', patch: parsed.data },
+      },
+      {
+        subjectType: 'participant_obligation_event',
+        subjectId: obligationId,
+        displayName: 'updated',
+        source: 'routes.bookingParticipants.patchEvent',
+      },
+    )
 
     return ok(c, updated)
   },
@@ -219,9 +304,11 @@ bookingParticipantRoutes.post(
       return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
     }
 
-    const [created] = await db
-      .insert(participantObligationEvents)
-      .values({
+    const created = await createParticipantRow(
+      c,
+      bizId,
+      'participantObligationEvents',
+      {
         bizId,
         bookingParticipantObligationId: obligationId,
         eventType: parsed.data.eventType,
@@ -229,8 +316,14 @@ bookingParticipantRoutes.post(
         actorUserId: getCurrentUser(c)?.id ?? null,
         note: parsed.data.note ?? null,
         metadata: parsed.data.metadata ?? {},
-      })
-      .returning()
+      },
+      {
+        subjectType: 'participant_obligation_event',
+        subjectId: obligationId,
+        displayName: parsed.data.eventType,
+        source: 'routes.bookingParticipants.addEvent',
+      },
+    )
 
     return ok(c, created, 201)
   },

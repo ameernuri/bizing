@@ -35,6 +35,7 @@ import {
   requireAuth,
   requireBizAccess,
 } from '../middleware/auth.js'
+import { executeCrudRouteAction } from '../services/action-route-bridge.js'
 import { appendAuditEvent } from '../lib/audit-log.js'
 import { sanitizePlainText, sanitizeUnknown } from '../lib/sanitize.js'
 import { fail, ok } from './_api.js'
@@ -219,6 +220,83 @@ function compareBindingSpecificity(row: typeof bizConfigBindings.$inferSelect) {
   return 1
 }
 
+async function createBizConfigRow<T extends Record<string, unknown>>(input: {
+  c: Parameters<typeof fail>[0]
+  bizId: string
+  tableKey: string
+  subjectType: string
+  data: Record<string, unknown>
+  displayName?: string
+}) {
+  const delegated = await executeCrudRouteAction({
+    c: input.c,
+    bizId: input.bizId,
+    tableKey: input.tableKey,
+    operation: 'create',
+    subjectType: input.subjectType,
+    displayName: input.displayName,
+    data: input.data,
+    metadata: { routeFamily: 'biz-configs' },
+  })
+  if (!delegated.ok) {
+    return fail(input.c, delegated.code, delegated.message, delegated.httpStatus, delegated.details)
+  }
+  return delegated.row as T
+}
+
+async function updateBizConfigRow<T extends Record<string, unknown>>(input: {
+  c: Parameters<typeof fail>[0]
+  bizId: string
+  tableKey: string
+  subjectType: string
+  id: string
+  patch: Record<string, unknown>
+  notFoundMessage: string
+}) {
+  const delegated = await executeCrudRouteAction({
+    c: input.c,
+    bizId: input.bizId,
+    tableKey: input.tableKey,
+    operation: 'update',
+    id: input.id,
+    subjectType: input.subjectType,
+    subjectId: input.id,
+    patch: input.patch,
+    metadata: { routeFamily: 'biz-configs' },
+  })
+  if (!delegated.ok) {
+    if (delegated.code === 'CRUD_TARGET_NOT_FOUND') {
+      return fail(input.c, 'NOT_FOUND', input.notFoundMessage, 404)
+    }
+    return fail(input.c, delegated.code, delegated.message, delegated.httpStatus, delegated.details)
+  }
+  if (!delegated.row) return fail(input.c, 'NOT_FOUND', input.notFoundMessage, 404)
+  return delegated.row as T
+}
+
+async function updateBizConfigBindingRows(input: {
+  c: Parameters<typeof fail>[0]
+  bizId: string
+  bindingIds: string[]
+  patch: Record<string, unknown>
+}) {
+  const updated: Array<typeof bizConfigBindings.$inferSelect> = []
+  for (const bindingId of input.bindingIds) {
+    const nextOrResponse = await updateBizConfigRow<typeof bizConfigBindings.$inferSelect>({
+      c: input.c,
+      bizId: input.bizId,
+      tableKey: 'bizConfigBindings',
+      subjectType: 'biz_config_binding',
+      id: bindingId,
+      notFoundMessage: 'Config binding not found.',
+      patch: input.patch,
+    })
+    if (nextOrResponse instanceof Response) return nextOrResponse
+    updated.push(nextOrResponse)
+  }
+  return updated
+}
+
 export const bizConfigRoutes = new Hono()
 
 bizConfigRoutes.get('/bizes/:bizId/config-sets', requireAuth, requireBizAccess('bizId'), requireAclPermission('bizes.read', { bizIdParam: 'bizId' }), async (c) => {
@@ -234,18 +312,27 @@ bizConfigRoutes.post('/bizes/:bizId/config-sets', requireAuth, requireBizAccess(
   const bizId = c.req.param('bizId')
   const parsed = createConfigSetBodySchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
-  const [created] = await db.insert(bizConfigSets).values({
+  const createdOrResponse = await createBizConfigRow<typeof bizConfigSets.$inferSelect>({
+    c,
     bizId,
-    locationId: parsed.data.locationId ?? null,
-    setType: sanitizePlainText(parsed.data.setType),
-    sourceOwnerKey: parsed.data.sourceOwnerKey ?? null,
-    name: sanitizePlainText(parsed.data.name),
-    slug: parsed.data.slug,
-    description: parsed.data.description ? sanitizePlainText(parsed.data.description) : null,
-    allowFreeformValues: parsed.data.allowFreeformValues,
-    isActive: parsed.data.isActive,
-    metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
-  }).returning()
+    tableKey: 'bizConfigSets',
+    subjectType: 'biz_config_set',
+    displayName: parsed.data.name,
+    data: {
+      bizId,
+      locationId: parsed.data.locationId ?? null,
+      setType: sanitizePlainText(parsed.data.setType),
+      sourceOwnerKey: parsed.data.sourceOwnerKey ?? null,
+      name: sanitizePlainText(parsed.data.name),
+      slug: parsed.data.slug,
+      description: parsed.data.description ? sanitizePlainText(parsed.data.description) : null,
+      allowFreeformValues: parsed.data.allowFreeformValues,
+      isActive: parsed.data.isActive,
+      metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
+    },
+  })
+  if (createdOrResponse instanceof Response) return createdOrResponse
+  const created = createdOrResponse
   await writeConfigAudit({ bizId, entityType: 'biz_config_set', entityId: created.id, eventType: 'create', afterState: created as Record<string, unknown>, note: `Created config set ${created.slug}.`, c })
   return ok(c, created, 201)
 })
@@ -256,17 +343,27 @@ bizConfigRoutes.patch('/bizes/:bizId/config-sets/:setId', requireAuth, requireBi
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
   const existing = await db.query.bizConfigSets.findFirst({ where: and(eq(bizConfigSets.bizId, bizId), eq(bizConfigSets.id, setId)) })
   if (!existing) return fail(c, 'NOT_FOUND', 'Config set not found.', 404)
-  const [updated] = await db.update(bizConfigSets).set({
-    locationId: parsed.data.locationId === undefined ? undefined : parsed.data.locationId ?? null,
-    setType: parsed.data.setType === undefined ? undefined : sanitizePlainText(parsed.data.setType),
-    sourceOwnerKey: parsed.data.sourceOwnerKey === undefined ? undefined : parsed.data.sourceOwnerKey ?? null,
-    name: parsed.data.name === undefined ? undefined : sanitizePlainText(parsed.data.name),
-    slug: parsed.data.slug,
-    description: parsed.data.description === undefined ? undefined : parsed.data.description ? sanitizePlainText(parsed.data.description) : null,
-    allowFreeformValues: parsed.data.allowFreeformValues,
-    isActive: parsed.data.isActive,
-    metadata: parsed.data.metadata === undefined ? undefined : sanitizeUnknown(parsed.data.metadata),
-  }).where(and(eq(bizConfigSets.bizId, bizId), eq(bizConfigSets.id, setId))).returning()
+  const updatedOrResponse = await updateBizConfigRow<typeof bizConfigSets.$inferSelect>({
+    c,
+    bizId,
+    tableKey: 'bizConfigSets',
+    subjectType: 'biz_config_set',
+    id: setId,
+    notFoundMessage: 'Config set not found.',
+    patch: {
+      locationId: parsed.data.locationId === undefined ? undefined : parsed.data.locationId ?? null,
+      setType: parsed.data.setType === undefined ? undefined : sanitizePlainText(parsed.data.setType),
+      sourceOwnerKey: parsed.data.sourceOwnerKey === undefined ? undefined : parsed.data.sourceOwnerKey ?? null,
+      name: parsed.data.name === undefined ? undefined : sanitizePlainText(parsed.data.name),
+      slug: parsed.data.slug,
+      description: parsed.data.description === undefined ? undefined : parsed.data.description ? sanitizePlainText(parsed.data.description) : null,
+      allowFreeformValues: parsed.data.allowFreeformValues,
+      isActive: parsed.data.isActive,
+      metadata: parsed.data.metadata === undefined ? undefined : sanitizeUnknown(parsed.data.metadata),
+    },
+  })
+  if (updatedOrResponse instanceof Response) return updatedOrResponse
+  const updated = updatedOrResponse
   await writeConfigAudit({ bizId, entityType: 'biz_config_set', entityId: setId, eventType: 'update', beforeState: existing as Record<string, unknown>, afterState: updated as Record<string, unknown>, diff: sanitizeUnknown(parsed.data as Record<string, unknown>) as Record<string, unknown>, note: `Updated config set ${updated.slug}.`, c })
   return ok(c, updated)
 })
@@ -302,14 +399,32 @@ bizConfigRoutes.post('/bizes/:bizId/config-values/:valueId/localizations', requi
     ),
   })
 
-  const [saved] = existing
-    ? await db.update(bizConfigValueLocalizations).set({
+  let saved: typeof bizConfigValueLocalizations.$inferSelect
+  if (existing) {
+    const rowOrResponse = await updateBizConfigRow<typeof bizConfigValueLocalizations.$inferSelect>({
+      c,
+      bizId,
+      tableKey: 'bizConfigValueLocalizations',
+      subjectType: 'biz_config_value_localization',
+      id: existing.id,
+      notFoundMessage: 'Config value localization not found.',
+      patch: {
         label: sanitizePlainText(parsed.data.label),
         description: parsed.data.description ? sanitizePlainText(parsed.data.description) : null,
         isActive: parsed.data.isActive,
         metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
-      }).where(and(eq(bizConfigValueLocalizations.bizId, bizId), eq(bizConfigValueLocalizations.id, existing.id))).returning()
-    : await db.insert(bizConfigValueLocalizations).values({
+      },
+    })
+    if (rowOrResponse instanceof Response) return rowOrResponse
+    saved = rowOrResponse
+  } else {
+    const rowOrResponse = await createBizConfigRow<typeof bizConfigValueLocalizations.$inferSelect>({
+      c,
+      bizId,
+      tableKey: 'bizConfigValueLocalizations',
+      subjectType: 'biz_config_value_localization',
+      displayName: parsed.data.locale,
+      data: {
         bizId,
         configValueId: valueId,
         locale: parsed.data.locale,
@@ -317,7 +432,11 @@ bizConfigRoutes.post('/bizes/:bizId/config-values/:valueId/localizations', requi
         description: parsed.data.description ? sanitizePlainText(parsed.data.description) : null,
         isActive: parsed.data.isActive,
         metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
-      }).returning()
+      },
+    })
+    if (rowOrResponse instanceof Response) return rowOrResponse
+    saved = rowOrResponse
+  }
 
   await writeConfigAudit({
     bizId,
@@ -336,21 +455,30 @@ bizConfigRoutes.post('/bizes/:bizId/config-sets/:setId/values', requireAuth, req
   const { bizId, setId } = c.req.param()
   const parsed = createConfigValueBodySchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
-  const [created] = await db.insert(bizConfigValues).values({
+  const createdOrResponse = await createBizConfigRow<typeof bizConfigValues.$inferSelect>({
+    c,
     bizId,
-    configSetId: setId,
-    code: parsed.data.code,
-    label: sanitizePlainText(parsed.data.label),
-    description: parsed.data.description ? sanitizePlainText(parsed.data.description) : null,
-    systemCode: parsed.data.systemCode ?? null,
-    replacedByConfigValueId: parsed.data.replacedByConfigValueId ?? null,
-    isDefault: parsed.data.isDefault,
-    isActive: parsed.data.isActive,
-    sortOrder: parsed.data.sortOrder,
-    colorHint: parsed.data.colorHint ?? null,
-    behavior: sanitizeUnknown(parsed.data.behavior ?? {}),
-    metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
-  }).returning()
+    tableKey: 'bizConfigValues',
+    subjectType: 'biz_config_value',
+    displayName: parsed.data.code,
+    data: {
+      bizId,
+      configSetId: setId,
+      code: parsed.data.code,
+      label: sanitizePlainText(parsed.data.label),
+      description: parsed.data.description ? sanitizePlainText(parsed.data.description) : null,
+      systemCode: parsed.data.systemCode ?? null,
+      replacedByConfigValueId: parsed.data.replacedByConfigValueId ?? null,
+      isDefault: parsed.data.isDefault,
+      isActive: parsed.data.isActive,
+      sortOrder: parsed.data.sortOrder,
+      colorHint: parsed.data.colorHint ?? null,
+      behavior: sanitizeUnknown(parsed.data.behavior ?? {}),
+      metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
+    },
+  })
+  if (createdOrResponse instanceof Response) return createdOrResponse
+  const created = createdOrResponse
   await writeConfigAudit({ bizId, entityType: 'biz_config_value', entityId: created.id, eventType: 'create', afterState: created as Record<string, unknown>, note: `Created config value ${created.code}.`, c })
   return ok(c, created, 201)
 })
@@ -361,19 +489,29 @@ bizConfigRoutes.patch('/bizes/:bizId/config-values/:valueId', requireAuth, requi
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
   const existing = await db.query.bizConfigValues.findFirst({ where: and(eq(bizConfigValues.bizId, bizId), eq(bizConfigValues.id, valueId)) })
   if (!existing) return fail(c, 'NOT_FOUND', 'Config value not found.', 404)
-  const [updated] = await db.update(bizConfigValues).set({
-    code: parsed.data.code,
-    label: parsed.data.label === undefined ? undefined : sanitizePlainText(parsed.data.label),
-    description: parsed.data.description === undefined ? undefined : parsed.data.description ? sanitizePlainText(parsed.data.description) : null,
-    systemCode: parsed.data.systemCode === undefined ? undefined : parsed.data.systemCode ?? null,
-    replacedByConfigValueId: parsed.data.replacedByConfigValueId === undefined ? undefined : parsed.data.replacedByConfigValueId ?? null,
-    isDefault: parsed.data.isDefault,
-    isActive: parsed.data.isActive,
-    sortOrder: parsed.data.sortOrder,
-    colorHint: parsed.data.colorHint === undefined ? undefined : parsed.data.colorHint ?? null,
-    behavior: parsed.data.behavior === undefined ? undefined : sanitizeUnknown(parsed.data.behavior),
-    metadata: parsed.data.metadata === undefined ? undefined : sanitizeUnknown(parsed.data.metadata),
-  }).where(and(eq(bizConfigValues.bizId, bizId), eq(bizConfigValues.id, valueId))).returning()
+  const updatedOrResponse = await updateBizConfigRow<typeof bizConfigValues.$inferSelect>({
+    c,
+    bizId,
+    tableKey: 'bizConfigValues',
+    subjectType: 'biz_config_value',
+    id: valueId,
+    notFoundMessage: 'Config value not found.',
+    patch: {
+      code: parsed.data.code,
+      label: parsed.data.label === undefined ? undefined : sanitizePlainText(parsed.data.label),
+      description: parsed.data.description === undefined ? undefined : parsed.data.description ? sanitizePlainText(parsed.data.description) : null,
+      systemCode: parsed.data.systemCode === undefined ? undefined : parsed.data.systemCode ?? null,
+      replacedByConfigValueId: parsed.data.replacedByConfigValueId === undefined ? undefined : parsed.data.replacedByConfigValueId ?? null,
+      isDefault: parsed.data.isDefault,
+      isActive: parsed.data.isActive,
+      sortOrder: parsed.data.sortOrder,
+      colorHint: parsed.data.colorHint === undefined ? undefined : parsed.data.colorHint ?? null,
+      behavior: parsed.data.behavior === undefined ? undefined : sanitizeUnknown(parsed.data.behavior),
+      metadata: parsed.data.metadata === undefined ? undefined : sanitizeUnknown(parsed.data.metadata),
+    },
+  })
+  if (updatedOrResponse instanceof Response) return updatedOrResponse
+  const updated = updatedOrResponse
   await writeConfigAudit({ bizId, entityType: 'biz_config_value', entityId: valueId, eventType: 'update', beforeState: existing as Record<string, unknown>, afterState: updated as Record<string, unknown>, diff: sanitizeUnknown(parsed.data as Record<string, unknown>) as Record<string, unknown>, note: `Updated config value ${updated.code}.`, c })
   return ok(c, updated)
 })
@@ -388,24 +526,43 @@ bizConfigRoutes.post('/bizes/:bizId/config-values/:valueId/retire', requireAuth,
   })
   if (!existing) return fail(c, 'NOT_FOUND', 'Config value not found.', 404)
 
-  const [updated] = await db.update(bizConfigValues).set({
-    isActive: false,
-    replacedByConfigValueId: parsed.data.replacementConfigValueId ?? null,
-    metadata: sanitizeUnknown({
-      ...((existing.metadata ?? {}) as Record<string, unknown>),
-      retiredAt: new Date().toISOString(),
-      retiredReason: parsed.data.reason ?? null,
-    }),
-  }).where(and(eq(bizConfigValues.bizId, bizId), eq(bizConfigValues.id, valueId))).returning()
+  const updatedOrResponse = await updateBizConfigRow<typeof bizConfigValues.$inferSelect>({
+    c,
+    bizId,
+    tableKey: 'bizConfigValues',
+    subjectType: 'biz_config_value',
+    id: valueId,
+    notFoundMessage: 'Config value not found.',
+    patch: {
+      isActive: false,
+      replacedByConfigValueId: parsed.data.replacementConfigValueId ?? null,
+      metadata: sanitizeUnknown({
+        ...((existing.metadata ?? {}) as Record<string, unknown>),
+        retiredAt: new Date().toISOString(),
+        retiredReason: parsed.data.reason ?? null,
+      }),
+    },
+  })
+  if (updatedOrResponse instanceof Response) return updatedOrResponse
+  const updated = updatedOrResponse
 
-  const updatedBindings = parsed.data.updateBindingsDefault && parsed.data.replacementConfigValueId
-    ? await db.update(bizConfigBindings).set({
-        defaultConfigValueId: parsed.data.replacementConfigValueId,
-      }).where(and(eq(bizConfigBindings.bizId, bizId), eq(bizConfigBindings.defaultConfigValueId, valueId))).returning({
-        id: bizConfigBindings.id,
-        defaultConfigValueId: bizConfigBindings.defaultConfigValueId,
-      })
-    : []
+  const updatedBindings: Array<{ id: string; defaultConfigValueId: string | null }> = []
+  if (parsed.data.updateBindingsDefault && parsed.data.replacementConfigValueId) {
+    const affectedBindings = await db.query.bizConfigBindings.findMany({
+      where: and(eq(bizConfigBindings.bizId, bizId), eq(bizConfigBindings.defaultConfigValueId, valueId)),
+      columns: { id: true },
+    })
+    const updatedOrResponse = await updateBizConfigBindingRows({
+      c,
+      bizId,
+      bindingIds: affectedBindings.map((row) => row.id),
+      patch: { defaultConfigValueId: parsed.data.replacementConfigValueId },
+    })
+    if (updatedOrResponse instanceof Response) return updatedOrResponse
+    for (const row of updatedOrResponse) {
+      updatedBindings.push({ id: row.id, defaultConfigValueId: row.defaultConfigValueId })
+    }
+  }
 
   await writeConfigAudit({
     bizId,
@@ -478,29 +635,45 @@ bizConfigRoutes.post('/bizes/:bizId/config-bindings', requireAuth, requireBizAcc
   const parsed = createBindingBodySchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
   if (parsed.data.isPrimary) {
-    await db.update(bizConfigBindings).set({ isPrimary: false }).where(and(
+    const bindingRows = await db.query.bizConfigBindings.findMany({ where: and(
       eq(bizConfigBindings.bizId, bizId),
       eq(bizConfigBindings.targetEntity, parsed.data.targetEntity),
       eq(bizConfigBindings.targetField, parsed.data.targetField),
       parsed.data.locationId ? eq(bizConfigBindings.locationId, parsed.data.locationId) : isNull(bizConfigBindings.locationId),
       parsed.data.scopeRefType ? eq(bizConfigBindings.scopeRefType, parsed.data.scopeRefType) : isNull(bizConfigBindings.scopeRefType),
       parsed.data.scopeRefId ? eq(bizConfigBindings.scopeRefId, parsed.data.scopeRefId) : isNull(bizConfigBindings.scopeRefId),
-    ))
+    ), columns: { id: true } })
+    const demotedOrResponse = await updateBizConfigBindingRows({
+      c,
+      bizId,
+      bindingIds: bindingRows.map((row) => row.id),
+      patch: { isPrimary: false },
+    })
+    if (demotedOrResponse instanceof Response) return demotedOrResponse
   }
-  const [created] = await db.insert(bizConfigBindings).values({
+  const createdOrResponse = await createBizConfigRow<typeof bizConfigBindings.$inferSelect>({
+    c,
     bizId,
-    configSetId: parsed.data.configSetId,
-    locationId: parsed.data.locationId ?? null,
-    scopeRefType: parsed.data.scopeRefType ?? null,
-    scopeRefId: parsed.data.scopeRefId ?? null,
-    targetEntity: sanitizePlainText(parsed.data.targetEntity),
-    targetField: sanitizePlainText(parsed.data.targetField),
-    isPrimary: parsed.data.isPrimary,
-    isStrict: parsed.data.isStrict,
-    defaultConfigValueId: parsed.data.defaultConfigValueId ?? null,
-    isActive: parsed.data.isActive,
-    metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
-  }).returning()
+    tableKey: 'bizConfigBindings',
+    subjectType: 'biz_config_binding',
+    displayName: `${parsed.data.targetEntity}.${parsed.data.targetField}`,
+    data: {
+      bizId,
+      configSetId: parsed.data.configSetId,
+      locationId: parsed.data.locationId ?? null,
+      scopeRefType: parsed.data.scopeRefType ?? null,
+      scopeRefId: parsed.data.scopeRefId ?? null,
+      targetEntity: sanitizePlainText(parsed.data.targetEntity),
+      targetField: sanitizePlainText(parsed.data.targetField),
+      isPrimary: parsed.data.isPrimary,
+      isStrict: parsed.data.isStrict,
+      defaultConfigValueId: parsed.data.defaultConfigValueId ?? null,
+      isActive: parsed.data.isActive,
+      metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
+    },
+  })
+  if (createdOrResponse instanceof Response) return createdOrResponse
+  const created = createdOrResponse
   await writeConfigAudit({ bizId, entityType: 'biz_config_binding', entityId: created.id, eventType: 'create', afterState: created as Record<string, unknown>, note: `Created config binding ${created.targetEntity}.${created.targetField}.`, c })
   return ok(c, created, 201)
 })
@@ -518,7 +691,7 @@ bizConfigRoutes.patch('/bizes/:bizId/config-bindings/:bindingId', requireAuth, r
   const nextTargetField = parsed.data.targetField ?? existing.targetField
   const nextIsPrimary = parsed.data.isPrimary ?? existing.isPrimary
   if (nextIsPrimary) {
-    await db.update(bizConfigBindings).set({ isPrimary: false }).where(and(
+    const bindingRows = await db.query.bizConfigBindings.findMany({ where: and(
       eq(bizConfigBindings.bizId, bizId),
       eq(bizConfigBindings.targetEntity, nextTargetEntity),
       eq(bizConfigBindings.targetField, nextTargetField),
@@ -526,21 +699,38 @@ bizConfigRoutes.patch('/bizes/:bizId/config-bindings/:bindingId', requireAuth, r
       nextScopeRefType ? eq(bizConfigBindings.scopeRefType, nextScopeRefType) : isNull(bizConfigBindings.scopeRefType),
       nextScopeRefId ? eq(bizConfigBindings.scopeRefId, nextScopeRefId) : isNull(bizConfigBindings.scopeRefId),
       eq(bizConfigBindings.isActive, true),
-    ))
+    ), columns: { id: true } })
+    const demotedOrResponse = await updateBizConfigBindingRows({
+      c,
+      bizId,
+      bindingIds: bindingRows.map((row) => row.id),
+      patch: { isPrimary: false },
+    })
+    if (demotedOrResponse instanceof Response) return demotedOrResponse
   }
-  const [updated] = await db.update(bizConfigBindings).set({
-    configSetId: parsed.data.configSetId,
-    locationId: parsed.data.locationId === undefined ? undefined : parsed.data.locationId ?? null,
-    scopeRefType: parsed.data.scopeRefType === undefined ? undefined : parsed.data.scopeRefType ?? null,
-    scopeRefId: parsed.data.scopeRefId === undefined ? undefined : parsed.data.scopeRefId ?? null,
-    targetEntity: parsed.data.targetEntity === undefined ? undefined : sanitizePlainText(parsed.data.targetEntity),
-    targetField: parsed.data.targetField === undefined ? undefined : sanitizePlainText(parsed.data.targetField),
-    isPrimary: parsed.data.isPrimary,
-    isStrict: parsed.data.isStrict,
-    defaultConfigValueId: parsed.data.defaultConfigValueId === undefined ? undefined : parsed.data.defaultConfigValueId ?? null,
-    isActive: parsed.data.isActive,
-    metadata: parsed.data.metadata === undefined ? undefined : sanitizeUnknown(parsed.data.metadata),
-  }).where(and(eq(bizConfigBindings.bizId, bizId), eq(bizConfigBindings.id, bindingId))).returning()
+  const updatedOrResponse = await updateBizConfigRow<typeof bizConfigBindings.$inferSelect>({
+    c,
+    bizId,
+    tableKey: 'bizConfigBindings',
+    subjectType: 'biz_config_binding',
+    id: bindingId,
+    notFoundMessage: 'Config binding not found.',
+    patch: {
+      configSetId: parsed.data.configSetId,
+      locationId: parsed.data.locationId === undefined ? undefined : parsed.data.locationId ?? null,
+      scopeRefType: parsed.data.scopeRefType === undefined ? undefined : parsed.data.scopeRefType ?? null,
+      scopeRefId: parsed.data.scopeRefId === undefined ? undefined : parsed.data.scopeRefId ?? null,
+      targetEntity: parsed.data.targetEntity === undefined ? undefined : sanitizePlainText(parsed.data.targetEntity),
+      targetField: parsed.data.targetField === undefined ? undefined : sanitizePlainText(parsed.data.targetField),
+      isPrimary: parsed.data.isPrimary,
+      isStrict: parsed.data.isStrict,
+      defaultConfigValueId: parsed.data.defaultConfigValueId === undefined ? undefined : parsed.data.defaultConfigValueId ?? null,
+      isActive: parsed.data.isActive,
+      metadata: parsed.data.metadata === undefined ? undefined : sanitizeUnknown(parsed.data.metadata),
+    },
+  })
+  if (updatedOrResponse instanceof Response) return updatedOrResponse
+  const updated = updatedOrResponse
   await writeConfigAudit({ bizId, entityType: 'biz_config_binding', entityId: bindingId, eventType: 'update', beforeState: existing as Record<string, unknown>, afterState: updated as Record<string, unknown>, diff: sanitizeUnknown(parsed.data as Record<string, unknown>) as Record<string, unknown>, note: `Updated config binding ${updated.targetEntity}.${updated.targetField}.`, c })
   return ok(c, updated)
 })
@@ -562,19 +752,28 @@ bizConfigRoutes.post('/bizes/:bizId/config-packs/seed', requireAuth, requireBizA
   const existingSet = await db.query.bizConfigSets.findFirst({
     where: and(eq(bizConfigSets.bizId, bizId), eq(bizConfigSets.slug, setSlug), parsed.data.locationId ? eq(bizConfigSets.locationId, parsed.data.locationId) : isNull(bizConfigSets.locationId)),
   })
-  const [configSet] = existingSet
-    ? [existingSet]
-    : await db.insert(bizConfigSets).values({
+  const createdSetOrResponse = existingSet
+    ? existingSet
+    : await createBizConfigRow<typeof bizConfigSets.$inferSelect>({
+        c,
         bizId,
-        locationId: parsed.data.locationId ?? null,
-        setType: parsed.data.setType,
-        name: sanitizePlainText(setName),
-        slug: setSlug,
-        description: `Seeded from quick-start pack ${seed.packKey}.`,
-        allowFreeformValues: false,
-        isActive: true,
-        metadata: sanitizeUnknown({ seedPackKey: seed.packKey, seedValues: seed.values }),
-      }).returning()
+        tableKey: 'bizConfigSets',
+        subjectType: 'biz_config_set',
+        displayName: setName,
+        data: {
+          bizId,
+          locationId: parsed.data.locationId ?? null,
+          setType: parsed.data.setType,
+          name: sanitizePlainText(setName),
+          slug: setSlug,
+          description: `Seeded from quick-start pack ${seed.packKey}.`,
+          allowFreeformValues: false,
+          isActive: true,
+          metadata: sanitizeUnknown({ seedPackKey: seed.packKey, seedValues: seed.values }),
+        },
+      })
+  if (createdSetOrResponse instanceof Response) return createdSetOrResponse
+  const configSet = createdSetOrResponse
 
   const createdValues = []
   for (const value of seed.values) {
@@ -585,18 +784,27 @@ bizConfigRoutes.post('/bizes/:bizId/config-packs/seed', requireAuth, requireBizA
       createdValues.push(existingValue)
       continue
     }
-    const [created] = await db.insert(bizConfigValues).values({
+    const createdOrResponse = await createBizConfigRow<typeof bizConfigValues.$inferSelect>({
+      c,
       bizId,
-      configSetId: configSet.id,
-      code: value.code,
-      label: value.label,
-      description: value.description,
-      systemCode: value.systemCode,
-      isDefault: value.isDefault,
-      isActive: value.isActive,
-      sortOrder: value.sortOrder,
-      metadata: sanitizeUnknown({ seedPackKey: seed.packKey }),
-    }).returning()
+      tableKey: 'bizConfigValues',
+      subjectType: 'biz_config_value',
+      displayName: value.code,
+      data: {
+        bizId,
+        configSetId: configSet.id,
+        code: value.code,
+        label: value.label,
+        description: value.description,
+        systemCode: value.systemCode,
+        isDefault: value.isDefault,
+        isActive: value.isActive,
+        sortOrder: value.sortOrder,
+        metadata: sanitizeUnknown({ seedPackKey: seed.packKey }),
+      },
+    })
+    if (createdOrResponse instanceof Response) return createdOrResponse
+    const created = createdOrResponse
     createdValues.push(created)
   }
 
@@ -604,20 +812,29 @@ bizConfigRoutes.post('/bizes/:bizId/config-packs/seed', requireAuth, requireBizA
   const existingBinding = await db.query.bizConfigBindings.findFirst({
     where: and(eq(bizConfigBindings.bizId, bizId), eq(bizConfigBindings.configSetId, configSet.id), eq(bizConfigBindings.targetEntity, parsed.data.targetEntity), eq(bizConfigBindings.targetField, parsed.data.targetField), parsed.data.locationId ? eq(bizConfigBindings.locationId, parsed.data.locationId) : isNull(bizConfigBindings.locationId)),
   })
-  const [binding] = existingBinding
-    ? [existingBinding]
-    : await db.insert(bizConfigBindings).values({
+  const createdBindingOrResponse = existingBinding
+    ? existingBinding
+    : await createBizConfigRow<typeof bizConfigBindings.$inferSelect>({
+        c,
         bizId,
-        configSetId: configSet.id,
-        locationId: parsed.data.locationId ?? null,
-        targetEntity: parsed.data.targetEntity,
-        targetField: parsed.data.targetField,
-        isPrimary: true,
-        isStrict: true,
-        defaultConfigValueId: defaultValue?.id ?? null,
-        isActive: true,
-        metadata: sanitizeUnknown({ seedPackKey: seed.packKey }),
-      }).returning()
+        tableKey: 'bizConfigBindings',
+        subjectType: 'biz_config_binding',
+        displayName: `${parsed.data.targetEntity}.${parsed.data.targetField}`,
+        data: {
+          bizId,
+          configSetId: configSet.id,
+          locationId: parsed.data.locationId ?? null,
+          targetEntity: parsed.data.targetEntity,
+          targetField: parsed.data.targetField,
+          isPrimary: true,
+          isStrict: true,
+          defaultConfigValueId: defaultValue?.id ?? null,
+          isActive: true,
+          metadata: sanitizeUnknown({ seedPackKey: seed.packKey }),
+        },
+      })
+  if (createdBindingOrResponse instanceof Response) return createdBindingOrResponse
+  const binding = createdBindingOrResponse
 
   await writeConfigAudit({
     bizId,
@@ -675,34 +892,60 @@ bizConfigRoutes.post('/bizes/:bizId/config-packs/:packKey/revert', requireAuth, 
   for (const row of currentValues) {
     const seedRow = seedValues.find((value) => value.code === row.code)
     if (!seedRow) {
-      await db.update(bizConfigValues).set({ isActive: false }).where(and(eq(bizConfigValues.bizId, bizId), eq(bizConfigValues.id, row.id)))
+      const retiredOrResponse = await updateBizConfigRow<typeof bizConfigValues.$inferSelect>({
+        c,
+        bizId,
+        tableKey: 'bizConfigValues',
+        subjectType: 'biz_config_value',
+        id: row.id,
+        notFoundMessage: 'Config value not found.',
+        patch: { isActive: false },
+      })
+      if (retiredOrResponse instanceof Response) return retiredOrResponse
       continue
     }
-    await db.update(bizConfigValues).set({
-      label: typeof seedRow.label === 'string' ? seedRow.label : row.label,
-      description: typeof seedRow.description === 'string' ? seedRow.description : null,
-      systemCode: typeof seedRow.systemCode === 'string' ? seedRow.systemCode : null,
-      isDefault: seedRow.isDefault === true,
-      isActive: seedRow.isActive !== false,
-      sortOrder: typeof seedRow.sortOrder === 'number' ? seedRow.sortOrder : row.sortOrder,
-    }).where(and(eq(bizConfigValues.bizId, bizId), eq(bizConfigValues.id, row.id)))
+    const updatedOrResponse = await updateBizConfigRow<typeof bizConfigValues.$inferSelect>({
+      c,
+      bizId,
+      tableKey: 'bizConfigValues',
+      subjectType: 'biz_config_value',
+      id: row.id,
+      notFoundMessage: 'Config value not found.',
+      patch: {
+        label: typeof seedRow.label === 'string' ? seedRow.label : row.label,
+        description: typeof seedRow.description === 'string' ? seedRow.description : null,
+        systemCode: typeof seedRow.systemCode === 'string' ? seedRow.systemCode : null,
+        isDefault: seedRow.isDefault === true,
+        isActive: seedRow.isActive !== false,
+        sortOrder: typeof seedRow.sortOrder === 'number' ? seedRow.sortOrder : row.sortOrder,
+      },
+    })
+    if (updatedOrResponse instanceof Response) return updatedOrResponse
   }
 
   for (const seedRow of seedValues) {
     const code = typeof seedRow.code === 'string' ? seedRow.code : null
     if (!code || currentValues.some((row) => row.code === code)) continue
-    await db.insert(bizConfigValues).values({
+    const createdOrResponse = await createBizConfigRow<typeof bizConfigValues.$inferSelect>({
+      c,
       bizId,
-      configSetId: targetSet.id,
-      code,
-      label: typeof seedRow.label === 'string' ? seedRow.label : code,
-      description: typeof seedRow.description === 'string' ? seedRow.description : null,
-      systemCode: typeof seedRow.systemCode === 'string' ? seedRow.systemCode : null,
-      isDefault: seedRow.isDefault === true,
-      isActive: seedRow.isActive !== false,
-      sortOrder: typeof seedRow.sortOrder === 'number' ? seedRow.sortOrder : 100,
-      metadata: sanitizeUnknown({ seedPackKey: packKey }),
+      tableKey: 'bizConfigValues',
+      subjectType: 'biz_config_value',
+      displayName: code,
+      data: {
+        bizId,
+        configSetId: targetSet.id,
+        code,
+        label: typeof seedRow.label === 'string' ? seedRow.label : code,
+        description: typeof seedRow.description === 'string' ? seedRow.description : null,
+        systemCode: typeof seedRow.systemCode === 'string' ? seedRow.systemCode : null,
+        isDefault: seedRow.isDefault === true,
+        isActive: seedRow.isActive !== false,
+        sortOrder: typeof seedRow.sortOrder === 'number' ? seedRow.sortOrder : 100,
+        metadata: sanitizeUnknown({ seedPackKey: packKey }),
+      },
     })
+    if (createdOrResponse instanceof Response) return createdOrResponse
   }
 
   const refreshedValues = await db.query.bizConfigValues.findMany({
@@ -772,19 +1015,28 @@ bizConfigRoutes.post('/bizes/:bizId/config-packs/apply', requireAuth, requireBiz
     ),
   })
 
-  const [configSet] = existingSet
-    ? [existingSet]
-    : await db.insert(bizConfigSets).values({
+  const createdSetOrResponse = existingSet
+    ? existingSet
+    : await createBizConfigRow<typeof bizConfigSets.$inferSelect>({
+        c,
         bizId,
-        locationId: parsed.data.locationId ?? null,
-        setType: 'status',
-        name: sanitizePlainText(parsed.data.setSlug.replace(/[_-]+/g, ' ')),
-        slug: parsed.data.setSlug,
-        description: 'Applied through config promotion workflow.',
-        allowFreeformValues: false,
-        isActive: true,
-        metadata: sanitizeUnknown({ source: 'config_promotion' }),
-      }).returning()
+        tableKey: 'bizConfigSets',
+        subjectType: 'biz_config_set',
+        displayName: parsed.data.setSlug,
+        data: {
+          bizId,
+          locationId: parsed.data.locationId ?? null,
+          setType: 'status',
+          name: sanitizePlainText(parsed.data.setSlug.replace(/[_-]+/g, ' ')),
+          slug: parsed.data.setSlug,
+          description: 'Applied through config promotion workflow.',
+          allowFreeformValues: false,
+          isActive: true,
+          metadata: sanitizeUnknown({ source: 'config_promotion' }),
+        },
+      })
+  if (createdSetOrResponse instanceof Response) return createdSetOrResponse
+  const configSet = createdSetOrResponse
 
   const upserted: string[] = []
   for (const incoming of parsed.data.incomingValues) {
@@ -792,26 +1044,43 @@ bizConfigRoutes.post('/bizes/:bizId/config-packs/apply', requireAuth, requireBiz
       where: and(eq(bizConfigValues.bizId, bizId), eq(bizConfigValues.configSetId, configSet.id), eq(bizConfigValues.code, incoming.code)),
     })
     if (existingValue) {
-      await db.update(bizConfigValues).set({
-        label: sanitizePlainText(incoming.label),
-        description: incoming.description ? sanitizePlainText(incoming.description) : null,
-        systemCode: incoming.systemCode ?? null,
-        isDefault: incoming.isDefault,
-        isActive: incoming.isActive,
-        sortOrder: incoming.sortOrder,
-      }).where(and(eq(bizConfigValues.bizId, bizId), eq(bizConfigValues.id, existingValue.id)))
-    } else {
-      await db.insert(bizConfigValues).values({
+      const updatedOrResponse = await updateBizConfigRow<typeof bizConfigValues.$inferSelect>({
+        c,
         bizId,
-        configSetId: configSet.id,
-        code: incoming.code,
-        label: sanitizePlainText(incoming.label),
-        description: incoming.description ? sanitizePlainText(incoming.description) : null,
-        systemCode: incoming.systemCode ?? null,
-        isDefault: incoming.isDefault,
-        isActive: incoming.isActive,
-        sortOrder: incoming.sortOrder,
+        tableKey: 'bizConfigValues',
+        subjectType: 'biz_config_value',
+        id: existingValue.id,
+        notFoundMessage: 'Config value not found.',
+        patch: {
+          label: sanitizePlainText(incoming.label),
+          description: incoming.description ? sanitizePlainText(incoming.description) : null,
+          systemCode: incoming.systemCode ?? null,
+          isDefault: incoming.isDefault,
+          isActive: incoming.isActive,
+          sortOrder: incoming.sortOrder,
+        },
       })
+      if (updatedOrResponse instanceof Response) return updatedOrResponse
+    } else {
+      const createdValueOrResponse = await createBizConfigRow<typeof bizConfigValues.$inferSelect>({
+        c,
+        bizId,
+        tableKey: 'bizConfigValues',
+        subjectType: 'biz_config_value',
+        displayName: incoming.code,
+        data: {
+          bizId,
+          configSetId: configSet.id,
+          code: incoming.code,
+          label: sanitizePlainText(incoming.label),
+          description: incoming.description ? sanitizePlainText(incoming.description) : null,
+          systemCode: incoming.systemCode ?? null,
+          isDefault: incoming.isDefault,
+          isActive: incoming.isActive,
+          sortOrder: incoming.sortOrder,
+        },
+      })
+      if (createdValueOrResponse instanceof Response) return createdValueOrResponse
     }
     upserted.push(incoming.code)
   }

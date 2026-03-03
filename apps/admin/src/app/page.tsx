@@ -138,12 +138,12 @@ export default function HomePage() {
         </div>
 
         <div className="grid gap-4 md:grid-cols-2">
-          <Link href="/sagas">
+          <Link href="/ooda">
             <Card className="h-full transition-colors hover:bg-muted/30">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-base">
                   <FlaskConical className="h-4 w-4" />
-                  OODA Dashboard
+                  OODash
                 </CardTitle>
                 <CardDescription>Use cases, personas, loops, saga definitions, runs, and evidence in one evolution dashboard.</CardDescription>
               </CardHeader>

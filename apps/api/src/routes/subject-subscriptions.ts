@@ -23,6 +23,7 @@ import {
   requireAuth,
   requireBizAccess,
 } from "../middleware/auth.js";
+import { executeCrudRouteAction } from "../services/action-route-bridge.js";
 import { fail, ok, parsePositiveInt } from "./_api.js";
 
 const {
@@ -31,6 +32,55 @@ const {
   graphSubjectSubscriptions,
   subjects,
 } = dbPackage;
+
+async function createSubjectSubscriptionRow<
+  TTableKey extends "graphIdentities" | "subjects" | "graphSubjectSubscriptions",
+>(
+  c: Parameters<typeof executeCrudRouteAction>[0]["c"],
+  bizId: string | null,
+  tableKey: TTableKey,
+  data: Parameters<typeof executeCrudRouteAction>[0]["data"],
+  meta: { subjectType: string; subjectId: string; displayName: string; source: string },
+) {
+  const result = await executeCrudRouteAction({
+    c,
+    bizId,
+    tableKey,
+    operation: "create",
+    data,
+    subjectType: meta.subjectType,
+    subjectId: meta.subjectId,
+    displayName: meta.displayName,
+    metadata: { source: meta.source },
+  });
+  if (!result.ok) throw new Error(result.message ?? `Failed to create ${tableKey}`);
+  if (!result.row) throw new Error(`Missing row for ${tableKey} create`);
+  return result.row;
+}
+
+async function updateSubjectSubscriptionRow(
+  c: Parameters<typeof executeCrudRouteAction>[0]["c"],
+  bizId: string,
+  id: string,
+  patch: Parameters<typeof executeCrudRouteAction>[0]["patch"],
+  meta: { subjectType: string; subjectId: string; displayName: string; source: string },
+) {
+  const result = await executeCrudRouteAction({
+    c,
+    bizId,
+    tableKey: "graphSubjectSubscriptions",
+    operation: "update",
+    id,
+    patch,
+    subjectType: meta.subjectType,
+    subjectId: meta.subjectId,
+    displayName: meta.displayName,
+    metadata: { source: meta.source },
+  });
+  if (!result.ok) throw new Error(result.message ?? "Failed to update graphSubjectSubscriptions");
+  if (!result.row) throw new Error("Missing row for graphSubjectSubscriptions update");
+  return result.row;
+}
 
 function isKnownOrCustom(value: string, known: readonly string[]) {
   return known.includes(value) || value.startsWith("custom_");
@@ -51,6 +101,7 @@ function randomHandleSuffix() {
 type GraphIdentityRow = typeof graphIdentities.$inferSelect;
 
 async function ensureUserGraphIdentity(input: {
+  c: Parameters<typeof executeCrudRouteAction>[0]["c"];
   userId: string;
   email?: string;
 }): Promise<GraphIdentityRow> {
@@ -68,9 +119,11 @@ async function ensureUserGraphIdentity(input: {
   for (let attempt = 0; attempt < 4; attempt += 1) {
     const handle = attempt === 0 ? base : `${base}_${randomHandleSuffix()}`.slice(0, 140);
     try {
-      const [created] = await db
-        .insert(graphIdentities)
-        .values({
+      const created = await createSubjectSubscriptionRow(
+        input.c,
+        null,
+        "graphIdentities",
+        {
           ownerType: "user",
           ownerUserId: input.userId,
           handle,
@@ -80,9 +133,15 @@ async function ensureUserGraphIdentity(input: {
           metadata: {
             source: "subject-subscriptions-api",
           },
-        })
-        .returning();
-      if (created) return created;
+        },
+        {
+          subjectType: "graph_identity",
+          subjectId: input.userId,
+          displayName: handle,
+          source: "routes.subjectSubscriptions.ensureUserGraphIdentity",
+        },
+      );
+      if (created) return created as GraphIdentityRow;
     } catch (error) {
       lastError = error;
     }
@@ -249,6 +308,7 @@ subjectSubscriptionRoutes.post(
     }
 
     let identity = await ensureUserGraphIdentity({
+      c,
       userId: user.id,
       email: user.email,
     });
@@ -274,21 +334,33 @@ subjectSubscriptionRoutes.post(
     let targetSubject = await db.query.subjects.findFirst({ where: targetSubjectWhere });
 
     if (!targetSubject && parsed.data.autoRegisterTargetSubject) {
-      await db
-        .insert(subjects)
-        .values({
-          bizId: targetSubjectBizId,
-          subjectType: parsed.data.targetSubjectType,
-          subjectId: parsed.data.targetSubjectId,
-          displayName: parsed.data.targetDisplayName ?? parsed.data.targetSubjectId,
-          category: parsed.data.targetCategory ?? "subscription_target",
-          status: "active",
-          isLinkable: true,
-          metadata: {
-            source: "subject-subscriptions-api",
+      try {
+        await createSubjectSubscriptionRow(
+          c,
+          targetSubjectBizId,
+          "subjects",
+          {
+            bizId: targetSubjectBizId,
+            subjectType: parsed.data.targetSubjectType,
+            subjectId: parsed.data.targetSubjectId,
+            displayName: parsed.data.targetDisplayName ?? parsed.data.targetSubjectId,
+            category: parsed.data.targetCategory ?? "subscription_target",
+            status: "active",
+            isLinkable: true,
+            metadata: {
+              source: "subject-subscriptions-api",
+            },
           },
-        })
-        .onConflictDoNothing();
+          {
+            subjectType: "subject",
+            subjectId: parsed.data.targetSubjectId,
+            displayName: parsed.data.targetSubjectType,
+            source: "routes.subjectSubscriptions.autoRegisterSubject",
+          },
+        );
+      } catch {
+        // Can race with another request creating the same subject; we re-read below.
+      }
       targetSubject = await db.query.subjects.findFirst({ where: targetSubjectWhere });
     }
 
@@ -313,9 +385,11 @@ subjectSubscriptionRoutes.post(
     });
     if (existing) return ok(c, existing);
 
-    const [created] = await db
-      .insert(graphSubjectSubscriptions)
-      .values({
+    const created = await createSubjectSubscriptionRow(
+      c,
+      bizId,
+      "graphSubjectSubscriptions",
+      {
         subscriberIdentityId: identity.id,
         targetSubjectBizId,
         targetSubjectType: parsed.data.targetSubjectType,
@@ -330,8 +404,14 @@ subjectSubscriptionRoutes.post(
           : null,
         filterPolicy: parsed.data.filterPolicy ?? {},
         metadata: parsed.data.metadata ?? {},
-      })
-      .returning();
+      },
+      {
+        subjectType: "subject_subscription",
+        subjectId: parsed.data.targetSubjectId,
+        displayName: parsed.data.subscriptionType,
+        source: "routes.subjectSubscriptions.create",
+      },
+    );
 
     return ok(c, created, 201);
   },
@@ -400,9 +480,11 @@ subjectSubscriptionRoutes.patch(
           ? null
           : existing.unsubscribedAt;
 
-    const [updated] = await db
-      .update(graphSubjectSubscriptions)
-      .set({
+    const updated = await updateSubjectSubscriptionRow(
+      c,
+      bizId,
+      subscriptionId,
+      {
         subscriptionType: parsed.data.subscriptionType,
         status: parsed.data.status,
         deliveryMode: parsed.data.deliveryMode,
@@ -418,14 +500,14 @@ subjectSubscriptionRoutes.patch(
         metadata: parsed.data.metadata,
         mutedAt: nextMutedAt,
         unsubscribedAt: nextUnsubscribedAt,
-      })
-      .where(
-        and(
-          eq(graphSubjectSubscriptions.id, subscriptionId),
-          eq(graphSubjectSubscriptions.targetSubjectBizId, bizId),
-        ),
-      )
-      .returning();
+      },
+      {
+        subjectType: "subject_subscription",
+        subjectId: subscriptionId,
+        displayName: "update subscription",
+        source: "routes.subjectSubscriptions.patch",
+      },
+    );
 
     return ok(c, updated);
   },

@@ -20,6 +20,7 @@ import { and, asc, desc, eq } from 'drizzle-orm'
 import { z } from 'zod'
 import dbPackage from '@bizing/db'
 import { getCurrentUser, requireAclPermission, requireAuth, requireBizAccess } from '../middleware/auth.js'
+import { executeCrudRouteAction } from '../services/action-route-bridge.js'
 import { sanitizePlainText, sanitizeUnknown } from '../lib/sanitize.js'
 import { fail, ok } from './_api.js'
 
@@ -190,6 +191,56 @@ function buildScopeRefKey(input: {
   return `subject:${input.subjectRefType}:${input.subjectRefId}`
 }
 
+async function createHipaaRow<T extends Record<string, unknown>>(input: {
+  c: Parameters<typeof fail>[0]
+  bizId: string
+  tableKey: string
+  subjectType: string
+  data: Record<string, unknown>
+  displayName?: string
+}) {
+  const delegated = await executeCrudRouteAction({
+    c: input.c,
+    bizId: input.bizId,
+    tableKey: input.tableKey,
+    operation: 'create',
+    subjectType: input.subjectType,
+    displayName: input.displayName,
+    data: input.data,
+    metadata: { routeFamily: 'hipaa' },
+  })
+  if (!delegated.ok) return fail(input.c, delegated.code, delegated.message, delegated.httpStatus, delegated.details)
+  return delegated.row as T
+}
+
+async function updateHipaaRow<T extends Record<string, unknown>>(input: {
+  c: Parameters<typeof fail>[0]
+  bizId: string
+  tableKey: string
+  subjectType: string
+  id: string
+  patch: Record<string, unknown>
+  notFoundMessage: string
+}) {
+  const delegated = await executeCrudRouteAction({
+    c: input.c,
+    bizId: input.bizId,
+    tableKey: input.tableKey,
+    operation: 'update',
+    id: input.id,
+    subjectType: input.subjectType,
+    subjectId: input.id,
+    patch: input.patch,
+    metadata: { routeFamily: 'hipaa' },
+  })
+  if (!delegated.ok) {
+    if (delegated.code === 'CRUD_TARGET_NOT_FOUND') return fail(input.c, 'NOT_FOUND', input.notFoundMessage, 404)
+    return fail(input.c, delegated.code, delegated.message, delegated.httpStatus, delegated.details)
+  }
+  if (!delegated.row) return fail(input.c, 'NOT_FOUND', input.notFoundMessage, 404)
+  return delegated.row as T
+}
+
 export const hipaaRoutes = new Hono()
 
 hipaaRoutes.get('/bizes/:bizId/hipaa/access-policies', requireAuth, requireBizAccess('bizId'), requireAclPermission('bizes.read', { bizIdParam: 'bizId' }), async (c) => {
@@ -205,25 +256,34 @@ hipaaRoutes.post('/bizes/:bizId/hipaa/access-policies', requireAuth, requireBizA
   const bizId = c.req.param('bizId')
   const parsed = phiPolicyBodySchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
-  const [created] = await db.insert(phiAccessPolicies).values({
+  const createdOrResponse = await createHipaaRow<typeof phiAccessPolicies.$inferSelect>({
+    c,
     bizId,
-    name: sanitizePlainText(parsed.data.name),
-    slug: sanitizePlainText(parsed.data.slug ?? `${parsed.data.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${Date.now().toString(36)}`),
-    status: parsed.data.status,
-    scope: parsed.data.scope,
-    scopeRefKey: buildScopeRefKey(parsed.data),
-    locationId: parsed.data.scope === 'location' ? parsed.data.locationId ?? null : null,
-    subjectRefType: parsed.data.scope === 'custom_subject' ? parsed.data.subjectRefType ?? null : null,
-    subjectRefId: parsed.data.scope === 'custom_subject' ? parsed.data.subjectRefId ?? null : null,
-    sensitivity: parsed.data.sensitivity,
-    allowedPurposes: sanitizeUnknown(parsed.data.allowedPurposes),
-    allowedActions: sanitizeUnknown(parsed.data.allowedActions),
-    requireAuthorization: parsed.data.requireAuthorization,
-    requireMfa: parsed.data.requireMfa,
-    requireBreakGlassJustification: parsed.data.requireBreakGlassJustification,
-    policy: sanitizeUnknown(parsed.data.policy ?? {}),
-    metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
-  }).returning()
+    tableKey: 'phiAccessPolicies',
+    subjectType: 'phi_access_policy',
+    displayName: parsed.data.name,
+    data: {
+      bizId,
+      name: sanitizePlainText(parsed.data.name),
+      slug: sanitizePlainText(parsed.data.slug ?? `${parsed.data.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${Date.now().toString(36)}`),
+      status: parsed.data.status,
+      scope: parsed.data.scope,
+      scopeRefKey: buildScopeRefKey(parsed.data),
+      locationId: parsed.data.scope === 'location' ? parsed.data.locationId ?? null : null,
+      subjectRefType: parsed.data.scope === 'custom_subject' ? parsed.data.subjectRefType ?? null : null,
+      subjectRefId: parsed.data.scope === 'custom_subject' ? parsed.data.subjectRefId ?? null : null,
+      sensitivity: parsed.data.sensitivity,
+      allowedPurposes: sanitizeUnknown(parsed.data.allowedPurposes),
+      allowedActions: sanitizeUnknown(parsed.data.allowedActions),
+      requireAuthorization: parsed.data.requireAuthorization,
+      requireMfa: parsed.data.requireMfa,
+      requireBreakGlassJustification: parsed.data.requireBreakGlassJustification,
+      policy: sanitizeUnknown(parsed.data.policy ?? {}),
+      metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
+    },
+  })
+  if (createdOrResponse instanceof Response) return createdOrResponse
+  const created = createdOrResponse
   return ok(c, created, 201)
 })
 
@@ -241,27 +301,35 @@ hipaaRoutes.post('/bizes/:bizId/hipaa/access-events', requireAuth, requireBizAcc
   const currentUser = getCurrentUser(c)
   const parsed = phiAccessEventBodySchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
-  const [created] = await db.insert(phiAccessEvents).values({
+  const createdOrResponse = await createHipaaRow<typeof phiAccessEvents.$inferSelect>({
+    c,
     bizId,
-    phiAccessPolicyId: parsed.data.phiAccessPolicyId ?? null,
-    hipaaAuthorizationId: parsed.data.hipaaAuthorizationId ?? null,
-    actorUserId: currentUser?.id ?? null,
-    targetType: parsed.data.targetType as never,
-    targetRefId: parsed.data.targetRefId,
-    subjectUserId: parsed.data.subjectUserId ?? null,
-    subjectGroupAccountId: parsed.data.subjectGroupAccountId ?? null,
-    subjectExternalRef: parsed.data.subjectExternalRef ?? null,
-    purposeOfUse: parsed.data.purposeOfUse,
-    action: parsed.data.action,
-    decision: parsed.data.decision,
-    isBreakGlass: parsed.data.isBreakGlass,
-    breakGlassReason: parsed.data.breakGlassReason ? sanitizePlainText(parsed.data.breakGlassReason) : null,
-    requestRef: parsed.data.requestRef ?? null,
-    sourceIp: parsed.data.sourceIp ?? null,
-    userAgent: parsed.data.userAgent ?? null,
-    fieldsAccessed: sanitizeUnknown(parsed.data.fieldsAccessed),
-    metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
-  }).returning()
+    tableKey: 'phiAccessEvents',
+    subjectType: 'phi_access_event',
+    data: {
+      bizId,
+      phiAccessPolicyId: parsed.data.phiAccessPolicyId ?? null,
+      hipaaAuthorizationId: parsed.data.hipaaAuthorizationId ?? null,
+      actorUserId: currentUser?.id ?? null,
+      targetType: parsed.data.targetType as never,
+      targetRefId: parsed.data.targetRefId,
+      subjectUserId: parsed.data.subjectUserId ?? null,
+      subjectGroupAccountId: parsed.data.subjectGroupAccountId ?? null,
+      subjectExternalRef: parsed.data.subjectExternalRef ?? null,
+      purposeOfUse: parsed.data.purposeOfUse,
+      action: parsed.data.action,
+      decision: parsed.data.decision,
+      isBreakGlass: parsed.data.isBreakGlass,
+      breakGlassReason: parsed.data.breakGlassReason ? sanitizePlainText(parsed.data.breakGlassReason) : null,
+      requestRef: parsed.data.requestRef ?? null,
+      sourceIp: parsed.data.sourceIp ?? null,
+      userAgent: parsed.data.userAgent ?? null,
+      fieldsAccessed: sanitizeUnknown(parsed.data.fieldsAccessed),
+      metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
+    },
+  })
+  if (createdOrResponse instanceof Response) return createdOrResponse
+  const created = createdOrResponse
   return ok(c, created, 201)
 })
 
@@ -279,7 +347,10 @@ hipaaRoutes.post('/bizes/:bizId/hipaa/break-glass-reviews', requireAuth, require
   const currentUser = getCurrentUser(c)
   const parsed = breakGlassReviewBodySchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
-  const [created] = await db.insert(breakGlassReviews).values({
+  const existing = await db.query.breakGlassReviews.findFirst({
+    where: and(eq(breakGlassReviews.bizId, bizId), eq(breakGlassReviews.phiAccessEventId, parsed.data.phiAccessEventId)),
+  })
+  const reviewPayload = {
     bizId,
     phiAccessEventId: parsed.data.phiAccessEventId,
     status: parsed.data.status,
@@ -288,17 +359,26 @@ hipaaRoutes.post('/bizes/:bizId/hipaa/break-glass-reviews', requireAuth, require
     summary: parsed.data.summary ? sanitizePlainText(parsed.data.summary) : null,
     securityIncidentId: parsed.data.securityIncidentId ?? null,
     metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
-  }).onConflictDoUpdate({
-    target: [breakGlassReviews.bizId, breakGlassReviews.phiAccessEventId],
-    set: {
-      status: parsed.data.status,
-      reviewerUserId: parsed.data.status === 'pending' ? null : currentUser?.id ?? null,
-      reviewedAt: parsed.data.status === 'pending' ? null : parsed.data.reviewedAt ? new Date(parsed.data.reviewedAt) : new Date(),
-      summary: parsed.data.summary ? sanitizePlainText(parsed.data.summary) : null,
-      securityIncidentId: parsed.data.securityIncidentId ?? null,
-      metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
-    },
-  }).returning()
+  }
+  const createdOrResponse = existing
+    ? await updateHipaaRow<typeof breakGlassReviews.$inferSelect>({
+        c,
+        bizId,
+        tableKey: 'breakGlassReviews',
+        subjectType: 'break_glass_review',
+        id: existing.id,
+        notFoundMessage: 'Break-glass review not found.',
+        patch: reviewPayload,
+      })
+    : await createHipaaRow<typeof breakGlassReviews.$inferSelect>({
+        c,
+        bizId,
+        tableKey: 'breakGlassReviews',
+        subjectType: 'break_glass_review',
+        data: reviewPayload,
+      })
+  if (createdOrResponse instanceof Response) return createdOrResponse
+  const created = createdOrResponse
   return ok(c, created, 201)
 })
 
@@ -315,27 +395,36 @@ hipaaRoutes.post('/bizes/:bizId/hipaa/baas', requireAuth, requireBizAccess('bizI
   const bizId = c.req.param('bizId')
   const parsed = baaBodySchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
-  const [created] = await db.insert(businessAssociateAgreements).values({
+  const createdOrResponse = await createHipaaRow<typeof businessAssociateAgreements.$inferSelect>({
+    c,
     bizId,
-    complianceProfileId: parsed.data.complianceProfileId ?? null,
-    partyType: parsed.data.partyType,
-    partyName: sanitizePlainText(parsed.data.partyName),
-    partyExternalRef: parsed.data.partyExternalRef ?? null,
-    bizExtensionInstallId: parsed.data.bizExtensionInstallId ?? null,
-    status: parsed.data.status,
-    agreementVersion: parsed.data.agreementVersion,
-    contractRef: parsed.data.contractRef ?? null,
-    documentRef: parsed.data.documentRef ?? null,
-    allowsPhiProcessing: parsed.data.allowsPhiProcessing,
-    requiresSubcontractorFlowDown: parsed.data.requiresSubcontractorFlowDown,
-    breachNoticeWindowHours: parsed.data.breachNoticeWindowHours,
-    effectiveFrom: parsed.data.effectiveFrom ? new Date(parsed.data.effectiveFrom) : null,
-    effectiveTo: parsed.data.effectiveTo ? new Date(parsed.data.effectiveTo) : null,
-    signedAt: parsed.data.signedAt ? new Date(parsed.data.signedAt) : null,
-    terminatedAt: parsed.data.terminatedAt ? new Date(parsed.data.terminatedAt) : null,
-    obligations: sanitizeUnknown(parsed.data.obligations ?? {}),
-    metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
-  }).returning()
+    tableKey: 'businessAssociateAgreements',
+    subjectType: 'business_associate_agreement',
+    displayName: parsed.data.partyName,
+    data: {
+      bizId,
+      complianceProfileId: parsed.data.complianceProfileId ?? null,
+      partyType: parsed.data.partyType,
+      partyName: sanitizePlainText(parsed.data.partyName),
+      partyExternalRef: parsed.data.partyExternalRef ?? null,
+      bizExtensionInstallId: parsed.data.bizExtensionInstallId ?? null,
+      status: parsed.data.status,
+      agreementVersion: parsed.data.agreementVersion,
+      contractRef: parsed.data.contractRef ?? null,
+      documentRef: parsed.data.documentRef ?? null,
+      allowsPhiProcessing: parsed.data.allowsPhiProcessing,
+      requiresSubcontractorFlowDown: parsed.data.requiresSubcontractorFlowDown,
+      breachNoticeWindowHours: parsed.data.breachNoticeWindowHours,
+      effectiveFrom: parsed.data.effectiveFrom ? new Date(parsed.data.effectiveFrom) : null,
+      effectiveTo: parsed.data.effectiveTo ? new Date(parsed.data.effectiveTo) : null,
+      signedAt: parsed.data.signedAt ? new Date(parsed.data.signedAt) : null,
+      terminatedAt: parsed.data.terminatedAt ? new Date(parsed.data.terminatedAt) : null,
+      obligations: sanitizeUnknown(parsed.data.obligations ?? {}),
+      metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
+    },
+  })
+  if (createdOrResponse instanceof Response) return createdOrResponse
+  const created = createdOrResponse
   return ok(c, created, 201)
 })
 
@@ -353,26 +442,35 @@ hipaaRoutes.post('/bizes/:bizId/hipaa/disclosures', requireAuth, requireBizAcces
   const currentUser = getCurrentUser(c)
   const parsed = disclosureBodySchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
-  const [created] = await db.insert(phiDisclosureEvents).values({
+  const createdOrResponse = await createHipaaRow<typeof phiDisclosureEvents.$inferSelect>({
+    c,
     bizId,
-    complianceProfileId: parsed.data.complianceProfileId ?? null,
-    subjectUserId: parsed.data.subjectUserId ?? null,
-    subjectGroupAccountId: parsed.data.subjectGroupAccountId ?? null,
-    subjectExternalRef: parsed.data.subjectExternalRef ?? null,
-    disclosedByUserId: currentUser?.id ?? null,
-    recipientType: parsed.data.recipientType,
-    recipientName: sanitizePlainText(parsed.data.recipientName),
-    recipientRef: parsed.data.recipientRef ?? null,
-    purposeOfUse: parsed.data.purposeOfUse,
-    disclosedAt: parsed.data.disclosedAt ? new Date(parsed.data.disclosedAt) : new Date(),
-    dataClasses: sanitizeUnknown(parsed.data.dataClasses),
-    legalBasis: parsed.data.legalBasis ?? null,
-    isTpoExempt: parsed.data.isTpoExempt,
-    hipaaAuthorizationId: parsed.data.hipaaAuthorizationId ?? null,
-    businessAssociateAgreementId: parsed.data.businessAssociateAgreementId ?? null,
-    requestRef: parsed.data.requestRef ?? null,
-    metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
-  }).returning()
+    tableKey: 'phiDisclosureEvents',
+    subjectType: 'phi_disclosure_event',
+    displayName: parsed.data.recipientName,
+    data: {
+      bizId,
+      complianceProfileId: parsed.data.complianceProfileId ?? null,
+      subjectUserId: parsed.data.subjectUserId ?? null,
+      subjectGroupAccountId: parsed.data.subjectGroupAccountId ?? null,
+      subjectExternalRef: parsed.data.subjectExternalRef ?? null,
+      disclosedByUserId: currentUser?.id ?? null,
+      recipientType: parsed.data.recipientType,
+      recipientName: sanitizePlainText(parsed.data.recipientName),
+      recipientRef: parsed.data.recipientRef ?? null,
+      purposeOfUse: parsed.data.purposeOfUse,
+      disclosedAt: parsed.data.disclosedAt ? new Date(parsed.data.disclosedAt) : new Date(),
+      dataClasses: sanitizeUnknown(parsed.data.dataClasses),
+      legalBasis: parsed.data.legalBasis ?? null,
+      isTpoExempt: parsed.data.isTpoExempt,
+      hipaaAuthorizationId: parsed.data.hipaaAuthorizationId ?? null,
+      businessAssociateAgreementId: parsed.data.businessAssociateAgreementId ?? null,
+      requestRef: parsed.data.requestRef ?? null,
+      metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
+    },
+  })
+  if (createdOrResponse instanceof Response) return createdOrResponse
+  const created = createdOrResponse
   return ok(c, created, 201)
 })
 
@@ -390,22 +488,31 @@ hipaaRoutes.post('/bizes/:bizId/hipaa/security-incidents', requireAuth, requireB
   const currentUser = getCurrentUser(c)
   const parsed = securityIncidentBodySchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
-  const [created] = await db.insert(securityIncidents).values({
+  const createdOrResponse = await createHipaaRow<typeof securityIncidents.$inferSelect>({
+    c,
     bizId,
-    complianceProfileId: parsed.data.complianceProfileId ?? null,
-    incidentType: parsed.data.incidentType,
-    severity: parsed.data.severity,
-    status: parsed.data.status,
-    summary: sanitizePlainText(parsed.data.summary),
-    details: sanitizeUnknown(parsed.data.details ?? {}),
-    affectedRecordsCount: parsed.data.affectedRecordsCount ?? null,
-    reportedByUserId: currentUser?.id ?? null,
-    detectedAt: parsed.data.detectedAt ? new Date(parsed.data.detectedAt) : new Date(),
-    containedAt: parsed.data.containedAt ? new Date(parsed.data.containedAt) : null,
-    resolvedAt: parsed.data.resolvedAt ? new Date(parsed.data.resolvedAt) : null,
-    closedAt: parsed.data.closedAt ? new Date(parsed.data.closedAt) : null,
-    metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
-  }).returning()
+    tableKey: 'securityIncidents',
+    subjectType: 'security_incident',
+    displayName: parsed.data.summary,
+    data: {
+      bizId,
+      complianceProfileId: parsed.data.complianceProfileId ?? null,
+      incidentType: parsed.data.incidentType,
+      severity: parsed.data.severity,
+      status: parsed.data.status,
+      summary: sanitizePlainText(parsed.data.summary),
+      details: sanitizeUnknown(parsed.data.details ?? {}),
+      affectedRecordsCount: parsed.data.affectedRecordsCount ?? null,
+      reportedByUserId: currentUser?.id ?? null,
+      detectedAt: parsed.data.detectedAt ? new Date(parsed.data.detectedAt) : new Date(),
+      containedAt: parsed.data.containedAt ? new Date(parsed.data.containedAt) : null,
+      resolvedAt: parsed.data.resolvedAt ? new Date(parsed.data.resolvedAt) : null,
+      closedAt: parsed.data.closedAt ? new Date(parsed.data.closedAt) : null,
+      metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
+    },
+  })
+  if (createdOrResponse instanceof Response) return createdOrResponse
+  const created = createdOrResponse
   return ok(c, created, 201)
 })
 
@@ -415,20 +522,30 @@ hipaaRoutes.patch('/bizes/:bizId/hipaa/security-incidents/:incidentId', requireA
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
   const existing = await db.query.securityIncidents.findFirst({ where: and(eq(securityIncidents.bizId, bizId), eq(securityIncidents.id, incidentId)) })
   if (!existing) return fail(c, 'NOT_FOUND', 'Security incident not found.', 404)
-  const [updated] = await db.update(securityIncidents).set({
-    complianceProfileId: parsed.data.complianceProfileId ?? undefined,
-    incidentType: parsed.data.incidentType ?? undefined,
-    severity: parsed.data.severity ?? undefined,
-    status: parsed.data.status ?? undefined,
-    summary: parsed.data.summary ? sanitizePlainText(parsed.data.summary) : undefined,
-    details: parsed.data.details ? sanitizeUnknown(parsed.data.details) : undefined,
-    affectedRecordsCount: parsed.data.affectedRecordsCount ?? undefined,
-    detectedAt: parsed.data.detectedAt ? new Date(parsed.data.detectedAt) : undefined,
-    containedAt: parsed.data.containedAt ? new Date(parsed.data.containedAt) : undefined,
-    resolvedAt: parsed.data.resolvedAt ? new Date(parsed.data.resolvedAt) : undefined,
-    closedAt: parsed.data.closedAt ? new Date(parsed.data.closedAt) : undefined,
-    metadata: parsed.data.metadata ? sanitizeUnknown(parsed.data.metadata) : undefined,
-  }).where(and(eq(securityIncidents.bizId, bizId), eq(securityIncidents.id, incidentId))).returning()
+  const updatedOrResponse = await updateHipaaRow<typeof securityIncidents.$inferSelect>({
+    c,
+    bizId,
+    tableKey: 'securityIncidents',
+    subjectType: 'security_incident',
+    id: incidentId,
+    notFoundMessage: 'Security incident not found.',
+    patch: {
+      complianceProfileId: parsed.data.complianceProfileId ?? undefined,
+      incidentType: parsed.data.incidentType ?? undefined,
+      severity: parsed.data.severity ?? undefined,
+      status: parsed.data.status ?? undefined,
+      summary: parsed.data.summary ? sanitizePlainText(parsed.data.summary) : undefined,
+      details: parsed.data.details ? sanitizeUnknown(parsed.data.details) : undefined,
+      affectedRecordsCount: parsed.data.affectedRecordsCount ?? undefined,
+      detectedAt: parsed.data.detectedAt ? new Date(parsed.data.detectedAt) : undefined,
+      containedAt: parsed.data.containedAt ? new Date(parsed.data.containedAt) : undefined,
+      resolvedAt: parsed.data.resolvedAt ? new Date(parsed.data.resolvedAt) : undefined,
+      closedAt: parsed.data.closedAt ? new Date(parsed.data.closedAt) : undefined,
+      metadata: parsed.data.metadata ? sanitizeUnknown(parsed.data.metadata) : undefined,
+    },
+  })
+  if (updatedOrResponse instanceof Response) return updatedOrResponse
+  const updated = updatedOrResponse
   return ok(c, updated)
 })
 
@@ -445,18 +562,27 @@ hipaaRoutes.post('/bizes/:bizId/hipaa/breach-notifications', requireAuth, requir
   const bizId = c.req.param('bizId')
   const parsed = breachNotificationBodySchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
-  const [created] = await db.insert(breachNotifications).values({
+  const createdOrResponse = await createHipaaRow<typeof breachNotifications.$inferSelect>({
+    c,
     bizId,
-    securityIncidentId: parsed.data.securityIncidentId,
-    recipientType: parsed.data.recipientType,
-    recipientName: parsed.data.recipientName ? sanitizePlainText(parsed.data.recipientName) : null,
-    recipientRef: parsed.data.recipientRef ?? null,
-    channel: parsed.data.channel,
-    status: parsed.data.status,
-    dueAt: parsed.data.dueAt ? new Date(parsed.data.dueAt) : null,
-    sentAt: parsed.data.sentAt ? new Date(parsed.data.sentAt) : null,
-    metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
-  }).returning()
+    tableKey: 'breachNotifications',
+    subjectType: 'breach_notification',
+    displayName: parsed.data.recipientName,
+    data: {
+      bizId,
+      securityIncidentId: parsed.data.securityIncidentId,
+      recipientType: parsed.data.recipientType,
+      recipientName: parsed.data.recipientName ? sanitizePlainText(parsed.data.recipientName) : null,
+      recipientRef: parsed.data.recipientRef ?? null,
+      channel: parsed.data.channel,
+      status: parsed.data.status,
+      dueAt: parsed.data.dueAt ? new Date(parsed.data.dueAt) : null,
+      sentAt: parsed.data.sentAt ? new Date(parsed.data.sentAt) : null,
+      metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
+    },
+  })
+  if (createdOrResponse instanceof Response) return createdOrResponse
+  const created = createdOrResponse
   return ok(c, created, 201)
 })
 
@@ -466,16 +592,26 @@ hipaaRoutes.patch('/bizes/:bizId/hipaa/breach-notifications/:notificationId', re
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
   const existing = await db.query.breachNotifications.findFirst({ where: and(eq(breachNotifications.bizId, bizId), eq(breachNotifications.id, notificationId)) })
   if (!existing) return fail(c, 'NOT_FOUND', 'Breach notification not found.', 404)
-  const [updated] = await db.update(breachNotifications).set({
-    securityIncidentId: parsed.data.securityIncidentId ?? undefined,
-    recipientType: parsed.data.recipientType ?? undefined,
-    recipientName: parsed.data.recipientName ? sanitizePlainText(parsed.data.recipientName) : undefined,
-    recipientRef: parsed.data.recipientRef ?? undefined,
-    channel: parsed.data.channel ?? undefined,
-    status: parsed.data.status ?? undefined,
-    dueAt: parsed.data.dueAt ? new Date(parsed.data.dueAt) : undefined,
-    sentAt: parsed.data.sentAt ? new Date(parsed.data.sentAt) : undefined,
-    metadata: parsed.data.metadata ? sanitizeUnknown(parsed.data.metadata) : undefined,
-  }).where(and(eq(breachNotifications.bizId, bizId), eq(breachNotifications.id, notificationId))).returning()
+  const updatedOrResponse = await updateHipaaRow<typeof breachNotifications.$inferSelect>({
+    c,
+    bizId,
+    tableKey: 'breachNotifications',
+    subjectType: 'breach_notification',
+    id: notificationId,
+    notFoundMessage: 'Breach notification not found.',
+    patch: {
+      securityIncidentId: parsed.data.securityIncidentId ?? undefined,
+      recipientType: parsed.data.recipientType ?? undefined,
+      recipientName: parsed.data.recipientName ? sanitizePlainText(parsed.data.recipientName) : undefined,
+      recipientRef: parsed.data.recipientRef ?? undefined,
+      channel: parsed.data.channel ?? undefined,
+      status: parsed.data.status ?? undefined,
+      dueAt: parsed.data.dueAt ? new Date(parsed.data.dueAt) : undefined,
+      sentAt: parsed.data.sentAt ? new Date(parsed.data.sentAt) : undefined,
+      metadata: parsed.data.metadata ? sanitizeUnknown(parsed.data.metadata) : undefined,
+    },
+  })
+  if (updatedOrResponse instanceof Response) return updatedOrResponse
+  const updated = updatedOrResponse
   return ok(c, updated)
 })

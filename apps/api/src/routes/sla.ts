@@ -16,6 +16,7 @@ import { and, asc, desc, eq } from 'drizzle-orm'
 import { z } from 'zod'
 import dbPackage from '@bizing/db'
 import { requireAclPermission, requireAuth, requireBizAccess } from '../middleware/auth.js'
+import { executeCrudRouteAction } from '../services/action-route-bridge.js'
 import { sanitizePlainText, sanitizeUnknown } from '../lib/sanitize.js'
 import { fail, ok } from './_api.js'
 
@@ -95,6 +96,56 @@ const breachPatchBodySchema = z.object({
 
 export const slaRoutes = new Hono()
 
+async function createSlaRow<T extends Record<string, unknown>>(input: {
+  c: Parameters<typeof fail>[0]
+  bizId: string
+  tableKey: string
+  subjectType: string
+  data: Record<string, unknown>
+  displayName?: string
+}) {
+  const delegated = await executeCrudRouteAction({
+    c: input.c,
+    bizId: input.bizId,
+    tableKey: input.tableKey,
+    operation: 'create',
+    subjectType: input.subjectType,
+    displayName: input.displayName,
+    data: input.data,
+    metadata: { routeFamily: 'sla' },
+  })
+  if (!delegated.ok) return fail(input.c, delegated.code, delegated.message, delegated.httpStatus, delegated.details)
+  return delegated.row as T
+}
+
+async function updateSlaRow<T extends Record<string, unknown>>(input: {
+  c: Parameters<typeof fail>[0]
+  bizId: string
+  tableKey: string
+  subjectType: string
+  id: string
+  patch: Record<string, unknown>
+  notFoundMessage: string
+}) {
+  const delegated = await executeCrudRouteAction({
+    c: input.c,
+    bizId: input.bizId,
+    tableKey: input.tableKey,
+    operation: 'update',
+    id: input.id,
+    subjectType: input.subjectType,
+    subjectId: input.id,
+    patch: input.patch,
+    metadata: { routeFamily: 'sla' },
+  })
+  if (!delegated.ok) {
+    if (delegated.code === 'CRUD_TARGET_NOT_FOUND') return fail(input.c, 'NOT_FOUND', input.notFoundMessage, 404)
+    return fail(input.c, delegated.code, delegated.message, delegated.httpStatus, delegated.details)
+  }
+  if (!delegated.row) return fail(input.c, 'NOT_FOUND', input.notFoundMessage, 404)
+  return delegated.row as T
+}
+
 slaRoutes.get(
   '/bizes/:bizId/sla-policies',
   requireAuth,
@@ -120,7 +171,13 @@ slaRoutes.post(
     const parsed = policyBodySchema.safeParse(await c.req.json().catch(() => null))
     if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
 
-    const [created] = await db.insert(slaPolicies).values({
+    const created = await createSlaRow<typeof slaPolicies.$inferSelect>({
+      c,
+      bizId,
+      tableKey: 'slaPolicies',
+      subjectType: 'sla_policy',
+      displayName: parsed.data.name,
+      data: {
       bizId,
       name: sanitizePlainText(parsed.data.name),
       slug: parsed.data.slug,
@@ -141,7 +198,9 @@ slaRoutes.post(
       evaluationPolicy: sanitizeUnknown(parsed.data.evaluationPolicy ?? {}),
       compensationPolicy: sanitizeUnknown(parsed.data.compensationPolicy ?? {}),
       metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
-    }).returning()
+      },
+    })
+    if (created instanceof Response) return created
 
     return ok(c, created, 201)
   },
@@ -172,7 +231,13 @@ slaRoutes.post(
     const parsed = breachBodySchema.safeParse(await c.req.json().catch(() => null))
     if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
 
-    const [created] = await db.insert(slaBreachEvents).values({
+    const created = await createSlaRow<typeof slaBreachEvents.$inferSelect>({
+      c,
+      bizId,
+      tableKey: 'slaBreachEvents',
+      subjectType: 'sla_breach_event',
+      displayName: parsed.data.targetType,
+      data: {
       bizId,
       slaPolicyId: parsed.data.slaPolicyId ?? null,
       targetType: parsed.data.targetType,
@@ -194,7 +259,9 @@ slaRoutes.post(
       isAutoDetected: parsed.data.isAutoDetected,
       details: sanitizeUnknown(parsed.data.details ?? {}),
       metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
-    }).returning()
+      },
+    })
+    if (created instanceof Response) return created
 
     return ok(c, created, 201)
   },
@@ -215,7 +282,14 @@ slaRoutes.patch(
     })
     if (!existing) return fail(c, 'NOT_FOUND', 'SLA breach event not found.', 404)
 
-    const [updated] = await db.update(slaBreachEvents).set({
+    const updated = await updateSlaRow<typeof slaBreachEvents.$inferSelect>({
+      c,
+      bizId,
+      tableKey: 'slaBreachEvents',
+      subjectType: 'sla_breach_event',
+      id: breachId,
+      notFoundMessage: 'SLA breach event not found.',
+      patch: {
       status: parsed.data.status ?? undefined,
       resolvedAt:
         parsed.data.resolvedAt === undefined
@@ -227,7 +301,9 @@ slaRoutes.patch(
       measuredDurationMin: parsed.data.measuredDurationMin ?? undefined,
       details: parsed.data.details ? sanitizeUnknown(parsed.data.details) : undefined,
       metadata: parsed.data.metadata ? sanitizeUnknown(parsed.data.metadata) : undefined,
-    }).where(and(eq(slaBreachEvents.bizId, bizId), eq(slaBreachEvents.id, breachId))).returning()
+      },
+    })
+    if (updated instanceof Response) return updated
 
     return ok(c, updated)
   },
@@ -249,7 +325,13 @@ slaRoutes.post(
     })
     if (!breach) return fail(c, 'NOT_FOUND', 'SLA breach event not found.', 404)
 
-    const [created] = await db.insert(slaCompensationEvents).values({
+    const created = await createSlaRow<typeof slaCompensationEvents.$inferSelect>({
+      c,
+      bizId,
+      tableKey: 'slaCompensationEvents',
+      subjectType: 'sla_compensation_event',
+      displayName: parsed.data.type,
+      data: {
       bizId,
       slaBreachEventId: breachId,
       type: parsed.data.type,
@@ -262,7 +344,9 @@ slaRoutes.post(
       reversedAt: parsed.data.reversedAt ? new Date(parsed.data.reversedAt) : null,
       note: parsed.data.note ? sanitizePlainText(parsed.data.note) : null,
       metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
-    }).returning()
+      },
+    })
+    if (created instanceof Response) return created
 
     return ok(c, created, 201)
   },

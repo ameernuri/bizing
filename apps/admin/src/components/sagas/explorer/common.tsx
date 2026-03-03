@@ -145,6 +145,29 @@ export function RunStatusBadge({ status }: { status: SagaRunStatus }) {
   return <Badge variant="outline" className={tone}>{status}</Badge>
 }
 
+export function CoverageVerdictBadge({
+  verdict,
+  prefix = 'coverage',
+}: {
+  verdict?: string | null
+  prefix?: string
+}) {
+  const normalized = (verdict ?? 'gap').toLowerCase()
+  const tone =
+    normalized === 'full'
+      ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
+      : normalized === 'strong'
+        ? 'border-blue-500/40 bg-blue-500/10 text-blue-700 dark:text-blue-300'
+        : normalized === 'partial'
+          ? 'border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300'
+          : 'border-destructive/40 bg-destructive/10 text-destructive'
+  return (
+    <Badge variant="outline" className={tone}>
+      {prefix}: {normalized}
+    </Badge>
+  )
+}
+
 export function buildRunStepSegments(run: Pick<SagaRunSummary, 'totalSteps' | 'passedSteps' | 'failedSteps' | 'skippedSteps'>): ProgressSegment[] {
   const pending = Math.max(run.totalSteps - run.passedSteps - run.failedSteps - run.skippedSteps, 0)
   return [
@@ -222,35 +245,35 @@ export function ExplorerLinkCards({
 }) {
   const items = [
     {
-      href: '/sagas/loops',
+      href: '/ooda/loops',
       label: 'Missions',
       value: counts.loops ?? 0,
       description: 'Active objectives currently being tracked and validated.',
       icon: Orbit,
     },
     {
-      href: '/sagas/use-cases',
+      href: '/ooda/use-cases',
       label: 'Use Cases',
       value: counts.useCases,
       description: 'Business needs the platform is supposed to prove.',
       icon: BookOpen,
     },
     {
-      href: '/sagas/personas',
+      href: '/ooda/personas',
       label: 'Personas',
       value: counts.personas,
       description: 'Actors used to exercise the same use cases from different angles.',
       icon: UserCircle2,
     },
     {
-      href: '/sagas/definitions',
+      href: '/ooda/definitions',
       label: 'Saga Definitions',
       value: counts.definitions,
       description: 'Concrete lifecycle scripts that connect use cases and personas.',
       icon: FileStack,
     },
     {
-      href: '/sagas/runs',
+      href: '/ooda/runs',
       label: 'Saga Runs',
       value: counts.runs,
       description: 'Execution history showing what actually passed, failed, or stalled.',
@@ -302,7 +325,7 @@ export function SmallRunList({
   return (
     <div className="space-y-3">
       {runs.map((run) => (
-        <Link href={`/sagas/runs/${run.id}`} key={run.id} className="block">
+        <Link href={`/ooda/runs/${run.id}`} key={run.id} className="block">
           <div className="relative overflow-hidden rounded-lg border p-3 transition-colors hover:border-primary/40 hover:bg-muted/30">
             <RunProgressBackdrop run={run} />
             <div className="relative flex items-start justify-between gap-3">

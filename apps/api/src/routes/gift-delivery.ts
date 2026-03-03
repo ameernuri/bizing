@@ -16,6 +16,7 @@ import { and, asc, desc, eq } from 'drizzle-orm'
 import { z } from 'zod'
 import dbPackage from '@bizing/db'
 import { requireAclPermission, requireAuth, requireBizAccess } from '../middleware/auth.js'
+import { executeCrudRouteAction } from '../services/action-route-bridge.js'
 import { sanitizePlainText, sanitizeUnknown } from '../lib/sanitize.js'
 import { fail, ok } from './_api.js'
 
@@ -85,6 +86,56 @@ const attemptBodySchema = z.object({
 
 export const giftDeliveryRoutes = new Hono()
 
+async function createGiftDeliveryRow<T extends Record<string, unknown>>(input: {
+  c: Parameters<typeof fail>[0]
+  bizId: string
+  tableKey: string
+  subjectType: string
+  data: Record<string, unknown>
+  displayName?: string
+}) {
+  const delegated = await executeCrudRouteAction({
+    c: input.c,
+    bizId: input.bizId,
+    tableKey: input.tableKey,
+    operation: 'create',
+    subjectType: input.subjectType,
+    displayName: input.displayName,
+    data: input.data,
+    metadata: { routeFamily: 'gift-delivery' },
+  })
+  if (!delegated.ok) return fail(input.c, delegated.code, delegated.message, delegated.httpStatus, delegated.details)
+  return delegated.row as T
+}
+
+async function updateGiftDeliveryRow<T extends Record<string, unknown>>(input: {
+  c: Parameters<typeof fail>[0]
+  bizId: string
+  tableKey: string
+  subjectType: string
+  id: string
+  patch: Record<string, unknown>
+  notFoundMessage: string
+}) {
+  const delegated = await executeCrudRouteAction({
+    c: input.c,
+    bizId: input.bizId,
+    tableKey: input.tableKey,
+    operation: 'update',
+    id: input.id,
+    subjectType: input.subjectType,
+    subjectId: input.id,
+    patch: input.patch,
+    metadata: { routeFamily: 'gift-delivery' },
+  })
+  if (!delegated.ok) {
+    if (delegated.code === 'CRUD_TARGET_NOT_FOUND') return fail(input.c, 'NOT_FOUND', input.notFoundMessage, 404)
+    return fail(input.c, delegated.code, delegated.message, delegated.httpStatus, delegated.details)
+  }
+  if (!delegated.row) return fail(input.c, 'NOT_FOUND', input.notFoundMessage, 404)
+  return delegated.row as T
+}
+
 giftDeliveryRoutes.get(
   '/bizes/:bizId/gift-instruments',
   requireAuth,
@@ -109,7 +160,13 @@ giftDeliveryRoutes.post(
     const bizId = c.req.param('bizId')
     const parsed = giftInstrumentBodySchema.safeParse(await c.req.json().catch(() => null))
     if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid gift instrument body.', 400, parsed.error.flatten())
-    const [created] = await db.insert(giftInstruments).values({
+    const created = await createGiftDeliveryRow<typeof giftInstruments.$inferSelect>({
+      c,
+      bizId,
+      tableKey: 'giftInstruments',
+      subjectType: 'gift_instrument',
+      displayName: parsed.data.code,
+      data: {
       bizId,
       code: sanitizePlainText(parsed.data.code),
       status: parsed.data.status,
@@ -121,7 +178,9 @@ giftDeliveryRoutes.post(
       ownerGroupAccountId: parsed.data.ownerGroupAccountId ?? null,
       expiresAt: parsed.data.expiresAt ? new Date(parsed.data.expiresAt) : null,
       metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
-    }).returning()
+      },
+    })
+    if (created instanceof Response) return created
     return ok(c, created, 201)
   },
 )
@@ -155,7 +214,13 @@ giftDeliveryRoutes.post(
     const parsed = scheduleBodySchema.safeParse(await c.req.json().catch(() => null))
     if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid gift delivery schedule body.', 400, parsed.error.flatten())
 
-    const [created] = await db.insert(giftDeliverySchedules).values({
+    const created = await createGiftDeliveryRow<typeof giftDeliverySchedules.$inferSelect>({
+      c,
+      bizId,
+      tableKey: 'giftDeliverySchedules',
+      subjectType: 'gift_delivery_schedule',
+      displayName: parsed.data.recipientAddress,
+      data: {
       bizId,
       giftInstrumentId: parsed.data.giftInstrumentId,
       status: sanitizePlainText(parsed.data.status),
@@ -178,7 +243,9 @@ giftDeliveryRoutes.post(
       cancelledAt: parsed.data.cancelledAt ? new Date(parsed.data.cancelledAt) : null,
       deliveryPolicy: sanitizeUnknown(parsed.data.deliveryPolicy ?? {}),
       metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
-    }).returning()
+      },
+    })
+    if (created instanceof Response) return created
     return ok(c, created, 201)
   },
 )
@@ -198,7 +265,14 @@ giftDeliveryRoutes.patch(
     })
     if (!existing) return fail(c, 'NOT_FOUND', 'Gift delivery schedule not found.', 404)
 
-    const [updated] = await db.update(giftDeliverySchedules).set({
+    const updated = await updateGiftDeliveryRow<typeof giftDeliverySchedules.$inferSelect>({
+      c,
+      bizId,
+      tableKey: 'giftDeliverySchedules',
+      subjectType: 'gift_delivery_schedule',
+      id: scheduleId,
+      notFoundMessage: 'Gift delivery schedule not found.',
+      patch: {
       giftInstrumentId: parsed.data.giftInstrumentId ?? undefined,
       status: parsed.data.status ? sanitizePlainText(parsed.data.status) : undefined,
       statusConfigValueId: parsed.data.statusConfigValueId === undefined ? undefined : parsed.data.statusConfigValueId,
@@ -220,7 +294,9 @@ giftDeliveryRoutes.patch(
       cancelledAt: parsed.data.cancelledAt === undefined ? undefined : parsed.data.cancelledAt ? new Date(parsed.data.cancelledAt) : null,
       deliveryPolicy: parsed.data.deliveryPolicy ? sanitizeUnknown(parsed.data.deliveryPolicy) : undefined,
       metadata: parsed.data.metadata ? sanitizeUnknown(parsed.data.metadata) : undefined,
-    }).where(and(eq(giftDeliverySchedules.bizId, bizId), eq(giftDeliverySchedules.id, scheduleId))).returning()
+      },
+    })
+    if (updated instanceof Response) return updated
     return ok(c, updated)
   },
 )
@@ -250,7 +326,13 @@ giftDeliveryRoutes.post(
     const parsed = attemptBodySchema.safeParse(await c.req.json().catch(() => null))
     if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid gift delivery attempt body.', 400, parsed.error.flatten())
 
-    const [created] = await db.insert(giftDeliveryAttempts).values({
+    const created = await createGiftDeliveryRow<typeof giftDeliveryAttempts.$inferSelect>({
+      c,
+      bizId,
+      tableKey: 'giftDeliveryAttempts',
+      subjectType: 'gift_delivery_attempt',
+      displayName: `${scheduleId}#${parsed.data.attemptNo}`,
+      data: {
       bizId,
       giftDeliveryScheduleId: scheduleId,
       attemptNo: parsed.data.attemptNo,
@@ -265,7 +347,9 @@ giftDeliveryRoutes.post(
       errorCode: parsed.data.errorCode ?? null,
       errorMessage: parsed.data.errorMessage ? sanitizePlainText(parsed.data.errorMessage) : null,
       metadata: sanitizeUnknown({ deliveryReceipt: parsed.data.deliveryReceipt ?? {}, ...(parsed.data.metadata ?? {}) }),
-    }).returning()
+      },
+    })
+    if (created instanceof Response) return created
     return ok(c, created, 201)
   },
 )

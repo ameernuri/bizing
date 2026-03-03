@@ -159,7 +159,7 @@ const defaultSpecForDefinition = (input: {
   useCaseRef?: string | null
   personaRef?: string | null
 }) => ({
-  schemaVersion: 'saga.v0' as const,
+  schemaVersion: 'saga.v1' as const,
   sagaKey: input.sagaKey,
   title: input.title,
   description: input.description,
@@ -171,6 +171,19 @@ const defaultSpecForDefinition = (input: {
   source: {
     useCaseRef: input.useCaseRef ?? undefined,
     personaRef: input.personaRef ?? undefined,
+  },
+  simulation: {
+    clock: {
+      mode: 'virtual' as const,
+      timezone: 'UTC',
+      autoAdvance: true,
+    },
+    scheduler: {
+      mode: 'deterministic' as const,
+      defaultPollMs: 1000,
+      defaultTimeoutMs: 30000,
+      maxTicksPerStep: 500,
+    },
   },
   objectives: ['Validate lifecycle behavior from OODA dashboard draft.'],
   actors: [
@@ -368,17 +381,17 @@ export const oodaApi = {
     sourceRef?: string | null
     sourceFilePath?: string | null
   }) =>
-    fetchApi<SagaUseCaseDefinition>('/api/v1/sagas/use-cases', {
+    fetchApi<SagaUseCaseDefinition>('/api/v1/ooda/sagas/use-cases', {
       method: 'POST',
       body: JSON.stringify(input),
     }),
   updateUseCase: (ucKey: string, patch: Partial<SagaUseCaseDefinition>) =>
-    fetchApi<SagaUseCaseDefinition>(`/api/v1/sagas/use-cases/${encodeURIComponent(ucKey)}`, {
+    fetchApi<SagaUseCaseDefinition>(`/api/v1/ooda/sagas/use-cases/${encodeURIComponent(ucKey)}`, {
       method: 'PATCH',
       body: JSON.stringify(patch),
     }),
   deleteUseCase: (ucKey: string) =>
-    fetchApi<{ deleted: true }>(`/api/v1/sagas/use-cases/${encodeURIComponent(ucKey)}`, {
+    fetchApi<{ deleted: true }>(`/api/v1/ooda/sagas/use-cases/${encodeURIComponent(ucKey)}`, {
       method: 'DELETE',
     }),
   createPersona: (input: {
@@ -389,17 +402,17 @@ export const oodaApi = {
     sourceRef?: string | null
     sourceFilePath?: string | null
   }) =>
-    fetchApi<SagaPersonaDefinition>('/api/v1/sagas/personas', {
+    fetchApi<SagaPersonaDefinition>('/api/v1/ooda/sagas/personas', {
       method: 'POST',
       body: JSON.stringify(input),
     }),
   updatePersona: (personaKey: string, patch: Partial<SagaPersonaDefinition>) =>
-    fetchApi<SagaPersonaDefinition>(`/api/v1/sagas/personas/${encodeURIComponent(personaKey)}`, {
+    fetchApi<SagaPersonaDefinition>(`/api/v1/ooda/sagas/personas/${encodeURIComponent(personaKey)}`, {
       method: 'PATCH',
       body: JSON.stringify(patch),
     }),
   deletePersona: (personaKey: string) =>
-    fetchApi<{ deleted: true }>(`/api/v1/sagas/personas/${encodeURIComponent(personaKey)}`, {
+    fetchApi<{ deleted: true }>(`/api/v1/ooda/sagas/personas/${encodeURIComponent(personaKey)}`, {
       method: 'DELETE',
     }),
   createDefinitionFromDraft: (input: {
@@ -410,7 +423,7 @@ export const oodaApi = {
     sourcePersonaRef?: string | null
     status?: 'draft' | 'active' | 'archived'
   }) =>
-    fetchApi<SagaDefinitionDetail>('/api/v1/sagas/specs', {
+    fetchApi<SagaDefinitionDetail>('/api/v1/ooda/sagas/specs', {
       method: 'POST',
       body: JSON.stringify({
         status: input.status ?? 'draft',
@@ -424,7 +437,7 @@ export const oodaApi = {
       }),
     }),
   deleteDefinition: (sagaKey: string) =>
-    fetchApi<{ archived: true }>(`/api/v1/sagas/specs/${encodeURIComponent(sagaKey)}`, {
+    fetchApi<{ archived: true }>(`/api/v1/ooda/sagas/specs/${encodeURIComponent(sagaKey)}`, {
       method: 'DELETE',
     }),
 }

@@ -23,6 +23,7 @@ import {
   requireBizAccess,
 } from "../middleware/auth.js";
 import { persistCanonicalAction } from "../services/action-runtime.js";
+import { executeCrudRouteAction } from "../services/action-route-bridge.js";
 import { fail, ok, parsePositiveInt } from "./_api.js";
 
 const {
@@ -350,9 +351,15 @@ serviceProductRoutes.post(
       if (!serviceGroup) return fail(c, "BAD_REQUEST", "serviceGroupId is not in this biz.", 400);
     }
 
-    const [created] = await db
-      .insert(serviceProductServices)
-      .values({
+    const delegated = await executeCrudRouteAction({
+      c,
+      bizId,
+      tableKey: "serviceProductServices",
+      operation: "create",
+      subjectType: "service_product_service_binding",
+      subjectId: serviceProductId,
+      displayName: "create service binding",
+      data: {
         bizId,
         serviceProductId,
         serviceId: parsed.data.serviceId,
@@ -363,8 +370,16 @@ serviceProductRoutes.post(
         sortOrder: parsed.data.sortOrder,
         description: parsed.data.description,
         metadata: parsed.data.metadata ?? {},
-      })
-      .returning();
+      },
+      metadata: { routeFamily: "service-products" },
+    });
+    if (!delegated.ok) {
+      return fail(c, delegated.code, delegated.message, delegated.httpStatus, delegated.details);
+    }
+    if (!delegated.row) {
+      return fail(c, "ACTION_EXECUTION_FAILED", "Service binding create returned no row.", 500);
+    }
+    const created = delegated.row;
 
     return ok(c, created, 201);
   },
@@ -387,15 +402,23 @@ serviceProductRoutes.delete(
     });
     if (!existing) return fail(c, "NOT_FOUND", "Service-product service binding not found.", 404);
 
-    await db
-      .delete(serviceProductServices)
-      .where(
-        and(
-          eq(serviceProductServices.bizId, bizId),
-          eq(serviceProductServices.serviceProductId, serviceProductId),
-          eq(serviceProductServices.id, bindingId),
-        ),
-      );
+    const delegated = await executeCrudRouteAction({
+      c,
+      bizId,
+      tableKey: "serviceProductServices",
+      operation: "delete",
+      id: bindingId,
+      subjectType: "service_product_service_binding",
+      subjectId: bindingId,
+      displayName: "delete service binding",
+      metadata: { routeFamily: "service-products" },
+    });
+    if (!delegated.ok) {
+      if (delegated.code === "CRUD_TARGET_NOT_FOUND") {
+        return fail(c, "NOT_FOUND", "Service-product service binding not found.", 404);
+      }
+      return fail(c, delegated.code, delegated.message, delegated.httpStatus, delegated.details);
+    }
 
     return ok(c, { id: bindingId });
   },

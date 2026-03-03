@@ -91,7 +91,7 @@ export function SagaPersonasPage() {
             {filtered.map((item) => (
               <EntitySummaryCard
                 key={item.id}
-                href={`/sagas/personas/${encodeURIComponent(item.personaKey)}`}
+                href={`/ooda/personas/${encodeURIComponent(item.personaKey)}`}
                 title={`${item.personaKey} · ${item.name}`}
                 description={item.profileSummary}
                 status={<LifecycleBadge status={item.status} />}

@@ -12,6 +12,7 @@ import { and, asc, eq } from 'drizzle-orm'
 import { z } from 'zod'
 import dbPackage from '@bizing/db'
 import { requireAclPermission, requireAuth, requireBizAccess } from '../middleware/auth.js'
+import { executeCrudRouteAction } from '../services/action-route-bridge.js'
 import { fail, ok } from './_api.js'
 
 const { db, sellablePricingModes, sellablePricingThresholds, sellablePricingOverrides } = dbPackage
@@ -66,6 +67,28 @@ const createPricingOverrideBodySchema = z.object({
 
 export const sellablePricingRoutes = new Hono()
 
+async function createSellablePricingRow<T extends Record<string, unknown>>(input: {
+  c: Parameters<typeof fail>[0]
+  bizId: string
+  tableKey: string
+  subjectType: string
+  data: Record<string, unknown>
+  displayName?: string
+}) {
+  const delegated = await executeCrudRouteAction({
+    c: input.c,
+    bizId: input.bizId,
+    tableKey: input.tableKey,
+    operation: 'create',
+    subjectType: input.subjectType,
+    displayName: input.displayName,
+    data: input.data,
+    metadata: { routeFamily: 'sellable-pricing' },
+  })
+  if (!delegated.ok) return fail(input.c, delegated.code, delegated.message, delegated.httpStatus, delegated.details)
+  return delegated.row as T
+}
+
 sellablePricingRoutes.get('/bizes/:bizId/sellable-pricing-modes', requireAuth, requireBizAccess('bizId'), requireAclPermission('bizes.read', { bizIdParam: 'bizId' }), async (c) => {
   const bizId = c.req.param('bizId')
   const sellableId = c.req.query('sellableId')
@@ -80,7 +103,13 @@ sellablePricingRoutes.post('/bizes/:bizId/sellable-pricing-modes', requireAuth, 
   const bizId = c.req.param('bizId')
   const parsed = createPricingModeBodySchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
-  const [row] = await db.insert(sellablePricingModes).values({
+  const row = await createSellablePricingRow<typeof sellablePricingModes.$inferSelect>({
+    c,
+    bizId,
+    tableKey: 'sellablePricingModes',
+    subjectType: 'sellable_pricing_mode',
+    displayName: parsed.data.mode,
+    data: {
     bizId,
     sellableId: parsed.data.sellableId,
     status: parsed.data.status,
@@ -98,7 +127,9 @@ sellablePricingRoutes.post('/bizes/:bizId/sellable-pricing-modes', requireAuth, 
     priority: parsed.data.priority,
     policySnapshot: parsed.data.policySnapshot ?? {},
     metadata: parsed.data.metadata ?? {},
-  }).returning()
+    },
+  })
+  if (row instanceof Response) return row
   return ok(c, row, 201)
 })
 
@@ -106,7 +137,13 @@ sellablePricingRoutes.post('/bizes/:bizId/sellable-pricing-thresholds', requireA
   const bizId = c.req.param('bizId')
   const parsed = createPricingThresholdBodySchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
-  const [row] = await db.insert(sellablePricingThresholds).values({
+  const row = await createSellablePricingRow<typeof sellablePricingThresholds.$inferSelect>({
+    c,
+    bizId,
+    tableKey: 'sellablePricingThresholds',
+    subjectType: 'sellable_pricing_threshold',
+    displayName: parsed.data.metricKey,
+    data: {
     bizId,
     sellablePricingModeId: parsed.data.sellablePricingModeId,
     thresholdType: parsed.data.thresholdType,
@@ -117,7 +154,9 @@ sellablePricingRoutes.post('/bizes/:bizId/sellable-pricing-thresholds', requireA
     priceMinor: parsed.data.priceMinor ?? null,
     sortOrder: parsed.data.sortOrder,
     metadata: parsed.data.metadata ?? {},
-  }).returning()
+    },
+  })
+  if (row instanceof Response) return row
   return ok(c, row, 201)
 })
 
@@ -125,7 +164,13 @@ sellablePricingRoutes.post('/bizes/:bizId/sellable-pricing-overrides', requireAu
   const bizId = c.req.param('bizId')
   const parsed = createPricingOverrideBodySchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
-  const [row] = await db.insert(sellablePricingOverrides).values({
+  const row = await createSellablePricingRow<typeof sellablePricingOverrides.$inferSelect>({
+    c,
+    bizId,
+    tableKey: 'sellablePricingOverrides',
+    subjectType: 'sellable_pricing_override',
+    displayName: parsed.data.overrideType,
+    data: {
     bizId,
     sellablePricingModeId: parsed.data.sellablePricingModeId,
     scopeType: parsed.data.scopeType,
@@ -141,6 +186,8 @@ sellablePricingRoutes.post('/bizes/:bizId/sellable-pricing-overrides', requireAu
     effectiveTo: parsed.data.effectiveTo ? new Date(parsed.data.effectiveTo) : null,
     priority: parsed.data.priority,
     metadata: parsed.data.metadata ?? {},
-  }).returning()
+    },
+  })
+  if (row instanceof Response) return row
   return ok(c, row, 201)
 })

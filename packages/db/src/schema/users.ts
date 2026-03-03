@@ -29,7 +29,7 @@ export const users = pgTable('users', {
 
   phone: varchar('phone', { length: 50 }),
 
-  /** Coarse default role; fine-grained access is in `org_memberships`. */
+  /** Coarse default role; fine-grained access is resolved through `members` + ACL mappings. */
   role: orgMembershipRoleEnum('role').default('staff').notNull(),
 
   /** Active/inactive archive control for user availability. */

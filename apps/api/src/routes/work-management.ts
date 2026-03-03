@@ -14,6 +14,7 @@ import { and, asc, desc, eq, sql } from 'drizzle-orm'
 import { z } from 'zod'
 import dbPackage from '@bizing/db'
 import { requireAclPermission, requireAuth, requireBizAccess } from '../middleware/auth.js'
+import { executeCrudRouteAction } from '../services/action-route-bridge.js'
 import { fail, ok, parsePositiveInt } from './_api.js'
 import { sanitizePlainText, sanitizeUnknown } from '../lib/sanitize.js'
 
@@ -133,6 +134,28 @@ const createTimeSegmentAllocationBodySchema = z.object({
 
 export const workManagementRoutes = new Hono()
 
+async function createWorkManagementRow<T extends Record<string, unknown>>(input: {
+  c: Parameters<typeof fail>[0]
+  bizId: string
+  tableKey: string
+  subjectType: string
+  data: Record<string, unknown>
+  displayName?: string
+}) {
+  const delegated = await executeCrudRouteAction({
+    c: input.c,
+    bizId: input.bizId,
+    tableKey: input.tableKey,
+    operation: 'create',
+    subjectType: input.subjectType,
+    displayName: input.displayName,
+    data: input.data,
+    metadata: { routeFamily: 'work-management' },
+  })
+  if (!delegated.ok) return fail(input.c, delegated.code, delegated.message, delegated.httpStatus, delegated.details)
+  return delegated.row as T
+}
+
 workManagementRoutes.get('/bizes/:bizId/work-templates', requireAuth, requireBizAccess('bizId'), requireAclPermission('bizes.read', { bizIdParam: 'bizId' }), async (c) => {
   const bizId = c.req.param('bizId')
   const parsed = listQuerySchema.safeParse(c.req.query())
@@ -149,7 +172,13 @@ workManagementRoutes.post('/bizes/:bizId/work-templates', requireAuth, requireBi
   const bizId = c.req.param('bizId')
   const parsed = createTemplateBodySchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
-  const [created] = await db.insert(workTemplates).values({
+  const created = await createWorkManagementRow<typeof workTemplates.$inferSelect>({
+    c,
+    bizId,
+    tableKey: 'workTemplates',
+    subjectType: 'work_template',
+    displayName: parsed.data.name,
+    data: {
     bizId,
     kind: parsed.data.kind,
     name: sanitizePlainText(parsed.data.name),
@@ -162,7 +191,9 @@ workManagementRoutes.post('/bizes/:bizId/work-templates', requireAuth, requireBi
     schema: sanitizeUnknown(parsed.data.schema),
     policy: sanitizeUnknown(parsed.data.policy),
     metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
-  }).returning()
+    },
+  })
+  if (created instanceof Response) return created
   return ok(c, created, 201)
 })
 
@@ -176,7 +207,13 @@ workManagementRoutes.post('/bizes/:bizId/work-runs', requireAuth, requireBizAcce
   const bizId = c.req.param('bizId')
   const parsed = createRunBodySchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
-  const [created] = await db.insert(workRuns).values({
+  const created = await createWorkManagementRow<typeof workRuns.$inferSelect>({
+    c,
+    bizId,
+    tableKey: 'workRuns',
+    subjectType: 'work_run',
+    displayName: parsed.data.targetType,
+    data: {
     bizId,
     workTemplateId: parsed.data.workTemplateId,
     targetType: parsed.data.targetType,
@@ -190,7 +227,9 @@ workManagementRoutes.post('/bizes/:bizId/work-runs', requireAuth, requireBizAcce
     dueAt: parsed.data.dueAt ? new Date(parsed.data.dueAt) : null,
     policySnapshot: sanitizeUnknown(parsed.data.policySnapshot),
     metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
-  }).returning()
+    },
+  })
+  if (created instanceof Response) return created
   return ok(c, created, 201)
 })
 
@@ -210,7 +249,13 @@ workManagementRoutes.post('/bizes/:bizId/work-entries', requireAuth, requireBizA
   const bizId = c.req.param('bizId')
   const parsed = createEntryBodySchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
-  const [created] = await db.insert(workEntries).values({
+  const created = await createWorkManagementRow<typeof workEntries.$inferSelect>({
+    c,
+    bizId,
+    tableKey: 'workEntries',
+    subjectType: 'work_entry',
+    displayName: parsed.data.entryType,
+    data: {
     bizId,
     workRunId: parsed.data.workRunId,
     workRunStepId: parsed.data.workRunStepId ?? null,
@@ -229,7 +274,9 @@ workManagementRoutes.post('/bizes/:bizId/work-entries', requireAuth, requireBizA
     note: parsed.data.note ? sanitizePlainText(parsed.data.note) : null,
     payload: sanitizeUnknown(parsed.data.payload),
     metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
-  }).returning()
+    },
+  })
+  if (created instanceof Response) return created
   return ok(c, created, 201)
 })
 
@@ -237,7 +284,13 @@ workManagementRoutes.post('/bizes/:bizId/work-artifacts', requireAuth, requireBi
   const bizId = c.req.param('bizId')
   const parsed = createArtifactBodySchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
-  const [created] = await db.insert(workArtifacts).values({
+  const created = await createWorkManagementRow<typeof workArtifacts.$inferSelect>({
+    c,
+    bizId,
+    tableKey: 'workArtifacts',
+    subjectType: 'work_artifact',
+    displayName: parsed.data.artifactType,
+    data: {
     bizId,
     workRunId: parsed.data.workRunId,
     workEntryId: parsed.data.workEntryId ?? null,
@@ -253,7 +306,9 @@ workManagementRoutes.post('/bizes/:bizId/work-artifacts', requireAuth, requireBi
     capturedAt: parsed.data.capturedAt ? new Date(parsed.data.capturedAt) : new Date(),
     capturedByUserId: parsed.data.capturedByUserId ?? null,
     metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
-  }).returning()
+    },
+  })
+  if (created instanceof Response) return created
   return ok(c, created, 201)
 })
 
@@ -261,7 +316,13 @@ workManagementRoutes.post('/bizes/:bizId/work-time-segments', requireAuth, requi
   const bizId = c.req.param('bizId')
   const parsed = createTimeSegmentBodySchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
-  const [created] = await db.insert(workTimeSegments).values({
+  const created = await createWorkManagementRow<typeof workTimeSegments.$inferSelect>({
+    c,
+    bizId,
+    tableKey: 'workTimeSegments',
+    subjectType: 'work_time_segment',
+    displayName: parsed.data.segmentType,
+    data: {
     bizId,
     workRunId: parsed.data.workRunId,
     userId: parsed.data.userId,
@@ -281,7 +342,9 @@ workManagementRoutes.post('/bizes/:bizId/work-time-segments', requireAuth, requi
     approvedAt: null,
     correctionNote: parsed.data.correctionNote ? sanitizePlainText(parsed.data.correctionNote) : null,
     metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
-  }).returning()
+    },
+  })
+  if (created instanceof Response) return created
   return ok(c, created, 201)
 })
 
@@ -304,7 +367,13 @@ workManagementRoutes.post('/bizes/:bizId/work-time-segment-allocations', require
   const bizId = c.req.param('bizId')
   const parsed = createTimeSegmentAllocationBodySchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
-  const [created] = await db.insert(workTimeSegmentAllocations).values({
+  const created = await createWorkManagementRow<typeof workTimeSegmentAllocations.$inferSelect>({
+    c,
+    bizId,
+    tableKey: 'workTimeSegmentAllocations',
+    subjectType: 'work_time_segment_allocation',
+    displayName: parsed.data.workTimeSegmentId,
+    data: {
     bizId,
     workTimeSegmentId: parsed.data.workTimeSegmentId,
     staffingAssignmentId: parsed.data.staffingAssignmentId,
@@ -312,6 +381,8 @@ workManagementRoutes.post('/bizes/:bizId/work-time-segment-allocations', require
     allocationBps: parsed.data.allocationBps ?? null,
     note: parsed.data.note ? sanitizePlainText(parsed.data.note) : null,
     metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
-  }).returning()
+    },
+  })
+  if (created instanceof Response) return created
   return ok(c, created, 201)
 })

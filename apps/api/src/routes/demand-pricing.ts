@@ -21,9 +21,32 @@ import {
   requireAuth,
   requireBizAccess,
 } from '../middleware/auth.js'
+import { executeCrudRouteAction } from '../services/action-route-bridge.js'
 import { fail, ok, parsePositiveInt } from './_api.js'
 
 const { db, demandPricingPolicies } = dbPackage
+
+async function createDemandPricingRow(
+  c: Parameters<typeof executeCrudRouteAction>[0]['c'],
+  bizId: string,
+  data: Parameters<typeof executeCrudRouteAction>[0]['data'],
+  meta: { subjectType: string; subjectId: string; displayName: string; source: string },
+) {
+  const result = await executeCrudRouteAction({
+    c,
+    bizId,
+    tableKey: 'demandPricingPolicies',
+    operation: 'create',
+    data,
+    subjectType: meta.subjectType,
+    subjectId: meta.subjectId,
+    displayName: meta.displayName,
+    metadata: { source: meta.source },
+  })
+  if (!result.ok) throw new Error(result.message ?? 'Failed to create demand pricing policy')
+  if (!result.row) throw new Error('Missing row for demand pricing policy create')
+  return result.row
+}
 
 const policyStatusValues = ['draft', 'active', 'inactive', 'archived'] as const
 const targetTypeValues = [
@@ -295,9 +318,10 @@ demandPricingRoutes.post(
     const slug = slugBase.length > 0 ? slugBase : `policy-${Date.now()}`
 
     try {
-      const [created] = await db
-        .insert(demandPricingPolicies)
-        .values({
+      const created = await createDemandPricingRow(
+        c,
+        bizId,
+        {
           bizId,
           name: parsed.data.name,
           slug,
@@ -327,8 +351,14 @@ demandPricingRoutes.post(
           isEnabled: parsed.data.isEnabled,
           policy: parsed.data.policy ?? {},
           metadata: parsed.data.metadata ?? {},
-        })
-        .returning()
+        },
+        {
+          subjectType: 'demand_pricing_policy',
+          subjectId: slug,
+          displayName: parsed.data.name,
+          source: 'routes.demandPricing.createPolicy',
+        },
+      )
 
       return ok(c, created, 201)
     } catch (error) {

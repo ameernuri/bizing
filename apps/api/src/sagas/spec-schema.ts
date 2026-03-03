@@ -10,7 +10,7 @@ import { z } from 'zod'
  *
  * v1 change summary:
  * - Adds first-class simulation controls (virtual clock + scheduler defaults).
- * - Keeps backward parsing for `saga.v0` so existing specs can be normalized.
+ * - v0 has been removed in the hard-cut schema/API consolidation.
  */
 
 /** Assertion contract for one saga step. */
@@ -195,12 +195,6 @@ const sagaSpecCommonShape = {
   metadata: z.record(z.unknown()).default({}),
 } as const
 
-/** Legacy v0 parser (kept to normalize old specs). */
-const sagaSpecV0Schema = z.object({
-  schemaVersion: z.literal('saga.v0'),
-  ...sagaSpecCommonShape,
-})
-
 /** Canonical v1 schema. */
 const sagaSpecV1Schema = z.object({
   schemaVersion: z.literal('saga.v1'),
@@ -208,42 +202,17 @@ const sagaSpecV1Schema = z.object({
   ...sagaSpecCommonShape,
 })
 
-/** Accept both versions at API boundary and normalize to v1 internally. */
-export const sagaSpecInputSchema = z.union([sagaSpecV1Schema, sagaSpecV0Schema])
+/** v1 is the only accepted schema version. */
+export const sagaSpecInputSchema = sagaSpecV1Schema
 
 /** Canonical internal saga shape used by services/runtime. */
 export const sagaSpecSchema = sagaSpecV1Schema
-
-function v1SimulationDefaults() {
-  return {
-    clock: {
-      mode: 'virtual' as const,
-      timezone: 'UTC',
-      autoAdvance: true,
-    },
-    scheduler: {
-      mode: 'deterministic' as const,
-      defaultPollMs: 1000,
-      defaultTimeoutMs: 30000,
-      maxTicksPerStep: 500,
-    },
-  }
-}
 
 /**
  * Parse unknown input and return canonical `saga.v1` shape.
  */
 export function normalizeSagaSpec(input: unknown): SagaSpec {
-  const parsed = sagaSpecInputSchema.parse(input)
-  if (parsed.schemaVersion === 'saga.v1') {
-    return parsed
-  }
-
-  return {
-    ...parsed,
-    schemaVersion: 'saga.v1',
-    simulation: v1SimulationDefaults(),
-  }
+  return sagaSpecInputSchema.parse(input)
 }
 
 export type SagaSpec = z.infer<typeof sagaSpecSchema>

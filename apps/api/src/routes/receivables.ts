@@ -17,6 +17,7 @@ import { and, asc, desc, eq } from 'drizzle-orm'
 import { z } from 'zod'
 import dbPackage from '@bizing/db'
 import { getCurrentUser, requireAclPermission, requireAuth, requireBizAccess } from '../middleware/auth.js'
+import { executeCrudRouteAction } from '../services/action-route-bridge.js'
 import { sanitizePlainText, sanitizeUnknown } from '../lib/sanitize.js'
 import { fail, ok } from './_api.js'
 
@@ -180,6 +181,56 @@ function computeInvoiceTotal(input: { subtotalMinor: number; taxMinor: number; f
   return input.subtotalMinor + input.taxMinor + input.feeMinor - input.discountMinor
 }
 
+async function createReceivableRow<T extends Record<string, unknown>>(input: {
+  c: Parameters<typeof fail>[0]
+  bizId: string
+  tableKey: string
+  subjectType: string
+  data: Record<string, unknown>
+  displayName?: string
+}) {
+  const delegated = await executeCrudRouteAction({
+    c: input.c,
+    bizId: input.bizId,
+    tableKey: input.tableKey,
+    operation: 'create',
+    subjectType: input.subjectType,
+    displayName: input.displayName,
+    data: input.data,
+    metadata: { routeFamily: 'receivables' },
+  })
+  if (!delegated.ok) return fail(input.c, delegated.code, delegated.message, delegated.httpStatus, delegated.details)
+  return delegated.row as T
+}
+
+async function updateReceivableRow<T extends Record<string, unknown>>(input: {
+  c: Parameters<typeof fail>[0]
+  bizId: string
+  tableKey: string
+  subjectType: string
+  id: string
+  patch: Record<string, unknown>
+  notFoundMessage: string
+}) {
+  const delegated = await executeCrudRouteAction({
+    c: input.c,
+    bizId: input.bizId,
+    tableKey: input.tableKey,
+    operation: 'update',
+    id: input.id,
+    subjectType: input.subjectType,
+    subjectId: input.id,
+    patch: input.patch,
+    metadata: { routeFamily: 'receivables' },
+  })
+  if (!delegated.ok) {
+    if (delegated.code === 'CRUD_TARGET_NOT_FOUND') return fail(input.c, 'NOT_FOUND', input.notFoundMessage, 404)
+    return fail(input.c, delegated.code, delegated.message, delegated.httpStatus, delegated.details)
+  }
+  if (!delegated.row) return fail(input.c, 'NOT_FOUND', input.notFoundMessage, 404)
+  return delegated.row as T
+}
+
 export const receivableRoutes = new Hono()
 
 receivableRoutes.get(
@@ -207,20 +258,29 @@ receivableRoutes.post(
     const parsed = billingAccountBodySchema.safeParse(await c.req.json().catch(() => null))
     if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
 
-    const [created] = await db.insert(billingAccounts).values({
+    const createdOrResponse = await createReceivableRow<typeof billingAccounts.$inferSelect>({
+      c,
       bizId,
-      name: sanitizePlainText(parsed.data.name),
-      accountType: parsed.data.accountType,
-      status: parsed.data.status,
-      counterpartyBizId: parsed.data.counterpartyBizId ?? null,
-      counterpartyUserId: parsed.data.counterpartyUserId ?? null,
-      counterpartyGroupAccountId: parsed.data.counterpartyGroupAccountId ?? null,
-      currency: parsed.data.currency,
-      creditLimitMinor: parsed.data.creditLimitMinor ?? null,
-      paymentTermsDays: parsed.data.paymentTermsDays,
-      taxProfile: sanitizeUnknown(parsed.data.taxProfile ?? {}),
-      metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
-    }).returning()
+      tableKey: 'billingAccounts',
+      subjectType: 'billing_account',
+      displayName: parsed.data.name,
+      data: {
+        bizId,
+        name: sanitizePlainText(parsed.data.name),
+        accountType: parsed.data.accountType,
+        status: parsed.data.status,
+        counterpartyBizId: parsed.data.counterpartyBizId ?? null,
+        counterpartyUserId: parsed.data.counterpartyUserId ?? null,
+        counterpartyGroupAccountId: parsed.data.counterpartyGroupAccountId ?? null,
+        currency: parsed.data.currency,
+        creditLimitMinor: parsed.data.creditLimitMinor ?? null,
+        paymentTermsDays: parsed.data.paymentTermsDays,
+        taxProfile: sanitizeUnknown(parsed.data.taxProfile ?? {}),
+        metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
+      },
+    })
+    if (createdOrResponse instanceof Response) return createdOrResponse
+    const created = createdOrResponse
     return ok(c, created, 201)
   },
 )
@@ -250,19 +310,28 @@ receivableRoutes.post(
     const parsed = purchaseOrderBodySchema.safeParse(await c.req.json().catch(() => null))
     if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
 
-    const [created] = await db.insert(purchaseOrders).values({
+    const createdOrResponse = await createReceivableRow<typeof purchaseOrders.$inferSelect>({
+      c,
       bizId,
-      billingAccountId: parsed.data.billingAccountId,
-      poNumber: sanitizePlainText(parsed.data.poNumber),
-      status: parsed.data.status,
-      currency: parsed.data.currency,
-      authorizedAmountMinor: parsed.data.authorizedAmountMinor,
-      billedAmountMinor: parsed.data.billedAmountMinor,
-      issuedAt: parsed.data.issuedAt ? new Date(parsed.data.issuedAt) : null,
-      expiresAt: parsed.data.expiresAt ? new Date(parsed.data.expiresAt) : null,
-      notes: parsed.data.notes ? sanitizePlainText(parsed.data.notes) : null,
-      metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
-    }).returning()
+      tableKey: 'purchaseOrders',
+      subjectType: 'purchase_order',
+      displayName: parsed.data.poNumber,
+      data: {
+        bizId,
+        billingAccountId: parsed.data.billingAccountId,
+        poNumber: sanitizePlainText(parsed.data.poNumber),
+        status: parsed.data.status,
+        currency: parsed.data.currency,
+        authorizedAmountMinor: parsed.data.authorizedAmountMinor,
+        billedAmountMinor: parsed.data.billedAmountMinor,
+        issuedAt: parsed.data.issuedAt ? new Date(parsed.data.issuedAt) : null,
+        expiresAt: parsed.data.expiresAt ? new Date(parsed.data.expiresAt) : null,
+        notes: parsed.data.notes ? sanitizePlainText(parsed.data.notes) : null,
+        metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
+      },
+    })
+    if (createdOrResponse instanceof Response) return createdOrResponse
+    const created = createdOrResponse
     return ok(c, created, 201)
   },
 )
@@ -330,38 +399,54 @@ receivableRoutes.post(
           ? new Date(issuedAt.getTime() + paymentTermsDays * 24 * 60 * 60 * 1000)
           : null
 
-    const [created] = await db.insert(arInvoices).values({
+    const createdOrResponse = await createReceivableRow<typeof arInvoices.$inferSelect>({
+      c,
       bizId,
-      billingAccountId: parsed.data.billingAccountId,
-      purchaseOrderId: parsed.data.purchaseOrderId ?? null,
-      invoiceNumber: sanitizePlainText(parsed.data.invoiceNumber),
-      status: parsed.data.status,
-      currency: parsed.data.currency,
-      subtotalMinor: parsed.data.subtotalMinor,
-      taxMinor: parsed.data.taxMinor,
-      feeMinor: parsed.data.feeMinor,
-      discountMinor: parsed.data.discountMinor,
-      totalMinor,
-      outstandingMinor,
-      issuedAt,
-      dueAt,
-      paidAt: parsed.data.paidAt ? new Date(parsed.data.paidAt) : null,
-      voidedAt: parsed.data.voidedAt ? new Date(parsed.data.voidedAt) : null,
-      notes: parsed.data.notes ? sanitizePlainText(parsed.data.notes) : null,
-      metadata: sanitizeUnknown({
-        ...(parsed.data.metadata ?? {}),
-        paymentTermsDays,
-      }),
-    }).returning()
-
-    await db.insert(invoiceEvents).values({
-      bizId,
-      arInvoiceId: created.id,
-      eventType: 'created',
-      actorUserId: getCurrentUser(c)?.id ?? null,
-      note: 'Invoice created through API.',
-      metadata: { source: 'receivables.create_invoice' },
+      tableKey: 'arInvoices',
+      subjectType: 'ar_invoice',
+      displayName: parsed.data.invoiceNumber,
+      data: {
+        bizId,
+        billingAccountId: parsed.data.billingAccountId,
+        purchaseOrderId: parsed.data.purchaseOrderId ?? null,
+        invoiceNumber: sanitizePlainText(parsed.data.invoiceNumber),
+        status: parsed.data.status,
+        currency: parsed.data.currency,
+        subtotalMinor: parsed.data.subtotalMinor,
+        taxMinor: parsed.data.taxMinor,
+        feeMinor: parsed.data.feeMinor,
+        discountMinor: parsed.data.discountMinor,
+        totalMinor,
+        outstandingMinor,
+        issuedAt,
+        dueAt,
+        paidAt: parsed.data.paidAt ? new Date(parsed.data.paidAt) : null,
+        voidedAt: parsed.data.voidedAt ? new Date(parsed.data.voidedAt) : null,
+        notes: parsed.data.notes ? sanitizePlainText(parsed.data.notes) : null,
+        metadata: sanitizeUnknown({
+          ...(parsed.data.metadata ?? {}),
+          paymentTermsDays,
+        }),
+      },
     })
+    if (createdOrResponse instanceof Response) return createdOrResponse
+    const created = createdOrResponse
+
+    const createdEventOrResponse = await createReceivableRow<typeof invoiceEvents.$inferSelect>({
+      c,
+      bizId,
+      tableKey: 'invoiceEvents',
+      subjectType: 'invoice_event',
+      data: {
+        bizId,
+        arInvoiceId: created.id,
+        eventType: 'created',
+        actorUserId: getCurrentUser(c)?.id ?? null,
+        note: 'Invoice created through API.',
+        metadata: { source: 'receivables.create_invoice' },
+      },
+    })
+    if (createdEventOrResponse instanceof Response) return createdEventOrResponse
 
     return ok(c, created, 201)
   },
@@ -427,25 +512,35 @@ receivableRoutes.patch(
       })
     }
 
-    const [updated] = await db.update(arInvoices).set({
-      billingAccountId: parsed.data.billingAccountId ?? undefined,
-      purchaseOrderId: parsed.data.purchaseOrderId ?? undefined,
-      invoiceNumber: parsed.data.invoiceNumber ? sanitizePlainText(parsed.data.invoiceNumber) : undefined,
-      status: parsed.data.status ?? undefined,
-      currency: parsed.data.currency ?? undefined,
-      subtotalMinor,
-      taxMinor,
-      feeMinor,
-      discountMinor,
-      totalMinor,
-      outstandingMinor,
-      issuedAt: parsed.data.issuedAt === undefined ? undefined : parsed.data.issuedAt ? new Date(parsed.data.issuedAt) : null,
-      dueAt: parsed.data.dueAt === undefined ? undefined : parsed.data.dueAt ? new Date(parsed.data.dueAt) : null,
-      paidAt: parsed.data.paidAt === undefined ? undefined : parsed.data.paidAt ? new Date(parsed.data.paidAt) : null,
-      voidedAt: parsed.data.voidedAt === undefined ? undefined : parsed.data.voidedAt ? new Date(parsed.data.voidedAt) : null,
-      notes: parsed.data.notes ? sanitizePlainText(parsed.data.notes) : undefined,
-      metadata: parsed.data.metadata ? sanitizeUnknown(parsed.data.metadata) : undefined,
-    }).where(and(eq(arInvoices.bizId, bizId), eq(arInvoices.id, invoiceId))).returning()
+    const updatedOrResponse = await updateReceivableRow<typeof arInvoices.$inferSelect>({
+      c,
+      bizId,
+      tableKey: 'arInvoices',
+      subjectType: 'ar_invoice',
+      id: invoiceId,
+      notFoundMessage: 'Invoice not found.',
+      patch: {
+        billingAccountId: parsed.data.billingAccountId ?? undefined,
+        purchaseOrderId: parsed.data.purchaseOrderId ?? undefined,
+        invoiceNumber: parsed.data.invoiceNumber ? sanitizePlainText(parsed.data.invoiceNumber) : undefined,
+        status: parsed.data.status ?? undefined,
+        currency: parsed.data.currency ?? undefined,
+        subtotalMinor,
+        taxMinor,
+        feeMinor,
+        discountMinor,
+        totalMinor,
+        outstandingMinor,
+        issuedAt: parsed.data.issuedAt === undefined ? undefined : parsed.data.issuedAt ? new Date(parsed.data.issuedAt) : null,
+        dueAt: parsed.data.dueAt === undefined ? undefined : parsed.data.dueAt ? new Date(parsed.data.dueAt) : null,
+        paidAt: parsed.data.paidAt === undefined ? undefined : parsed.data.paidAt ? new Date(parsed.data.paidAt) : null,
+        voidedAt: parsed.data.voidedAt === undefined ? undefined : parsed.data.voidedAt ? new Date(parsed.data.voidedAt) : null,
+        notes: parsed.data.notes ? sanitizePlainText(parsed.data.notes) : undefined,
+        metadata: parsed.data.metadata ? sanitizeUnknown(parsed.data.metadata) : undefined,
+      },
+    })
+    if (updatedOrResponse instanceof Response) return updatedOrResponse
+    const updated = updatedOrResponse
 
     return ok(c, updated)
   },
@@ -467,16 +562,24 @@ receivableRoutes.post(
     })
     if (!invoice) return fail(c, 'NOT_FOUND', 'Invoice not found.', 404)
 
-    const [created] = await db.insert(invoiceEvents).values({
+    const createdOrResponse = await createReceivableRow<typeof invoiceEvents.$inferSelect>({
+      c,
       bizId,
-      arInvoiceId: invoiceId,
-      eventType: parsed.data.eventType,
-      amountMinor: parsed.data.amountMinor ?? null,
-      happenedAt: parsed.data.happenedAt ? new Date(parsed.data.happenedAt) : new Date(),
-      actorUserId: getCurrentUser(c)?.id ?? null,
-      note: parsed.data.note ? sanitizePlainText(parsed.data.note) : null,
-      metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
-    }).returning()
+      tableKey: 'invoiceEvents',
+      subjectType: 'invoice_event',
+      data: {
+        bizId,
+        arInvoiceId: invoiceId,
+        eventType: parsed.data.eventType,
+        amountMinor: parsed.data.amountMinor ?? null,
+        happenedAt: parsed.data.happenedAt ? new Date(parsed.data.happenedAt) : new Date(),
+        actorUserId: getCurrentUser(c)?.id ?? null,
+        note: parsed.data.note ? sanitizePlainText(parsed.data.note) : null,
+        metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
+      },
+    })
+    if (createdOrResponse instanceof Response) return createdOrResponse
+    const created = createdOrResponse
 
     return ok(c, created, 201)
   },
@@ -517,27 +620,35 @@ receivableRoutes.post(
     })
     if (!invoice) return fail(c, 'NOT_FOUND', 'Invoice not found.', 404)
 
-    const [created] = await db.insert(installmentPlans).values({
+    const createdOrResponse = await createReceivableRow<typeof installmentPlans.$inferSelect>({
+      c,
       bizId,
-      arInvoiceId: parsed.data.arInvoiceId,
-      version: parsed.data.version ?? 1,
-      isCurrent: parsed.data.isCurrent ?? true,
-      status: parsed.data.status ?? 'draft',
-      statusConfigValueId: parsed.data.statusConfigValueId ?? null,
-      planKind: parsed.data.planKind ?? 'custom_schedule',
-      currency: parsed.data.currency ?? invoice.currency,
-      totalPlannedMinor: parsed.data.totalPlannedMinor ?? invoice.totalMinor,
-      totalPaidMinor: parsed.data.totalPaidMinor ?? 0,
-      totalWaivedMinor: parsed.data.totalWaivedMinor ?? 0,
-      totalFailedMinor: parsed.data.totalFailedMinor ?? 0,
-      installmentCount: parsed.data.installmentCount ?? 1,
-      startsAt: parsed.data.startsAt ? new Date(parsed.data.startsAt) : null,
-      endsAt: parsed.data.endsAt ? new Date(parsed.data.endsAt) : null,
-      nextDueAt: parsed.data.nextDueAt ? new Date(parsed.data.nextDueAt) : null,
-      autoAdvance: parsed.data.autoAdvance ?? true,
-      policySnapshot: sanitizeUnknown(parsed.data.policySnapshot ?? {}),
-      metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
-    }).returning()
+      tableKey: 'installmentPlans',
+      subjectType: 'installment_plan',
+      data: {
+        bizId,
+        arInvoiceId: parsed.data.arInvoiceId,
+        version: parsed.data.version ?? 1,
+        isCurrent: parsed.data.isCurrent ?? true,
+        status: parsed.data.status ?? 'draft',
+        statusConfigValueId: parsed.data.statusConfigValueId ?? null,
+        planKind: parsed.data.planKind ?? 'custom_schedule',
+        currency: parsed.data.currency ?? invoice.currency,
+        totalPlannedMinor: parsed.data.totalPlannedMinor ?? invoice.totalMinor,
+        totalPaidMinor: parsed.data.totalPaidMinor ?? 0,
+        totalWaivedMinor: parsed.data.totalWaivedMinor ?? 0,
+        totalFailedMinor: parsed.data.totalFailedMinor ?? 0,
+        installmentCount: parsed.data.installmentCount ?? 1,
+        startsAt: parsed.data.startsAt ? new Date(parsed.data.startsAt) : null,
+        endsAt: parsed.data.endsAt ? new Date(parsed.data.endsAt) : null,
+        nextDueAt: parsed.data.nextDueAt ? new Date(parsed.data.nextDueAt) : null,
+        autoAdvance: parsed.data.autoAdvance ?? true,
+        policySnapshot: sanitizeUnknown(parsed.data.policySnapshot ?? {}),
+        metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
+      },
+    })
+    if (createdOrResponse instanceof Response) return createdOrResponse
+    const created = createdOrResponse
 
     return ok(c, created, 201)
   },
@@ -574,27 +685,35 @@ receivableRoutes.post(
     })
     if (!plan) return fail(c, 'NOT_FOUND', 'Installment plan not found.', 404)
 
-    const [created] = await db.insert(installmentScheduleItems).values({
+    const createdOrResponse = await createReceivableRow<typeof installmentScheduleItems.$inferSelect>({
+      c,
       bizId,
-      installmentPlanId: planId,
-      sequenceNo: parsed.data.sequenceNo,
-      dueAt: new Date(parsed.data.dueAt),
-      status: parsed.data.status ?? 'pending',
-      statusConfigValueId: parsed.data.statusConfigValueId ?? null,
-      amountMinor: parsed.data.amountMinor,
-      paidMinor: parsed.data.paidMinor ?? 0,
-      waivedMinor: parsed.data.waivedMinor ?? 0,
-      failedMinor: parsed.data.failedMinor ?? 0,
-      lateFeeMinor: parsed.data.lateFeeMinor ?? 0,
-      currency: parsed.data.currency ?? plan.currency,
-      attemptCount: parsed.data.attemptCount ?? 0,
-      lastAttemptAt: parsed.data.lastAttemptAt ? new Date(parsed.data.lastAttemptAt) : null,
-      paidAt: parsed.data.paidAt ? new Date(parsed.data.paidAt) : null,
-      paymentIntentId: parsed.data.paymentIntentId ?? null,
-      paymentTransactionId: parsed.data.paymentTransactionId ?? null,
-      notes: parsed.data.notes ? sanitizePlainText(parsed.data.notes) : null,
-      metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
-    }).returning()
+      tableKey: 'installmentScheduleItems',
+      subjectType: 'installment_schedule_item',
+      data: {
+        bizId,
+        installmentPlanId: planId,
+        sequenceNo: parsed.data.sequenceNo,
+        dueAt: new Date(parsed.data.dueAt),
+        status: parsed.data.status ?? 'pending',
+        statusConfigValueId: parsed.data.statusConfigValueId ?? null,
+        amountMinor: parsed.data.amountMinor,
+        paidMinor: parsed.data.paidMinor ?? 0,
+        waivedMinor: parsed.data.waivedMinor ?? 0,
+        failedMinor: parsed.data.failedMinor ?? 0,
+        lateFeeMinor: parsed.data.lateFeeMinor ?? 0,
+        currency: parsed.data.currency ?? plan.currency,
+        attemptCount: parsed.data.attemptCount ?? 0,
+        lastAttemptAt: parsed.data.lastAttemptAt ? new Date(parsed.data.lastAttemptAt) : null,
+        paidAt: parsed.data.paidAt ? new Date(parsed.data.paidAt) : null,
+        paymentIntentId: parsed.data.paymentIntentId ?? null,
+        paymentTransactionId: parsed.data.paymentTransactionId ?? null,
+        notes: parsed.data.notes ? sanitizePlainText(parsed.data.notes) : null,
+        metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
+      },
+    })
+    if (createdOrResponse instanceof Response) return createdOrResponse
+    const created = createdOrResponse
 
     return ok(c, created, 201)
   },
@@ -629,24 +748,33 @@ receivableRoutes.post(
     const parsed = autopayRuleBodySchema.safeParse(await c.req.json().catch(() => null))
     if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid autopay rule body.', 400, parsed.error.flatten())
 
-    const [created] = await db.insert(billingAccountAutopayRules).values({
+    const createdOrResponse = await createReceivableRow<typeof billingAccountAutopayRules.$inferSelect>({
+      c,
       bizId,
-      billingAccountId: parsed.data.billingAccountId,
-      status: parsed.data.status,
-      name: sanitizePlainText(parsed.data.name),
-      priority: parsed.data.priority,
-      isDefault: parsed.data.isDefault,
-      paymentMethodId: parsed.data.paymentMethodId ?? null,
-      targetScope: parsed.data.targetScope,
-      runOffsetDays: parsed.data.runOffsetDays,
-      maxAttemptsPerItem: parsed.data.maxAttemptsPerItem,
-      retryIntervalHours: parsed.data.retryIntervalHours,
-      minimumAmountMinor: parsed.data.minimumAmountMinor,
-      maximumAmountMinor: parsed.data.maximumAmountMinor ?? null,
-      allowPartialCollection: parsed.data.allowPartialCollection,
-      collectionPolicy: sanitizeUnknown(parsed.data.collectionPolicy ?? {}),
-      metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
-    }).returning()
+      tableKey: 'billingAccountAutopayRules',
+      subjectType: 'billing_account_autopay_rule',
+      displayName: parsed.data.name,
+      data: {
+        bizId,
+        billingAccountId: parsed.data.billingAccountId,
+        status: parsed.data.status,
+        name: sanitizePlainText(parsed.data.name),
+        priority: parsed.data.priority,
+        isDefault: parsed.data.isDefault,
+        paymentMethodId: parsed.data.paymentMethodId ?? null,
+        targetScope: parsed.data.targetScope,
+        runOffsetDays: parsed.data.runOffsetDays,
+        maxAttemptsPerItem: parsed.data.maxAttemptsPerItem,
+        retryIntervalHours: parsed.data.retryIntervalHours,
+        minimumAmountMinor: parsed.data.minimumAmountMinor,
+        maximumAmountMinor: parsed.data.maximumAmountMinor ?? null,
+        allowPartialCollection: parsed.data.allowPartialCollection,
+        collectionPolicy: sanitizeUnknown(parsed.data.collectionPolicy ?? {}),
+        metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
+      },
+    })
+    if (createdOrResponse instanceof Response) return createdOrResponse
+    const created = createdOrResponse
     return ok(c, created, 201)
   },
 )
@@ -682,27 +810,35 @@ receivableRoutes.post(
     const parsed = autocollectionAttemptBodySchema.safeParse(await c.req.json().catch(() => null))
     if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid autocollection attempt body.', 400, parsed.error.flatten())
 
-    const [created] = await db.insert(autocollectionAttempts).values({
+    const createdOrResponse = await createReceivableRow<typeof autocollectionAttempts.$inferSelect>({
+      c,
       bizId,
-      billingAccountAutopayRuleId: parsed.data.billingAccountAutopayRuleId,
-      billingAccountId: parsed.data.billingAccountId,
-      arInvoiceId: parsed.data.arInvoiceId ?? null,
-      installmentScheduleItemId: parsed.data.installmentScheduleItemId ?? null,
-      status: sanitizePlainText(parsed.data.status),
-      statusConfigValueId: parsed.data.statusConfigValueId ?? null,
-      attemptNumber: parsed.data.attemptNumber,
-      scheduledFor: new Date(parsed.data.scheduledFor),
-      startedAt: parsed.data.startedAt ? new Date(parsed.data.startedAt) : null,
-      finishedAt: parsed.data.finishedAt ? new Date(parsed.data.finishedAt) : null,
-      paymentIntentId: parsed.data.paymentIntentId ?? null,
-      paymentTransactionId: parsed.data.paymentTransactionId ?? null,
-      attemptedAmountMinor: parsed.data.attemptedAmountMinor,
-      currency: parsed.data.currency,
-      failureCode: parsed.data.failureCode ?? null,
-      failureMessage: parsed.data.failureMessage ? sanitizePlainText(parsed.data.failureMessage) : null,
-      idempotencyKey: parsed.data.idempotencyKey ?? null,
-      metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
-    }).returning()
+      tableKey: 'autocollectionAttempts',
+      subjectType: 'autocollection_attempt',
+      data: {
+        bizId,
+        billingAccountAutopayRuleId: parsed.data.billingAccountAutopayRuleId,
+        billingAccountId: parsed.data.billingAccountId,
+        arInvoiceId: parsed.data.arInvoiceId ?? null,
+        installmentScheduleItemId: parsed.data.installmentScheduleItemId ?? null,
+        status: sanitizePlainText(parsed.data.status),
+        statusConfigValueId: parsed.data.statusConfigValueId ?? null,
+        attemptNumber: parsed.data.attemptNumber,
+        scheduledFor: new Date(parsed.data.scheduledFor),
+        startedAt: parsed.data.startedAt ? new Date(parsed.data.startedAt) : null,
+        finishedAt: parsed.data.finishedAt ? new Date(parsed.data.finishedAt) : null,
+        paymentIntentId: parsed.data.paymentIntentId ?? null,
+        paymentTransactionId: parsed.data.paymentTransactionId ?? null,
+        attemptedAmountMinor: parsed.data.attemptedAmountMinor,
+        currency: parsed.data.currency,
+        failureCode: parsed.data.failureCode ?? null,
+        failureMessage: parsed.data.failureMessage ? sanitizePlainText(parsed.data.failureMessage) : null,
+        idempotencyKey: parsed.data.idempotencyKey ?? null,
+        metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
+      },
+    })
+    if (createdOrResponse instanceof Response) return createdOrResponse
+    const created = createdOrResponse
     return ok(c, created, 201)
   },
 )

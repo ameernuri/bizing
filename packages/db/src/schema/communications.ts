@@ -29,7 +29,7 @@ import {
   messageDeliveryStatusEnum,
   messageEventTypeEnum,
 } from "./enums";
-import { bizExtensionInstalls, lifecycleEvents } from "./extensions";
+import { bizExtensionInstalls } from "./extensions";
 import { debugSnapshots, projectionDocuments } from "./projections";
 
 /**
@@ -785,9 +785,9 @@ export const outboundMessages = pgTable(
       () => messageTemplates.id,
     ),
 
-    /** Optional source lifecycle event that triggered this message. */
+    /** Optional source domain event that triggered this message. */
     lifecycleEventId: idRef("lifecycle_event_id").references(
-      () => lifecycleEvents.id,
+      () => domainEvents.id,
     ),
 
     /** Optional source campaign for journey sends. */
@@ -908,10 +908,10 @@ export const outboundMessages = pgTable(
       name: "outbound_messages_biz_template_fk",
     }),
 
-    /** Tenant-safe FK to lifecycle event. */
+    /** Tenant-safe FK to canonical domain event. */
     outboundMessagesBizLifecycleEventFk: foreignKey({
       columns: [table.bizId, table.lifecycleEventId],
-      foreignColumns: [lifecycleEvents.bizId, lifecycleEvents.id],
+      foreignColumns: [domainEvents.bizId, domainEvents.id],
       name: "outbound_messages_biz_lifecycle_event_fk",
     }),
 

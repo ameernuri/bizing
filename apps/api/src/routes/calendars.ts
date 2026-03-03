@@ -21,6 +21,7 @@ import {
   requireBizAccess,
 } from "../middleware/auth.js";
 import { persistCanonicalAction } from "../services/action-runtime.js";
+import { executeCrudRouteAction } from "../services/action-route-bridge.js";
 import { fail, ok, parsePositiveInt } from "./_api.js";
 
 const {
@@ -264,6 +265,62 @@ async function executeBizAction(c: Parameters<typeof getCurrentUser>[0], bizId: 
       accessMode: "biz",
     },
   });
+}
+
+async function createCalendarRow(
+  c: Parameters<typeof executeCrudRouteAction>[0]["c"],
+  bizId: string | null | undefined,
+  tableKey: string,
+  data: Record<string, unknown>,
+  options?: {
+    subjectType?: string;
+    subjectId?: string;
+    displayName?: string;
+    metadata?: Record<string, unknown>;
+  },
+) {
+  const result = await executeCrudRouteAction({
+    c,
+    bizId: bizId ?? null,
+    tableKey,
+    operation: "create",
+    data,
+    subjectType: options?.subjectType,
+    subjectId: options?.subjectId,
+    displayName: options?.displayName,
+    metadata: options?.metadata,
+  });
+  if (!result.ok) return fail(c, result.code, result.message, result.httpStatus, result.details);
+  return result.row;
+}
+
+async function updateCalendarRow(
+  c: Parameters<typeof executeCrudRouteAction>[0]["c"],
+  bizId: string | null | undefined,
+  tableKey: string,
+  id: string,
+  patch: Record<string, unknown>,
+  options?: {
+    subjectType?: string;
+    subjectId?: string;
+    displayName?: string;
+    metadata?: Record<string, unknown>;
+  },
+) {
+  const result = await executeCrudRouteAction({
+    c,
+    bizId: bizId ?? null,
+    tableKey,
+    operation: "update",
+    id,
+    patch,
+    subjectType: options?.subjectType,
+    subjectId: options?.subjectId,
+    displayName: options?.displayName,
+    metadata: options?.metadata,
+  });
+  if (!result.ok) return fail(c, result.code, result.message, result.httpStatus, result.details);
+  return result.row;
 }
 
 function deriveOwnerRefKey(
@@ -753,27 +810,30 @@ calendarRoutes.post(
     const ownerRefKey = deriveOwnerRefKey(parsed.data.ownerType, parsed.data);
     if (!ownerRefKey) return fail(c, "BAD_REQUEST", "Owner payload does not match ownerType.", 400);
 
-    const [created] = await db
-      .insert(calendarBindings)
-      .values({
-        bizId,
-        calendarId: parsed.data.calendarId,
-        ownerType: parsed.data.ownerType,
-        resourceId: parsed.data.resourceId,
-        serviceId: parsed.data.serviceId,
-        serviceProductId: parsed.data.serviceProductId,
-        offerId: parsed.data.offerId,
-        offerVersionId: parsed.data.offerVersionId,
-        locationId: parsed.data.locationId,
-        ownerUserId: parsed.data.ownerUserId,
-        ownerRefType: parsed.data.ownerRefType,
-        ownerRefId: parsed.data.ownerRefId,
-        ownerRefKey,
-        isPrimary: parsed.data.isPrimary,
-        isActive: parsed.data.isActive,
-        metadata: parsed.data.metadata ?? {},
-      })
-      .returning();
+    const created = (await createCalendarRow(c, bizId, "calendarBindings", {
+      bizId,
+      calendarId: parsed.data.calendarId,
+      ownerType: parsed.data.ownerType,
+      resourceId: parsed.data.resourceId,
+      serviceId: parsed.data.serviceId,
+      serviceProductId: parsed.data.serviceProductId,
+      offerId: parsed.data.offerId,
+      offerVersionId: parsed.data.offerVersionId,
+      locationId: parsed.data.locationId,
+      ownerUserId: parsed.data.ownerUserId,
+      ownerRefType: parsed.data.ownerRefType,
+      ownerRefId: parsed.data.ownerRefId,
+      ownerRefKey,
+      isPrimary: parsed.data.isPrimary,
+      isActive: parsed.data.isActive,
+      metadata: parsed.data.metadata ?? {},
+    }, {
+      subjectType: "calendar_binding",
+      subjectId: parsed.data.calendarId,
+      displayName: ownerRefKey,
+      metadata: { source: "routes.calendars.createBinding" },
+    })) as Record<string, unknown> | Response;
+    if (created instanceof Response) return created;
 
     return ok(c, created, 201);
   },
@@ -798,13 +858,15 @@ calendarRoutes.patch(
     });
     if (!existing) return fail(c, "NOT_FOUND", "Calendar binding not found.", 404);
 
-    const [updated] = await db
-      .update(calendarBindings)
-      .set({
-        ...parsed.data,
-      })
-      .where(and(eq(calendarBindings.bizId, bizId), eq(calendarBindings.id, bindingId)))
-      .returning();
+    const updated = (await updateCalendarRow(c, bizId, "calendarBindings", bindingId, {
+      ...parsed.data,
+    }, {
+      subjectType: "calendar_binding",
+      subjectId: bindingId,
+      displayName: "Update calendar binding",
+      metadata: { source: "routes.calendars.updateBinding" },
+    })) as Record<string, unknown> | Response;
+    if (updated instanceof Response) return updated;
 
     return ok(c, updated);
   },
@@ -823,13 +885,15 @@ calendarRoutes.delete(
     });
     if (!existing) return fail(c, "NOT_FOUND", "Calendar binding not found.", 404);
 
-    const [updated] = await db
-      .update(calendarBindings)
-      .set({
-        isActive: false,
-      })
-      .where(and(eq(calendarBindings.bizId, bizId), eq(calendarBindings.id, bindingId)))
-      .returning();
+    const updated = (await updateCalendarRow(c, bizId, "calendarBindings", bindingId, {
+      isActive: false,
+    }, {
+      subjectType: "calendar_binding",
+      subjectId: bindingId,
+      displayName: "Deactivate calendar binding",
+      metadata: { source: "routes.calendars.deleteBinding" },
+    })) as Record<string, unknown> | Response;
+    if (updated instanceof Response) return updated;
 
     return ok(c, updated);
   },
@@ -903,32 +967,35 @@ calendarRoutes.post(
     });
     if (!calendar) return fail(c, "NOT_FOUND", "Calendar not found.", 404);
 
-    const [created] = await db
-      .insert(availabilityRules)
-      .values({
-        bizId,
-        calendarId,
-        overlayId: parsed.data.overlayId,
-        name: parsed.data.name,
-        mode: parsed.data.mode,
-        frequency: parsed.data.frequency,
-        recurrenceRule: parsed.data.recurrenceRule,
-        dayOfWeek: parsed.data.dayOfWeek ?? null,
-        dayOfMonth: parsed.data.dayOfMonth ?? null,
-        startDate: parsed.data.startDate ?? null,
-        endDate: parsed.data.endDate ?? null,
-        startTime: parsed.data.startTime ?? null,
-        endTime: parsed.data.endTime ?? null,
-        startAt: parsed.data.startAt ? new Date(parsed.data.startAt) : null,
-        endAt: parsed.data.endAt ? new Date(parsed.data.endAt) : null,
-        action: parsed.data.action,
-        capacityDelta: parsed.data.capacityDelta ?? null,
-        pricingAdjustment: parsed.data.pricingAdjustment,
-        priority: parsed.data.priority,
-        isActive: parsed.data.isActive,
-        metadata: parsed.data.metadata ?? {},
-      })
-      .returning();
+    const created = (await createCalendarRow(c, bizId, "availabilityRules", {
+      bizId,
+      calendarId,
+      overlayId: parsed.data.overlayId,
+      name: parsed.data.name,
+      mode: parsed.data.mode,
+      frequency: parsed.data.frequency,
+      recurrenceRule: parsed.data.recurrenceRule,
+      dayOfWeek: parsed.data.dayOfWeek ?? null,
+      dayOfMonth: parsed.data.dayOfMonth ?? null,
+      startDate: parsed.data.startDate ?? null,
+      endDate: parsed.data.endDate ?? null,
+      startTime: parsed.data.startTime ?? null,
+      endTime: parsed.data.endTime ?? null,
+      startAt: parsed.data.startAt ? new Date(parsed.data.startAt) : null,
+      endAt: parsed.data.endAt ? new Date(parsed.data.endAt) : null,
+      action: parsed.data.action,
+      capacityDelta: parsed.data.capacityDelta ?? null,
+      pricingAdjustment: parsed.data.pricingAdjustment,
+      priority: parsed.data.priority,
+      isActive: parsed.data.isActive,
+      metadata: parsed.data.metadata ?? {},
+    }, {
+      subjectType: "availability_rule",
+      subjectId: calendarId,
+      displayName: parsed.data.name,
+      metadata: { source: "routes.calendars.createAvailabilityRule" },
+    })) as Record<string, unknown> | Response;
+    if (created instanceof Response) return created;
 
     return ok(c, created, 201);
   },
@@ -965,17 +1032,13 @@ calendarRoutes.patch(
       updatePayload.endAt = parsed.data.endAt ? new Date(parsed.data.endAt) : null
     }
 
-    const [updated] = await db
-      .update(availabilityRules)
-      .set(updatePayload as never)
-      .where(
-        and(
-          eq(availabilityRules.bizId, bizId),
-          eq(availabilityRules.calendarId, calendarId),
-          eq(availabilityRules.id, ruleId),
-        ),
-      )
-      .returning();
+    const updated = (await updateCalendarRow(c, bizId, "availabilityRules", ruleId, updatePayload as never, {
+      subjectType: "availability_rule",
+      subjectId: ruleId,
+      displayName: "Update availability rule",
+      metadata: { source: "routes.calendars.updateAvailabilityRule" },
+    })) as Record<string, unknown> | Response;
+    if (updated instanceof Response) return updated;
 
     return ok(c, updated);
   },
@@ -998,19 +1061,15 @@ calendarRoutes.delete(
     });
     if (!existing) return fail(c, "NOT_FOUND", "Availability rule not found.", 404);
 
-    const [updated] = await db
-      .update(availabilityRules)
-      .set({
-        isActive: false,
-      })
-      .where(
-        and(
-          eq(availabilityRules.bizId, bizId),
-          eq(availabilityRules.calendarId, calendarId),
-          eq(availabilityRules.id, ruleId),
-        ),
-      )
-      .returning();
+    const updated = (await updateCalendarRow(c, bizId, "availabilityRules", ruleId, {
+      isActive: false,
+    }, {
+      subjectType: "availability_rule",
+      subjectId: ruleId,
+      displayName: "Deactivate availability rule",
+      metadata: { source: "routes.calendars.deleteAvailabilityRule" },
+    })) as Record<string, unknown> | Response;
+    if (updated instanceof Response) return updated;
 
     return ok(c, updated);
   },
@@ -1055,7 +1114,7 @@ calendarRoutes.post(
     const parsed = createCapacityHoldBodySchema.safeParse(await c.req.json().catch(() => null));
     if (!parsed.success) return fail(c, "VALIDATION_ERROR", "Invalid request body.", 400, parsed.error.flatten());
 
-    const [created] = await db.insert(capacityHolds).values({
+    const created = (await createCalendarRow(c, bizId, "capacityHolds", {
       bizId,
       calendarId,
       targetType: parsed.data.targetType,
@@ -1087,7 +1146,13 @@ calendarRoutes.post(
       reasonCode: parsed.data.reasonCode ?? null,
       policySnapshot: parsed.data.policySnapshot ?? {},
       metadata: parsed.data.metadata ?? {},
-    }).returning();
+    }, {
+      subjectType: "capacity_hold",
+      subjectId: parsed.data.targetRefKey,
+      displayName: `Capacity hold ${parsed.data.effectMode}`,
+      metadata: { source: "routes.calendars.createCapacityHold" },
+    })) as Record<string, unknown> | Response;
+    if (created instanceof Response) return created;
     return ok(c, created, 201);
   },
 );
@@ -1101,15 +1166,25 @@ calendarRoutes.patch(
     const { bizId, calendarId, holdId } = c.req.param();
     const parsed = updateCapacityHoldBodySchema.safeParse(await c.req.json().catch(() => null));
     if (!parsed.success) return fail(c, "VALIDATION_ERROR", "Invalid request body.", 400, parsed.error.flatten());
-    const [updated] = await db.update(capacityHolds).set({
+    const existing = await db.query.capacityHolds.findFirst({
+      where: and(eq(capacityHolds.bizId, bizId), eq(capacityHolds.calendarId, calendarId), eq(capacityHolds.id, holdId)),
+      columns: { id: true },
+    });
+    if (!existing) return fail(c, "NOT_FOUND", "Capacity hold not found.", 404);
+    const updated = (await updateCalendarRow(c, bizId, "capacityHolds", holdId, {
       status: parsed.data.status,
       expiresAt: parsed.data.expiresAt === undefined ? undefined : parsed.data.expiresAt ? new Date(parsed.data.expiresAt) : null,
       releasedAt: parsed.data.releasedAt === undefined ? undefined : parsed.data.releasedAt ? new Date(parsed.data.releasedAt) : null,
       consumedAt: parsed.data.consumedAt === undefined ? undefined : parsed.data.consumedAt ? new Date(parsed.data.consumedAt) : null,
       cancelledAt: parsed.data.cancelledAt === undefined ? undefined : parsed.data.cancelledAt ? new Date(parsed.data.cancelledAt) : null,
       metadata: parsed.data.metadata,
-    }).where(and(eq(capacityHolds.bizId, bizId), eq(capacityHolds.calendarId, calendarId), eq(capacityHolds.id, holdId))).returning();
-    if (!updated) return fail(c, "NOT_FOUND", "Capacity hold not found.", 404);
+    }, {
+      subjectType: "capacity_hold",
+      subjectId: holdId,
+      displayName: "Update capacity hold",
+      metadata: { source: "routes.calendars.updateCapacityHold" },
+    })) as Record<string, unknown> | Response;
+    if (updated instanceof Response) return updated;
     return ok(c, updated);
   },
 );

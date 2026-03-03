@@ -14,6 +14,7 @@ import { and, asc, desc, eq } from 'drizzle-orm'
 import { z } from 'zod'
 import dbPackage from '@bizing/db'
 import { requireAclPermission, requireAuth, requireBizAccess } from '../middleware/auth.js'
+import { executeCrudRouteAction } from '../services/action-route-bridge.js'
 import { fail, ok } from './_api.js'
 import { sanitizePlainText, sanitizeUnknown } from '../lib/sanitize.js'
 
@@ -77,6 +78,56 @@ const createEventBodySchema = z.object({
 
 export const leaveRoutes = new Hono()
 
+async function createLeaveRow<T extends Record<string, unknown>>(input: {
+  c: Parameters<typeof fail>[0]
+  bizId: string
+  tableKey: string
+  subjectType: string
+  data: Record<string, unknown>
+  displayName?: string
+}) {
+  const delegated = await executeCrudRouteAction({
+    c: input.c,
+    bizId: input.bizId,
+    tableKey: input.tableKey,
+    operation: 'create',
+    subjectType: input.subjectType,
+    displayName: input.displayName,
+    data: input.data,
+    metadata: { routeFamily: 'leave' },
+  })
+  if (!delegated.ok) return fail(input.c, delegated.code, delegated.message, delegated.httpStatus, delegated.details)
+  return delegated.row as T
+}
+
+async function updateLeaveRow<T extends Record<string, unknown>>(input: {
+  c: Parameters<typeof fail>[0]
+  bizId: string
+  tableKey: string
+  subjectType: string
+  id: string
+  patch: Record<string, unknown>
+  notFoundMessage: string
+}) {
+  const delegated = await executeCrudRouteAction({
+    c: input.c,
+    bizId: input.bizId,
+    tableKey: input.tableKey,
+    operation: 'update',
+    id: input.id,
+    subjectType: input.subjectType,
+    subjectId: input.id,
+    patch: input.patch,
+    metadata: { routeFamily: 'leave' },
+  })
+  if (!delegated.ok) {
+    if (delegated.code === 'CRUD_TARGET_NOT_FOUND') return fail(input.c, 'NOT_FOUND', input.notFoundMessage, 404)
+    return fail(input.c, delegated.code, delegated.message, delegated.httpStatus, delegated.details)
+  }
+  if (!delegated.row) return fail(input.c, 'NOT_FOUND', input.notFoundMessage, 404)
+  return delegated.row as T
+}
+
 leaveRoutes.get('/bizes/:bizId/leave-policies', requireAuth, requireBizAccess('bizId'), requireAclPermission('bizes.read', { bizIdParam: 'bizId' }), async (c) => {
   const bizId = c.req.param('bizId')
   const rows = await db.query.leavePolicies.findMany({ where: eq(leavePolicies.bizId, bizId), orderBy: [asc(leavePolicies.name)] })
@@ -87,7 +138,13 @@ leaveRoutes.post('/bizes/:bizId/leave-policies', requireAuth, requireBizAccess('
   const bizId = c.req.param('bizId')
   const parsed = createPolicyBodySchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
-  const [created] = await db.insert(leavePolicies).values({
+  const created = await createLeaveRow<typeof leavePolicies.$inferSelect>({
+    c,
+    bizId,
+    tableKey: 'leavePolicies',
+    subjectType: 'leave_policy',
+    displayName: parsed.data.name,
+    data: {
     bizId,
     name: sanitizePlainText(parsed.data.name),
     slug: sanitizePlainText(parsed.data.slug),
@@ -103,7 +160,9 @@ leaveRoutes.post('/bizes/:bizId/leave-policies', requireAuth, requireBizAccess('
     minNoticeMinutes: parsed.data.minNoticeMinutes,
     policy: sanitizeUnknown(parsed.data.policy ?? {}),
     metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
-  }).returning()
+    },
+  })
+  if (created instanceof Response) return created
   return ok(c, created, 201)
 })
 
@@ -117,8 +176,10 @@ leaveRoutes.post('/bizes/:bizId/leave-balances', requireAuth, requireBizAccess('
   const bizId = c.req.param('bizId')
   const parsed = createBalanceBodySchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
-  const [created] = await db.insert(leaveBalances).values({
-    bizId,
+  const existing = await db.query.leaveBalances.findFirst({
+    where: and(eq(leaveBalances.bizId, bizId), eq(leaveBalances.leavePolicyId, parsed.data.leavePolicyId), eq(leaveBalances.resourceId, parsed.data.resourceId)),
+  })
+  const payload = {
     leavePolicyId: parsed.data.leavePolicyId,
     resourceId: parsed.data.resourceId,
     balanceAmount: String(parsed.data.balanceAmount),
@@ -126,16 +187,26 @@ leaveRoutes.post('/bizes/:bizId/leave-balances', requireAuth, requireBizAccess('
     usedAmount: String(parsed.data.usedAmount),
     asOfAt: parsed.data.asOfAt ? new Date(parsed.data.asOfAt) : new Date(),
     metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
-  }).onConflictDoUpdate({
-    target: [leaveBalances.leavePolicyId, leaveBalances.resourceId],
-    set: {
-      balanceAmount: String(parsed.data.balanceAmount),
-      reservedAmount: String(parsed.data.reservedAmount),
-      usedAmount: String(parsed.data.usedAmount),
-      asOfAt: parsed.data.asOfAt ? new Date(parsed.data.asOfAt) : new Date(),
-      metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
-    },
-  }).returning()
+  }
+  const created = existing
+    ? await updateLeaveRow<typeof leaveBalances.$inferSelect>({
+      c,
+      bizId,
+      tableKey: 'leaveBalances',
+      subjectType: 'leave_balance',
+      id: existing.id,
+      patch: payload,
+      notFoundMessage: 'Leave balance not found.',
+    })
+    : await createLeaveRow<typeof leaveBalances.$inferSelect>({
+      c,
+      bizId,
+      tableKey: 'leaveBalances',
+      subjectType: 'leave_balance',
+      displayName: parsed.data.resourceId,
+      data: { bizId, ...payload },
+    })
+  if (created instanceof Response) return created
   return ok(c, created, 201)
 })
 
@@ -149,7 +220,13 @@ leaveRoutes.post('/bizes/:bizId/leave-requests', requireAuth, requireBizAccess('
   const bizId = c.req.param('bizId')
   const parsed = createRequestBodySchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
-  const [created] = await db.insert(leaveRequests).values({
+  const created = await createLeaveRow<typeof leaveRequests.$inferSelect>({
+    c,
+    bizId,
+    tableKey: 'leaveRequests',
+    subjectType: 'leave_request',
+    displayName: parsed.data.resourceId,
+    data: {
     bizId,
     leavePolicyId: parsed.data.leavePolicyId,
     resourceId: parsed.data.resourceId,
@@ -164,7 +241,9 @@ leaveRoutes.post('/bizes/:bizId/leave-requests', requireAuth, requireBizAccess('
     reason: parsed.data.reason ? sanitizePlainText(parsed.data.reason) : null,
     decisionReason: parsed.data.decisionReason ? sanitizePlainText(parsed.data.decisionReason) : null,
     metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
-  }).returning()
+    },
+  })
+  if (created instanceof Response) return created
   return ok(c, created, 201)
 })
 
@@ -172,7 +251,13 @@ leaveRoutes.patch('/bizes/:bizId/leave-requests/:leaveRequestId', requireAuth, r
   const { bizId, leaveRequestId } = c.req.param()
   const parsed = patchRequestBodySchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
-  const [created] = await db.update(leaveRequests).set({
+  const created = await updateLeaveRow<typeof leaveRequests.$inferSelect>({
+    c,
+    bizId,
+    tableKey: 'leaveRequests',
+    subjectType: 'leave_request',
+    id: leaveRequestId,
+    patch: {
     leavePolicyId: parsed.data.leavePolicyId ?? undefined,
     resourceId: parsed.data.resourceId ?? undefined,
     requesterUserId: parsed.data.requesterUserId ?? undefined,
@@ -186,7 +271,10 @@ leaveRoutes.patch('/bizes/:bizId/leave-requests/:leaveRequestId', requireAuth, r
     reason: parsed.data.reason === undefined ? undefined : parsed.data.reason ? sanitizePlainText(parsed.data.reason) : null,
     decisionReason: parsed.data.decisionReason === undefined ? undefined : parsed.data.decisionReason ? sanitizePlainText(parsed.data.decisionReason) : null,
     metadata: parsed.data.metadata ? sanitizeUnknown(parsed.data.metadata) : undefined,
-  }).where(and(eq(leaveRequests.bizId, bizId), eq(leaveRequests.id, leaveRequestId))).returning()
+    },
+    notFoundMessage: 'Leave request not found.',
+  })
+  if (created instanceof Response) return created
   if (!created) return fail(c, 'NOT_FOUND', 'Leave request not found.', 404)
   return ok(c, created)
 })
@@ -201,7 +289,13 @@ leaveRoutes.post('/bizes/:bizId/leave-events', requireAuth, requireBizAccess('bi
   const bizId = c.req.param('bizId')
   const parsed = createEventBodySchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
-  const [created] = await db.insert(leaveEvents).values({
+  const created = await createLeaveRow<typeof leaveEvents.$inferSelect>({
+    c,
+    bizId,
+    tableKey: 'leaveEvents',
+    subjectType: 'leave_event',
+    displayName: parsed.data.eventType,
+    data: {
     bizId,
     leavePolicyId: parsed.data.leavePolicyId,
     resourceId: parsed.data.resourceId,
@@ -212,6 +306,8 @@ leaveRoutes.post('/bizes/:bizId/leave-events', requireAuth, requireBizAccess('bi
     actorUserId: parsed.data.actorUserId ?? null,
     note: parsed.data.note ? sanitizePlainText(parsed.data.note) : null,
     metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
-  }).returning()
+    },
+  })
+  if (created instanceof Response) return created
   return ok(c, created, 201)
 })

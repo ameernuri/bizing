@@ -17,6 +17,7 @@ import { and, asc, desc, eq } from 'drizzle-orm'
 import { z } from 'zod'
 import dbPackage from '@bizing/db'
 import { requireAclPermission, requireAuth, requireBizAccess } from '../middleware/auth.js'
+import { executeCrudRouteAction } from '../services/action-route-bridge.js'
 import { fail, ok } from './_api.js'
 
 const { db, queueCounters, queueCounterAssignments, queueEntries, queueTickets, queueTicketCalls } = dbPackage
@@ -82,12 +83,23 @@ queueCounterRoutes.post('/bizes/:bizId/queue-counters', requireAuth, requireBizA
   const bizId = c.req.param('bizId')
   const parsed = counterBodySchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
-  const [row] = await db.insert(queueCounters).values({
+  const delegated = await executeCrudRouteAction({
+    c,
     bizId,
-    ...parsed.data,
-    policy: parsed.data.policy ?? {},
-    metadata: parsed.data.metadata ?? {},
-  }).returning()
+    tableKey: 'queueCounters',
+    operation: 'create',
+    subjectType: 'queue_counter',
+    displayName: parsed.data.name,
+    data: {
+      bizId,
+      ...parsed.data,
+      policy: parsed.data.policy ?? {},
+      metadata: parsed.data.metadata ?? {},
+    },
+    metadata: { routeFamily: 'queue-counters' },
+  })
+  if (!delegated.ok) return fail(c, delegated.code, delegated.message, delegated.httpStatus, delegated.details)
+  const row = delegated.row
   return ok(c, row, 201)
 })
 
@@ -95,16 +107,31 @@ queueCounterRoutes.patch('/bizes/:bizId/queue-counters/:queueCounterId', require
   const { bizId, queueCounterId } = c.req.param()
   const parsed = counterPatchSchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
-  const [row] = await db.update(queueCounters).set({
-    queueId: parsed.data.queueId ?? undefined,
-    locationId: parsed.data.locationId ?? undefined,
-    code: parsed.data.code ?? undefined,
-    name: parsed.data.name ?? undefined,
-    status: parsed.data.status ?? undefined,
-    counterType: parsed.data.counterType ?? undefined,
-    policy: parsed.data.policy ?? undefined,
-    metadata: parsed.data.metadata ?? undefined,
-  }).where(and(eq(queueCounters.bizId, bizId), eq(queueCounters.id, queueCounterId))).returning()
+  const delegated = await executeCrudRouteAction({
+    c,
+    bizId,
+    tableKey: 'queueCounters',
+    operation: 'update',
+    id: queueCounterId,
+    subjectType: 'queue_counter',
+    subjectId: queueCounterId,
+    patch: {
+      queueId: parsed.data.queueId ?? undefined,
+      locationId: parsed.data.locationId ?? undefined,
+      code: parsed.data.code ?? undefined,
+      name: parsed.data.name ?? undefined,
+      status: parsed.data.status ?? undefined,
+      counterType: parsed.data.counterType ?? undefined,
+      policy: parsed.data.policy ?? undefined,
+      metadata: parsed.data.metadata ?? undefined,
+    },
+    metadata: { routeFamily: 'queue-counters' },
+  })
+  if (!delegated.ok) {
+    if (delegated.code === 'CRUD_TARGET_NOT_FOUND') return fail(c, 'NOT_FOUND', 'Queue counter not found.', 404)
+    return fail(c, delegated.code, delegated.message, delegated.httpStatus, delegated.details)
+  }
+  const row = delegated.row
   if (!row) return fail(c, 'NOT_FOUND', 'Queue counter not found.', 404)
   return ok(c, row)
 })
@@ -123,15 +150,26 @@ queueCounterRoutes.post('/bizes/:bizId/queue-counter-assignments', requireAuth, 
   const bizId = c.req.param('bizId')
   const parsed = assignmentBodySchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
-  const [row] = await db.insert(queueCounterAssignments).values({
+  const delegated = await executeCrudRouteAction({
+    c,
     bizId,
-    ...parsed.data,
-    startsAt: new Date(parsed.data.startsAt),
-    endsAt: parsed.data.endsAt ? new Date(parsed.data.endsAt) : null,
-    activatedAt: parsed.data.activatedAt ? new Date(parsed.data.activatedAt) : null,
-    endedAt: parsed.data.endedAt ? new Date(parsed.data.endedAt) : null,
-    metadata: parsed.data.metadata ?? {},
-  }).returning()
+    tableKey: 'queueCounterAssignments',
+    operation: 'create',
+    subjectType: 'queue_counter_assignment',
+    displayName: parsed.data.assignmentState,
+    data: {
+      bizId,
+      ...parsed.data,
+      startsAt: new Date(parsed.data.startsAt),
+      endsAt: parsed.data.endsAt ? new Date(parsed.data.endsAt) : null,
+      activatedAt: parsed.data.activatedAt ? new Date(parsed.data.activatedAt) : null,
+      endedAt: parsed.data.endedAt ? new Date(parsed.data.endedAt) : null,
+      metadata: parsed.data.metadata ?? {},
+    },
+    metadata: { routeFamily: 'queue-counters' },
+  })
+  if (!delegated.ok) return fail(c, delegated.code, delegated.message, delegated.httpStatus, delegated.details)
+  const row = delegated.row
   return ok(c, row, 201)
 })
 
@@ -139,20 +177,35 @@ queueCounterRoutes.patch('/bizes/:bizId/queue-counter-assignments/:assignmentId'
   const { bizId, assignmentId } = c.req.param()
   const parsed = assignmentPatchSchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
-  const [row] = await db.update(queueCounterAssignments).set({
-    queueCounterId: parsed.data.queueCounterId ?? undefined,
-    assigneeUserId: parsed.data.assigneeUserId ?? undefined,
-    assigneeGroupAccountId: parsed.data.assigneeGroupAccountId ?? undefined,
-    assigneeResourceId: parsed.data.assigneeResourceId ?? undefined,
-    assigneeSubjectType: parsed.data.assigneeSubjectType ?? undefined,
-    assigneeSubjectId: parsed.data.assigneeSubjectId ?? undefined,
-    assignmentState: parsed.data.assignmentState ?? undefined,
-    startsAt: parsed.data.startsAt ? new Date(parsed.data.startsAt) : undefined,
-    endsAt: parsed.data.endsAt ? new Date(parsed.data.endsAt) : undefined,
-    activatedAt: parsed.data.activatedAt ? new Date(parsed.data.activatedAt) : undefined,
-    endedAt: parsed.data.endedAt ? new Date(parsed.data.endedAt) : undefined,
-    metadata: parsed.data.metadata ?? undefined,
-  }).where(and(eq(queueCounterAssignments.bizId, bizId), eq(queueCounterAssignments.id, assignmentId))).returning()
+  const delegated = await executeCrudRouteAction({
+    c,
+    bizId,
+    tableKey: 'queueCounterAssignments',
+    operation: 'update',
+    id: assignmentId,
+    subjectType: 'queue_counter_assignment',
+    subjectId: assignmentId,
+    patch: {
+      queueCounterId: parsed.data.queueCounterId ?? undefined,
+      assigneeUserId: parsed.data.assigneeUserId ?? undefined,
+      assigneeGroupAccountId: parsed.data.assigneeGroupAccountId ?? undefined,
+      assigneeResourceId: parsed.data.assigneeResourceId ?? undefined,
+      assigneeSubjectType: parsed.data.assigneeSubjectType ?? undefined,
+      assigneeSubjectId: parsed.data.assigneeSubjectId ?? undefined,
+      assignmentState: parsed.data.assignmentState ?? undefined,
+      startsAt: parsed.data.startsAt ? new Date(parsed.data.startsAt) : undefined,
+      endsAt: parsed.data.endsAt ? new Date(parsed.data.endsAt) : undefined,
+      activatedAt: parsed.data.activatedAt ? new Date(parsed.data.activatedAt) : undefined,
+      endedAt: parsed.data.endedAt ? new Date(parsed.data.endedAt) : undefined,
+      metadata: parsed.data.metadata ?? undefined,
+    },
+    metadata: { routeFamily: 'queue-counters' },
+  })
+  if (!delegated.ok) {
+    if (delegated.code === 'CRUD_TARGET_NOT_FOUND') return fail(c, 'NOT_FOUND', 'Queue counter assignment not found.', 404)
+    return fail(c, delegated.code, delegated.message, delegated.httpStatus, delegated.details)
+  }
+  const row = delegated.row
   if (!row) return fail(c, 'NOT_FOUND', 'Queue counter assignment not found.', 404)
   return ok(c, row)
 })
@@ -199,37 +252,69 @@ queueCounterRoutes.post('/bizes/:bizId/queue-ticket-calls', requireAuth, require
       limit: 1,
     })
     const nextTicketNumber = (existingTickets[0]?.ticketNumber ?? 0) + 1
-    ;[ticket] = await db.insert(queueTickets).values({
+    const ticketCreate = await executeCrudRouteAction({
+      c,
       bizId,
-      queueEntryId: entry.id,
-      queueId: entry.queueId,
-      ticketNumber: nextTicketNumber,
-      status: 'issued',
-      metadata: {},
-    }).returning()
+      tableKey: 'queueTickets',
+      operation: 'create',
+      subjectType: 'queue_ticket',
+      displayName: String(nextTicketNumber),
+      data: {
+        bizId,
+        queueEntryId: entry.id,
+        queueId: entry.queueId,
+        ticketNumber: nextTicketNumber,
+        status: 'issued',
+        metadata: {},
+      },
+      metadata: { routeFamily: 'queue-counters' },
+    })
+    if (!ticketCreate.ok) return fail(c, ticketCreate.code, ticketCreate.message, ticketCreate.httpStatus, ticketCreate.details)
+    ticket = ticketCreate.row as typeof queueTickets.$inferSelect
   }
 
-  const [row] = await db.insert(queueTicketCalls).values({
+  const callCreate = await executeCrudRouteAction({
+    c,
     bizId,
-    queueTicketId: ticket.id,
-    queueEntryId: entry.id,
-    queueCounterId: counter.id,
-    callState: parsed.data.callState,
-    calledAt: parsed.data.calledAt ? new Date(parsed.data.calledAt) : new Date(),
-    acknowledgedAt: parsed.data.acknowledgedAt ? new Date(parsed.data.acknowledgedAt) : null,
-    serviceStartedAt: parsed.data.serviceStartedAt ? new Date(parsed.data.serviceStartedAt) : null,
-    serviceEndedAt: parsed.data.serviceEndedAt ? new Date(parsed.data.serviceEndedAt) : null,
-    calledByUserId: parsed.data.calledByUserId ?? null,
-    servedByUserId: parsed.data.servedByUserId ?? null,
-    metadata: parsed.data.metadata ?? {},
-  }).returning()
+    tableKey: 'queueTicketCalls',
+    operation: 'create',
+    subjectType: 'queue_ticket_call',
+    data: {
+      bizId,
+      queueTicketId: ticket.id,
+      queueEntryId: entry.id,
+      queueCounterId: counter.id,
+      callState: parsed.data.callState,
+      calledAt: parsed.data.calledAt ? new Date(parsed.data.calledAt) : new Date(),
+      acknowledgedAt: parsed.data.acknowledgedAt ? new Date(parsed.data.acknowledgedAt) : null,
+      serviceStartedAt: parsed.data.serviceStartedAt ? new Date(parsed.data.serviceStartedAt) : null,
+      serviceEndedAt: parsed.data.serviceEndedAt ? new Date(parsed.data.serviceEndedAt) : null,
+      calledByUserId: parsed.data.calledByUserId ?? null,
+      servedByUserId: parsed.data.servedByUserId ?? null,
+      metadata: parsed.data.metadata ?? {},
+    },
+    metadata: { routeFamily: 'queue-counters' },
+  })
+  if (!callCreate.ok) return fail(c, callCreate.code, callCreate.message, callCreate.httpStatus, callCreate.details)
+  const row = callCreate.row as typeof queueTicketCalls.$inferSelect
 
-  await db.update(queueTickets).set({
-    status: row.callState === 'served' ? 'completed' : row.callState === 'cancelled' ? 'cancelled' : row.serviceStartedAt ? 'serving' : 'called',
-    calledAt: row.calledAt,
-    serviceStartedAt: row.serviceStartedAt ?? undefined,
-    serviceEndedAt: row.serviceEndedAt ?? undefined,
-  }).where(and(eq(queueTickets.bizId, bizId), eq(queueTickets.id, ticket.id)))
+  const ticketUpdate = await executeCrudRouteAction({
+    c,
+    bizId,
+    tableKey: 'queueTickets',
+    operation: 'update',
+    id: ticket.id,
+    subjectType: 'queue_ticket',
+    subjectId: ticket.id,
+    patch: {
+      status: row.callState === 'served' ? 'completed' : row.callState === 'cancelled' ? 'cancelled' : row.serviceStartedAt ? 'serving' : 'called',
+      calledAt: row.calledAt,
+      serviceStartedAt: row.serviceStartedAt ?? undefined,
+      serviceEndedAt: row.serviceEndedAt ?? undefined,
+    },
+    metadata: { routeFamily: 'queue-counters' },
+  })
+  if (!ticketUpdate.ok) return fail(c, ticketUpdate.code, ticketUpdate.message, ticketUpdate.httpStatus, ticketUpdate.details)
 
   return ok(c, row, 201)
 })
@@ -238,16 +323,31 @@ queueCounterRoutes.patch('/bizes/:bizId/queue-ticket-calls/:callId', requireAuth
   const { bizId, callId } = c.req.param()
   const parsed = callPatchSchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
-  const [row] = await db.update(queueTicketCalls).set({
-    callState: parsed.data.callState ?? undefined,
-    calledAt: parsed.data.calledAt ? new Date(parsed.data.calledAt) : undefined,
-    acknowledgedAt: parsed.data.acknowledgedAt ? new Date(parsed.data.acknowledgedAt) : undefined,
-    serviceStartedAt: parsed.data.serviceStartedAt ? new Date(parsed.data.serviceStartedAt) : undefined,
-    serviceEndedAt: parsed.data.serviceEndedAt ? new Date(parsed.data.serviceEndedAt) : undefined,
-    calledByUserId: parsed.data.calledByUserId ?? undefined,
-    servedByUserId: parsed.data.servedByUserId ?? undefined,
-    metadata: parsed.data.metadata ?? undefined,
-  }).where(and(eq(queueTicketCalls.bizId, bizId), eq(queueTicketCalls.id, callId))).returning()
+  const delegated = await executeCrudRouteAction({
+    c,
+    bizId,
+    tableKey: 'queueTicketCalls',
+    operation: 'update',
+    id: callId,
+    subjectType: 'queue_ticket_call',
+    subjectId: callId,
+    patch: {
+      callState: parsed.data.callState ?? undefined,
+      calledAt: parsed.data.calledAt ? new Date(parsed.data.calledAt) : undefined,
+      acknowledgedAt: parsed.data.acknowledgedAt ? new Date(parsed.data.acknowledgedAt) : undefined,
+      serviceStartedAt: parsed.data.serviceStartedAt ? new Date(parsed.data.serviceStartedAt) : undefined,
+      serviceEndedAt: parsed.data.serviceEndedAt ? new Date(parsed.data.serviceEndedAt) : undefined,
+      calledByUserId: parsed.data.calledByUserId ?? undefined,
+      servedByUserId: parsed.data.servedByUserId ?? undefined,
+      metadata: parsed.data.metadata ?? undefined,
+    },
+    metadata: { routeFamily: 'queue-counters' },
+  })
+  if (!delegated.ok) {
+    if (delegated.code === 'CRUD_TARGET_NOT_FOUND') return fail(c, 'NOT_FOUND', 'Queue ticket call not found.', 404)
+    return fail(c, delegated.code, delegated.message, delegated.httpStatus, delegated.details)
+  }
+  const row = delegated.row
   if (!row) return fail(c, 'NOT_FOUND', 'Queue ticket call not found.', 404)
   return ok(c, row)
 })

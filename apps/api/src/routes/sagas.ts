@@ -49,6 +49,7 @@ import {
   getSagaCoverageReportDetail,
   createSchemaCoverageBaselineReport,
   importSchemaCoverageReportFromMarkdown,
+  rebuildUcCoverageMatrixReport,
   listSagaRunActorProfiles,
   listSagaRunActorMessages,
   createSagaRunActorMessage,
@@ -203,6 +204,7 @@ const createSchemaCoverageItemBodySchema = z.object({
 })
 
 const createSchemaCoverageReportBodySchema = z.object({
+  scopeType: z.string().optional(),
   title: z.string().min(1).max(255),
   summary: z.string().optional().nullable(),
   reportMarkdown: z.string().optional().nullable(),
@@ -211,6 +213,13 @@ const createSchemaCoverageReportBodySchema = z.object({
   replaceExisting: z.boolean().default(false),
   bizId: z.string().optional().nullable(),
   items: z.array(createSchemaCoverageItemBodySchema).min(1),
+})
+
+const rebuildUcCoverageBodySchema = z.object({
+  sourceSchemaReportId: z.string().optional(),
+  replaceExisting: z.boolean().default(true),
+  coverageFile: z.string().optional(),
+  bizId: z.string().optional().nullable(),
 })
 
 const resetLoopBodySchema = z.object({
@@ -527,6 +536,7 @@ sagaRoutes.post('/ooda/sagas/schema-coverage/reports', requireAuth, async (c) =>
   }
 
   const created = await createSchemaCoverageBaselineReport({
+    scopeType: parsed.data.scopeType,
     title: parsed.data.title,
     summary: parsed.data.summary,
     reportMarkdown: parsed.data.reportMarkdown,
@@ -538,6 +548,31 @@ sagaRoutes.post('/ooda/sagas/schema-coverage/reports', requireAuth, async (c) =>
     items: parsed.data.items,
   })
   return ok(c, created, 201)
+})
+
+/**
+ * Build one unified UC coverage matrix from:
+ * - schema baseline report rows
+ * - API endpoint evidence observed in latest saga runs
+ */
+sagaRoutes.post('/ooda/sagas/uc-coverage/rebuild', requireAuth, async (c) => {
+  const user = getCurrentUser(c)
+  if (!user) return fail(c, 'UNAUTHORIZED', 'Authentication required.', 401)
+
+  const body = await c.req.json().catch(() => null)
+  const parsed = rebuildUcCoverageBodySchema.safeParse(body)
+  if (!parsed.success) {
+    return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
+  }
+
+  const rebuilt = await rebuildUcCoverageMatrixReport({
+    sourceSchemaReportId: parsed.data.sourceSchemaReportId,
+    replaceExisting: parsed.data.replaceExisting,
+    coverageFile: parsed.data.coverageFile,
+    bizId: parsed.data.bizId,
+    actorUserId: user.id,
+  })
+  return ok(c, rebuilt, 201)
 })
 
 sagaRoutes.get('/ooda/sagas/library/overview', requireAuth, async (c) => {
@@ -926,6 +961,35 @@ sagaRoutes.get('/ooda/sagas/schema-coverage/reports/:reportId', requireAuth, asy
   if (!detail) return fail(c, 'NOT_FOUND', 'Coverage report not found.', 404)
   if (detail.report.scopeType !== 'schema_baseline') {
     return fail(c, 'NOT_FOUND', 'Schema coverage report not found.', 404)
+  }
+  return ok(c, detail)
+})
+
+/**
+ * Unified UC coverage matrix endpoints (schema + API evidence).
+ */
+sagaRoutes.get('/ooda/sagas/uc-coverage/reports', requireAuth, async (c) => {
+  const user = getCurrentUser(c)
+  if (!user) return fail(c, 'UNAUTHORIZED', 'Authentication required.', 401)
+  const parsed = listCoverageReportsQuerySchema.safeParse(c.req.query())
+  if (!parsed.success) {
+    return fail(c, 'VALIDATION_ERROR', 'Invalid query parameters.', 400, parsed.error.flatten())
+  }
+  const rows = await listSagaCoverageReports({
+    scopeType: 'uc_coverage_matrix',
+    limit: Math.min(parsePositiveInt(parsed.data.limit, 100), 1000),
+  })
+  return ok(c, rows)
+})
+
+sagaRoutes.get('/ooda/sagas/uc-coverage/reports/:reportId', requireAuth, async (c) => {
+  const user = getCurrentUser(c)
+  if (!user) return fail(c, 'UNAUTHORIZED', 'Authentication required.', 401)
+  const reportId = c.req.param('reportId')
+  const detail = await getSagaCoverageReportDetail(reportId)
+  if (!detail) return fail(c, 'NOT_FOUND', 'Coverage report not found.', 404)
+  if (detail.report.scopeType !== 'uc_coverage_matrix') {
+    return fail(c, 'NOT_FOUND', 'UC coverage report not found.', 404)
   }
   return ok(c, detail)
 })

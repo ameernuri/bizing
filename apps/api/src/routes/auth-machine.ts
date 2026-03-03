@@ -32,12 +32,14 @@ import {
   getCurrentAuthCredentialId,
   getCurrentAuthSource,
   getCurrentUser,
+  requirePlatformAdmin,
   requireAuthAllowApiKey,
   requireSessionAuth,
 } from "../middleware/auth.js";
+import { executeCrudRouteAction } from "../services/action-route-bridge.js";
 import { fail, ok, parsePositiveInt } from "./_api.js";
 
-const { db, apiCredentials, apiAccessTokens } = dbPackage;
+const { db, apiCredentials, apiAccessTokens, users, members } = dbPackage;
 
 const listApiKeysQuerySchema = z.object({
   includeRevoked: z.enum(["true", "false"]).optional(),
@@ -134,6 +136,41 @@ const rotateApiKeyBodySchema = z.object({
       reason: z.string().max(500).optional(),
     })
     .optional(),
+});
+
+const listImpersonationUsersQuerySchema = z.object({
+  search: z.string().optional(),
+  limit: z.string().optional(),
+});
+
+const createImpersonationUserBodySchema = z.object({
+  email: z.string().email(),
+  name: z.string().min(1).max(255),
+  role: z.enum(["owner", "admin", "manager", "staff", "host", "customer"]).default("customer"),
+  phone: z.string().max(50).optional(),
+  autoMembershipBizId: z.string().optional(),
+  autoMembershipRole: z
+    .enum(["owner", "admin", "manager", "staff", "host", "customer"])
+    .default("customer"),
+  metadata: z.record(z.unknown()).optional(),
+});
+
+const issueImpersonationTokenBodySchema = z.object({
+  targetUserId: z.string().optional(),
+  targetEmail: z.string().email().optional(),
+  targetName: z.string().min(1).max(255).optional(),
+  targetRole: z.enum(["owner", "admin", "manager", "staff", "host", "customer"]).default("customer"),
+  targetPhone: z.string().max(50).optional(),
+  autoCreateUser: z.boolean().default(false),
+  bizId: z.string().optional(),
+  ensureMembership: z.boolean().default(false),
+  membershipRole: z
+    .enum(["owner", "admin", "manager", "staff", "host", "customer"])
+    .default("customer"),
+  scopes: z.array(z.string().min(1).max(180)).optional(),
+  ttlSeconds: z.number().int().min(60).max(24 * 60 * 60).default(60 * 60),
+  label: z.string().min(1).max(180).optional(),
+  metadata: z.record(z.unknown()).optional(),
 });
 
 export const authMachineRoutes = new Hono();
@@ -501,6 +538,356 @@ authMachineRoutes.post("/auth/api-keys/:apiCredentialId/rotate", requireSessionA
 });
 
 /**
+ * Platform-admin testing helper:
+ * list users so operator tooling can impersonate actors without logging out.
+ */
+authMachineRoutes.get(
+  "/auth/impersonation/users",
+  requireSessionAuth,
+  requirePlatformAdmin,
+  async (c) => {
+    const parsed = listImpersonationUsersQuerySchema.safeParse(c.req.query());
+    if (!parsed.success) {
+      return fail(c, "VALIDATION_ERROR", "Invalid query parameters.", 400, parsed.error.flatten());
+    }
+
+    const limit = Math.min(parsePositiveInt(parsed.data.limit, 50), 200);
+    const search = parsed.data.search?.trim();
+
+    const rows = await db.query.users.findMany({
+      where: search
+        ? sql`("deleted_at" IS NULL) AND ("email" ILIKE ${`%${search}%`} OR "name" ILIKE ${`%${search}%`})`
+        : sql`"deleted_at" IS NULL`,
+      orderBy: [desc(users.id)],
+      limit,
+    });
+
+    return ok(
+      c,
+      rows.map((row) => ({
+        id: row.id,
+        email: row.email,
+        name: row.name,
+        role: row.role,
+        status: row.status,
+        phone: row.phone,
+        createdAt: row.createdAt,
+      })),
+    );
+  },
+);
+
+/**
+ * Platform-admin testing helper:
+ * create a user row for actor simulation flows.
+ *
+ * ELI5:
+ * - this is for internal test tooling, not public signup UX.
+ * - it lets one admin session prepare customer/member actors quickly.
+ */
+authMachineRoutes.post(
+  "/auth/impersonation/users",
+  requireSessionAuth,
+  requirePlatformAdmin,
+  async (c) => {
+    const body = await c.req.json().catch(() => null);
+    const parsed = createImpersonationUserBodySchema.safeParse(body);
+    if (!parsed.success) {
+      return fail(c, "VALIDATION_ERROR", "Invalid request body.", 400, parsed.error.flatten());
+    }
+
+    const existing = await db.query.users.findFirst({
+      where: and(eq(users.email, parsed.data.email), sql`"deleted_at" IS NULL`),
+    });
+
+    let user = existing;
+    if (!user) {
+      const createdResult = await executeCrudRouteAction({
+        c,
+        bizId: null,
+        tableKey: "users",
+        operation: "create",
+        subjectType: "user",
+        subjectId: parsed.data.email,
+        displayName: parsed.data.name,
+        data: {
+          email: parsed.data.email,
+          name: parsed.data.name,
+          role: parsed.data.role,
+          phone: parsed.data.phone ?? null,
+          status: "active",
+          emailVerified: true,
+          emailVerifiedAt: new Date(),
+          metadata: parsed.data.metadata ?? {},
+        },
+        metadata: { source: "routes.authMachine.createImpersonationUser" },
+      });
+      if (!createdResult.ok) {
+        return fail(c, createdResult.code, createdResult.message, createdResult.httpStatus, createdResult.details);
+      }
+      if (!createdResult.row) {
+        return fail(c, "ACTION_EXECUTION_FAILED", "User create returned no row.", 500);
+      }
+      user = createdResult.row as typeof users.$inferSelect;
+    }
+
+    let membership: {
+      id: string;
+      organizationId: string;
+      userId: string;
+      role: string;
+      createdAt: Date;
+    } | null = null;
+    if (parsed.data.autoMembershipBizId) {
+      const existingMembership = await db.query.members.findFirst({
+        where: and(
+          eq(members.organizationId, parsed.data.autoMembershipBizId),
+          eq(members.userId, user.id),
+        ),
+      });
+      if (existingMembership) {
+        membership = existingMembership;
+      } else {
+        const memberResult = await executeCrudRouteAction({
+          c,
+          bizId: parsed.data.autoMembershipBizId,
+          tableKey: "members",
+          operation: "create",
+          subjectType: "member",
+          subjectId: parsed.data.autoMembershipBizId,
+          displayName: "auto membership",
+          data: {
+            id: `member_${crypto.randomUUID().replace(/-/g, "")}`,
+            organizationId: parsed.data.autoMembershipBizId,
+            userId: user.id,
+            role: parsed.data.autoMembershipRole,
+            createdAt: new Date(),
+          },
+          metadata: { source: "routes.authMachine.createImpersonationMembership" },
+        });
+        if (!memberResult.ok) {
+          return fail(c, memberResult.code, memberResult.message, memberResult.httpStatus, memberResult.details);
+        }
+        if (!memberResult.row) {
+          return fail(c, "ACTION_EXECUTION_FAILED", "Membership create returned no row.", 500);
+        }
+        membership = memberResult.row as {
+          id: string;
+          organizationId: string;
+          userId: string;
+          role: string;
+          createdAt: Date;
+        };
+      }
+    }
+
+    return ok(
+      c,
+      {
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          role: user.role,
+          status: user.status,
+          phone: user.phone,
+          createdAt: user.createdAt,
+        },
+        membership: membership
+          ? {
+              id: membership.id,
+              bizId: membership.organizationId,
+              role: membership.role,
+              createdAt: membership.createdAt,
+            }
+          : null,
+        reusedExistingUser: Boolean(existing),
+      },
+      existing ? 200 : 201,
+    );
+  },
+);
+
+/**
+ * Platform-admin testing helper:
+ * mint a short-lived bearer token for another user.
+ *
+ * ELI5:
+ * - keeps one browser session for the operator,
+ * - but lets the UI call APIs as customer/member/other actors.
+ */
+authMachineRoutes.post(
+  "/auth/impersonation/tokens",
+  requireSessionAuth,
+  requirePlatformAdmin,
+  async (c) => {
+    const body = await c.req.json().catch(() => null);
+    const parsed = issueImpersonationTokenBodySchema.safeParse(body);
+    if (!parsed.success) {
+      return fail(c, "VALIDATION_ERROR", "Invalid request body.", 400, parsed.error.flatten());
+    }
+
+    if (!parsed.data.targetUserId && !parsed.data.targetEmail) {
+      return fail(c, "VALIDATION_ERROR", "Provide targetUserId or targetEmail.", 400);
+    }
+
+    let targetUser = parsed.data.targetUserId
+      ? await db.query.users.findFirst({
+          where: and(eq(users.id, parsed.data.targetUserId), sql`"deleted_at" IS NULL`),
+        })
+      : await db.query.users.findFirst({
+          where: and(eq(users.email, parsed.data.targetEmail!), sql`"deleted_at" IS NULL`),
+        });
+
+    if (!targetUser && parsed.data.autoCreateUser && parsed.data.targetEmail) {
+      const createdTargetUser = await executeCrudRouteAction({
+        c,
+        bizId: null,
+        tableKey: "users",
+        operation: "create",
+        subjectType: "user",
+        subjectId: parsed.data.targetEmail,
+        displayName: parsed.data.targetName ?? parsed.data.targetEmail.split("@")[0] ?? "Actor",
+        data: {
+          email: parsed.data.targetEmail,
+          name: parsed.data.targetName ?? parsed.data.targetEmail.split("@")[0] ?? "Actor",
+          role: parsed.data.targetRole,
+          phone: parsed.data.targetPhone ?? null,
+          status: "active",
+          emailVerified: true,
+          emailVerifiedAt: new Date(),
+          metadata: {
+            source: "impersonation_auto_create",
+            ...(parsed.data.metadata ?? {}),
+          },
+        },
+        metadata: { source: "routes.authMachine.autoCreateTokenTargetUser" },
+      });
+      if (!createdTargetUser.ok) {
+        return fail(
+          c,
+          createdTargetUser.code,
+          createdTargetUser.message,
+          createdTargetUser.httpStatus,
+          createdTargetUser.details,
+        );
+      }
+      if (!createdTargetUser.row) {
+        return fail(c, "ACTION_EXECUTION_FAILED", "Target user create returned no row.", 500);
+      }
+      targetUser = createdTargetUser.row as typeof users.$inferSelect;
+    }
+
+    if (!targetUser) {
+      return fail(c, "NOT_FOUND", "Target user not found.", 404);
+    }
+
+    if (parsed.data.bizId && parsed.data.ensureMembership) {
+      const existingMembership = await db.query.members.findFirst({
+        where: and(eq(members.organizationId, parsed.data.bizId), eq(members.userId, targetUser.id)),
+      });
+      if (!existingMembership) {
+        const memberResult = await executeCrudRouteAction({
+          c,
+          bizId: parsed.data.bizId,
+          tableKey: "members",
+          operation: "create",
+          subjectType: "member",
+          subjectId: parsed.data.bizId,
+          displayName: "ensure membership",
+          data: {
+            id: `member_${crypto.randomUUID().replace(/-/g, "")}`,
+            organizationId: parsed.data.bizId,
+            userId: targetUser.id,
+            role: parsed.data.membershipRole,
+            createdAt: new Date(),
+          },
+          metadata: { source: "routes.authMachine.ensureMembershipForToken" },
+        });
+        if (!memberResult.ok) {
+          return fail(c, memberResult.code, memberResult.message, memberResult.httpStatus, memberResult.details);
+        }
+      }
+    } else if (parsed.data.bizId) {
+      const canAccess = await ensureUserCanAccessBiz(targetUser.id, parsed.data.bizId);
+      if (!canAccess) {
+        return fail(
+          c,
+          "FORBIDDEN",
+          "Target user is not a member of the requested biz. Set ensureMembership=true to auto-attach.",
+          403,
+        );
+      }
+    }
+
+    const credential = await createApiCredential({
+      ownerUserId: targetUser.id,
+      bizId: parsed.data.bizId ?? null,
+      label:
+        parsed.data.label ??
+        `impersonation:${targetUser.email}:${new Date().toISOString().slice(0, 10)}`,
+      description: "Operator-issued impersonation credential for studio testing.",
+      scopes: parsed.data.scopes,
+      allowDirectApiKeyAuth: false,
+      expiresAt: new Date(Date.now() + Math.min(parsed.data.ttlSeconds, 24 * 60 * 60) * 1000),
+      metadata: {
+        source: "impersonation_token_route",
+        ...(parsed.data.metadata ?? {}),
+      },
+    });
+
+    const issued = await issueAccessTokenFromCredential({
+      apiCredentialId: credential.credential.id,
+      ownerUserId: targetUser.id,
+      bizId: parsed.data.bizId ?? null,
+      scopes: parsed.data.scopes ?? normalizeScopesForResponse(credential.credential.scopes),
+      ttlSeconds: parsed.data.ttlSeconds,
+      metadata: {
+        source: "impersonation_token_route",
+      },
+    });
+
+    emitAuthEvent(c, {
+      authSource: "session",
+      eventType: "impersonation_token_issued",
+      decision: "issued",
+      ownerUserId: targetUser.id,
+      bizId: parsed.data.bizId ?? null,
+      apiCredentialId: credential.credential.id,
+      actorUserId: getCurrentUser(c)?.id ?? null,
+      eventData: {
+        ttlSeconds: parsed.data.ttlSeconds,
+        scopes: parsed.data.scopes ?? ["*"],
+      },
+    });
+
+    return ok(
+      c,
+      {
+        tokenType: "Bearer",
+        accessToken: issued.accessToken,
+        expiresAt: issued.expiresAt.toISOString(),
+        expiresInSeconds: issued.expiresInSeconds,
+        scopes: parsed.data.scopes ?? normalizeScopesForResponse(credential.credential.scopes),
+        actor: {
+          id: targetUser.id,
+          email: targetUser.email,
+          name: targetUser.name,
+          role: targetUser.role,
+        },
+        credential: {
+          id: credential.credential.id,
+          bizId: credential.credential.bizId,
+          label: credential.credential.label,
+          keyPreview: credential.credential.keyPreview,
+        },
+      },
+      201,
+    );
+  },
+);
+
+/**
  * Exchange API key for short-lived bearer token.
  *
  * Auth entry points:
@@ -654,14 +1041,25 @@ authMachineRoutes.post("/auth/tokens/:tokenId/revoke", requireSessionAuth, async
     return fail(c, "FORBIDDEN", "Only token owner or platform admin can revoke.", 403);
   }
 
-  await db
-    .update(apiAccessTokens)
-    .set({
+  const revokeResult = await executeCrudRouteAction({
+    c,
+    bizId: token.bizId ?? null,
+    tableKey: "apiAccessTokens",
+    operation: "update",
+    id: tokenId,
+    subjectType: "api_access_token",
+    subjectId: tokenId,
+    displayName: "revoke access token",
+    patch: {
       status: "revoked",
       revokedAt: new Date(),
       revokedReason: parsed.data.reason ?? null,
-    })
-    .where(eq(apiAccessTokens.id, tokenId));
+    },
+    metadata: { source: "routes.authMachine.revokeToken" },
+  });
+  if (!revokeResult.ok) {
+    return fail(c, revokeResult.code, revokeResult.message, revokeResult.httpStatus, revokeResult.details);
+  }
 
   emitAuthEvent(c, {
     authSource: "session",

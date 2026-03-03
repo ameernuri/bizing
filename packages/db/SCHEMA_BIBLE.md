@@ -790,7 +790,7 @@ newColumn: varchar().default('legacy_value')
 | ----------------- | -------------- | ----------------------------------------------------------------- |
 | `bizes.ts`        | Tenant         | bizes                                                             |
 | `users.ts`        | Identity       | users, user_identities                                            |
-| `memberships.ts`  | Access         | memberships, invitations                                          |
+| `auth/members.ts` + `auth/invitations.ts` | Access | members, invitations |
 | `locations.ts`    | Operations     | locations                                                         |
 | `resources.ts`    | Supply         | resources, resource_calendars                                     |
 | `offers.ts`       | Catalog        | offers, offer_versions, offer_components                          |

@@ -48,6 +48,12 @@ const CORE_PERMISSION_SEEDS: PermissionSeed[] = [
   { key: 'bizes.read', name: 'Read Biz', moduleKey: 'bizes', description: 'View biz profile/config.' },
   { key: 'bizes.create', name: 'Create Biz', moduleKey: 'bizes', description: 'Create new biz tenants.' },
   { key: 'bizes.update', name: 'Update Biz', moduleKey: 'bizes', description: 'Edit biz profile/config.' },
+  {
+    key: 'bizes.write',
+    name: 'Write Biz (Alias)',
+    moduleKey: 'bizes',
+    description: 'Alias permission for routes that still request bizes.write while migrating to bizes.update.',
+  },
   { key: 'bizes.archive', name: 'Archive Biz', moduleKey: 'bizes', description: 'Archive/deactivate biz.' },
   { key: 'locations.read', name: 'Read Locations', moduleKey: 'locations', description: 'View biz locations.' },
   { key: 'locations.create', name: 'Create Locations', moduleKey: 'locations', description: 'Create locations.' },
@@ -102,6 +108,12 @@ const CORE_PERMISSION_SEEDS: PermissionSeed[] = [
   { key: 'offers.read', name: 'Read Offers', moduleKey: 'offers', description: 'View offers and versions.' },
   { key: 'offers.create', name: 'Create Offers', moduleKey: 'offers', description: 'Create offers.' },
   { key: 'offers.update', name: 'Update Offers', moduleKey: 'offers', description: 'Edit offers and versions.' },
+  {
+    key: 'offers.write',
+    name: 'Write Offers (Alias)',
+    moduleKey: 'offers',
+    description: 'Alias permission for routes that still request offers.write while migrating to offers.update.',
+  },
   { key: 'offers.archive', name: 'Archive Offers', moduleKey: 'offers', description: 'Archive offers.' },
   { key: 'pricing.read', name: 'Read Pricing', moduleKey: 'pricing', description: 'View pricing rules and demand-pricing policies.' },
   { key: 'pricing.write', name: 'Write Pricing', moduleKey: 'pricing', description: 'Create/update pricing rules and demand-pricing policies.' },
@@ -158,6 +170,30 @@ const CORE_PERMISSION_SEEDS: PermissionSeed[] = [
   { key: 'booking_orders.update', name: 'Update Booking Orders', moduleKey: 'bookings', description: 'Edit bookings.' },
   { key: 'booking_orders.status.update', name: 'Update Booking Status', moduleKey: 'bookings', description: 'Change booking status.' },
   { key: 'booking_orders.cancel', name: 'Cancel Booking Orders', moduleKey: 'bookings', description: 'Cancel/archive bookings.' },
+  {
+    key: 'bookings.read',
+    name: 'Read Bookings (Alias)',
+    moduleKey: 'bookings',
+    description: 'Alias permission for booking read routes migrating to canonical booking_orders.* keys.',
+  },
+  {
+    key: 'bookings.create',
+    name: 'Create Bookings (Alias)',
+    moduleKey: 'bookings',
+    description: 'Alias permission for booking create routes migrating to canonical booking_orders.* keys.',
+  },
+  {
+    key: 'bookings.update',
+    name: 'Update Bookings (Alias)',
+    moduleKey: 'bookings',
+    description: 'Alias permission for booking update routes migrating to canonical booking_orders.* keys.',
+  },
+  {
+    key: 'bookings.cancel',
+    name: 'Cancel Bookings (Alias)',
+    moduleKey: 'bookings',
+    description: 'Alias permission for booking cancel routes migrating to canonical booking_orders.* keys.',
+  },
   { key: 'queues.read', name: 'Read Queues', moduleKey: 'queues', description: 'View queue/waitlist definitions.' },
   { key: 'queues.create', name: 'Create Queues', moduleKey: 'queues', description: 'Create queue/waitlist definitions.' },
   { key: 'queues.update', name: 'Update Queues', moduleKey: 'queues', description: 'Edit queue/waitlist definitions.' },
@@ -166,6 +202,24 @@ const CORE_PERMISSION_SEEDS: PermissionSeed[] = [
   { key: 'queue_entries.create', name: 'Create Queue Entries', moduleKey: 'queues', description: 'Create queue entry rows.' },
   { key: 'queue_entries.update', name: 'Update Queue Entries', moduleKey: 'queues', description: 'Update queue entry status/priority.' },
   { key: 'compliance.read', name: 'Read Compliance Controls', moduleKey: 'compliance', description: 'View compliance/privacy/audit control snapshot.' },
+  {
+    key: 'compliance.write',
+    name: 'Write Compliance Controls',
+    moduleKey: 'compliance',
+    description: 'Create/update compliance policy, incidents, controls, and reviews.',
+  },
+  {
+    key: 'payments.read',
+    name: 'Read Payments',
+    moduleKey: 'payments',
+    description: 'View payment intents, transactions, settlements, and reconciliations.',
+  },
+  {
+    key: 'payments.manage',
+    name: 'Manage Payments',
+    moduleKey: 'payments',
+    description: 'Create/update payment and compensation operations requiring payment authority.',
+  },
   { key: 'members.read', name: 'Read Members', moduleKey: 'members', description: 'View biz members.' },
   { key: 'members.manage', name: 'Manage Members', moduleKey: 'members', description: 'Add/update/remove members.' },
   { key: 'invitations.read', name: 'Read Invitations', moduleKey: 'members', description: 'View member invitations.' },
@@ -179,13 +233,14 @@ const CORE_PERMISSION_SEEDS: PermissionSeed[] = [
   { key: 'actions.read', name: 'Read Actions', moduleKey: 'actions', description: 'View action requests, executions, and failures.' },
   { key: 'actions.execute', name: 'Execute Actions', moduleKey: 'actions', description: 'Preview or execute canonical business actions.' },
   { key: 'events.read', name: 'Read Domain Events', moduleKey: 'events', description: 'View canonical business events emitted by the action backbone.' },
+  { key: 'events.write', name: 'Write Domain Events', moduleKey: 'events', description: 'Emit test/manual events and manage delivery retries/subscriptions.' },
   { key: 'workflows.read', name: 'Read Workflows', moduleKey: 'workflows', description: 'View review queues, workflow instances, decisions, and async deliverables.' },
   { key: 'workflows.write', name: 'Write Workflows', moduleKey: 'workflows', description: 'Create or update review-queue and workflow-control rows when operations need human approval lanes.' },
   { key: 'projections.read', name: 'Read Projections', moduleKey: 'projections', description: 'View projection documents and debug snapshots.' },
 ]
 
 /**
- * Baseline role bundle defaults used for first-run bootstrap and legacy fallback.
+ * Baseline role bundle defaults used for first-run ACL bootstrap.
  *
  * Why these are still in code:
  * - They guarantee the system can boot with sensible defaults.
@@ -250,6 +305,7 @@ const DEFAULT_ROLE_PERMISSION_KEYS: Record<string, string[]> = {
     'actions.read',
     'actions.execute',
     'events.read',
+    'events.write',
     'workflows.read',
     'workflows.write',
     'projections.read',
@@ -334,11 +390,6 @@ const DEFAULT_ROLE_PERMISSION_KEYS: Record<string, string[]> = {
 }
 
 let bootstrapPromise: Promise<void> | null = null
-
-function roleHasPermission(permissionKeys: string[], permissionKey: string) {
-  if (permissionKeys.includes('*')) return true
-  return permissionKeys.includes(permissionKey)
-}
 
 function scopeSpecificity(scopeType: string): number {
   switch (scopeType) {
@@ -552,9 +603,10 @@ export async function ensureAclBootstrap() {
               ],
             })
         }
-      } catch {
-        // Bootstrap errors are intentionally swallowed here so API can keep
-        // serving with legacy role fallback until migrations/seeding are fixed.
+      } catch (cause) {
+        const message =
+          cause instanceof Error ? cause.message : 'ACL bootstrap failed with unknown error.'
+        throw new Error(`ACL bootstrap failed: ${message}`)
       }
     })()
   }
@@ -566,59 +618,6 @@ async function getMembershipRole(userId: string, bizId: string) {
     where: and(eq(members.userId, userId), eq(members.organizationId, bizId)),
   })
   return membership?.role ?? null
-}
-
-/**
- * Legacy compatibility path used when ACL tables are not yet migrated/seeded.
- */
-async function evaluateWithLegacyRoleFallback(
-  userId: string,
-  platformRole: string | null | undefined,
-  permissionKey: string,
-  scope: AclScopeInput,
-): Promise<PermissionDecision> {
-  if (platformRole === 'admin' || platformRole === 'owner') {
-    return {
-      allowed: true,
-      reason: 'platform role bypass (legacy fallback)',
-      effect: 'allow',
-      scopeType: 'platform',
-      matchedRoleKeys: [platformRole],
-    }
-  }
-
-  const bizId = scope.bizId ?? null
-  if (!bizId) {
-    return {
-      allowed: false,
-      reason: 'no biz scope available in legacy fallback',
-      effect: 'deny',
-      scopeType: 'platform',
-      matchedRoleKeys: [],
-    }
-  }
-
-  const membershipRole = await getMembershipRole(userId, bizId)
-  if (!membershipRole) {
-    return {
-      allowed: false,
-      reason: 'no biz membership (legacy fallback)',
-      effect: 'deny',
-      scopeType: 'biz',
-      matchedRoleKeys: [],
-    }
-  }
-
-  const permissionKeys = DEFAULT_ROLE_PERMISSION_KEYS[membershipRole] ?? []
-  const allowed = roleHasPermission(permissionKeys, permissionKey)
-
-  return {
-    allowed,
-    reason: allowed ? 'allowed by legacy role map' : 'denied by legacy role map',
-    effect: allowed ? 'allow' : 'deny',
-    scopeType: 'biz',
-    matchedRoleKeys: [membershipRole],
-  }
 }
 
 /**
@@ -654,12 +653,11 @@ export async function evaluatePermission(input: {
       where: eq(authzPermissionDefinitions.permissionKey, input.permissionKey),
     })
     if (!permission) {
-      return evaluateWithLegacyRoleFallback(
-        input.userId,
-        input.platformRole,
-        input.permissionKey,
-        scope,
-      )
+      return {
+        allowed: false,
+        reason: `permission definition not found: ${input.permissionKey}`,
+        effect: 'deny',
+      }
     }
 
     const now = new Date()
@@ -709,12 +707,11 @@ export async function evaluatePermission(input: {
     }
 
     if (scopedAssignments.length === 0) {
-      return evaluateWithLegacyRoleFallback(
-        input.userId,
-        input.platformRole,
-        input.permissionKey,
-        scope,
-      )
+      return {
+        allowed: false,
+        reason: 'no applicable active role assignments/membership mappings',
+        effect: 'deny',
+      }
     }
 
     const roleIds = Array.from(new Set(scopedAssignments.map((row) => row.roleDefinitionId)))
@@ -742,12 +739,11 @@ export async function evaluatePermission(input: {
       )
 
     if (permissionRows.length === 0) {
-      return evaluateWithLegacyRoleFallback(
-        input.userId,
-        input.platformRole,
-        input.permissionKey,
-        scope,
-      )
+      return {
+        allowed: false,
+        reason: 'no role permission rows matched this permission key',
+        effect: 'deny',
+      }
     }
 
     const assignmentByRoleId = new Map(
@@ -811,13 +807,15 @@ export async function evaluatePermission(input: {
       scopeType: topRows[0]?.roleScopeType,
       matchedRoleKeys: Array.from(new Set(topRows.map((row) => row.roleKey))),
     }
-  } catch {
-    return evaluateWithLegacyRoleFallback(
-      input.userId,
-      input.platformRole,
-      input.permissionKey,
-      scope,
-    )
+  } catch (cause) {
+    return {
+      allowed: false,
+      reason:
+        cause instanceof Error
+          ? `acl evaluation error: ${cause.message}`
+          : 'acl evaluation error',
+      effect: 'deny',
+    }
   }
 }
 

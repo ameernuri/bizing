@@ -14,12 +14,14 @@ import { Textarea } from '@/components/ui/textarea'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { sagaApi, type SagaLibraryRelations, type SagaLifecycleStatus, type SagaRunSummary, type SagaUseCaseDetail } from '@/lib/sagas-api'
-import { EntitySummaryCard, getLatestRun, LifecycleBadge, LoadError, LoadingGrid, PageIntro, RunStatusBadge, summarizeRuns } from './common'
+import { fetchLatestUcCoverageSnapshot, type UcCoverageEntry } from '@/lib/uc-coverage'
+import { CoverageVerdictBadge, EntitySummaryCard, getLatestRun, LifecycleBadge, LoadError, LoadingGrid, PageIntro, RunStatusBadge, summarizeRuns } from './common'
 
 export function SagaUseCaseDetailPage({ ucKey }: { ucKey: string }) {
   const [detail, setDetail] = useState<SagaUseCaseDetail | null>(null)
   const [relations, setRelations] = useState<SagaLibraryRelations | null>(null)
   const [runs, setRuns] = useState<SagaRunSummary[]>([])
+  const [coverage, setCoverage] = useState<UcCoverageEntry | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -45,13 +47,15 @@ export function SagaUseCaseDetailPage({ ucKey }: { ucKey: string }) {
     setIsLoading(true)
     setError(null)
     try {
-      const [nextDetail, nextRelations, allRuns] = await Promise.all([
+      const [nextDetail, nextRelations, allRuns, coverageSnapshot] = await Promise.all([
         sagaApi.fetchUseCaseDetail(ucKey),
         sagaApi.fetchLibraryRelations('use_case', ucKey),
         sagaApi.fetchRuns({ limit: 5000, mineOnly: false, includeArchived: true }),
+        fetchLatestUcCoverageSnapshot(),
       ])
       setDetail(nextDetail)
       setRelations(nextRelations)
+      setCoverage(coverageSnapshot.byUc.get(ucKey.toUpperCase()) ?? null)
       const linkedKeys = new Set(nextRelations.definitions.map((definition) => definition.sagaKey))
       setRuns(allRuns.filter((run) => linkedKeys.has(run.sagaKey)))
       setEditForm({
@@ -148,7 +152,7 @@ export function SagaUseCaseDetailPage({ ucKey }: { ucKey: string }) {
     setError(null)
     try {
       await sagaApi.deleteUseCase(detail.definition.ucKey)
-      window.location.href = '/sagas/use-cases'
+      window.location.href = '/ooda/use-cases'
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Failed to delete use case.')
       setIsDeleting(false)
@@ -164,7 +168,7 @@ export function SagaUseCaseDetailPage({ ucKey }: { ucKey: string }) {
         actions={
           <>
             <Button variant="outline" asChild>
-              <Link href="/sagas/use-cases">
+              <Link href="/ooda/use-cases">
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Back to use cases
               </Link>
@@ -233,23 +237,43 @@ export function SagaUseCaseDetailPage({ ucKey }: { ucKey: string }) {
 
               <Card>
                 <CardHeader>
-                  <CardTitle>Linked saga coverage</CardTitle>
+                  <CardTitle>Coverage status</CardTitle>
                   <CardDescription>
-                    Every linked saga definition below is one concrete attempt to prove this use case with a persona and a full lifecycle run.
+                    Direct verdict from latest UC coverage matrix plus execution signal from linked definitions.
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-3 text-sm">
+                  <div className="rounded-lg border p-4">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <CoverageVerdictBadge verdict={coverage?.overallVerdict} prefix="overall" />
+                      <CoverageVerdictBadge verdict={coverage?.schemaVerdict} prefix="schema" />
+                      <CoverageVerdictBadge verdict={coverage?.apiVerdict} prefix="api" />
+                    </div>
+                    <p className="mt-2 text-muted-foreground">
+                      API pass rate {coverage?.apiPassRatePct ?? 0}% on latest runs ({coverage?.apiLatestRunsCount ?? 0} latest run{(coverage?.apiLatestRunsCount ?? 0) === 1 ? '' : 's'})
+                    </p>
+                  </div>
                   <div className="rounded-lg border p-4">
                     <p className="text-2xl font-semibold">{relations.definitions.length}</p>
                     <p className="text-muted-foreground">linked saga definitions</p>
                   </div>
                   <div className="rounded-lg border p-4">
                     <p className="text-2xl font-semibold">{runs.length}</p>
-                    <p className="text-muted-foreground">runs connected to those definitions</p>
+                    <p className="text-muted-foreground">runs connected to linked definitions</p>
                   </div>
                   <div className="rounded-lg border p-4">
                     <p className="text-2xl font-semibold">{definitionSummaries.filter((entry) => entry.latestRun?.status === 'passed').length}</p>
                     <p className="text-muted-foreground">definitions whose latest run is green</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button variant="outline" size="sm" asChild>
+                      <Link href={`/ooda/coverage?uc=${encodeURIComponent(detail.definition.ucKey)}`}>
+                        Open matrix row
+                      </Link>
+                    </Button>
+                    <Button variant="outline" size="sm" asChild>
+                      <Link href="/ooda/coverage">Open full matrix</Link>
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
@@ -286,7 +310,7 @@ export function SagaUseCaseDetailPage({ ucKey }: { ucKey: string }) {
                   {definitionSummaries.map(({ definition, latestRun, runSummary }) => (
                     <EntitySummaryCard
                       key={definition.id}
-                      href={`/sagas/definitions/${encodeURIComponent(definition.sagaKey)}`}
+                      href={`/ooda/definitions/${encodeURIComponent(definition.sagaKey)}`}
                       title={definition.title}
                       description={definition.description}
                       status={latestRun ? <RunStatusBadge status={latestRun.status} /> : <LifecycleBadge status={definition.status} />}
@@ -315,7 +339,7 @@ export function SagaUseCaseDetailPage({ ucKey }: { ucKey: string }) {
                     .sort((a, b) => new Date(b.updatedAt ?? b.createdAt ?? 0).getTime() - new Date(a.updatedAt ?? a.createdAt ?? 0).getTime())
                     .slice(0, 12)
                     .map((run) => (
-                      <Link key={run.id} href={`/sagas/runs/${run.id}`} className="flex items-center justify-between gap-3 rounded-lg border p-3 transition-colors hover:border-primary/40 hover:bg-muted/30">
+                      <Link key={run.id} href={`/ooda/runs/${run.id}`} className="flex items-center justify-between gap-3 rounded-lg border p-3 transition-colors hover:border-primary/40 hover:bg-muted/30">
                         <div className="min-w-0 space-y-1">
                           <p className="truncate font-medium">{run.sagaKey}</p>
                           <p className="text-sm text-muted-foreground">{run.passedSteps}/{run.totalSteps} passed • {new Date(run.updatedAt ?? run.createdAt ?? Date.now()).toLocaleString()}</p>

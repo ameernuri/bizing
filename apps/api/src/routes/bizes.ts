@@ -17,6 +17,7 @@ import {
   requireAuth,
   requireBizAccess,
 } from '../middleware/auth.js'
+import { executeCrudRouteAction } from '../services/action-route-bridge.js'
 import { appendAuditEvent, createOperationalAlert } from '../lib/audit-log.js'
 import { sanitizePlainText, sanitizeUnknown } from '../lib/sanitize.js'
 import { fail, ok, parsePositiveInt } from './_api.js'
@@ -165,9 +166,15 @@ bizRoutes.post('/', requireAuth, async (c) => {
     return fail(c, 'DUPLICATE_SLUG', 'A biz with this slug already exists.', 409)
   }
 
-  const [created] = await db
-    .insert(bizes)
-    .values({
+  const createdResult = await executeCrudRouteAction({
+    c,
+    bizId: null,
+    tableKey: 'bizes',
+    operation: 'create',
+    subjectType: 'biz',
+    subjectId: parsed.data.slug,
+    displayName: parsed.data.name,
+    data: {
       name: sanitizePlainText(parsed.data.name),
       slug: parsed.data.slug,
       type: parsed.data.type,
@@ -176,16 +183,37 @@ bizRoutes.post('/', requireAuth, async (c) => {
       currency: parsed.data.currency,
       logoUrl: parsed.data.logoUrl ?? null,
       metadata: sanitizeUnknown(parsed.data.metadata ?? {}),
-    })
-    .returning()
-
-  await db.insert(members).values({
-    id: `member_${crypto.randomUUID().replace(/-/g, '')}`,
-    organizationId: created.id,
-    userId: user.id,
-    role: 'owner',
-    createdAt: new Date(),
+    },
+    metadata: { source: 'routes.bizes.create' },
   })
+  if (!createdResult.ok) {
+    return fail(c, createdResult.code, createdResult.message, createdResult.httpStatus, createdResult.details)
+  }
+  if (!createdResult.row) {
+    return fail(c, 'ACTION_EXECUTION_FAILED', 'Biz create returned no row.', 500)
+  }
+  const created = createdResult.row
+
+  const memberResult = await executeCrudRouteAction({
+    c,
+    bizId: String(created.id),
+    tableKey: 'members',
+    operation: 'create',
+    subjectType: 'member',
+    subjectId: String(created.id),
+    displayName: 'owner membership',
+    data: {
+      id: `member_${crypto.randomUUID().replace(/-/g, '')}`,
+      organizationId: created.id,
+      userId: user.id,
+      role: 'owner',
+      createdAt: new Date(),
+    },
+    metadata: { source: 'routes.bizes.createOwnerMembership' },
+  })
+  if (!memberResult.ok) {
+    return fail(c, memberResult.code, memberResult.message, memberResult.httpStatus, memberResult.details)
+  }
 
   return ok(c, created, 201)
 })
@@ -347,15 +375,29 @@ bizRoutes.patch(
       if (dup) return fail(c, 'DUPLICATE_SLUG', 'A biz with this slug already exists.', 409)
     }
 
-    const [updated] = await db
-      .update(bizes)
-      .set({
+    const updatedResult = await executeCrudRouteAction({
+      c,
+      bizId,
+      tableKey: 'bizes',
+      operation: 'update',
+      id: bizId,
+      subjectType: 'biz',
+      subjectId: bizId,
+      displayName: 'update biz',
+      patch: {
         ...parsed.data,
         name: parsed.data.name ? sanitizePlainText(parsed.data.name) : undefined,
         metadata: parsed.data.metadata ? sanitizeUnknown(parsed.data.metadata) : undefined,
-      })
-      .where(eq(bizes.id, bizId))
-      .returning()
+      },
+      metadata: { source: 'routes.bizes.patch' },
+    })
+    if (!updatedResult.ok) {
+      return fail(c, updatedResult.code, updatedResult.message, updatedResult.httpStatus, updatedResult.details)
+    }
+    if (!updatedResult.row) {
+      return fail(c, 'ACTION_EXECUTION_FAILED', 'Biz update returned no row.', 500)
+    }
+    const updated = updatedResult.row
 
     return ok(c, updated)
   },
@@ -373,12 +415,23 @@ bizRoutes.delete(
     const existing = await db.query.bizes.findFirst({ where: eq(bizes.id, bizId) })
     if (!existing) return fail(c, 'NOT_FOUND', 'Biz not found.', 404)
 
-    await db
-      .update(bizes)
-      .set({
+    const archivedResult = await executeCrudRouteAction({
+      c,
+      bizId,
+      tableKey: 'bizes',
+      operation: 'update',
+      id: bizId,
+      subjectType: 'biz',
+      subjectId: bizId,
+      displayName: 'archive biz',
+      patch: {
         status: 'archived',
-      })
-      .where(eq(bizes.id, bizId))
+      },
+      metadata: { source: 'routes.bizes.archive' },
+    })
+    if (!archivedResult.ok) {
+      return fail(c, archivedResult.code, archivedResult.message, archivedResult.httpStatus, archivedResult.details)
+    }
 
     return ok(c, { id: bizId })
   },

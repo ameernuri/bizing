@@ -23,6 +23,7 @@ import { z } from 'zod'
 import dbPackage from '@bizing/db'
 import { getCurrentUser, requireAuth } from '../middleware/auth.js'
 import { ensureBizMembership } from '../services/sagas.js'
+import { executeCrudRouteAction } from '../services/action-route-bridge.js'
 import { fail, ok, parsePositiveInt } from './_api.js'
 
 const { db, graphIdentities, graphIdentityNotificationEndpoints } = dbPackage
@@ -45,7 +46,64 @@ function randomHandleSuffix() {
 
 type GraphIdentityRow = typeof graphIdentities.$inferSelect
 
+async function createNotificationRow(
+  c: Parameters<typeof executeCrudRouteAction>[0]['c'],
+  bizId: string | null,
+  tableKey: string,
+  data: Record<string, unknown>,
+  options?: {
+    subjectType?: string
+    subjectId?: string
+    displayName?: string
+    metadata?: Record<string, unknown>
+  },
+) {
+  const result = await executeCrudRouteAction({
+    c,
+    bizId,
+    tableKey,
+    operation: 'create',
+    data,
+    subjectType: options?.subjectType,
+    subjectId: options?.subjectId,
+    displayName: options?.displayName,
+    metadata: options?.metadata,
+  })
+  if (!result.ok) return fail(c, result.code, result.message, result.httpStatus, result.details)
+  return result.row
+}
+
+async function updateNotificationRow(
+  c: Parameters<typeof executeCrudRouteAction>[0]['c'],
+  bizId: string | null,
+  tableKey: string,
+  id: string,
+  patch: Record<string, unknown>,
+  options?: {
+    subjectType?: string
+    subjectId?: string
+    displayName?: string
+    metadata?: Record<string, unknown>
+  },
+) {
+  const result = await executeCrudRouteAction({
+    c,
+    bizId,
+    tableKey,
+    operation: 'update',
+    id,
+    patch,
+    subjectType: options?.subjectType,
+    subjectId: options?.subjectId ?? id,
+    displayName: options?.displayName,
+    metadata: options?.metadata,
+  })
+  if (!result.ok) return fail(c, result.code, result.message, result.httpStatus, result.details)
+  return result.row
+}
+
 async function ensureUserGraphIdentity(input: {
+  c: Parameters<typeof executeCrudRouteAction>[0]['c']
   userId: string
   email?: string
 }): Promise<GraphIdentityRow> {
@@ -66,9 +124,7 @@ async function ensureUserGraphIdentity(input: {
   for (let attempt = 0; attempt < 4; attempt += 1) {
     const handle = attempt === 0 ? base : `${base}_${randomHandleSuffix()}`.slice(0, 140)
     try {
-      const [created] = await db
-        .insert(graphIdentities)
-        .values({
+      const created = await createNotificationRow(input.c, null, 'graphIdentities', {
           ownerType: 'user',
           ownerUserId: input.userId,
           handle,
@@ -76,9 +132,12 @@ async function ensureUserGraphIdentity(input: {
           status: 'active',
           isDiscoverable: true,
           metadata: { source: 'notification-endpoints-api' },
-        })
-        .returning()
-      if (created) return created
+        }, {
+        subjectType: 'graph_identity',
+        displayName: handle,
+      })
+      if (created instanceof Response) throw new Error('Failed to create graph identity.')
+      if (created) return created as GraphIdentityRow
     } catch (error) {
       lastError = error
     }
@@ -135,7 +194,7 @@ notificationEndpointRoutes.get('/users/me/notification-endpoints', requireAuth, 
     if (!membership) return fail(c, 'FORBIDDEN', 'You are not a member of this biz.', 403)
   }
 
-  const identity = await ensureUserGraphIdentity({ userId: user.id, email: user.email })
+  const identity = await ensureUserGraphIdentity({ c, userId: user.id, email: user.email })
   const page = parsePositiveInt(parsed.data.page, 1)
   const perPage = Math.min(parsePositiveInt(parsed.data.perPage, 20), 100)
   const where = and(
@@ -199,23 +258,27 @@ notificationEndpointRoutes.post('/users/me/notification-endpoints', requireAuth,
     return fail(c, 'VALIDATION_ERROR', 'Destination is required for non in-app endpoints.', 400)
   }
 
-  const identity = await ensureUserGraphIdentity({ userId: user.id, email: user.email })
+  const identity = await ensureUserGraphIdentity({ c, userId: user.id, email: user.email })
   if (parsed.data.isDefault) {
-    await db
-      .update(graphIdentityNotificationEndpoints)
-      .set({ isDefault: false })
-      .where(
-        and(
-          eq(graphIdentityNotificationEndpoints.ownerIdentityId, identity.id),
-          eq(graphIdentityNotificationEndpoints.channel, parsed.data.channel),
-          sql`"deleted_at" IS NULL`,
-        ),
-      )
+    const existingDefaults = await db.query.graphIdentityNotificationEndpoints.findMany({
+      where: and(
+        eq(graphIdentityNotificationEndpoints.ownerIdentityId, identity.id),
+        eq(graphIdentityNotificationEndpoints.channel, parsed.data.channel),
+        sql`"deleted_at" IS NULL`,
+      ),
+    })
+    for (const existing of existingDefaults) {
+      const unset = await updateNotificationRow(c, existing.bizId ?? null, 'graphIdentityNotificationEndpoints', existing.id, {
+        isDefault: false,
+      }, {
+        subjectType: 'notification_endpoint',
+        displayName: existing.channel,
+      })
+      if (unset instanceof Response) return unset
+    }
   }
 
-  const [created] = await db
-    .insert(graphIdentityNotificationEndpoints)
-    .values({
+  const created = await createNotificationRow(c, bizId, 'graphIdentityNotificationEndpoints', {
       ownerIdentityId: identity.id,
       bizId,
       channel: parsed.data.channel,
@@ -225,8 +288,11 @@ notificationEndpointRoutes.post('/users/me/notification-endpoints', requireAuth,
       verifiedAt: parsed.data.verifiedAt ? new Date(parsed.data.verifiedAt) : null,
       lastUsedAt: parsed.data.lastUsedAt ? new Date(parsed.data.lastUsedAt) : null,
       metadata: parsed.data.metadata ?? {},
-    })
-    .returning()
+    }, {
+    subjectType: 'notification_endpoint',
+    displayName: parsed.data.channel,
+  })
+  if (created instanceof Response) return created
 
   return ok(c, created, 201)
 })
@@ -240,7 +306,7 @@ notificationEndpointRoutes.patch('/users/me/notification-endpoints/:endpointId',
     return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
   }
 
-  const identity = await ensureUserGraphIdentity({ userId: user.id, email: user.email })
+  const identity = await ensureUserGraphIdentity({ c, userId: user.id, email: user.email })
   const endpointId = c.req.param('endpointId')
   const existing = await db.query.graphIdentityNotificationEndpoints.findFirst({
     where: and(
@@ -277,22 +343,26 @@ notificationEndpointRoutes.patch('/users/me/notification-endpoints/:endpointId',
 
   const nextIsDefault = parsed.data.isDefault ?? existing.isDefault
   if (nextIsDefault) {
-    await db
-      .update(graphIdentityNotificationEndpoints)
-      .set({ isDefault: false })
-      .where(
-        and(
-          eq(graphIdentityNotificationEndpoints.ownerIdentityId, identity.id),
-          eq(graphIdentityNotificationEndpoints.channel, nextChannel),
-          sql`"deleted_at" IS NULL`,
-          sql`"id" <> ${endpointId}`,
-        ),
-      )
+    const existingDefaults = await db.query.graphIdentityNotificationEndpoints.findMany({
+      where: and(
+        eq(graphIdentityNotificationEndpoints.ownerIdentityId, identity.id),
+        eq(graphIdentityNotificationEndpoints.channel, nextChannel),
+        sql`"deleted_at" IS NULL`,
+        sql`"id" <> ${endpointId}`,
+      ),
+    })
+    for (const defaultRow of existingDefaults) {
+      const unset = await updateNotificationRow(c, defaultRow.bizId ?? null, 'graphIdentityNotificationEndpoints', defaultRow.id, {
+        isDefault: false,
+      }, {
+        subjectType: 'notification_endpoint',
+        displayName: defaultRow.channel,
+      })
+      if (unset instanceof Response) return unset
+    }
   }
 
-  const [updated] = await db
-    .update(graphIdentityNotificationEndpoints)
-    .set({
+  const updated = await updateNotificationRow(c, nextBizId ?? null, 'graphIdentityNotificationEndpoints', endpointId, {
       bizId: nextBizId ?? null,
       channel: nextChannel,
       destination: nextDestination ?? null,
@@ -311,14 +381,11 @@ notificationEndpointRoutes.patch('/users/me/notification-endpoints/:endpointId',
             ? new Date(parsed.data.lastUsedAt)
             : null,
       metadata: parsed.data.metadata === undefined ? existing.metadata : parsed.data.metadata,
-    })
-    .where(
-      and(
-        eq(graphIdentityNotificationEndpoints.id, endpointId),
-        eq(graphIdentityNotificationEndpoints.ownerIdentityId, identity.id),
-      ),
-    )
-    .returning()
+    }, {
+    subjectType: 'notification_endpoint',
+    displayName: nextChannel,
+  })
+  if (updated instanceof Response) return updated
 
   return ok(c, updated)
 })

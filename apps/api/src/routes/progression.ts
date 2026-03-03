@@ -19,6 +19,7 @@ import { and, asc, desc, eq } from 'drizzle-orm'
 import { z } from 'zod'
 import dbPackage from '@bizing/db'
 import { requireAclPermission, requireAuth, requireBizAccess } from '../middleware/auth.js'
+import { executeCrudRouteAction } from '../services/action-route-bridge.js'
 import { fail, ok } from './_api.js'
 
 const {
@@ -106,6 +107,28 @@ const requirementEvidenceBodySchema = z.object({
 
 export const progressionRoutes = new Hono()
 
+async function createProgressionRow<T extends Record<string, unknown>>(input: {
+  c: Parameters<typeof fail>[0]
+  bizId: string
+  tableKey: string
+  subjectType: string
+  data: Record<string, unknown>
+  displayName?: string
+}) {
+  const delegated = await executeCrudRouteAction({
+    c: input.c,
+    bizId: input.bizId,
+    tableKey: input.tableKey,
+    operation: 'create',
+    subjectType: input.subjectType,
+    displayName: input.displayName,
+    data: input.data,
+    metadata: { routeFamily: 'progression' },
+  })
+  if (!delegated.ok) return fail(input.c, delegated.code, delegated.message, delegated.httpStatus, delegated.details)
+  return delegated.row as T
+}
+
 progressionRoutes.get('/bizes/:bizId/requirement-sets', requireAuth, requireBizAccess('bizId'), requireAclPermission('bizes.read', { bizIdParam: 'bizId' }), async (c) => {
   const bizId = c.req.param('bizId')
   const rows = await db.query.requirementSets.findMany({
@@ -119,7 +142,13 @@ progressionRoutes.post('/bizes/:bizId/requirement-sets', requireAuth, requireBiz
   const bizId = c.req.param('bizId')
   const parsed = requirementSetBodySchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
-  const [row] = await db.insert(requirementSets).values({
+  const row = await createProgressionRow<typeof requirementSets.$inferSelect>({
+    c,
+    bizId,
+    tableKey: 'requirementSets',
+    subjectType: 'requirement_set',
+    displayName: parsed.data.name,
+    data: {
     bizId,
     name: parsed.data.name,
     slug: parsed.data.slug,
@@ -131,7 +160,9 @@ progressionRoutes.post('/bizes/:bizId/requirement-sets', requireAuth, requireBiz
     version: parsed.data.version,
     policySnapshot: parsed.data.policySnapshot ?? {},
     metadata: parsed.data.metadata ?? {},
-  }).returning()
+    },
+  })
+  if (row instanceof Response) return row
   return ok(c, row, 201)
 })
 
@@ -148,7 +179,13 @@ progressionRoutes.post('/bizes/:bizId/requirement-nodes', requireAuth, requireBi
   const bizId = c.req.param('bizId')
   const parsed = requirementNodeBodySchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
-  const [row] = await db.insert(requirementNodes).values({
+  const row = await createProgressionRow<typeof requirementNodes.$inferSelect>({
+    c,
+    bizId,
+    tableKey: 'requirementNodes',
+    subjectType: 'requirement_node',
+    displayName: parsed.data.nodeKey,
+    data: {
     bizId,
     requirementSetId: parsed.data.requirementSetId,
     nodeKey: parsed.data.nodeKey,
@@ -164,7 +201,9 @@ progressionRoutes.post('/bizes/:bizId/requirement-nodes', requireAuth, requireBi
     targetSubjectId: parsed.data.targetSubjectId ?? null,
     predicateConfig: parsed.data.predicateConfig ?? {},
     metadata: parsed.data.metadata ?? {},
-  }).returning()
+    },
+  })
+  if (row instanceof Response) return row
   return ok(c, row, 201)
 })
 
@@ -172,14 +211,22 @@ progressionRoutes.post('/bizes/:bizId/requirement-edges', requireAuth, requireBi
   const bizId = c.req.param('bizId')
   const parsed = requirementEdgeBodySchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
-  const [row] = await db.insert(requirementEdges).values({
+  const row = await createProgressionRow<typeof requirementEdges.$inferSelect>({
+    c,
+    bizId,
+    tableKey: 'requirementEdges',
+    subjectType: 'requirement_edge',
+    displayName: parsed.data.edgeType,
+    data: {
     bizId,
     requirementSetId: parsed.data.requirementSetId,
     fromNodeId: parsed.data.fromNodeId,
     toNodeId: parsed.data.toNodeId,
     edgeType: parsed.data.edgeType,
     metadata: parsed.data.metadata ?? {},
-  }).returning()
+    },
+  })
+  if (row instanceof Response) return row
   return ok(c, row, 201)
 })
 
@@ -196,7 +243,13 @@ progressionRoutes.post('/bizes/:bizId/requirement-evaluations', requireAuth, req
   const bizId = c.req.param('bizId')
   const parsed = requirementEvaluationBodySchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
-  const [row] = await db.insert(requirementEvaluations).values({
+  const row = await createProgressionRow<typeof requirementEvaluations.$inferSelect>({
+    c,
+    bizId,
+    tableKey: 'requirementEvaluations',
+    subjectType: 'requirement_evaluation',
+    displayName: parsed.data.evaluatedSubjectType,
+    data: {
     bizId,
     requirementSetId: parsed.data.requirementSetId,
     evaluatedSubjectType: parsed.data.evaluatedSubjectType,
@@ -214,7 +267,9 @@ progressionRoutes.post('/bizes/:bizId/requirement-evaluations', requireAuth, req
     resultSnapshot: parsed.data.resultSnapshot ?? {},
     policySnapshot: parsed.data.policySnapshot ?? {},
     metadata: parsed.data.metadata ?? {},
-  }).returning()
+    },
+  })
+  if (row instanceof Response) return row
   return ok(c, row, 201)
 })
 
@@ -222,7 +277,13 @@ progressionRoutes.post('/bizes/:bizId/requirement-evidence-links', requireAuth, 
   const bizId = c.req.param('bizId')
   const parsed = requirementEvidenceBodySchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
-  const [row] = await db.insert(requirementEvidenceLinks).values({
+  const row = await createProgressionRow<typeof requirementEvidenceLinks.$inferSelect>({
+    c,
+    bizId,
+    tableKey: 'requirementEvidenceLinks',
+    subjectType: 'requirement_evidence_link',
+    displayName: parsed.data.evidenceType,
+    data: {
     bizId,
     requirementEvaluationId: parsed.data.requirementEvaluationId,
     requirementNodeId: parsed.data.requirementNodeId ?? null,
@@ -238,6 +299,8 @@ progressionRoutes.post('/bizes/:bizId/requirement-evidence-links', requireAuth, 
     occurredAt: parsed.data.occurredAt ? new Date(parsed.data.occurredAt) : null,
     details: parsed.data.details ?? {},
     metadata: parsed.data.metadata ?? {},
-  }).returning()
+    },
+  })
+  if (row instanceof Response) return row
   return ok(c, row, 201)
 })

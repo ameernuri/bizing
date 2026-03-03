@@ -10,7 +10,6 @@ export * from './schema/bizes'
 export * from './schema/users'
 export * from './schema/locations'
 export * from './schema/group_accounts'
-export * from './schema/memberships'
 export * from './schema/services'
 export * from './schema/products'
 export * from './schema/service_products'
@@ -40,6 +39,7 @@ export * from './schema/credential_exchange'
 export * from './schema/enterprise'
 export * from './schema/gifts'
 export * from './schema/crm'
+export * from './schema/customer_ops'
 export * from './schema/receivables'
 export * from './schema/gift_delivery'
 export * from './schema/marketing_performance'
@@ -61,7 +61,6 @@ import * as bizesSchema from './schema/bizes'
 import * as usersSchema from './schema/users'
 import * as locationsSchema from './schema/locations'
 import * as groupAccountsSchema from './schema/group_accounts'
-import * as membershipsSchema from './schema/memberships'
 import * as servicesSchema from './schema/services'
 import * as productsSchema from './schema/products'
 import * as serviceProductsSchema from './schema/service_products'
@@ -90,6 +89,7 @@ import * as credentialExchangeSchema from './schema/credential_exchange'
 import * as enterpriseSchema from './schema/enterprise'
 import * as giftsSchema from './schema/gifts'
 import * as crmSchema from './schema/crm'
+import * as customerOpsSchema from './schema/customer_ops'
 import * as receivablesSchema from './schema/receivables'
 import * as giftDeliverySchema from './schema/gift_delivery'
 import * as marketingPerformanceSchema from './schema/marketing_performance'
@@ -106,7 +106,6 @@ const schemaCore = {
   ...usersSchema,
   ...locationsSchema,
   ...groupAccountsSchema,
-  ...membershipsSchema,
   ...servicesSchema,
   ...productsSchema,
   ...serviceProductsSchema,
@@ -135,6 +134,7 @@ const schemaCore = {
   ...enterpriseSchema,
   ...giftsSchema,
   ...crmSchema,
+  ...customerOpsSchema,
   ...receivablesSchema,
   ...giftDeliverySchema,
   ...marketingPerformanceSchema,
@@ -369,8 +369,6 @@ const dbPackage = {
   workflowDecisions: canonicalSchemaModules.workflowDecisions,
   asyncDeliverables: canonicalSchemaModules.asyncDeliverables,
   domainEvents: canonicalSchemaModules.domainEvents,
-  eventSubscriptions: canonicalSchemaModules.eventSubscriptions,
-  eventDeliveries: canonicalSchemaModules.eventDeliveries,
   eventProjectionCheckpoints: canonicalSchemaModules.eventProjectionCheckpoints,
   businessAssociateAgreements: canonicalSchemaModules.businessAssociateAgreements,
   hipaaAuthorizations: canonicalSchemaModules.hipaaAuthorizations,
@@ -380,7 +378,6 @@ const dbPackage = {
   phiDisclosureEvents: canonicalSchemaModules.phiDisclosureEvents,
   securityIncidents: canonicalSchemaModules.securityIncidents,
   breachNotifications: canonicalSchemaModules.breachNotifications,
-  lifecycleEvents: extensionsSchema.lifecycleEvents,
   lifecycleEventSubscriptions: extensionsSchema.lifecycleEventSubscriptions,
   lifecycleEventDeliveries: extensionsSchema.lifecycleEventDeliveries,
   clientInstallations: canonicalSchemaModules.clientInstallations,
@@ -388,6 +385,21 @@ const dbPackage = {
   customerProfiles: canonicalSchemaModules.customerProfiles,
   customerIdentityHandles: canonicalSchemaModules.customerIdentityHandles,
   customerIdentityLinks: canonicalSchemaModules.customerIdentityLinks,
+  customerProfileCrmLinks: canonicalSchemaModules.customerProfileCrmLinks,
+  customerTimelineEvents: canonicalSchemaModules.customerTimelineEvents,
+  crmActivities: canonicalSchemaModules.crmActivities,
+  crmTasks: canonicalSchemaModules.crmTasks,
+  supportCases: canonicalSchemaModules.supportCases,
+  supportCaseEvents: canonicalSchemaModules.supportCaseEvents,
+  supportCaseParticipants: canonicalSchemaModules.supportCaseParticipants,
+  supportCaseLinks: canonicalSchemaModules.supportCaseLinks,
+  customerJourneys: canonicalSchemaModules.customerJourneys,
+  customerJourneySteps: canonicalSchemaModules.customerJourneySteps,
+  customerJourneyEnrollments: canonicalSchemaModules.customerJourneyEnrollments,
+  customerJourneyEvents: canonicalSchemaModules.customerJourneyEvents,
+  customerPlaybooks: canonicalSchemaModules.customerPlaybooks,
+  customerPlaybookBindings: canonicalSchemaModules.customerPlaybookBindings,
+  customerPlaybookRuns: canonicalSchemaModules.customerPlaybookRuns,
   clientExternalSubjects: canonicalSchemaModules.clientExternalSubjects,
   customerVerificationChallenges: canonicalSchemaModules.customerVerificationChallenges,
   customerProfileMerges: canonicalSchemaModules.customerProfileMerges,

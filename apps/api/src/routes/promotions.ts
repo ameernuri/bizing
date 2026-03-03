@@ -18,6 +18,7 @@ import { z } from 'zod'
 import { randomUUID } from 'node:crypto'
 import dbPackage from '@bizing/db'
 import { requireAclPermission, requireAuth, requireBizAccess } from '../middleware/auth.js'
+import { executeCrudRouteAction } from '../services/action-route-bridge.js'
 import { sanitizePlainText, sanitizeUnknown } from '../lib/sanitize.js'
 import { fail, ok, parsePositiveInt } from './_api.js'
 
@@ -134,6 +135,56 @@ const createRedemptionBodySchema = z.object({
 
 export const promotionRoutes = new Hono()
 
+async function createPromotionRow<T extends Record<string, unknown>>(input: {
+  c: Parameters<typeof fail>[0]
+  bizId: string
+  tableKey: string
+  subjectType: string
+  data: Record<string, unknown>
+  displayName?: string
+}) {
+  const delegated = await executeCrudRouteAction({
+    c: input.c,
+    bizId: input.bizId,
+    tableKey: input.tableKey,
+    operation: 'create',
+    subjectType: input.subjectType,
+    displayName: input.displayName,
+    data: input.data,
+    metadata: { routeFamily: 'promotions' },
+  })
+  if (!delegated.ok) return fail(input.c, delegated.code, delegated.message, delegated.httpStatus, delegated.details)
+  return delegated.row as T
+}
+
+async function updatePromotionRow<T extends Record<string, unknown>>(input: {
+  c: Parameters<typeof fail>[0]
+  bizId: string
+  tableKey: string
+  subjectType: string
+  id: string
+  patch: Record<string, unknown>
+  notFoundMessage: string
+}) {
+  const delegated = await executeCrudRouteAction({
+    c: input.c,
+    bizId: input.bizId,
+    tableKey: input.tableKey,
+    operation: 'update',
+    id: input.id,
+    subjectType: input.subjectType,
+    subjectId: input.id,
+    patch: input.patch,
+    metadata: { routeFamily: 'promotions' },
+  })
+  if (!delegated.ok) {
+    if (delegated.code === 'CRUD_TARGET_NOT_FOUND') return fail(input.c, 'NOT_FOUND', input.notFoundMessage, 404)
+    return fail(input.c, delegated.code, delegated.message, delegated.httpStatus, delegated.details)
+  }
+  if (!delegated.row) return fail(input.c, 'NOT_FOUND', input.notFoundMessage, 404)
+  return delegated.row as T
+}
+
 function makeDiscountCode(prefix: string) {
   return `${sanitizePlainText(prefix).toUpperCase()}-${randomUUID().replace(/-/g, '').slice(0, 8).toUpperCase()}`
 }
@@ -186,7 +237,13 @@ promotionRoutes.post(
     const parsed = createCampaignBodySchema.safeParse(await c.req.json().catch(() => null))
     if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
 
-    const [created] = await db.insert(discountCampaigns).values({
+    const created = await createPromotionRow<typeof discountCampaigns.$inferSelect>({
+      c,
+      bizId,
+      tableKey: 'discountCampaigns',
+      subjectType: 'discount_campaign',
+      displayName: parsed.data.name,
+      data: {
       bizId,
       bizExtensionInstallId: parsed.data.bizExtensionInstallId ?? null,
       name: sanitizePlainText(parsed.data.name),
@@ -207,7 +264,9 @@ promotionRoutes.post(
       endsAt: parsed.data.endsAt ? new Date(parsed.data.endsAt) : null,
       conditions: cleanMetadata(parsed.data.conditions),
       metadata: cleanMetadata(parsed.data.metadata),
-    }).returning()
+      },
+    })
+    if (created instanceof Response) return created
 
     return ok(c, created, 201)
   },
@@ -229,7 +288,14 @@ promotionRoutes.patch(
     })
     if (!existing) return fail(c, 'NOT_FOUND', 'Discount campaign not found.', 404)
 
-    const [updated] = await db.update(discountCampaigns).set({
+    const updated = await updatePromotionRow<typeof discountCampaigns.$inferSelect>({
+      c,
+      bizId,
+      tableKey: 'discountCampaigns',
+      subjectType: 'discount_campaign',
+      id: campaignId,
+      notFoundMessage: 'Discount campaign not found.',
+      patch: {
       bizExtensionInstallId: parsed.data.bizExtensionInstallId === undefined ? existing.bizExtensionInstallId : (parsed.data.bizExtensionInstallId ?? null),
       name: parsed.data.name === undefined ? existing.name : sanitizePlainText(parsed.data.name),
       slug: parsed.data.slug === undefined ? existing.slug : sanitizePlainText(parsed.data.slug),
@@ -249,7 +315,9 @@ promotionRoutes.patch(
       endsAt: parsed.data.endsAt === undefined ? existing.endsAt : (parsed.data.endsAt ? new Date(parsed.data.endsAt) : null),
       conditions: parsed.data.conditions === undefined ? existing.conditions : cleanMetadata(parsed.data.conditions),
       metadata: parsed.data.metadata === undefined ? existing.metadata : cleanMetadata(parsed.data.metadata),
-    }).where(and(eq(discountCampaigns.bizId, bizId), eq(discountCampaigns.id, campaignId))).returning()
+      },
+    })
+    if (updated instanceof Response) return updated
 
     return ok(c, updated)
   },
@@ -299,7 +367,13 @@ promotionRoutes.post(
     const bizId = c.req.param('bizId')
     const parsed = createCodeBodySchema.safeParse(await c.req.json().catch(() => null))
     if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
-    const [created] = await db.insert(discountCodes).values({
+    const created = await createPromotionRow<typeof discountCodes.$inferSelect>({
+      c,
+      bizId,
+      tableKey: 'discountCodes',
+      subjectType: 'discount_code',
+      displayName: parsed.data.code ?? 'PROMO',
+      data: {
       bizId,
       discountCampaignId: parsed.data.discountCampaignId,
       code: sanitizePlainText(parsed.data.code ?? makeDiscountCode('PROMO')),
@@ -311,7 +385,9 @@ promotionRoutes.post(
       redemptionCount: parsed.data.redemptionCount ?? 0,
       isSingleUse: parsed.data.isSingleUse,
       metadata: cleanMetadata(parsed.data.metadata),
-    }).returning()
+      },
+    })
+    if (created instanceof Response) return created
     return ok(c, created, 201)
   },
 )
@@ -354,7 +430,19 @@ promotionRoutes.post(
         }),
       }
     })
-    const created = await db.insert(discountCodes).values(codes).returning()
+    const created: Array<typeof discountCodes.$inferSelect> = []
+    for (const codeRow of codes) {
+      const row = await createPromotionRow<typeof discountCodes.$inferSelect>({
+        c,
+        bizId,
+        tableKey: 'discountCodes',
+        subjectType: 'discount_code',
+        displayName: String(codeRow.code),
+        data: codeRow,
+      })
+      if (row instanceof Response) return row
+      created.push(row)
+    }
     return ok(c, created, 201)
   },
 )
@@ -373,7 +461,14 @@ promotionRoutes.patch(
       where: and(eq(discountCodes.bizId, bizId), eq(discountCodes.id, codeId)),
     })
     if (!existing) return fail(c, 'NOT_FOUND', 'Discount code not found.', 404)
-    const [updated] = await db.update(discountCodes).set({
+    const updated = await updatePromotionRow<typeof discountCodes.$inferSelect>({
+      c,
+      bizId,
+      tableKey: 'discountCodes',
+      subjectType: 'discount_code',
+      id: codeId,
+      notFoundMessage: 'Discount code not found.',
+      patch: {
       discountCampaignId: parsed.data.discountCampaignId ?? existing.discountCampaignId,
       code: parsed.data.code === undefined ? existing.code : sanitizePlainText(parsed.data.code),
       status: parsed.data.status ?? existing.status,
@@ -384,7 +479,9 @@ promotionRoutes.patch(
       redemptionCount: parsed.data.redemptionCount ?? existing.redemptionCount,
       isSingleUse: parsed.data.isSingleUse ?? existing.isSingleUse,
       metadata: parsed.data.metadata === undefined ? existing.metadata : cleanMetadata(parsed.data.metadata),
-    }).where(and(eq(discountCodes.bizId, bizId), eq(discountCodes.id, codeId))).returning()
+      },
+    })
+    if (updated instanceof Response) return updated
     return ok(c, updated)
   },
 )
@@ -436,7 +533,13 @@ promotionRoutes.post(
     const bizId = c.req.param('bizId')
     const parsed = createRedemptionBodySchema.safeParse(await c.req.json().catch(() => null))
     if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
-    const [created] = await db.insert(discountRedemptions).values({
+    const created = await createPromotionRow<typeof discountRedemptions.$inferSelect>({
+      c,
+      bizId,
+      tableKey: 'discountRedemptions',
+      subjectType: 'discount_redemption',
+      displayName: parsed.data.discountCampaignId,
+      data: {
       bizId,
       discountCampaignId: parsed.data.discountCampaignId,
       discountCodeId: parsed.data.discountCodeId ?? null,
@@ -449,7 +552,9 @@ promotionRoutes.post(
       redeemedAt: parsed.data.redeemedAt ? new Date(parsed.data.redeemedAt) : new Date(),
       voidedAt: parsed.data.voidedAt ? new Date(parsed.data.voidedAt) : null,
       metadata: cleanMetadata(parsed.data.metadata),
-    }).returning()
+      },
+    })
+    if (created instanceof Response) return created
     return ok(c, created, 201)
   },
 )
