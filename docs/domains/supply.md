@@ -8,12 +8,14 @@ tags:
 
 # Supply Domain
 
-This file is generated from route/schema source files and exists to keep domain docs synchronized with code reality.
+This file is generated from route/schema source files and the canonical domain manifest to keep docs synchronized with runtime mounts.
 
 ## Source
 
-- Route file: `/Users/ameer/bizing/code/apps/api/src/routes/supply.ts`
-- Schema file: `/Users/ameer/bizing/code/packages/db/src/schema/supply.ts`
+- Route file: `apps/api/src/routes/supply.ts`
+- Schema file: `packages/db/src/schema/supply.ts`
+- Mount path: `/`
+- Auth class (manifest): `machine_allowed`
 
 ## Route Intent (top JSDoc)
 
@@ -36,22 +38,22 @@ _No top JSDoc comment found._
 
 ## API Surface
 
-- `GET` `/bizes/:bizId/resource-usage-counters`
-- `POST` `/bizes/:bizId/resource-usage-counters`
-- `POST` `/bizes/:bizId/resource-usage-counters/:counterId/increment`
-- `GET` `/bizes/:bizId/resource-maintenance-policies`
-- `POST` `/bizes/:bizId/resource-maintenance-policies`
-- `GET` `/bizes/:bizId/resource-maintenance-work-orders`
-- `POST` `/bizes/:bizId/resource-maintenance-work-orders`
-- `PATCH` `/bizes/:bizId/resource-maintenance-work-orders/:workOrderId`
-- `GET` `/bizes/:bizId/resource-condition-reports`
-- `POST` `/bizes/:bizId/resource-condition-reports`
-- `GET` `/bizes/:bizId/production-batches`
-- `POST` `/bizes/:bizId/production-batches`
-- `PATCH` `/bizes/:bizId/production-batches/:batchId`
-- `GET` `/bizes/:bizId/production-batches/:batchId/reservations`
-- `POST` `/bizes/:bizId/production-batches/:batchId/reservations`
-- `PATCH` `/bizes/:bizId/production-batches/:batchId/reservations/:reservationId`
+- `GET` `/api/v1/bizes/:bizId/resource-usage-counters`
+- `POST` `/api/v1/bizes/:bizId/resource-usage-counters`
+- `POST` `/api/v1/bizes/:bizId/resource-usage-counters/:counterId/increment`
+- `GET` `/api/v1/bizes/:bizId/resource-maintenance-policies`
+- `POST` `/api/v1/bizes/:bizId/resource-maintenance-policies`
+- `GET` `/api/v1/bizes/:bizId/resource-maintenance-work-orders`
+- `POST` `/api/v1/bizes/:bizId/resource-maintenance-work-orders`
+- `PATCH` `/api/v1/bizes/:bizId/resource-maintenance-work-orders/:workOrderId`
+- `GET` `/api/v1/bizes/:bizId/resource-condition-reports`
+- `POST` `/api/v1/bizes/:bizId/resource-condition-reports`
+- `GET` `/api/v1/bizes/:bizId/production-batches`
+- `POST` `/api/v1/bizes/:bizId/production-batches`
+- `PATCH` `/api/v1/bizes/:bizId/production-batches/:batchId`
+- `GET` `/api/v1/bizes/:bizId/production-batches/:batchId/reservations`
+- `POST` `/api/v1/bizes/:bizId/production-batches/:batchId/reservations`
+- `PATCH` `/api/v1/bizes/:bizId/production-batches/:batchId/reservations/:reservationId`
 
 ## Tables
 

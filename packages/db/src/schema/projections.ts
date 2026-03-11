@@ -10,6 +10,7 @@ import { sql } from "drizzle-orm";
 import { idRef, idWithTag, withAuditRefs } from "./_common";
 import { bizes } from "./bizes";
 import { users } from "./users";
+import { projectionDocumentStatusEnum, projectionStatusEnum } from "./enums";
 
 /**
  * projections
@@ -27,7 +28,7 @@ export const projections = pgTable(
     bizId: idRef("biz_id").references(() => bizes.id),
     projectionKey: varchar("projection_key", { length: 160 }).notNull(),
     projectionFamily: varchar("projection_family", { length: 80 }).notNull(),
-    status: varchar("status", { length: 32 }).default("active").notNull(),
+    status: projectionStatusEnum("status").default("active").notNull(),
     freshnessPolicy: jsonb("freshness_policy").default({}).notNull(),
     metadata: jsonb("metadata").default({}).notNull(),
 
@@ -68,7 +69,7 @@ export const projectionDocuments = pgTable(
     documentKey: varchar("document_key", { length: 180 }).notNull(),
     subjectType: varchar("subject_type", { length: 80 }),
     subjectId: varchar("subject_id", { length: 140 }),
-    status: varchar("status", { length: 32 }).default("current").notNull(),
+    status: projectionDocumentStatusEnum("status").default("current").notNull(),
     versionNumber: integer("version_number").default(1).notNull(),
     renderedData: jsonb("rendered_data").notNull(),
     staleReason: text("stale_reason"),

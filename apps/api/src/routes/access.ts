@@ -92,9 +92,29 @@ const issueBookingTicketBodySchema = z.object({
   metadata: z.record(z.unknown()).optional(),
 })
 
+const accessArtifactTypeSchema = z.enum([
+  'access_grant',
+  'license_key',
+  'download_entitlement',
+  'ticket_entitlement',
+  'content_gate',
+  'replay_access',
+  'custom',
+])
+
+const accessArtifactStatusSchema = z.enum([
+  'draft',
+  'active',
+  'suspended',
+  'revoked',
+  'expired',
+  'consumed',
+  'transferred',
+])
+
 const createAccessArtifactBodySchema = z.object({
-  artifactType: z.enum(['access_grant', 'license_key', 'download_entitlement', 'ticket_entitlement', 'content_gate', 'replay_access', 'custom']),
-  status: z.enum(['draft', 'active', 'suspended', 'revoked', 'expired', 'consumed', 'transferred']).default('active'),
+  artifactType: accessArtifactTypeSchema,
+  status: accessArtifactStatusSchema.default('active'),
   publicCode: z.string().max(200).optional(),
   holderUserId: z.string().optional(),
   holderGroupAccountId: z.string().optional(),
@@ -107,6 +127,10 @@ const createAccessArtifactBodySchema = z.object({
   usageRemaining: z.number().int().min(0).optional(),
   policySnapshot: z.record(z.unknown()).optional(),
   metadata: z.record(z.unknown()).optional(),
+})
+
+const listAccessArtifactsQuerySchema = z.object({
+  artifactType: accessArtifactTypeSchema.optional(),
 })
 
 const createAccessArtifactLinkBodySchema = z.object({
@@ -491,9 +515,14 @@ accessRoutes.get(
   requireAclPermission('bookings.read', { bizIdParam: 'bizId' }),
   async (c) => {
     const bizId = c.req.param('bizId')
-    const artifactType = c.req.query('artifactType')
+    const parsed = listAccessArtifactsQuerySchema.safeParse(c.req.query())
+    if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid query parameters.', 400, parsed.error.flatten())
+
     const rows = await db.query.accessArtifacts.findMany({
-      where: and(eq(accessArtifacts.bizId, bizId), artifactType ? eq(accessArtifacts.artifactType, artifactType as never) : undefined),
+      where: and(
+        eq(accessArtifacts.bizId, bizId),
+        parsed.data.artifactType ? eq(accessArtifacts.artifactType, parsed.data.artifactType) : undefined,
+      ),
       orderBy: [asc(accessArtifacts.issuedAt)],
     })
     return ok(c, rows)

@@ -8,12 +8,14 @@ tags:
 
 # Compensation Domain
 
-This file is generated from route/schema source files and exists to keep domain docs synchronized with code reality.
+This file is generated from route/schema source files and the canonical domain manifest to keep docs synchronized with runtime mounts.
 
 ## Source
 
-- Route file: `/Users/ameer/bizing/code/apps/api/src/routes/compensation.ts`
-- Schema file: `/Users/ameer/bizing/code/packages/db/src/schema/compensation.ts`
+- Route file: `apps/api/src/routes/compensation.ts`
+- Schema file: `packages/db/src/schema/compensation.ts`
+- Mount path: `/`
+- Auth class (manifest): `machine_allowed`
 
 ## Route Intent (top JSDoc)
 
@@ -31,20 +33,20 @@ _No top JSDoc comment found._
 
 ## API Surface
 
-- `GET` `/bizes/:bizId/compensation-plan-rules`
-- `POST` `/bizes/:bizId/compensation-role-templates`
-- `POST` `/bizes/:bizId/compensation-plans`
-- `POST` `/bizes/:bizId/compensation-plan-versions`
-- `POST` `/bizes/:bizId/compensation-plan-rules`
-- `POST` `/bizes/:bizId/compensation/resolve/fulfillment-units/:fulfillmentUnitId`
-- `GET` `/bizes/:bizId/compensation-ledger-entries`
-- `POST` `/bizes/:bizId/compensation-ledger-entries`
-- `POST` `/bizes/:bizId/compensation-ledger-entries/:entryId/reverse`
-- `GET` `/bizes/:bizId/compensation-pay-runs`
-- `POST` `/bizes/:bizId/compensation-pay-runs`
-- `POST` `/bizes/:bizId/compensation-pay-runs/:payRunId/build`
-- `GET` `/bizes/:bizId/compensation-pay-runs/:payRunId`
-- `GET` `/bizes/:bizId/payroll-exports/preview`
+- `GET` `/api/v1/bizes/:bizId/compensation-plan-rules`
+- `POST` `/api/v1/bizes/:bizId/compensation-role-templates`
+- `POST` `/api/v1/bizes/:bizId/compensation-plans`
+- `POST` `/api/v1/bizes/:bizId/compensation-plan-versions`
+- `POST` `/api/v1/bizes/:bizId/compensation-plan-rules`
+- `POST` `/api/v1/bizes/:bizId/compensation/resolve/fulfillment-units/:fulfillmentUnitId`
+- `GET` `/api/v1/bizes/:bizId/compensation-ledger-entries`
+- `POST` `/api/v1/bizes/:bizId/compensation-ledger-entries`
+- `POST` `/api/v1/bizes/:bizId/compensation-ledger-entries/:entryId/reverse`
+- `GET` `/api/v1/bizes/:bizId/compensation-pay-runs`
+- `POST` `/api/v1/bizes/:bizId/compensation-pay-runs`
+- `POST` `/api/v1/bizes/:bizId/compensation-pay-runs/:payRunId/build`
+- `GET` `/api/v1/bizes/:bizId/compensation-pay-runs/:payRunId`
+- `GET` `/api/v1/bizes/:bizId/payroll-exports/preview`
 
 ## Tables
 

@@ -45,18 +45,37 @@ const {
   debugSnapshots,
 } = dbPackage
 
+const actionRequestStatuses = [
+  'pending',
+  'running',
+  'previewed',
+  'succeeded',
+  'failed',
+  'cancelled',
+] as const
+
+const actionIntentModes = ['execute', 'dry_run', 'validate_only'] as const
+const projectionStatuses = ['draft', 'active', 'inactive', 'archived'] as const
+const projectionDocumentStatuses = [
+  'current',
+  'stale',
+  'superseded',
+  'failed',
+  'archived',
+] as const
+
 const listActionsQuerySchema = z.object({
   page: z.string().optional(),
   perPage: z.string().optional(),
   actionFamily: z.string().optional(),
   actionKey: z.string().optional(),
-  status: z.string().optional(),
-  intentMode: z.string().optional(),
+  status: z.enum(actionRequestStatuses).optional(),
+  intentMode: z.enum(actionIntentModes).optional(),
 })
 
 const listProjectionsQuerySchema = z.object({
   projectionFamily: z.string().optional(),
-  status: z.string().optional(),
+  status: z.enum(projectionStatuses).optional(),
   page: z.string().optional(),
   perPage: z.string().optional(),
 })
@@ -64,7 +83,7 @@ const listProjectionsQuerySchema = z.object({
 const listProjectionDocumentsQuerySchema = z.object({
   subjectType: z.string().optional(),
   subjectId: z.string().optional(),
-  status: z.string().optional(),
+  status: z.enum(projectionDocumentStatuses).optional(),
   page: z.string().optional(),
   perPage: z.string().optional(),
 })

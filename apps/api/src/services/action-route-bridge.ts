@@ -2,6 +2,7 @@ import type { Context } from 'hono'
 import type { AuthSource, CurrentUser } from '../middleware/auth.js'
 import { getCurrentAuthCredentialId, getCurrentAuthSource, getCurrentUser } from '../middleware/auth.js'
 import { persistCanonicalAction } from './action-runtime.js'
+import { syncWorkItemFromCrudMutation } from './work-items.js'
 
 type CrudOperation = 'create' | 'update' | 'delete'
 
@@ -26,6 +27,7 @@ type CrudActionSuccess = {
   httpStatus: number
   row: Record<string, unknown> | null
   actionRequest: unknown
+  workItem: unknown | null
 }
 
 type CrudActionFailure = {
@@ -110,10 +112,36 @@ export async function executeCrudRouteAction(input: CrudActionInput): Promise<Cr
     }
   }
 
+  let workItem: unknown | null = null
+  try {
+    if (bizId) {
+      workItem = await syncWorkItemFromCrudMutation({
+        bizId,
+        tableKey: input.tableKey,
+        operation: input.operation,
+        row,
+        id: input.id ?? row?.id?.toString?.() ?? undefined,
+        actorUserId: user.id,
+      })
+    }
+  } catch (error) {
+    /**
+     * Work-item sync is a projection side effect and must never block
+     * canonical writes from route adapters.
+     */
+    console.warn('[action-route-bridge] work-item sync failed', {
+      tableKey: input.tableKey,
+      operation: input.operation,
+      bizId,
+      error,
+    })
+  }
+
   return {
     ok: true,
     httpStatus: actionResult.httpStatus,
     row,
     actionRequest: actionResult.actionRequest,
+    workItem,
   }
 }

@@ -46,3 +46,18 @@ The runtime now has two modes:
 The saga runner now also uses bounded HTTP timeouts for internal API calls, so a
 bad endpoint becomes a deterministic failure instead of an indefinitely running
 saga.
+
+## Depth lanes
+
+Saga definitions and runs now carry an explicit depth lane:
+
+- shallow: quick smoke validation for fast OODA loops.
+- medium: balanced daily/regular regression validation.
+- deep: broad stress validation for risky merges and major refactors.
+
+Runner controls:
+
+- `SAGA_DEPTH=shallow|medium|deep|all`
+- `bun run --cwd /Users/ameer/bizing/code/apps/api sagas:rerun:shallow`
+- `bun run --cwd /Users/ameer/bizing/code/apps/api sagas:rerun:medium`
+- `bun run --cwd /Users/ameer/bizing/code/apps/api sagas:rerun:deep`

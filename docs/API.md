@@ -46,6 +46,17 @@ Machine auth inputs accepted by protected API routes:
 - `x-api-key: <raw-api-key>` or `Authorization: ApiKey <raw-api-key>`
 - `Authorization: Bearer <raw-api-key>` is also interpreted as API key for UX compatibility.
 
+Session cookie namespace isolation:
+- Better Auth now uses `advanced.cookiePrefix` with default `bizing-auth`.
+- Why: browser cookies are domain/path scoped (not port scoped), so `localhost:3000`
+  and `localhost:9000` can clobber each other when both apps use default Better
+  Auth cookie names.
+- Override with `BETTER_AUTH_COOKIE_PREFIX` if needed for local multi-app setups.
+- trusted local browser origins now also include Canvascii standalone defaults:
+  - `http://localhost:9101`
+  - `http://127.0.0.1:9101`
+  - optional override: `CANVASCII_APP_ORIGIN`
+
 Auth guard policy:
 - `requireAuth` accepts session, bearer access token, and direct API key by default.
 - `requireSessionAuth` remains the strict human-only guard for interactive security-sensitive flows.
@@ -71,6 +82,51 @@ ELI5:
   (owner/member/customer) so UI simulations can run side-by-side without
   repeated sign-out/sign-in cookie switching.
 
+Canvascii auth/collab note:
+- Canvascii browser auth still goes through Better Auth on the API service.
+- the new Canvascii collab service validates browser sessions by forwarding the
+incoming Better Auth cookie to `GET /api/v1/auth/me`.
+- local Docker development can optionally enable a collab-only dev bypass for
+raw websocket smoke tests, but the intended auth model remains Better Auth.
+
+Standalone Canvascii note:
+- the standalone workspace at `/Users/ameer/bizing/canvascii` now also exposes
+  its own local Canvascii API surfaces for collaboration:
+  - `GET/POST/PUT/PATCH/DELETE /api/v1/canvascii/file`
+  - `GET/PATCH /api/v1/canvascii/share`
+  - `GET /api/v1/canvascii/collab-access`
+  - `POST /api/v1/canvascii/agent`
+- purpose:
+  - `file`: saved canvas CRUD; `GET`/`PUT` by `id` also accept portal-share links
+    via `x-canvascii-share-token` or `?share=<token>`
+  - `share`: owner-managed whole-canvas and portal-level grants
+  - `collab-access`: session-or-share-link access resolution for Hocuspocus
+  - `agent`: simple machine-edit surface for shape and sharing actions, including
+    portal create/update/delete plus whole-canvas and portal email/link sharing mutations
+  - `agent` also supports grant lifecycle edits by grant id, so the owner UI can
+    update access levels or revoke existing email/link grants in-place without
+    reconstructing the whole share policy client-side
+  - `agent` also accepts an optional top-level `editorState` payload for owner
+    portal updates, so move-only portal edits can translate enclosed canvas
+    content and persist the portal rect/share-policy change in the same write
+  - portal share links:
+  - are currently modeled as share grants with `subjectType: "link"`
+  - the same link-grant model now also supports whole-canvas link sharing, not only portal links
+  - are generated per-portal in the owner UI from the portal selection affordance
+  - can independently grant portal `view` or `edit`
+  - can optionally add whole-canvas `view` for context while keeping edit access
+    portal-scoped
+  - share-link page bootstrap now prefers a lightweight Better Auth session probe
+    (`/api/auth/get-session`) before hitting `/api/v1/auth/me`, so unauthenticated
+    portal links do not spam `401` auth-context failures during initial load
+  - deep-linked share-link opens now guard against duplicate file-open requests
+    while the first `/api/v1/canvascii/file?id=...` request is still in flight,
+    which prevents the share view from repeatedly re-opening the same canvas
+    during initial portal load
+  - portal receivers now only see collaborator cursors inside their elevated
+    portal scope; whole-canvas context view does not leak remote cursor noise
+    from outside the editable portal
+
 ### Agents API (tool execution surface)
 
 - `GET /api/v1/agents/manifest`
@@ -88,11 +144,179 @@ OODash API explorer compatibility notes:
   - `GET /api/v1/health/db`
 - admin rewrites also proxy `/health*` to the API origin so process-health checks
   still work when invoked from the admin app host.
+- OODash now includes a dedicated shared-memory sync page:
+  - `GET /ooda/knowledge`
+  - purpose: show source counts, checkpoint drift groups, and recent knowledge events
+    from `/api/v1/knowledge/*` in one operator view.
+  - operator actions are now first-class on that page:
+    - create source (`POST /api/v1/knowledge/sources`)
+    - edit source (`PATCH /api/v1/knowledge/sources/:sourceId`)
+    - trigger filesystem ingest (`POST /api/v1/knowledge/sources/:sourceId/ingest-files`)
+  - the page exposes ingest controls for root path, extension filters,
+    file limits, and optional chunk/embed behavior so sync operations
+    can be run without leaving OODash.
 
 Implementation:
 - `/Users/ameer/bizing/code/apps/api/src/routes/core-api.ts`
 - `/Users/ameer/bizing/code/apps/api/src/routes/mcp.ts`
 - `/Users/ameer/bizing/code/apps/api/src/code-mode/README.md`
+
+### Shared Knowledge Plane API (Codex + OpenClaw Sync)
+
+This is the canonical API surface for shared memory between Codex, OpenClaw,
+and future in-product Bizing agents.
+
+ELI5:
+- instead of each agent remembering different things in hidden local state,
+  they read and write through one auditable memory API.
+- each write can be chunked, embedded, queried, and checkpointed.
+- drift is measured via checkpoint cursors and latest event comparisons.
+
+Auth posture:
+- all `/api/v1/knowledge/*` endpoints currently require:
+  - authenticated session/token
+  - platform-admin role
+
+Core endpoints:
+- `GET /api/v1/knowledge/stats`
+- `GET /api/v1/knowledge/sources`
+- `POST /api/v1/knowledge/sources`
+- `PATCH /api/v1/knowledge/sources/:sourceId`
+- `POST /api/v1/knowledge/sources/:sourceId/ingest-files`
+- `GET /api/v1/knowledge/documents`
+- `GET /api/v1/knowledge/documents/:documentId`
+- `POST /api/v1/knowledge/documents`
+- `POST /api/v1/knowledge/documents/:documentId/rechunk`
+- `GET /api/v1/knowledge/chunks`
+- `POST /api/v1/knowledge/chunks/:chunkId/embed`
+- `POST /api/v1/knowledge/query`
+- `GET /api/v1/knowledge/retrieval-traces`
+- `GET /api/v1/knowledge/events`
+- `POST /api/v1/knowledge/edges`
+- `GET /api/v1/knowledge/agent-runs`
+- `POST /api/v1/knowledge/agent-runs`
+- `GET /api/v1/knowledge/checkpoints`
+- `PUT /api/v1/knowledge/checkpoints/:agentKind/:agentName`
+- `GET /api/v1/knowledge/sync-status`
+
+Practical sync flow:
+1. Create one source for code docs and one source for mind workspace.
+2. Run `ingest-files` on each source (with optional auto-chunk/auto-embed).
+3. Run `query` for retrieval and store trace rows for audit.
+4. Upsert checkpoints for each runtime (`codex`, `openclaw`, etc.).
+5. Read `sync-status` to detect cursor/commit drift.
+
+Scope and dedupe invariants:
+- `sourceKey` uniqueness is scope-aware:
+  - global rows: unique on `(source_key)` where `biz_id IS NULL`
+  - tenant rows: unique on `(biz_id, source_key)` where `biz_id IS NOT NULL`
+- checkpoint uniqueness is also scope-aware:
+  - global rows: `(agent_kind, agent_name, checkpoint_key)` where `biz_id IS NULL`
+  - tenant rows: `(biz_id, agent_kind, agent_name, checkpoint_key)` where `biz_id IS NOT NULL`
+- `POST /api/v1/knowledge/sources` and `PATCH /api/v1/knowledge/sources/:sourceId`
+  now return `409 DUPLICATE_SOURCE_KEY` on scope collisions.
+
+Query behavior guardrails:
+- `candidateLimit` is clamped to `50..1000` (default `800`).
+- `graph` mode blends semantic/keyword with `knowledge_edges` boosts and reports
+  `graphEdgeCount` in query metadata.
+- retrieval/list routes now exclude soft-deleted knowledge rows and retrieval
+  excludes superseded/archived documents.
+
+Embedding provider behavior:
+- provider selection is runtime-configurable and supports:
+  - OpenAI embeddings (`OPENAI_API_KEY`, model default `text-embedding-3-small`)
+  - Ollama embeddings (`OLLAMA_URL`, model default `nomic-embed-text`)
+- defaults are implemented in:
+  - `/Users/ameer/bizing/code/apps/api/src/services/knowledge-embeddings.ts`
+
+Bootstrap/repair invariant:
+- `packages/db/scripts/bootstrap-knowledge.ts` now repairs actor-audit drift on
+  existing `knowledge_*` tables by ensuring:
+  - `created_by`, `updated_by`, `deleted_by` columns exist
+  - FK constraints to `users(id)` exist for those columns
+- Why this matters:
+  - knowledge routes use canonical schema with actor-audit fields
+  - without this repair, list/read routes can fail with
+    `column "created_by" does not exist` on drifted local DBs.
+
+Agent tool exposure:
+- key knowledge operations are also exposed via `/api/v1/agents/execute`
+  through tools in:
+  - `/Users/ameer/bizing/code/apps/api/src/code-mode/tools.ts`
+
+Implementation:
+- `/Users/ameer/bizing/code/apps/api/src/routes/knowledge.ts`
+- `/Users/ameer/bizing/code/apps/api/src/services/knowledge-embeddings.ts`
+- `/Users/ameer/bizing/code/packages/db/src/schema/knowledge.ts`
+
+### Customer Experience UI (Admin App Routes)
+
+- `GET /customer` (real customer-facing app surface)
+- `GET /experience` (existing experience lab surface; preserved)
+
+Purpose:
+- provide a customer-facing UI that starts simple and reveals advanced
+  controls only on demand.
+- allow admin/operator users to impersonate owner/member/customer actors and
+  exercise real lifecycle flows through API endpoints (no direct DB writes).
+
+Design model:
+- `/customer` default view is intentionally minimal:
+  - pick actor
+  - pick biz
+  - pick offer
+  - load slots
+  - create booking
+  - pay (advanced or Stripe)
+- `/customer` now follows a real booking-dashboard shell:
+  - left navigation with the first-time-default sections:
+    - user calendar (label is the signed-in user name)
+    - appointments
+    - customers
+    - services
+    - products
+    - settings
+  - one-click booking action in header
+  - no explicit biz identity card/title in main header to keep first view clean
+  - first login auto-seeds one starter biz if the user has none
+  - the starter seed creates a user-owned calendar binding so "my calendar"
+    works immediately without extra setup
+  - calendar now renders a switchable week/month board inspired by operator
+    scheduling surfaces while staying customer-simple
+  - calendar timeline is projection-first:
+    - uses `timelineEvents` when present
+    - falls back to `bookings` + `holds` + `rules` when projections are absent
+  - calendar chrome is intentionally compact:
+    - no top form controls in the `my_calendar` section
+    - month/week lens toggle + previous/today/next navigation
+  - day cells are availability-informed:
+    - dominant daily state colors background borders
+    - booking/hold/availability cards are rendered with low-noise semantic colors
+    - empty days show "No bookings" in week mode
+- advanced controls remain opt-in from section-level actions:
+  - admin/operator controls are excluded from `/customer`
+  - status mutation controls and availability-rule CRUD remain in `/experience`
+  - deep debugging stays on `/experience` and OODash surfaces, not the default customer view
+
+Calendar focus:
+- the page includes a rendered calendar timeline lens that combines:
+  - availability rules
+  - capacity holds
+  - bookings
+- calendar controls on `/customer` are read-first and minimal.
+- calendar controls include availability-rule CRUD only on `/experience`
+  for granular schedule/blackout/special-pricing behavior testing.
+
+Implementation:
+- `/Users/ameer/bizing/code/apps/admin/src/app/customer/page.tsx`
+- `/Users/ameer/bizing/code/apps/admin/src/components/customer-ui/customer-app-page.tsx`
+- `/Users/ameer/bizing/code/apps/admin/src/app/experience/page.tsx`
+- `/Users/ameer/bizing/code/apps/admin/src/components/customer-ui/experience-page.tsx`
+- `/Users/ameer/bizing/code/apps/admin/src/components/customer-ui/calendar-timeline-view.tsx`
+- `/Users/ameer/bizing/code/apps/admin/src/components/customer-ui/availability-rule-manager.tsx`
+- `/Users/ameer/bizing/code/apps/admin/src/components/customer-ui/feature-discovery-command.tsx`
+- `/Users/ameer/bizing/code/apps/admin/src/lib/studio-api.ts`
 
 ### Canonical Action API
 
@@ -239,6 +463,17 @@ Intentional exception (still direct SQL update):
 - Specs: `/api/v1/ooda/sagas/specs/*`
 - Spec contract: `testing/sagas/SAGA_SPEC.md` now canonical on `saga.v1`
   with first-class `simulation.clock` + `simulation.scheduler`.
+- Saga storage model is DB-native:
+  - definitions: `saga_definitions` + `saga_definition_revisions`
+  - runs/steps: `saga_runs` + `saga_run_steps`
+  - artifacts: `saga_run_artifacts.body_text` (with `storage_path` as a virtual `db://...` pointer)
+- `POST /api/v1/ooda/sagas/specs/sync` now re-indexes the current DB definition set
+  and does not import JSON files from disk.
+- Saga depth lanes are first-class on definitions/runs:
+  - `depth = shallow | medium | deep`
+  - list filtering: `GET /api/v1/ooda/sagas/specs?depth=...`
+  - run filtering: `GET /api/v1/ooda/sagas/runs?depth=...`
+  - classification refresh: `POST /api/v1/ooda/sagas/specs/depth/reclassify` (platform admin)
 - `saga.v0` is removed; API accepts `saga.v1` only.
 - Runs: `/api/v1/ooda/sagas/runs*`
 - Execute a created run: `POST /api/v1/ooda/sagas/runs/:runId/execute`
@@ -255,7 +490,11 @@ Intentional exception (still direct SQL update):
 - Bulk validation workflow:
   - `bun run --cwd /Users/ameer/bizing/code/apps/api sagas:rerun`
   - `bun run --cwd /Users/ameer/bizing/code/apps/api sagas:rerun:fast`
+  - `bun run --cwd /Users/ameer/bizing/code/apps/api sagas:rerun:shallow`
+  - `bun run --cwd /Users/ameer/bizing/code/apps/api sagas:rerun:medium`
+  - `bun run --cwd /Users/ameer/bizing/code/apps/api sagas:rerun:deep`
   - `bun run --cwd /Users/ameer/bizing/code/apps/api sagas:collect`
+  - `bun run --cwd /Users/ameer/bizing/code/apps/api sagas:depth:seed`
   - Runner defaults are tuned for stability under large batches:
     - `SAGA_CONCURRENCY=4`
     - `SAGA_HTTP_TIMEOUT_MS=45000`
@@ -274,6 +513,11 @@ Intentional exception (still direct SQL update):
     - `SAGA_PERSIST_COVERAGE=1|0`
     - `SAGA_RECOMPUTE_INTEGRITY=1|0`
   - You can still override these with env vars per run.
+  - Depth lane selection in runner:
+    - `SAGA_DEPTH=shallow|medium|deep|all` (default: `all`)
+    - shallow is the default quick confidence lane,
+    - medium is balanced regression lane,
+    - deep is pre-merge/post-refactor stress lane.
   - `sagas:collect` keeps running after failures, groups blockers by domain/endpoint, and writes the latest report to:
     - `/Users/ameer/bizing/code/apps/api/.tmp/saga-reports/blockers-latest.json`
     - `/Users/ameer/bizing/code/apps/api/.tmp/saga-reports/blockers-latest.md`
@@ -380,6 +624,8 @@ The saga explorer is now also the OODA dashboard backbone:
 - Observe -> Orient -> Decide -> Act loops are first-class API objects.
 - Loops link to use cases/personas/definitions/runs so debugging and planning
   are one connected flow.
+- The operator focus is now failure-first: blockers and immediate reorient hints
+  are exposed directly from the API so loop triage is deterministic.
 
 Routes:
 - `GET /api/v1/ooda/overview`
@@ -398,7 +644,19 @@ Routes:
 - `POST /api/v1/ooda/loops/:loopId/actions`
 - `PATCH /api/v1/ooda/loops/:loopId/actions/:actionId`
 - `POST /api/v1/ooda/loops/:loopId/saga-runs`
+- `GET /api/v1/ooda/loops/:loopId/blockers`
 - `POST /api/v1/ooda/generate/draft` (LLM-assisted draft payloads)
+
+Overview payload additions (`GET /api/v1/ooda/overview`):
+- `attention.blockers`: top unresolved, evidence-linked blockers across runs
+- `attention.reorient`: clustered failure signatures with concrete next-action suggestions
+
+Loop blocker payload (`GET /api/v1/ooda/loops/:loopId/blockers`):
+- returns one loop-scoped blocker queue combining:
+  - failed/blocked saga steps linked to the loop
+  - unresolved loop entries
+  - failed loop actions
+- includes a loop-scoped `reorient` section for top failure clusters and recommended fixes
 
 Loop-run creation behavior (`POST /api/v1/ooda/loops/:loopId/saga-runs`):
 - always creates a canonical `ooda_loop_links` output link for the new run id
@@ -425,6 +683,13 @@ ELI5:
 - `entries` are timeline observations/decisions/results.
 - `actions` are what you actually executed.
 - `links` connect each loop to the exact UC/persona/saga/run evidence.
+
+Loop link idempotency:
+- `POST /api/v1/ooda/loops/:loopId/links` is now idempotent for the logical
+  unique tuple (`oodaLoopId`, `targetType`, `targetId`, `relationRole`).
+- if the link already exists, API returns the existing row with `200` (instead
+  of surfacing a duplicate-key failure).
+- this supports safe retries from agents, UI double-clicks, and saga replay.
 
 Contract tightenings (workflow alignment):
 - Loop gates are now explicit API fields on loop create/update and are persisted
@@ -613,7 +878,7 @@ Design note:
   - `/Users/ameer/bizing/code/packages/db/migrations/0000_luxuriant_goblin_queen.sql`
 
 ELI5:
-- saga definitions now come from the docs + generated spec files again
+- saga definitions now come from docs-driven generation into DB (or direct API CRUD)
 - the database migration story is now "one clean canonical baseline", not "keep dragging legacy rename history forever"
 
 ### Lifecycle Evidence Surfaces
@@ -649,6 +914,33 @@ These are the backbone routes the saga runner now uses to prove:
 - cancel-at-period-end access semantics
 - package/session transfers
 - rollover and expiration behavior
+
+### Stripe integration (real provider path)
+
+Stripe is now wired as a first-class payment provider surface (not simulation-only).
+
+Environment:
+- `STRIPE_SECRET_KEY` is required for provider operations.
+- `STRIPE_WEBHOOK_SECRET` is optional but strongly recommended for signature verification.
+
+Canonical routes:
+- `POST /api/v1/public/bizes/:bizId/booking-orders/:bookingOrderId/payments/stripe/payment-intents`
+- `POST /api/v1/public/payments/stripe/webhook`
+
+ELI5:
+- the payment-intent route creates a real Stripe payment intent, mirrors it into
+  canonical `payment_intents`/`payment_intent_events`/`payment_transactions`,
+  and returns `clientSecret` for checkout UIs.
+- the webhook route ingests Stripe events, dedupes by `evt_*` id, stores raw
+  payload in `stripe_webhook_events`, and reconciles local intent/transaction
+  state so operator reads stay trustworthy.
+
+Current scope:
+- Stripe-backed booking checkout is modeled as one primary card tender per
+  provider-backed intent (split multi-provider card legs remain available in
+  simulated advanced flow and can be expanded later).
+- `/payments/advanced` remains available for deterministic simulated split
+  tender scenarios used by existing saga/operator flows.
 
 ### Security posture updates
 
@@ -757,14 +1049,102 @@ evidence instead of exploratory guesses.
 `GET /api/v1/bizes/:bizId/calendars/:calendarId/timeline`
 - ELI5:
   this is the "tell me the full story of this calendar" payload.
-- It returns the calendar plus:
-  - bindings
-  - active or historical rules in a window
-  - holds in that window
-  - bookings that match the bound owners/subjects
-- This keeps saga calendar review and future operator UIs from having to
-  manually fan out across bindings/rules/holds/bookings and guess how they fit
-  together.
+- It is now **projection-first** by default:
+  - reads normalized timeline projections first (`calendar_owner_timeline_events`,
+    then `calendar_timeline_events`)
+  - returns `timelineEvents` + `readModel=projection_first` when projections exist
+  - only falls back to raw fan-out (`rules/holds/bookings` joins) when
+    projections are missing or when `includeRaw=true`
+- Query controls:
+  - `includeRaw=true` forces raw fan-out payload for debugging/parity checks
+  - `includeRules`, `includeHolds`, `includeBookings` still gate payload slices
+- Why this matters:
+  - one canonical read shape for calendar UX
+  - lower query complexity in normal operator/customer timeline reads
+  - easier replay/debug because payload explicitly says which read model path
+    answered the request.
+
+`POST /api/v1/bizes/:bizId/calendars/:calendarId/capacity-holds`
+- ELI5:
+  hold writes now require one canonical scope pointer (`timeScopeId`) instead
+  of trusting caller-provided polymorphic target key fields.
+- Hard contract:
+  - `timeScopeId` is required for new hold writes
+  - `targetRefKey` is server-derived from `time_scopes.scope_ref_key`
+  - if a caller sends conflicting target fields, the API rejects the write
+- Why this matters:
+  - one source of truth for hold target identity
+  - no drift between `time_scope_id` and `target_ref_key`
+  - cleaner migration path away from nullable polymorphic target payload columns
+
+`GET /api/v1/bizes/:bizId/booking-orders/:bookingOrderId/line-execution`
+- ELI5:
+  this is the "show me exactly where every money line stands" payload.
+- It unifies commercial and fulfillment interpretation in one read:
+  - line-level paid/refunded math from immutable transaction allocations
+  - line-level fulfillment linkage/status from fulfillment units
+  - one canonical execution state per line (`awaiting_payment`, `ready_for_execution`, `in_execution`, `completed`, etc.)
+- Query controls:
+  - `includeTimeline=true` adds chronological event rows for each line (payment allocations + linked fulfillment snapshots).
+- Fulfillment linking semantics:
+  - first uses `fulfillment_units.booking_order_line_id` when present
+  - falls back to `offer_component_id` only when that component maps to exactly one line
+  - response now includes linkage diagnostics:
+    - `directLineLinkedUnitCount`
+    - `fallbackComponentLinkedUnitCount`
+    - `ambiguousFallbackUnitCount`
+- Why this matters:
+  - removes duplicated status-guessing logic from dashboard/saga/API clients
+  - makes debugging "why is this line blocked?" deterministic
+- gives one stable execution read model for customer support, finance ops, and QA evidence
+
+### 2026-03-06 Growth Backbone Surface
+
+Growth now has an explicit first-class API family instead of being implied across
+disconnected marketing/config routes.
+
+- Localization:
+  - `GET /api/v1/bizes/:bizId/growth/localization/resources`
+  - `POST /api/v1/bizes/:bizId/growth/localization/resources`
+  - `GET /api/v1/bizes/:bizId/growth/localization/resources/:resourceId/values`
+  - `POST /api/v1/bizes/:bizId/growth/localization/resources/:resourceId/values`
+  - `POST /api/v1/bizes/:bizId/growth/localization/resolve`
+- Experiments:
+  - `GET /api/v1/bizes/:bizId/growth/experiments`
+  - `POST /api/v1/bizes/:bizId/growth/experiments`
+  - `GET /api/v1/bizes/:bizId/growth/experiments/:experimentId/variants`
+  - `POST /api/v1/bizes/:bizId/growth/experiments/:experimentId/variants`
+  - `GET /api/v1/bizes/:bizId/growth/experiments/:experimentId/assignments`
+  - `POST /api/v1/bizes/:bizId/growth/experiments/:experimentId/assignments`
+  - `GET /api/v1/bizes/:bizId/growth/experiments/:experimentId/measurements`
+  - `POST /api/v1/bizes/:bizId/growth/experiments/:experimentId/measurements`
+  - `GET /api/v1/bizes/:bizId/growth/experiments/:experimentId/summary`
+- Marketing activations:
+  - `GET /api/v1/bizes/:bizId/growth/marketing-activations`
+  - `POST /api/v1/bizes/:bizId/growth/marketing-activations`
+  - `GET /api/v1/bizes/:bizId/growth/marketing-activations/:activationId/runs`
+  - `POST /api/v1/bizes/:bizId/growth/marketing-activations/:activationId/runs`
+  - `GET /api/v1/bizes/:bizId/growth/marketing-activation-runs/:runId/items`
+
+Contract split:
+- `/growth/*` = strategy/orchestration plane (locale resolution, experiment assignment, activation lifecycle).
+- `/marketing/*` and ad-spend/offline-conversion routes = execution telemetry/ingest plane.
+
+### Domain Manifest Ownership Contract
+
+`apps/api/src/routes/domain-manifest.json` is now strict: every domain entry
+must declare one canonical `schemaModule`.
+
+Why:
+- route ownership and schema ownership must stay explicit for generated docs.
+- null ownership masks drift and produces low-value generated docs.
+
+Guardrails:
+- `bun run docs:check:domains` fails when manifest schema ownership is missing.
+- `bun run docs:check` now runs:
+  - docs/code drift check
+  - generated domain-doc sync check
+  - atlas/event ledger sync check
 
 ## Non-Negotiable Rule
 
@@ -814,6 +1194,32 @@ evidence instead of exploratory guesses.
 
 External actors (humans, third-party apps, testing agents) must use API contracts only.
 No direct database access is part of public behavior validation.
+
+## Status Filter Contract Hardening (2026-03-02)
+
+Action and projection list endpoints now enforce enum-based status filters instead of accepting free-form status strings.
+
+Updated query contracts:
+- `GET /api/v1/bizes/:bizId/actions`
+  - `status`: `pending | running | previewed | succeeded | failed | cancelled`
+  - `intentMode`: `execute | dry_run | validate_only`
+- `GET /api/v1/bizes/:bizId/projections`
+  - `status`: `draft | active | inactive | archived`
+- `GET /api/v1/bizes/:bizId/projections/:projectionId/documents`
+  - `status`: `current | stale | superseded | failed | archived`
+- `GET /api/v1/bizes/:bizId/analytics/reports`
+  - `status`: `draft | active | inactive | archived`
+- `POST/PATCH /api/v1/bizes/:bizId/customer-profiles`
+  - `status`: `shadow | claimed | merged | archived`
+- `POST /api/v1/bizes/:bizId/customer-profiles/:profileId/identities`
+  - `handle.status`: `active | inactive | suspended | archived`
+- `POST /api/v1/bizes/:bizId/extensions/installs/:installId/projection-checkpoints`
+  - `status`: `active | paused | disabled | healthy | lagging | degraded | failed | archived`
+
+Why:
+- aligns API filter vocabulary with schema enum lifecycle states
+- prevents silent invalid filters that otherwise degrade observability/debugging
+- keeps OODash and agent consumers on deterministic contracts
 
 ## How This Doc Stays Current
 

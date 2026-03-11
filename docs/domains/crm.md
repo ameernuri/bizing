@@ -8,12 +8,14 @@ tags:
 
 # Crm Domain
 
-This file is generated from route/schema source files and exists to keep domain docs synchronized with code reality.
+This file is generated from route/schema source files and the canonical domain manifest to keep docs synchronized with runtime mounts.
 
 ## Source
 
-- Route file: `/Users/ameer/bizing/code/apps/api/src/routes/crm.ts`
-- Schema file: `/Users/ameer/bizing/code/packages/db/src/schema/crm.ts`
+- Route file: `apps/api/src/routes/crm.ts`
+- Schema file: `packages/db/src/schema/crm.ts`
+- Mount path: `/`
+- Auth class (manifest): `machine_allowed`
 
 ## Route Intent (top JSDoc)
 
@@ -39,19 +41,19 @@ _No top JSDoc comment found._
 
 ## API Surface
 
-- `GET` `/bizes/:bizId/crm/pipelines`
-- `POST` `/bizes/:bizId/crm/pipelines`
-- `GET` `/bizes/:bizId/crm/pipelines/:pipelineId/stages`
-- `POST` `/bizes/:bizId/crm/pipelines/:pipelineId/stages`
-- `GET` `/bizes/:bizId/crm/contacts`
-- `POST` `/bizes/:bizId/crm/contacts`
-- `GET` `/bizes/:bizId/crm/leads`
-- `POST` `/bizes/:bizId/crm/leads`
-- `PATCH` `/bizes/:bizId/crm/leads/:leadId`
-- `POST` `/bizes/:bizId/crm/lead-intake`
-- `GET` `/bizes/:bizId/crm/opportunities`
-- `POST` `/bizes/:bizId/crm/opportunities`
-- `GET` `/bizes/:bizId/crm/contacts/:contactId/summary`
+- `GET` `/api/v1/bizes/:bizId/crm/pipelines`
+- `POST` `/api/v1/bizes/:bizId/crm/pipelines`
+- `GET` `/api/v1/bizes/:bizId/crm/pipelines/:pipelineId/stages`
+- `POST` `/api/v1/bizes/:bizId/crm/pipelines/:pipelineId/stages`
+- `GET` `/api/v1/bizes/:bizId/crm/contacts`
+- `POST` `/api/v1/bizes/:bizId/crm/contacts`
+- `GET` `/api/v1/bizes/:bizId/crm/leads`
+- `POST` `/api/v1/bizes/:bizId/crm/leads`
+- `PATCH` `/api/v1/bizes/:bizId/crm/leads/:leadId`
+- `POST` `/api/v1/bizes/:bizId/crm/lead-intake`
+- `GET` `/api/v1/bizes/:bizId/crm/opportunities`
+- `POST` `/api/v1/bizes/:bizId/crm/opportunities`
+- `GET` `/api/v1/bizes/:bizId/crm/contacts/:contactId/summary`
 
 ## Tables
 

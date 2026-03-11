@@ -23,6 +23,20 @@ import {
   processLifecycleDeliveryQueueAcrossBizes,
   processLifecycleDeliveryQueueForBiz,
 } from '../services/lifecycle-delivery-worker.js'
+import { executeAutomationHooks } from '../services/automation-hook-runtime.js'
+import {
+  AUTOMATION_INTERNAL_HANDLER_CATALOG,
+} from '../services/automation-hook-internal-handlers.js'
+import {
+  executeGenericAutomationHookBinding,
+  finalizeGenericAutomationHookBinding,
+  type GenericAutomationHookExecutionResult,
+} from '../services/automation-hook-bindings-runtime.js'
+import {
+  ensureLifecycleHookContract,
+  ensureLifecycleHookContractVersion,
+  normalizeLifecycleHookKey,
+} from '../services/lifecycle-hook-contracts.js'
 import { sanitizePlainText, sanitizeUnknown } from '../lib/sanitize.js'
 import { fail, ok, parsePositiveInt } from './_api.js'
 
@@ -31,6 +45,12 @@ const {
   domainEvents,
   lifecycleEventSubscriptions,
   lifecycleEventDeliveries,
+  lifecycleHookContracts,
+  lifecycleHookContractVersions,
+  lifecycleHookInvocations,
+  lifecycleHookEffectEvents,
+  automationHookBindings,
+  automationHookRuns,
 } = dbPackage
 
 function pagination(input: { page?: string; perPage?: string }) {
@@ -162,6 +182,116 @@ const updateDeliveryBodySchema = createDeliveryBodySchema.partial()
 const processDeliveriesBodySchema = z.object({
   limit: z.number().int().min(1).max(500).optional(),
 })
+
+const listLifecycleHookContractsQuerySchema = z.object({
+  status: lifecycleStatusSchema.optional(),
+  phase: z.enum(['before', 'after']).optional(),
+  targetType: z.string().optional(),
+})
+
+const createLifecycleHookContractBodySchema = z.object({
+  key: z.string().min(1).max(180),
+  name: z.string().min(1).max(220).optional(),
+  status: lifecycleStatusSchema.default('active'),
+  phase: z.enum(['before', 'after']).default('after'),
+  triggerMode: z.enum(['action', 'event', 'manual', 'schedule', 'workflow', 'system']).default('manual'),
+  targetType: z.string().min(1).max(120).default('custom'),
+  mutability: z.enum(['readonly', 'effects']).default('effects'),
+  currentVersion: z.number().int().min(1).default(1),
+  description: z.string().max(2000).optional().nullable(),
+  metadata: z.record(z.unknown()).optional(),
+  inputSchema: z.record(z.unknown()).optional(),
+  contextSchema: z.record(z.unknown()).optional(),
+  effectSchema: z.record(z.unknown()).optional(),
+})
+
+const createLifecycleHookContractVersionBodySchema = z.object({
+  version: z.number().int().min(1),
+  status: lifecycleStatusSchema.default('active'),
+  inputSchema: z.record(z.unknown()).optional(),
+  contextSchema: z.record(z.unknown()).optional(),
+  effectSchema: z.record(z.unknown()).optional(),
+  metadata: z.record(z.unknown()).optional(),
+})
+
+const listAutomationHookBindingsQuerySchema = z.object({
+  page: z.string().optional(),
+  perPage: z.string().optional(),
+  status: lifecycleStatusSchema.optional(),
+  hookPoint: z.string().optional(),
+  contractKey: z.string().optional(),
+  lifecycleHookContractId: z.string().optional(),
+  deliveryMode: z.enum(['internal_handler', 'webhook']).optional(),
+})
+
+const automationHookBindingBodyBaseSchema = z.object({
+  bizExtensionInstallId: z.string().optional().nullable(),
+  name: z.string().min(1).max(200),
+  status: lifecycleStatusSchema.default('active'),
+  lifecycleHookContractId: z.string().optional().nullable(),
+  lifecycleHookContractVersion: z.number().int().min(1).optional(),
+  hookPoint: z.string().min(1).max(160),
+  priority: z.number().int().min(0).max(100000).default(100),
+  deliveryMode: z.enum(['internal_handler', 'webhook']),
+  internalHandlerKey: z.string().max(200).optional().nullable(),
+  webhookUrl: z.string().url().max(1000).optional().nullable(),
+  signingSecretRef: z.string().max(255).optional().nullable(),
+  timeoutMs: z.number().int().min(100).max(300000).default(5000),
+  failureMode: z.enum(['fail_open', 'fail_closed']).default('fail_open'),
+  workflowKey: z.string().max(140).optional().nullable(),
+  configuration: z.record(z.unknown()).optional(),
+  filter: z.record(z.unknown()).optional(),
+  metadata: z.record(z.unknown()).optional(),
+})
+
+const createAutomationHookBindingBodySchema = automationHookBindingBodyBaseSchema.superRefine((value, ctx) => {
+  if (value.deliveryMode === 'internal_handler' && !value.internalHandlerKey) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'internalHandlerKey is required for internal_handler mode.' })
+  }
+  if (value.deliveryMode === 'webhook' && !value.webhookUrl) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'webhookUrl is required for webhook mode.' })
+  }
+})
+
+const updateAutomationHookBindingBodySchema = automationHookBindingBodyBaseSchema.partial()
+
+const listAutomationHookRunsQuerySchema = z.object({
+  page: z.string().optional(),
+  perPage: z.string().optional(),
+  hookPoint: z.string().optional(),
+  targetType: z.string().optional(),
+  targetRefId: z.string().optional(),
+  status: z.enum(['running', 'succeeded', 'failed', 'skipped']).optional(),
+  automationHookBindingId: z.string().optional(),
+})
+
+const listLifecycleHookInvocationsQuerySchema = z.object({
+  page: z.string().optional(),
+  perPage: z.string().optional(),
+  contractKey: z.string().optional(),
+  targetType: z.string().optional(),
+  targetRefId: z.string().optional(),
+  status: z.enum(['running', 'succeeded', 'failed', 'skipped']).optional(),
+})
+
+const executeAutomationHooksBodySchema = z
+  .object({
+    hookPoint: z.string().min(1).max(160).optional(),
+    contractId: z.string().optional().nullable(),
+    contractVersion: z.number().int().min(1).optional().nullable(),
+    targetType: z.string().min(1).max(120),
+    targetRefId: z.string().min(1).max(160),
+    idempotencyKey: z.string().max(200).optional().nullable(),
+    inputPayload: z.record(z.unknown()).optional(),
+  })
+  .superRefine((value, ctx) => {
+    if ((!value.hookPoint || value.hookPoint.trim().length === 0) && !value.contractId) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Either hookPoint or contractId is required.',
+      })
+    }
+  })
 
 const testSubscriptionBodySchema = z.object({
   eventName: z.string().min(1).max(200).default('test.event'),
@@ -308,7 +438,7 @@ lifecycleHookRoutes.get(
   '/bizes/:bizId/lifecycle-event-subscriptions',
   requireAuth,
   requireBizAccess('bizId'),
-  requireAclPermission('events.write', { bizIdParam: 'bizId' }),
+  requireAclPermission('events.read', { bizIdParam: 'bizId' }),
   async (c) => {
     const bizId = c.req.param('bizId')
     const parsed = listSubscriptionQuerySchema.safeParse(c.req.query())
@@ -422,10 +552,566 @@ lifecycleHookRoutes.patch(
 )
 
 lifecycleHookRoutes.get(
-  '/bizes/:bizId/lifecycle-event-deliveries',
+  '/bizes/:bizId/lifecycle-hook-contracts',
+  requireAuth,
+  requireBizAccess('bizId'),
+  requireAclPermission('events.read', { bizIdParam: 'bizId' }),
+  async (c) => {
+    const bizId = c.req.param('bizId')
+    const parsed = listLifecycleHookContractsQuerySchema.safeParse(c.req.query())
+    if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid query parameters.', 400, parsed.error.flatten())
+    const rows = await db.query.lifecycleHookContracts.findMany({
+      where: and(
+        eq(lifecycleHookContracts.bizId, bizId),
+        parsed.data.status ? eq(lifecycleHookContracts.status, parsed.data.status) : undefined,
+        parsed.data.phase ? eq(lifecycleHookContracts.phase, parsed.data.phase) : undefined,
+        parsed.data.targetType ? eq(lifecycleHookContracts.targetType, sanitizePlainText(parsed.data.targetType)) : undefined,
+      ),
+      orderBy: [asc(lifecycleHookContracts.key)],
+      limit: 300,
+    })
+    return ok(c, rows)
+  },
+)
+
+lifecycleHookRoutes.post(
+  '/bizes/:bizId/lifecycle-hook-contracts',
   requireAuth,
   requireBizAccess('bizId'),
   requireAclPermission('events.write', { bizIdParam: 'bizId' }),
+  async (c) => {
+    const bizId = c.req.param('bizId')
+    const parsed = createLifecycleHookContractBodySchema.safeParse(await c.req.json().catch(() => null))
+    if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
+
+    const key = normalizeLifecycleHookKey(parsed.data.key)
+    const existing = await db.query.lifecycleHookContracts.findFirst({
+      where: and(eq(lifecycleHookContracts.bizId, bizId), eq(lifecycleHookContracts.key, key)),
+    })
+
+    const contract = existing
+      ? existing
+      : (await db
+          .insert(lifecycleHookContracts)
+          .values({
+            bizId,
+            key,
+            name: sanitizePlainText(parsed.data.name ?? key),
+            status: parsed.data.status,
+            phase: parsed.data.phase,
+            triggerMode: parsed.data.triggerMode,
+            targetType: sanitizePlainText(parsed.data.targetType),
+            mutability: parsed.data.mutability,
+            currentVersion: parsed.data.currentVersion,
+            description: parsed.data.description ?? null,
+            metadata: cleanMetadata(parsed.data.metadata),
+          })
+          .returning())[0]
+
+    const version = await ensureLifecycleHookContractVersion({
+      tx: db,
+      bizId,
+      contract,
+      requestedVersion: parsed.data.currentVersion,
+      mode: 'auto_register',
+      source: 'routes.lifecycle-hooks',
+    })
+    if (!version) {
+      return fail(c, 'VALIDATION_ERROR', 'Lifecycle hook contract version does not exist.', 400)
+    }
+
+    if (!existing) {
+      await db
+        .update(lifecycleHookContractVersions)
+        .set({
+          status: parsed.data.status,
+          inputSchema: cleanMetadata(parsed.data.inputSchema),
+          contextSchema: cleanMetadata(parsed.data.contextSchema),
+          effectSchema: cleanMetadata(parsed.data.effectSchema),
+          metadata: cleanMetadata(parsed.data.metadata),
+        })
+        .where(and(eq(lifecycleHookContractVersions.bizId, bizId), eq(lifecycleHookContractVersions.id, version.id)))
+    }
+
+    return ok(c, { contract, contractVersion: version }, existing ? 200 : 201, existing ? { reused: true } : undefined)
+  },
+)
+
+lifecycleHookRoutes.get(
+  '/bizes/:bizId/lifecycle-hook-contracts/:contractId/versions',
+  requireAuth,
+  requireBizAccess('bizId'),
+  requireAclPermission('events.read', { bizIdParam: 'bizId' }),
+  async (c) => {
+    const { bizId, contractId } = c.req.param()
+    const rows = await db.query.lifecycleHookContractVersions.findMany({
+      where: and(
+        eq(lifecycleHookContractVersions.bizId, bizId),
+        eq(lifecycleHookContractVersions.lifecycleHookContractId, contractId),
+      ),
+      orderBy: [asc(lifecycleHookContractVersions.version)],
+      limit: 200,
+    })
+    return ok(c, rows)
+  },
+)
+
+lifecycleHookRoutes.post(
+  '/bizes/:bizId/lifecycle-hook-contracts/:contractId/versions',
+  requireAuth,
+  requireBizAccess('bizId'),
+  requireAclPermission('events.write', { bizIdParam: 'bizId' }),
+  async (c) => {
+    const { bizId, contractId } = c.req.param()
+    const parsed = createLifecycleHookContractVersionBodySchema.safeParse(await c.req.json().catch(() => null))
+    if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
+
+    const contract = await db.query.lifecycleHookContracts.findFirst({
+      where: and(eq(lifecycleHookContracts.bizId, bizId), eq(lifecycleHookContracts.id, contractId)),
+    })
+    if (!contract) return fail(c, 'NOT_FOUND', 'Lifecycle hook contract not found.', 404)
+
+    const existing = await db.query.lifecycleHookContractVersions.findFirst({
+      where: and(
+        eq(lifecycleHookContractVersions.bizId, bizId),
+        eq(lifecycleHookContractVersions.lifecycleHookContractId, contractId),
+        eq(lifecycleHookContractVersions.version, parsed.data.version),
+      ),
+    })
+    if (existing) return ok(c, existing, 200, { reused: true })
+
+    const [created] = await db
+      .insert(lifecycleHookContractVersions)
+      .values({
+        bizId,
+        lifecycleHookContractId: contractId,
+        version: parsed.data.version,
+        status: parsed.data.status,
+        inputSchema: cleanMetadata(parsed.data.inputSchema),
+        contextSchema: cleanMetadata(parsed.data.contextSchema),
+        effectSchema: cleanMetadata(parsed.data.effectSchema),
+        metadata: cleanMetadata(parsed.data.metadata),
+      })
+      .returning()
+
+    await db
+      .update(lifecycleHookContracts)
+      .set({
+        currentVersion: Math.max(contract.currentVersion, parsed.data.version),
+      })
+      .where(and(eq(lifecycleHookContracts.bizId, bizId), eq(lifecycleHookContracts.id, contractId)))
+
+    return ok(c, created, 201)
+  },
+)
+
+lifecycleHookRoutes.get(
+  '/bizes/:bizId/automation-hook-bindings',
+  requireAuth,
+  requireBizAccess('bizId'),
+  requireAclPermission('events.read', { bizIdParam: 'bizId' }),
+  async (c) => {
+    const bizId = c.req.param('bizId')
+    const parsed = listAutomationHookBindingsQuerySchema.safeParse(c.req.query())
+    if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid query parameters.', 400, parsed.error.flatten())
+    const pageInfo = pagination(parsed.data)
+    const where = and(
+      eq(automationHookBindings.bizId, bizId),
+      parsed.data.status ? eq(automationHookBindings.status, parsed.data.status) : undefined,
+      parsed.data.hookPoint ? eq(automationHookBindings.hookPoint, parsed.data.hookPoint) : undefined,
+      parsed.data.lifecycleHookContractId
+        ? eq(automationHookBindings.lifecycleHookContractId, parsed.data.lifecycleHookContractId)
+        : undefined,
+      parsed.data.contractKey
+        ? sql`${automationHookBindings.lifecycleHookContractId} IN (
+            SELECT id FROM lifecycle_hook_contracts
+            WHERE biz_id = ${bizId} AND key = ${sanitizePlainText(parsed.data.contractKey)}
+          )`
+        : undefined,
+      parsed.data.deliveryMode ? eq(automationHookBindings.deliveryMode, parsed.data.deliveryMode) : undefined,
+    )
+    const [rows, countRows] = await Promise.all([
+      db.query.automationHookBindings.findMany({
+        where,
+        orderBy: [asc(automationHookBindings.priority), asc(automationHookBindings.name)],
+        limit: pageInfo.perPage,
+        offset: pageInfo.offset,
+      }),
+      db.select({ count: sql<number>`count(*)`.mapWith(Number) }).from(automationHookBindings).where(where),
+    ])
+    return ok(c, rows, 200, {
+      pagination: {
+        page: pageInfo.page,
+        perPage: pageInfo.perPage,
+        total: countRows[0]?.count ?? 0,
+        hasMore: pageInfo.page * pageInfo.perPage < (countRows[0]?.count ?? 0),
+      },
+    })
+  },
+)
+
+lifecycleHookRoutes.post(
+  '/bizes/:bizId/automation-hook-bindings',
+  requireAuth,
+  requireBizAccess('bizId'),
+  requireAclPermission('events.write', { bizIdParam: 'bizId' }),
+  async (c) => {
+    const bizId = c.req.param('bizId')
+    const parsed = createAutomationHookBindingBodySchema.safeParse(await c.req.json().catch(() => null))
+    if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
+    const hookPoint = normalizeLifecycleHookKey(parsed.data.hookPoint)
+    const contract = await ensureLifecycleHookContract({
+      tx: db,
+      bizId,
+      hookPoint,
+      contractId: parsed.data.lifecycleHookContractId ?? null,
+      targetType:
+        typeof parsed.data.filter?.targetType === 'string' ? parsed.data.filter.targetType : null,
+      mode: 'auto_register',
+      source: 'routes.lifecycle-hooks',
+    })
+    if (!contract) {
+      return fail(c, 'VALIDATION_ERROR', 'Lifecycle hook contract could not be resolved.', 400)
+    }
+    const contractVersion = await ensureLifecycleHookContractVersion({
+      tx: db,
+      bizId,
+      contract,
+      requestedVersion: parsed.data.lifecycleHookContractVersion ?? contract.currentVersion,
+      mode: 'auto_register',
+      source: 'routes.lifecycle-hooks',
+    })
+    if (!contractVersion) {
+      return fail(c, 'VALIDATION_ERROR', 'Lifecycle hook contract version could not be resolved.', 400)
+    }
+    const [created] = await db
+      .insert(automationHookBindings)
+      .values({
+        bizId,
+        bizExtensionInstallId: parsed.data.bizExtensionInstallId ?? null,
+        name: sanitizePlainText(parsed.data.name),
+        status: parsed.data.status,
+        lifecycleHookContractId: contract.id,
+        lifecycleHookContractVersion: contractVersion.version,
+        hookPoint: contract.key,
+        priority: parsed.data.priority,
+        deliveryMode: parsed.data.deliveryMode,
+        internalHandlerKey: parsed.data.internalHandlerKey ?? null,
+        webhookUrl: parsed.data.webhookUrl ?? null,
+        signingSecretRef: parsed.data.signingSecretRef ?? null,
+        timeoutMs: parsed.data.timeoutMs,
+        failureMode: parsed.data.failureMode,
+        workflowKey: parsed.data.workflowKey ?? null,
+        configuration: cleanMetadata(parsed.data.configuration),
+        filter: cleanMetadata(parsed.data.filter),
+        metadata: cleanMetadata(parsed.data.metadata),
+      })
+      .returning()
+    return ok(c, created, 201)
+  },
+)
+
+lifecycleHookRoutes.patch(
+  '/bizes/:bizId/automation-hook-bindings/:bindingId',
+  requireAuth,
+  requireBizAccess('bizId'),
+  requireAclPermission('events.write', { bizIdParam: 'bizId' }),
+  async (c) => {
+    const bizId = c.req.param('bizId')
+    const bindingId = c.req.param('bindingId')
+    const parsed = updateAutomationHookBindingBodySchema.safeParse(await c.req.json().catch(() => null))
+    if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
+    const existing = await db.query.automationHookBindings.findFirst({
+      where: and(eq(automationHookBindings.bizId, bizId), eq(automationHookBindings.id, bindingId)),
+    })
+    if (!existing) return fail(c, 'NOT_FOUND', 'Automation hook binding not found.', 404)
+    const nextDeliveryMode = parsed.data.deliveryMode ?? existing.deliveryMode
+    const nextInternalHandlerKey =
+      parsed.data.internalHandlerKey === undefined ? existing.internalHandlerKey : (parsed.data.internalHandlerKey ?? null)
+    const nextWebhookUrl =
+      parsed.data.webhookUrl === undefined ? existing.webhookUrl : (parsed.data.webhookUrl ?? null)
+    if (nextDeliveryMode === 'internal_handler' && !nextInternalHandlerKey) {
+      return fail(c, 'VALIDATION_ERROR', 'internalHandlerKey is required for internal_handler mode.', 400)
+    }
+    if (nextDeliveryMode === 'webhook' && !nextWebhookUrl) {
+      return fail(c, 'VALIDATION_ERROR', 'webhookUrl is required for webhook mode.', 400)
+    }
+
+    const nextHookPoint =
+      parsed.data.hookPoint === undefined
+        ? existing.hookPoint
+        : normalizeLifecycleHookKey(parsed.data.hookPoint)
+    const contract = await ensureLifecycleHookContract({
+      tx: db,
+      bizId,
+      hookPoint: nextHookPoint,
+      contractId:
+        parsed.data.lifecycleHookContractId === undefined
+          ? existing.lifecycleHookContractId
+          : (parsed.data.lifecycleHookContractId ?? null),
+      targetType:
+        typeof parsed.data.filter?.targetType === 'string'
+          ? parsed.data.filter.targetType
+          : (typeof (existing.filter as Record<string, unknown> | null)?.targetType === 'string'
+              ? ((existing.filter as Record<string, unknown>).targetType as string)
+              : null),
+      mode: 'auto_register',
+      source: 'routes.lifecycle-hooks',
+    })
+    if (!contract) {
+      return fail(c, 'VALIDATION_ERROR', 'Lifecycle hook contract could not be resolved.', 400)
+    }
+    const contractVersion = await ensureLifecycleHookContractVersion({
+      tx: db,
+      bizId,
+      contract,
+      requestedVersion:
+        parsed.data.lifecycleHookContractVersion === undefined
+          ? existing.lifecycleHookContractVersion
+          : parsed.data.lifecycleHookContractVersion,
+      mode: 'auto_register',
+      source: 'routes.lifecycle-hooks',
+    })
+    if (!contractVersion) {
+      return fail(c, 'VALIDATION_ERROR', 'Lifecycle hook contract version could not be resolved.', 400)
+    }
+
+    const [updated] = await db
+      .update(automationHookBindings)
+      .set({
+        bizExtensionInstallId:
+          parsed.data.bizExtensionInstallId === undefined
+            ? existing.bizExtensionInstallId
+            : (parsed.data.bizExtensionInstallId ?? null),
+        name: parsed.data.name === undefined ? existing.name : sanitizePlainText(parsed.data.name),
+        status: parsed.data.status ?? existing.status,
+        lifecycleHookContractId: contract.id,
+        lifecycleHookContractVersion: contractVersion.version,
+        hookPoint: contract.key,
+        priority: parsed.data.priority ?? existing.priority,
+        deliveryMode: nextDeliveryMode,
+        internalHandlerKey: nextInternalHandlerKey,
+        webhookUrl: nextWebhookUrl,
+        signingSecretRef:
+          parsed.data.signingSecretRef === undefined
+            ? existing.signingSecretRef
+            : (parsed.data.signingSecretRef ?? null),
+        timeoutMs: parsed.data.timeoutMs ?? existing.timeoutMs,
+        failureMode: parsed.data.failureMode ?? existing.failureMode,
+        workflowKey: parsed.data.workflowKey === undefined ? existing.workflowKey : (parsed.data.workflowKey ?? null),
+        configuration:
+          parsed.data.configuration === undefined
+            ? existing.configuration
+            : cleanMetadata(parsed.data.configuration),
+        filter: parsed.data.filter === undefined ? existing.filter : cleanMetadata(parsed.data.filter),
+        metadata: parsed.data.metadata === undefined ? existing.metadata : cleanMetadata(parsed.data.metadata),
+      })
+      .where(and(eq(automationHookBindings.bizId, bizId), eq(automationHookBindings.id, bindingId)))
+      .returning()
+
+    return ok(c, updated)
+  },
+)
+
+lifecycleHookRoutes.get(
+  '/bizes/:bizId/automation-hook-runs',
+  requireAuth,
+  requireBizAccess('bizId'),
+  requireAclPermission('events.read', { bizIdParam: 'bizId' }),
+  async (c) => {
+    const bizId = c.req.param('bizId')
+    const parsed = listAutomationHookRunsQuerySchema.safeParse(c.req.query())
+    if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid query parameters.', 400, parsed.error.flatten())
+    const pageInfo = pagination(parsed.data)
+    const where = and(
+      eq(automationHookRuns.bizId, bizId),
+      parsed.data.hookPoint ? eq(automationHookRuns.hookPoint, parsed.data.hookPoint) : undefined,
+      parsed.data.targetType ? eq(automationHookRuns.targetType, parsed.data.targetType) : undefined,
+      parsed.data.targetRefId ? eq(automationHookRuns.targetRefId, parsed.data.targetRefId) : undefined,
+      parsed.data.status ? eq(automationHookRuns.status, parsed.data.status) : undefined,
+      parsed.data.automationHookBindingId
+        ? eq(automationHookRuns.automationHookBindingId, parsed.data.automationHookBindingId)
+        : undefined,
+    )
+    const [rows, countRows] = await Promise.all([
+      db.query.automationHookRuns.findMany({
+        where,
+        orderBy: [desc(automationHookRuns.startedAt)],
+        limit: pageInfo.perPage,
+        offset: pageInfo.offset,
+      }),
+      db.select({ count: sql<number>`count(*)`.mapWith(Number) }).from(automationHookRuns).where(where),
+    ])
+    return ok(c, rows, 200, {
+      pagination: {
+        page: pageInfo.page,
+        perPage: pageInfo.perPage,
+        total: countRows[0]?.count ?? 0,
+        hasMore: pageInfo.page * pageInfo.perPage < (countRows[0]?.count ?? 0),
+      },
+    })
+  },
+)
+
+lifecycleHookRoutes.get(
+  '/bizes/:bizId/lifecycle-hook-invocations',
+  requireAuth,
+  requireBizAccess('bizId'),
+  requireAclPermission('events.read', { bizIdParam: 'bizId' }),
+  async (c) => {
+    const bizId = c.req.param('bizId')
+    const parsed = listLifecycleHookInvocationsQuerySchema.safeParse(c.req.query())
+    if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid query parameters.', 400, parsed.error.flatten())
+    const pageInfo = pagination(parsed.data)
+    const where = and(
+      eq(lifecycleHookInvocations.bizId, bizId),
+      parsed.data.contractKey ? eq(lifecycleHookInvocations.contractKey, sanitizePlainText(parsed.data.contractKey)) : undefined,
+      parsed.data.targetType ? eq(lifecycleHookInvocations.targetType, sanitizePlainText(parsed.data.targetType)) : undefined,
+      parsed.data.targetRefId ? eq(lifecycleHookInvocations.targetRefId, parsed.data.targetRefId) : undefined,
+      parsed.data.status ? eq(lifecycleHookInvocations.status, parsed.data.status) : undefined,
+    )
+    const [rows, countRows] = await Promise.all([
+      db.query.lifecycleHookInvocations.findMany({
+        where,
+        orderBy: [desc(lifecycleHookInvocations.startedAt)],
+        limit: pageInfo.perPage,
+        offset: pageInfo.offset,
+      }),
+      db.select({ count: sql<number>`count(*)`.mapWith(Number) }).from(lifecycleHookInvocations).where(where),
+    ])
+    return ok(c, rows, 200, {
+      pagination: {
+        page: pageInfo.page,
+        perPage: pageInfo.perPage,
+        total: countRows[0]?.count ?? 0,
+        hasMore: pageInfo.page * pageInfo.perPage < (countRows[0]?.count ?? 0),
+      },
+    })
+  },
+)
+
+lifecycleHookRoutes.get(
+  '/bizes/:bizId/lifecycle-hook-invocations/:invocationId/effects',
+  requireAuth,
+  requireBizAccess('bizId'),
+  requireAclPermission('events.read', { bizIdParam: 'bizId' }),
+  async (c) => {
+    const { bizId, invocationId } = c.req.param()
+    const rows = await db.query.lifecycleHookEffectEvents.findMany({
+      where: and(
+        eq(lifecycleHookEffectEvents.bizId, bizId),
+        eq(lifecycleHookEffectEvents.lifecycleHookInvocationId, invocationId),
+      ),
+      orderBy: [asc(lifecycleHookEffectEvents.appliedAt), asc(lifecycleHookEffectEvents.id)],
+    })
+    return ok(c, rows)
+  },
+)
+
+lifecycleHookRoutes.get(
+  '/bizes/:bizId/automation-hook-catalog',
+  requireAuth,
+  requireBizAccess('bizId'),
+  requireAclPermission('events.read', { bizIdParam: 'bizId' }),
+  async (c) => {
+    const bizId = c.req.param('bizId')
+    const [contracts, bindings] = await Promise.all([
+      db.query.lifecycleHookContracts.findMany({
+        where: eq(lifecycleHookContracts.bizId, bizId),
+        orderBy: [asc(lifecycleHookContracts.key)],
+      }),
+      db.query.automationHookBindings.findMany({
+        where: eq(automationHookBindings.bizId, bizId),
+        orderBy: [asc(automationHookBindings.hookPoint), asc(automationHookBindings.priority)],
+      }),
+    ])
+    const hookPoints = Array.from(new Set([
+      ...contracts.map((row) => row.key),
+      ...bindings.map((row) => row.hookPoint),
+    ])).sort()
+    return ok(c, {
+      hookPoints,
+      contracts,
+      bindingCount: bindings.length,
+      internalHandlers: AUTOMATION_INTERNAL_HANDLER_CATALOG,
+      notes: [
+        'Lifecycle hook contracts are first-class and versioned.',
+        'Bindings attach to contracts and execute through /automation-hooks/execute.',
+        'Domain services can call the same runtime for native before/after lifecycle points.',
+      ],
+    })
+  },
+)
+
+lifecycleHookRoutes.post(
+  '/bizes/:bizId/automation-hooks/execute',
+  requireAuth,
+  requireBizAccess('bizId'),
+  requireAclPermission('events.write', { bizIdParam: 'bizId' }),
+  async (c) => {
+    const bizId = c.req.param('bizId')
+    const parsed = executeAutomationHooksBodySchema.safeParse(await c.req.json().catch(() => null))
+    if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
+    const result = await db.transaction(async (tx) => {
+      const hookPoint = normalizeLifecycleHookKey(parsed.data.hookPoint ?? '__contract__')
+      const execution = await executeAutomationHooks<
+        GenericAutomationHookExecutionResult,
+        { createdReviewItems: Array<{ id: string }>; createdWorkflowInstances: Array<{ id: string; workflowKey: string }> }
+      >({
+        tx,
+        bizId,
+        hookPoint,
+        contractId: parsed.data.contractId ?? null,
+        contractVersion: parsed.data.contractVersion ?? null,
+        triggerSource: 'api',
+        targetType: sanitizePlainText(parsed.data.targetType),
+        targetRefId: parsed.data.targetRefId,
+        idempotencyKey: parsed.data.idempotencyKey ?? null,
+        inputPayload: cleanMetadata(parsed.data.inputPayload),
+        executeBinding: ({ binding }) => executeGenericAutomationHookBinding({
+          binding,
+          hookPoint: binding.hookPoint,
+          targetType: parsed.data.targetType,
+          targetRefId: parsed.data.targetRefId,
+          inputPayload: cleanMetadata(parsed.data.inputPayload),
+        }),
+        finalizeBinding: ({ binding, run, executionResult }) =>
+          finalizeGenericAutomationHookBinding({
+            tx,
+            bizId,
+            targetType: parsed.data.targetType,
+            targetRefId: parsed.data.targetRefId,
+            binding,
+            run,
+            executionResult,
+          }),
+      })
+      return {
+        hookPoint: execution.contract.key,
+        contract: execution.contract,
+        contractVersion: execution.contractVersion,
+        invocation: execution.invocation,
+        targetType: parsed.data.targetType,
+        targetRefId: parsed.data.targetRefId,
+        hookRuns: execution.runs,
+        effectEvents: execution.effects,
+        createdReviewItems: execution.aggregates.flatMap((row) => row.createdReviewItems),
+        createdWorkflowInstances: execution.aggregates.flatMap(
+          (row) => row.createdWorkflowInstances,
+        ),
+        workflowDispatches: execution.workflowDispatches,
+        reused: execution.reused,
+      }
+    })
+    return ok(c, result)
+  },
+)
+
+lifecycleHookRoutes.get(
+  '/bizes/:bizId/lifecycle-event-deliveries',
+  requireAuth,
+  requireBizAccess('bizId'),
+  requireAclPermission('events.read', { bizIdParam: 'bizId' }),
   async (c) => {
     const bizId = c.req.param('bizId')
     const parsed = listDeliveryQuerySchema.safeParse(c.req.query())
@@ -461,7 +1147,7 @@ lifecycleHookRoutes.post(
   '/bizes/:bizId/lifecycle-event-deliveries',
   requireAuth,
   requireBizAccess('bizId'),
-  requireAclPermission('events.read', { bizIdParam: 'bizId' }),
+  requireAclPermission('events.write', { bizIdParam: 'bizId' }),
   async (c) => {
     const bizId = c.req.param('bizId')
     const parsed = createDeliveryBodySchema.safeParse(await c.req.json().catch(() => null))
@@ -500,7 +1186,7 @@ lifecycleHookRoutes.patch(
   '/bizes/:bizId/lifecycle-event-deliveries/:deliveryId',
   requireAuth,
   requireBizAccess('bizId'),
-  requireAclPermission('events.read', { bizIdParam: 'bizId' }),
+  requireAclPermission('events.write', { bizIdParam: 'bizId' }),
   async (c) => {
     const bizId = c.req.param('bizId')
     const deliveryId = c.req.param('deliveryId')

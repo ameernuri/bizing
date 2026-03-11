@@ -1,7 +1,7 @@
 import 'dotenv/config'
 import {
   generateSagaSpecsFromDocs,
-  syncSagaDefinitionsFromDisk,
+  syncSagaDefinitions,
   DEFAULT_PERSONAS_FILE,
   DEFAULT_USE_CASES_FILE,
 } from '../services/sagas.js'
@@ -56,8 +56,9 @@ async function main() {
 
   const generated = await generateSagaSpecsFromDocs({
     ...options,
+    actorUserId: 'system',
   })
-  const synced = options.sync ? await syncSagaDefinitionsFromDisk() : []
+  const synced = options.sync ? await syncSagaDefinitions() : []
 
   console.log(`[sagas] generated: ${generated.length}`)
   console.log(`[sagas] synced definitions: ${synced.length} (sync=${options.sync})`)

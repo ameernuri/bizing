@@ -8,12 +8,14 @@ tags:
 
 # Locations Domain
 
-This file is generated from route/schema source files and exists to keep domain docs synchronized with code reality.
+This file is generated from route/schema source files and the canonical domain manifest to keep docs synchronized with runtime mounts.
 
 ## Source
 
-- Route file: `/Users/ameer/bizing/code/apps/api/src/routes/locations.ts`
-- Schema file: `/Users/ameer/bizing/code/packages/db/src/schema/locations.ts`
+- Route file: `apps/api/src/routes/locations.ts`
+- Schema file: `packages/db/src/schema/locations.ts`
+- Mount path: `/`
+- Auth class (manifest): `machine_allowed`
 
 ## Route Intent (top JSDoc)
 
@@ -25,12 +27,12 @@ _No top JSDoc comment found._
 
 ## API Surface
 
-- `GET` `/public/bizes/:bizId/locations`
-- `GET` `/bizes/:bizId/locations`
-- `POST` `/bizes/:bizId/locations`
-- `GET` `/bizes/:bizId/locations/:locationId`
-- `PATCH` `/bizes/:bizId/locations/:locationId`
-- `DELETE` `/bizes/:bizId/locations/:locationId`
+- `GET` `/api/v1/public/bizes/:bizId/locations`
+- `GET` `/api/v1/bizes/:bizId/locations`
+- `POST` `/api/v1/bizes/:bizId/locations`
+- `GET` `/api/v1/bizes/:bizId/locations/:locationId`
+- `PATCH` `/api/v1/bizes/:bizId/locations/:locationId`
+- `DELETE` `/api/v1/bizes/:bizId/locations/:locationId`
 
 ## Tables
 

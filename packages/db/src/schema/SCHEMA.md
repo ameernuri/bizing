@@ -19,6 +19,7 @@ Active modules in `packages/db/src/schema`:
 - Core catalog/supply: `services.ts`, `service_products.ts`, `products.ts`, `product_commerce.ts`, `assets.ts`, `venues.ts`, `resources.ts`
 - Canonical booking domains: `offers.ts`, `supply.ts`, `time_availability.ts`, `calendar_sync.ts`, `credential_exchange.ts`, `fulfillment.ts`, `payments.ts`, `compensation.ts`, `product_commerce.ts`, `sellable_variants.ts`, `demand_pricing.ts`, `entitlements.ts`, `channels.ts`, `intelligence.ts`, `education.ts`, `progression.ts`, `audit.ts`, `extensions.ts`, `access_rights.ts`, `checkout.ts`, `session_interactions.ts`, `instruments.ts`, `communications.ts`, `promotions.ts`, `work_management.ts`, `notes.ts`, `queue.ts`, `transportation.ts`, `marketplace.ts`, `operations_backbone.ts`, `enterprise.ts`, `governance.ts`, `hipaa.ts`, `compliance_programs.ts`, `bizings.ts`, `workflows.ts`, `ar.ts`, `commitments.ts`, `sla.ts`, `tax_fx.ts`, `leave.ts`, `offline.ts`, `reporting.ts`, `auth_observability.ts`, `customer_ops.ts`
 - Backbone modules introduced by the redesign: `action_backbone.ts`, `domain_events.ts`, `external_installations.ts`, `schedule_subjects.ts`, `projections.ts`
+- Cross-domain operating cores: `inventory_procurement.ts`, `value_programs.ts`, `workforce_core.ts`
 - Integration: `stripe.ts`
 - Shared primitives: `_common.ts`, `enums.ts`, `canonical.ts`
 
@@ -212,6 +213,20 @@ ELI5:
   - `support_cases` + participants/events/links provide support workflow with direct pointers to orders/messages/transactions.
   - `customer_journeys` + steps/enrollments/events model lifecycle automation in one reusable shape.
   - `customer_playbooks` + bindings/runs model reusable customer operations automations across sales/support/marketing flows.
+- Inventory execution backbone:
+  - `supply_partners` + `supply_partner_catalog_items` normalize supplier economics and procurement identity.
+  - `inventory_replenishment_policies` + `inventory_replenishment_runs` + `inventory_replenishment_suggestions` make replenishment deterministic and explainable.
+  - `inventory_procurement_orders` + lines + receipt/lot tables formalize inbound execution and stock traceability.
+- Value/loyalty backbone:
+  - `value_programs` + `value_program_tiers` define reusable tenant value economies.
+  - `value_program_accounts` + `value_ledger_entries` provide account shells plus immutable movement accounting.
+  - `value_rules` + `value_rule_evaluations` make earn/redeem decisions replayable and auditable.
+  - `value_transfers` captures human/system approval lifecycle around account transfers.
+- Workforce core backbone:
+  - `workforce_departments` + `workforce_positions` + `workforce_assignments` define workforce structure and active employment relationships.
+  - `workforce_requisitions` + candidates/applications/events provide first-class hiring workflow.
+  - `workforce_performance_cycles` + reviews formalize review programs.
+  - `workforce_benefit_plans` + enrollments anchor benefits lifecycle to assignments.
 - Unified operations backbone:
   - generic work templates/runs/steps/entries/artifacts/approvals/time-segments
     to model field ops, inspections, timesheets, and multi-party sign-offs

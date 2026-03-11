@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useMemo } from 'react'
 import { usePathname } from 'next/navigation'
-import { BookOpen, FileStack, FlaskConical, Gauge, Orbit, PlayCircle, Settings2, UserCircle2, Code, FileSpreadsheet } from 'lucide-react'
+import { BookOpen, BrainCircuit, Code, FileSpreadsheet, FileStack, FlaskConical, Gauge, Orbit, PlayCircle, Settings2, UserCircle2, Workflow } from 'lucide-react'
 import { RequireRole } from '@/components/RequireRole'
 import { SidebarProvider, Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarInset, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarTrigger } from '@/components/ui/sidebar'
 import { cn } from '@/lib/utils'
@@ -17,6 +17,8 @@ const navItems = [
   { href: '/ooda/personas', label: 'Personas', icon: UserCircle2, shortLabel: 'Personas' },
   { href: '/ooda/definitions', label: 'Definitions', icon: FileStack, shortLabel: 'Defs' },
   { href: '/ooda/runs', label: 'Runs', icon: PlayCircle, shortLabel: 'Runs' },
+  { href: '/ooda/knowledge', label: 'Knowledge Sync', icon: BrainCircuit, shortLabel: 'Knowledge' },
+  { href: '/ooda/canvascii', label: 'Canvascii', icon: Workflow, shortLabel: 'Canvascii' },
   { href: '/ooda/api', label: 'API Explorer', icon: Code, shortLabel: 'API' },
   { href: '/ooda/coverage', label: 'Coverage Report', icon: FileSpreadsheet, shortLabel: 'Coverage' },
 ] as const

@@ -1,8 +1,8 @@
 # **Bizing**
 
-**Sell your services and digital products online, easily.**
+**Run your business without the back-and-forth.**
 
-A modern, API-first business platform for selling services, digital products, and managing bookings. Built with TypeScript, Next.js, and Hono.
+A modern, API-first business platform for operations, scheduling, sales, payments, and customer communication. Built with TypeScript, Next.js, and Hono.
 
 ## 🚀 Quick Start
 
@@ -69,6 +69,7 @@ Canonical engineering docs now live under [`docs/`](docs/):
 - [`docs/INDEX.md`](docs/INDEX.md) - documentation entry point
 - [`docs/API.md`](docs/API.md) - API architecture and route surfaces
 - [`docs/SCHEMA_BIBLE.md`](docs/SCHEMA_BIBLE.md) - schema map + source locations
+- [`docs/UX_PRINCIPLES.md`](docs/UX_PRINCIPLES.md) - canonical UI/copy direction
 - [`docs/DOC_SYNC.md`](docs/DOC_SYNC.md) - required doc + memory sync protocol
 - [`docs/CHANGE_NOTES.md`](docs/CHANGE_NOTES.md) - concise architecture change log
 

@@ -259,6 +259,20 @@ notificationEndpointRoutes.post('/users/me/notification-endpoints', requireAuth,
   }
 
   const identity = await ensureUserGraphIdentity({ c, userId: user.id, email: user.email })
+  if (parsed.data.destination != null) {
+    const existing = await db.query.graphIdentityNotificationEndpoints.findFirst({
+      where: and(
+        eq(graphIdentityNotificationEndpoints.ownerIdentityId, identity.id),
+        eq(graphIdentityNotificationEndpoints.channel, parsed.data.channel),
+        eq(graphIdentityNotificationEndpoints.destination, parsed.data.destination),
+        sql`"deleted_at" IS NULL`,
+      ),
+    })
+    if (existing) {
+      return ok(c, existing)
+    }
+  }
+
   if (parsed.data.isDefault) {
     const existingDefaults = await db.query.graphIdentityNotificationEndpoints.findMany({
       where: and(

@@ -8,12 +8,14 @@ tags:
 
 # Leave Domain
 
-This file is generated from route/schema source files and exists to keep domain docs synchronized with code reality.
+This file is generated from route/schema source files and the canonical domain manifest to keep docs synchronized with runtime mounts.
 
 ## Source
 
-- Route file: `/Users/ameer/bizing/code/apps/api/src/routes/leave.ts`
-- Schema file: `/Users/ameer/bizing/code/packages/db/src/schema/leave.ts`
+- Route file: `apps/api/src/routes/leave.ts`
+- Schema file: `packages/db/src/schema/leave.ts`
+- Mount path: `/`
+- Auth class (manifest): `machine_allowed`
 
 ## Route Intent (top JSDoc)
 
@@ -32,15 +34,15 @@ _No top JSDoc comment found._
 
 ## API Surface
 
-- `GET` `/bizes/:bizId/leave-policies`
-- `POST` `/bizes/:bizId/leave-policies`
-- `GET` `/bizes/:bizId/leave-balances`
-- `POST` `/bizes/:bizId/leave-balances`
-- `GET` `/bizes/:bizId/leave-requests`
-- `POST` `/bizes/:bizId/leave-requests`
-- `PATCH` `/bizes/:bizId/leave-requests/:leaveRequestId`
-- `GET` `/bizes/:bizId/leave-events`
-- `POST` `/bizes/:bizId/leave-events`
+- `GET` `/api/v1/bizes/:bizId/leave-policies`
+- `POST` `/api/v1/bizes/:bizId/leave-policies`
+- `GET` `/api/v1/bizes/:bizId/leave-balances`
+- `POST` `/api/v1/bizes/:bizId/leave-balances`
+- `GET` `/api/v1/bizes/:bizId/leave-requests`
+- `POST` `/api/v1/bizes/:bizId/leave-requests`
+- `PATCH` `/api/v1/bizes/:bizId/leave-requests/:leaveRequestId`
+- `GET` `/api/v1/bizes/:bizId/leave-events`
+- `POST` `/api/v1/bizes/:bizId/leave-events`
 
 ## Tables
 

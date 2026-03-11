@@ -147,6 +147,25 @@ const publicRespondQueueEntryBodySchema = z.object({
   metadata: z.record(z.unknown()).optional(),
 })
 
+function queueEntryResponseMatchesExisting(
+  entry: { status: string; customerUserId: string | null; decisionState: unknown },
+  userId: string,
+  action: 'accept' | 'decline',
+) {
+  const expectedStatus = action === 'accept' ? 'claimed' : 'cancelled'
+  if (entry.status !== expectedStatus || entry.customerUserId !== userId) return false
+  if (!entry.decisionState || typeof entry.decisionState !== 'object' || Array.isArray(entry.decisionState)) {
+    return true
+  }
+
+  const response = (entry.decisionState as Record<string, unknown>).response
+  if (!response || typeof response !== 'object' || Array.isArray(response)) return true
+  const existingAction = (response as Record<string, unknown>).action
+  const existingCustomerUserId = (response as Record<string, unknown>).customerUserId
+  if (existingAction == null && existingCustomerUserId == null) return true
+  return existingAction === action && existingCustomerUserId === userId
+}
+
 const publicListQueuesQuerySchema = z.object({
   locationId: z.string().optional(),
   search: z.string().optional(),
@@ -235,6 +254,22 @@ function isUniqueViolationForQueueActiveCustomer(error: unknown) {
   const message = String((error as { message?: string }).message || '')
   if (pgCode === '23505' && message.includes('queue_entries_active_customer_queue_unique')) return true
   return message.includes('queue_entries_active_customer_queue_unique')
+}
+
+async function findActiveQueueEntryForCustomer(input: {
+  bizId: string
+  queueId: string
+  customerUserId: string
+}) {
+  return db.query.queueEntries.findFirst({
+    where: and(
+      eq(queueEntries.bizId, input.bizId),
+      eq(queueEntries.queueId, input.queueId),
+      eq(queueEntries.customerUserId, input.customerUserId),
+      sql`${queueEntries.status} in ('waiting', 'offered')`,
+    ),
+    orderBy: [desc(queueEntries.joinedAt)],
+  })
 }
 
 /**
@@ -553,6 +588,19 @@ queueRoutes.post(
     })
     if (!statusConfigValidation.ok) {
       return fail(c, statusConfigValidation.code, statusConfigValidation.message, 409)
+    }
+
+    const activeExisting =
+      parsed.data.customerUserId &&
+      (parsed.data.status === 'waiting' || parsed.data.status === 'offered')
+        ? await findActiveQueueEntryForCustomer({
+            bizId,
+            queueId,
+            customerUserId: parsed.data.customerUserId,
+          })
+        : null
+    if (activeExisting) {
+      return ok(c, activeExisting)
     }
 
     try {
@@ -917,6 +965,15 @@ queueRoutes.post('/public/bizes/:bizId/queues/:queueId/entries', requireAuth, as
     return fail(c, 'SELF_JOIN_DISABLED', 'Queue self-join is disabled.', 409)
   }
 
+  const activeExisting = await findActiveQueueEntryForCustomer({
+    bizId,
+    queueId,
+    customerUserId: user.id,
+  })
+  if (activeExisting) {
+    return ok(c, activeExisting)
+  }
+
   try {
     const created = await createQueueRow(c, bizId, 'queueEntries', {
         bizId,
@@ -1025,6 +1082,9 @@ queueRoutes.post('/public/bizes/:bizId/queues/:queueId/entries/:queueEntryId/res
     ),
   })
   if (!existing) return fail(c, 'NOT_FOUND', 'Queue entry not found.', 404)
+  if (queueEntryResponseMatchesExisting(existing, user.id, parsed.data.action)) {
+    return ok(c, existing)
+  }
   if (existing.status !== 'offered') {
     return fail(c, 'INVALID_STATE', 'Only offered queue entries can be answered.', 409)
   }

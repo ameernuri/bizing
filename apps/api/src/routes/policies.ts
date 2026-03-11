@@ -133,24 +133,24 @@ const createRuleBodySchema = z.object({
   metadata: z.record(z.unknown()).optional(),
 })
 
+const policyBindingTargetTypeSchema = z.enum([
+  'biz',
+  'location',
+  'resource',
+  'service',
+  'offer',
+  'offer_version',
+  'queue',
+  'subject',
+])
+
 const createBindingBodySchema = z
   .object({
     policyTemplateId: z.string().min(1),
-    targetType: z.enum([
-      'biz',
-      'location',
-      'resource',
-      'service',
-      'service_product',
-      'offer',
-      'offer_version',
-      'queue',
-      'subject',
-    ]),
+    targetType: policyBindingTargetTypeSchema,
     locationId: z.string().optional(),
     resourceId: z.string().optional(),
     serviceId: z.string().optional(),
-    serviceProductId: z.string().optional(),
     offerId: z.string().optional(),
     offerVersionId: z.string().optional(),
     queueId: z.string().optional(),
@@ -166,7 +166,6 @@ const createBindingBodySchema = z
       value.locationId,
       value.resourceId,
       value.serviceId,
-      value.serviceProductId,
       value.offerId,
       value.offerVersionId,
       value.queueId,
@@ -187,9 +186,7 @@ const createBindingBodySchema = z
           ? value.resourceId
           : value.targetType === 'service'
             ? value.serviceId
-            : value.targetType === 'service_product'
-              ? value.serviceProductId
-              : value.targetType === 'offer'
+            : value.targetType === 'offer'
                 ? value.offerId
                 : value.targetType === 'offer_version'
                   ? value.offerVersionId
@@ -206,6 +203,10 @@ const createBindingBodySchema = z
       })
     }
   })
+
+const listBindingsQuerySchema = z.object({
+  targetType: policyBindingTargetTypeSchema.optional(),
+})
 
 export const policyRoutes = new Hono()
 
@@ -432,11 +433,15 @@ policyRoutes.get(
   requireAclPermission('compliance.read', { bizIdParam: 'bizId' }),
   async (c) => {
     const bizId = c.req.param('bizId')
-    const targetType = c.req.query('targetType')
+    const parsed = listBindingsQuerySchema.safeParse(c.req.query())
+    if (!parsed.success) {
+      return fail(c, 'VALIDATION_ERROR', 'Invalid query parameters.', 400, parsed.error.flatten())
+    }
+
     const rows = await db.query.policyBindings.findMany({
       where: and(
         eq(policyBindings.bizId, bizId),
-        targetType ? eq(policyBindings.targetType, targetType as never) : undefined,
+        parsed.data.targetType ? eq(policyBindings.targetType, parsed.data.targetType) : undefined,
       ),
       orderBy: [asc(policyBindings.targetType), asc(policyBindings.priority)],
       limit: 500,
@@ -479,10 +484,6 @@ policyRoutes.post(
         parsed.data.targetType === 'service' && parsed.data.serviceId
           ? eq(policyBindings.serviceId, parsed.data.serviceId)
           : undefined,
-        parsed.data.targetType === 'service_product'
-          && parsed.data.serviceProductId
-          ? eq(policyBindings.serviceProductId, parsed.data.serviceProductId)
-          : undefined,
         parsed.data.targetType === 'offer' && parsed.data.offerId
           ? eq(policyBindings.offerId, parsed.data.offerId)
           : undefined,
@@ -519,7 +520,7 @@ policyRoutes.post(
         locationId: parsed.data.locationId ?? null,
         resourceId: parsed.data.resourceId ?? null,
         serviceId: parsed.data.serviceId ?? null,
-        serviceProductId: parsed.data.serviceProductId ?? null,
+        serviceProductId: null,
         offerId: parsed.data.offerId ?? null,
         offerVersionId: parsed.data.offerVersionId ?? null,
         queueId: parsed.data.queueId ?? null,

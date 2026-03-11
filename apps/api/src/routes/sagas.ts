@@ -8,10 +8,6 @@ import {
   DEFAULT_PERSONAS_FILE,
   DEFAULT_SCHEMA_COVERAGE_FILE,
   DEFAULT_USE_CASES_FILE,
-  SAGA_BASE_DIR,
-  SAGA_REPORTS_DIR,
-  SAGA_RUNS_DIR,
-  SAGA_SPECS_DIR,
   archiveSagaRuns,
   canUserAccessSagaRun,
   createSagaRun,
@@ -25,6 +21,7 @@ import {
   listSagaDefinitions,
   listSagaRuns,
   readArtifactsContent,
+  reclassifySagaDefinitionDepths,
   refreshSagaRunStatus,
   saveSagaArtifact,
   saveSagaSnapshot,
@@ -58,7 +55,7 @@ import {
   listSagaRunSchedulerJobs,
   createSagaRunSchedulerJob,
   updateSagaRunSchedulerJob,
-  syncSagaDefinitionsFromDisk,
+  syncSagaDefinitions,
   upsertSagaDefinitionSpec,
   updateSagaRunStep,
 } from '../services/sagas.js'
@@ -80,7 +77,7 @@ const sagaPersonaVersions = dbPackage.sagaPersonaVersions
 
 const listSpecQuerySchema = z.object({
   status: z.enum(['draft', 'active', 'archived']).optional(),
-  sync: z.enum(['true', 'false']).optional(),
+  depth: z.enum(['shallow', 'medium', 'deep']).optional(),
   limit: z.string().optional(),
 })
 
@@ -267,6 +264,7 @@ const saveTraceBodySchema = z.object({
 
 const listRunsQuerySchema = z.object({
   sagaKey: z.string().optional(),
+  depth: z.enum(['shallow', 'medium', 'deep']).optional(),
   status: z.enum(['pending', 'running', 'passed', 'failed', 'cancelled']).optional(),
   limit: z.string().optional(),
   mineOnly: z.enum(['true', 'false']).optional(),
@@ -387,11 +385,11 @@ sagaRoutes.get('/ooda/sagas/docs', requireAuth, async (c) => {
   return ok(c, {
     description:
       'Saga lifecycle testing contract. Use spec generation + run APIs for full business lifecycle simulations.',
-    filesystem: {
-      baseDir: SAGA_BASE_DIR,
-      specsDir: SAGA_SPECS_DIR,
-      runsDir: SAGA_RUNS_DIR,
-      reportsDir: SAGA_REPORTS_DIR,
+    storage: {
+      model: 'db_native',
+      definitions: 'saga_definitions + saga_definition_revisions',
+      runs: 'saga_runs + saga_run_steps',
+      artifacts: 'saga_run_artifacts (body_text)',
       defaultUseCasesFile: DEFAULT_USE_CASES_FILE,
       defaultPersonasFile: DEFAULT_PERSONAS_FILE,
       defaultSchemaCoverageFile: DEFAULT_SCHEMA_COVERAGE_FILE,
@@ -399,7 +397,7 @@ sagaRoutes.get('/ooda/sagas/docs', requireAuth, async (c) => {
     workflow: [
       'Create/replace DB-native saga specs via POST/PUT /api/v1/ooda/sagas/specs.',
       'List revisions via GET /api/v1/ooda/sagas/specs/:sagaKey/revisions.',
-      'Optional: import file specs with POST /api/v1/ooda/sagas/specs/sync.',
+      'Optional: refresh DB definition index with POST /api/v1/ooda/sagas/specs/sync.',
       'Create run with POST /api/v1/ooda/sagas/runs.',
       'Archive runs with POST /api/v1/ooda/sagas/runs/:runId/archive or /api/v1/ooda/sagas/runs/archive.',
       'Use agents tools and report each step via /steps/:stepKey/result.',
@@ -466,11 +464,12 @@ sagaRoutes.post('/ooda/sagas/library/reset-reseed', requireAuth, async (c) => {
       useCaseFile: parsed.data.useCaseFile,
       personaFile: parsed.data.personaFile,
       overwrite: true,
+      actorUserId: user.id,
     })
   }
 
   const syncedDefinitions = parsed.data.syncDefinitions
-    ? await syncSagaDefinitionsFromDisk(user.id)
+    ? await syncSagaDefinitions(user.id)
     : []
 
   const loopSynced = await syncSagaLoopLibraryFromDocs({
@@ -1032,12 +1031,9 @@ sagaRoutes.get('/ooda/sagas/specs', requireAuth, async (c) => {
     return fail(c, 'VALIDATION_ERROR', 'Invalid query parameters.', 400, parsed.error.flatten())
   }
 
-  if (parsed.data.sync === 'true') {
-    await syncSagaDefinitionsFromDisk(user.id)
-  }
-
   const definitions = await listSagaDefinitions({
     status: parsed.data.status,
+    depth: parsed.data.depth,
     limit: Math.min(parsePositiveInt(parsed.data.limit, 200), 1000),
   })
 
@@ -1093,8 +1089,11 @@ sagaRoutes.post('/ooda/sagas/specs/generate', requireAuth, async (c) => {
     return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
   }
 
-  const generated = await generateSagaSpecsFromDocs(parsed.data)
-  const synced = parsed.data.syncDefinitions ? await syncSagaDefinitionsFromDisk(user.id) : []
+  const generated = await generateSagaSpecsFromDocs({
+    ...parsed.data,
+    actorUserId: user.id,
+  })
+  const synced = parsed.data.syncDefinitions ? await syncSagaDefinitions(user.id) : []
   const loopSynced = await syncSagaLoopLibraryFromDocs({
     useCaseFile: parsed.data.useCaseFile,
     personaFile: parsed.data.personaFile,
@@ -1110,10 +1109,30 @@ sagaRoutes.post('/ooda/sagas/specs/generate', requireAuth, async (c) => {
   })
 })
 
+/**
+ * Recompute depth classification for all synced saga definitions.
+ *
+ * Why this exists:
+ * - keeps existing library consistently tagged for shallow/medium/deep lanes
+ * - makes runner presets + OODash filters trustworthy after large edits
+ */
+sagaRoutes.post('/ooda/sagas/specs/depth/reclassify', requireAuth, async (c) => {
+  const user = getCurrentUser(c)
+  if (!user) return fail(c, 'UNAUTHORIZED', 'Authentication required.', 401)
+  if (!isPlatformAdmin(user)) {
+    return fail(c, 'FORBIDDEN', 'Platform admin role required.', 403)
+  }
+  const result = await reclassifySagaDefinitionDepths({
+    actorUserId: user.id,
+    status: 'active',
+  })
+  return ok(c, result)
+})
+
 sagaRoutes.post('/ooda/sagas/specs/sync', requireAuth, async (c) => {
   const user = getCurrentUser(c)
   if (!user) return fail(c, 'UNAUTHORIZED', 'Authentication required.', 401)
-  const synced = await syncSagaDefinitionsFromDisk(user.id)
+  const synced = await syncSagaDefinitions(user.id)
   const loopSynced = await syncSagaLoopLibraryFromDocs({
     actorUserId: user.id,
     linkSagaDefinitions: true,
@@ -1287,6 +1306,7 @@ sagaRoutes.get('/ooda/sagas/runs', requireAuth, async (c) => {
 
   const runs = await listSagaRuns({
     sagaKey: parsed.data.sagaKey,
+    depth: parsed.data.depth,
     status: parsed.data.status,
     limit: Math.min(parsePositiveInt(parsed.data.limit, 50), 200),
     requestedByUserId: wantsAllRuns ? undefined : user.id,
@@ -1308,6 +1328,7 @@ sagaRoutes.get('/ooda/sagas/runs', requireAuth, async (c) => {
   const refreshedRuns = openRunIds.length
     ? await listSagaRuns({
         sagaKey: parsed.data.sagaKey,
+        depth: parsed.data.depth,
         status: parsed.data.status,
         limit: Math.min(parsePositiveInt(parsed.data.limit, 50), 200),
         requestedByUserId: wantsAllRuns ? undefined : user.id,

@@ -8,12 +8,14 @@ tags:
 
 # Channels Domain
 
-This file is generated from route/schema source files and exists to keep domain docs synchronized with code reality.
+This file is generated from route/schema source files and the canonical domain manifest to keep docs synchronized with runtime mounts.
 
 ## Source
 
-- Route file: `/Users/ameer/bizing/code/apps/api/src/routes/channels.ts`
-- Schema file: `/Users/ameer/bizing/code/packages/db/src/schema/channels.ts`
+- Route file: `apps/api/src/routes/channels.ts`
+- Schema file: `packages/db/src/schema/channels.ts`
+- Mount path: `/`
+- Auth class (manifest): `machine_allowed`
 
 ## Route Intent (top JSDoc)
 
@@ -36,19 +38,19 @@ _No top JSDoc comment found._
 
 ## API Surface
 
-- `GET` `/bizes/:bizId/channel-accounts`
-- `POST` `/bizes/:bizId/channel-accounts`
-- `GET` `/bizes/:bizId/channel-sync-states`
-- `POST` `/bizes/:bizId/channel-sync-states`
-- `GET` `/bizes/:bizId/channel-entity-links`
-- `POST` `/bizes/:bizId/channel-entity-links`
-- `POST` `/bizes/:bizId/channel-accounts/:channelAccountId/external-bookings`
-- `POST` `/bizes/:bizId/channel-accounts/:channelAccountId/external-bookings/:bookingOrderId/attendance`
-- `GET` `/bizes/:bizId/channel-accounts/:channelAccountId/reconciliation`
-- `GET` `/bizes/:bizId/channel-accounts/:channelAccountId/capacity-allocation`
-- `POST` `/bizes/:bizId/channel-accounts/:channelAccountId/social-booking-links`
-- `GET` `/public/bizes/:bizId/social-booking-links`
-- `GET` `/bizes/:bizId/channel-insights`
+- `GET` `/api/v1/bizes/:bizId/channel-accounts`
+- `POST` `/api/v1/bizes/:bizId/channel-accounts`
+- `GET` `/api/v1/bizes/:bizId/channel-sync-states`
+- `POST` `/api/v1/bizes/:bizId/channel-sync-states`
+- `GET` `/api/v1/bizes/:bizId/channel-entity-links`
+- `POST` `/api/v1/bizes/:bizId/channel-entity-links`
+- `POST` `/api/v1/bizes/:bizId/channel-accounts/:channelAccountId/external-bookings`
+- `POST` `/api/v1/bizes/:bizId/channel-accounts/:channelAccountId/external-bookings/:bookingOrderId/attendance`
+- `GET` `/api/v1/bizes/:bizId/channel-accounts/:channelAccountId/reconciliation`
+- `GET` `/api/v1/bizes/:bizId/channel-accounts/:channelAccountId/capacity-allocation`
+- `POST` `/api/v1/bizes/:bizId/channel-accounts/:channelAccountId/social-booking-links`
+- `GET` `/api/v1/public/bizes/:bizId/social-booking-links`
+- `GET` `/api/v1/bizes/:bizId/channel-insights`
 
 ## Tables
 

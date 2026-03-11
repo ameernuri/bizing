@@ -186,6 +186,15 @@ const sagaSpecCommonShape = {
   sagaKey: z.string().min(1),
   title: z.string().min(1),
   description: z.string().min(1),
+  /**
+   * Execution depth profile for this saga.
+   *
+   * ELI5:
+   * - shallow: quick smoke check
+   * - medium: normal regression path
+   * - deep: broad pre-merge stress validation
+   */
+  depth: z.enum(['shallow', 'medium', 'deep']).default('medium'),
   tags: z.array(z.string().min(1)).default([]),
   defaults: sagaDefaultsSchema,
   source: sagaSourceSchema.default({}),
@@ -219,3 +228,4 @@ export type SagaSpec = z.infer<typeof sagaSpecSchema>
 export type SagaSpecInput = z.infer<typeof sagaSpecInputSchema>
 export type SagaPhase = z.infer<typeof sagaPhaseSchema>
 export type SagaStep = z.infer<typeof sagaStepSchema>
+export type SagaDepth = SagaSpec['depth']

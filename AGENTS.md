@@ -15,6 +15,9 @@ This file defines how agents should operate in `/Users/ameer/bizing/code`.
 3. `/Users/ameer/bizing/mind/INDEX.md`
 4. `/Users/ameer/bizing/mind/memory/RAM.md`
 
+For any UI/frontend/copy task, also read:
+5. `docs/UX_PRINCIPLES.md`
+
 ## Skill Usage Rule
 
 Skills live under `/Users/ameer/bizing/mind/skills`.
@@ -41,6 +44,15 @@ When code behavior changes (API, schema, auth, saga, integrations):
 
 - Prefer wiki-links for internal docs (e.g., `[[API]]`, `[[SCHEMA_BIBLE]]`).
 - Maintain bridge notes in mind workspace so body and mind stay navigable together.
+
+## UX/UI Guardrail (Required)
+
+- Treat `docs/UX_PRINCIPLES.md` as binding direction.
+- Do not ship end-user UI copy that includes:
+  - internal/debug wording
+  - persona/storytelling placeholders
+  - jargon-heavy or suspicious trust/security marketing language
+- Keep customer and biz-owner surfaces clean, role-targeted, and free from admin/dev leakage.
 
 ## Done Criteria
 

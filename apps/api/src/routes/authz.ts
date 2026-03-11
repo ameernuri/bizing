@@ -35,7 +35,12 @@ import {
 import { executeCrudRouteAction } from '../services/action-route-bridge.js'
 import { appendAuditEvent, createOperationalAlert } from '../lib/audit-log.js'
 import { sanitizePlainText, sanitizeUnknown } from '../lib/sanitize.js'
-import { fail, ok } from './_api.js'
+import {
+  bulkDeleteMembersBodySchema,
+  expectedBulkDeleteConfirmation,
+  offboardMemberBodySchema,
+} from '../contracts/member-admin.js'
+import { fail, ok, parseJsonBody } from './_api.js'
 
 const {
   db,
@@ -65,26 +70,6 @@ const createMemberBodySchema = z.object({
 
 const updateMemberBodySchema = z.object({
   role: z.string().min(1).max(60),
-})
-
-const bulkDeleteMembersBodySchema = z.object({
-  memberIds: z.array(z.string().min(1)).min(1),
-  confirmationText: z.string().min(1).max(120),
-  reason: z.string().min(1).max(500),
-})
-
-const offboardMemberBodySchema = z.object({
-  reason: z.string().min(1).max(500),
-  checklist: z
-    .array(
-      z.object({
-        key: z.string().min(1).max(120),
-        label: z.string().min(1).max(220).optional(),
-        completed: z.boolean(),
-      }),
-    )
-    .min(1),
-  metadata: z.record(z.unknown()).optional(),
 })
 
 const createInvitationBodySchema = z.object({
@@ -594,12 +579,12 @@ authzRoutes.post(
   requireAclPermission('members.manage', { bizIdParam: 'bizId' }),
   async (c) => {
     const bizId = c.req.param('bizId')
-    const parsed = bulkDeleteMembersBodySchema.safeParse(await c.req.json().catch(() => null))
-    if (!parsed.success) {
-      return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
+    const parsed = await parseJsonBody(c, bulkDeleteMembersBodySchema)
+    if (!parsed.ok) {
+      return parsed.response
     }
 
-    const expectedConfirmation = `DELETE ${parsed.data.memberIds.length} MEMBERS`
+    const expectedConfirmation = expectedBulkDeleteConfirmation(parsed.data.memberIds.length)
     if (parsed.data.confirmationText !== expectedConfirmation) {
       return fail(c, 'CONFIRMATION_REQUIRED', 'Bulk delete requires exact confirmation text.', 400, {
         expectedConfirmation,
@@ -775,94 +760,15 @@ authzRoutes.delete(
 )
 
 authzRoutes.post(
-  '/bizes/:bizId/members/bulk-delete',
-  requireAuth,
-  requireBizAccess('bizId'),
-  requireAclPermission('members.manage', { bizIdParam: 'bizId' }),
-  async (c) => {
-    const bizId = c.req.param('bizId')
-    const parsed = bulkDeleteMembersBodySchema.safeParse(await c.req.json().catch(() => null))
-    if (!parsed.success) {
-      return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
-    }
-
-    const expectedConfirmation = `DELETE ${parsed.data.memberIds.length} MEMBERS`
-    if (parsed.data.confirmationText !== expectedConfirmation) {
-      return fail(c, 'CONFIRMATION_REQUIRED', 'Bulk delete requires exact confirmation text.', 400, {
-        expectedConfirmation,
-      })
-    }
-
-    const existingRows = await db
-      .select({
-        id: members.id,
-        userId: members.userId,
-        role: members.role,
-      })
-      .from(members)
-      .where(and(eq(members.organizationId, bizId), inArray(members.id, parsed.data.memberIds)))
-
-    if (existingRows.length !== parsed.data.memberIds.length) {
-      return fail(c, 'NOT_FOUND', 'One or more members were not found for bulk delete.', 404, {
-        expectedCount: parsed.data.memberIds.length,
-        foundCount: existingRows.length,
-      })
-    }
-
-    const removedRows: Array<{ id: string }> = []
-    for (const memberId of parsed.data.memberIds) {
-      const removed = (await deleteAuthzRow(c, bizId, 'members', memberId, {
-        subjectType: 'member',
-        subjectId: memberId,
-        displayName: 'Bulk remove member',
-        metadata: { source: 'routes.authz.bulkDeleteMembers' },
-      })) as Record<string, unknown> | Response
-      if (removed instanceof Response) return removed
-      removedRows.push({ id: String(removed.id) })
-    }
-
-    const batchId = `bulk_member_delete_${crypto.randomUUID().replace(/-/g, '')}`
-    await emitAdminActionTrace(c, {
-      bizId,
-      streamKey: `tenant:${bizId}`,
-      streamType: 'tenant',
-      entityType: 'bulk_member_delete',
-      entityId: batchId,
-      eventType: 'delete',
-      reasonCode: 'bulk_member_delete',
-      note: sanitizePlainText(parsed.data.reason),
-      beforeState: {
-        members: existingRows,
-      },
-      afterState: {
-        removedMemberIds: removedRows.map((row) => row.id),
-      },
-      metadata: {
-        memberIds: parsed.data.memberIds,
-        deletedCount: removedRows.length,
-        confirmationText: parsed.data.confirmationText,
-      },
-    })
-
-    return ok(c, {
-      batchId,
-      deletedCount: removedRows.length,
-      memberIds: removedRows.map((row) => row.id),
-      reason: parsed.data.reason,
-    })
-  },
-)
-
-authzRoutes.post(
   '/bizes/:bizId/members/:memberId/offboard',
   requireAuth,
   requireBizAccess('bizId'),
   requireAclPermission('members.manage', { bizIdParam: 'bizId' }),
   async (c) => {
     const { bizId, memberId } = c.req.param()
-    const parsed = offboardMemberBodySchema.safeParse(await c.req.json().catch(() => null))
-    if (!parsed.success) {
-      return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
+    const parsed = await parseJsonBody(c, offboardMemberBodySchema)
+    if (!parsed.ok) {
+      return parsed.response
     }
 
     if (parsed.data.checklist.some((item) => !item.completed)) {

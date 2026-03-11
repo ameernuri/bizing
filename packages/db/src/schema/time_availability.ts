@@ -21,6 +21,7 @@ import { scheduleSubjects } from "./schedule_subjects";
 import { serviceProducts } from "./service_products";
 import { services } from "./services";
 import { subjects } from "./subjects";
+import { timeScopes } from "./time_scopes";
 import { users } from "./users";
 import {
   availabilityDependencyEnforcementModeEnum,
@@ -350,6 +351,18 @@ export const calendarBindings = pgTable(
      */
     isPrimary: boolean("is_primary").default(true).notNull(),
 
+    /**
+     * Smaller values are evaluated first when multiple owner-layer calendars
+     * apply to the same booking request.
+     */
+    priority: integer("priority").default(100).notNull(),
+
+    /**
+     * Required bindings must be available for a slot to be bookable.
+     * Optional bindings are advisory only.
+     */
+    isRequired: boolean("is_required").default(false).notNull(),
+
     /** Toggle to retire/disable a mapping without deleting it. */
     isActive: boolean("is_active").default(true).notNull(),
 
@@ -395,6 +408,13 @@ export const calendarBindings = pgTable(
     calendarBindingsBizCalendarIdx: index("calendar_bindings_biz_calendar_idx").on(
       table.bizId,
       table.calendarId,
+    ),
+    /** Common resolver path for active primary bindings ordered by priority. */
+    calendarBindingsBizActivePriorityIdx: index("calendar_bindings_biz_active_priority_idx").on(
+      table.bizId,
+      table.isActive,
+      table.isPrimary,
+      table.priority,
     ),
     /** Canonical owner lookup path through the schedule-subject backbone. */
     calendarBindingsBizScheduleSubjectIdx: index(
@@ -2528,6 +2548,17 @@ export const capacityHoldPolicies = pgTable(
     /** Scope discriminator that selects which target payload column is used. */
     targetType: capacityHoldPolicyTargetTypeEnum("target_type").notNull(),
 
+    /**
+     * Canonical normalized scope pointer.
+     *
+     * ELI5:
+     * `target_type` + typed payload columns are the current legacy-compatible
+     * shape. `time_scope_id` is the new canonical bridge to `time_scopes`
+     * so scope identity can be shared across modules without repeating many
+     * nullable target columns.
+     */
+    timeScopeId: idRef("time_scope_id").references(() => timeScopes.id),
+
     /** Target payload for `target_type=location`. */
     locationId: idRef("location_id").references(() => locations.id),
 
@@ -2701,6 +2732,11 @@ export const capacityHoldPolicies = pgTable(
       "capacity_hold_policies_biz_status_target_priority_idx",
     ).on(table.bizId, table.status, table.targetType, table.priority),
 
+    /** Canonical scope-pointer lookup path for normalized resolver logic. */
+    capacityHoldPoliciesBizTimeScopeStatusIdx: index(
+      "capacity_hold_policies_biz_time_scope_status_idx",
+    ).on(table.bizId, table.timeScopeId, table.status, table.priority),
+
     /** Direct lookup path when resolver already computed canonical scope key. */
     capacityHoldPoliciesBizTargetScopeIdx: index(
       "capacity_hold_policies_biz_target_scope_idx",
@@ -2734,6 +2770,11 @@ export const capacityHoldPolicies = pgTable(
       columns: [table.bizId, table.calendarId],
       foreignColumns: [calendars.bizId, calendars.id],
       name: "capacity_hold_policies_biz_calendar_fk",
+    }),
+    capacityHoldPoliciesBizTimeScopeFk: foreignKey({
+      columns: [table.bizId, table.timeScopeId],
+      foreignColumns: [timeScopes.bizId, timeScopes.id],
+      name: "capacity_hold_policies_biz_time_scope_fk",
     }),
     capacityHoldPoliciesBizResourceFk: foreignKey({
       columns: [table.bizId, table.resourceId],
@@ -3097,6 +3138,14 @@ export const capacityHoldDemandAlerts = pgTable(
     /** Scope discriminator for this alert. */
     targetType: capacityHoldPolicyTargetTypeEnum("target_type").notNull(),
 
+    /**
+     * Canonical normalized scope pointer.
+     *
+     * This allows alert consumers to pivot to `time_scopes` without relying on
+     * typed target payload columns.
+     */
+    timeScopeId: idRef("time_scope_id").references(() => timeScopes.id),
+
     /** Typed target payloads (same shape model as hold policies). */
     locationId: idRef("location_id").references(() => locations.id),
     calendarId: idRef("calendar_id").references(() => calendars.id),
@@ -3188,6 +3237,11 @@ export const capacityHoldDemandAlerts = pgTable(
       table.windowEndAt,
     ),
 
+    /** Normalized-scope lookup path for policy and dashboard aggregations. */
+    capacityHoldDemandAlertsBizTimeScopeStatusWindowIdx: index(
+      "capacity_hold_demand_alerts_biz_time_scope_status_window_idx",
+    ).on(table.bizId, table.timeScopeId, table.status, table.windowStartAt, table.windowEndAt),
+
     /** Calendar-focused path for operator schedule screens. */
     capacityHoldDemandAlertsBizCalendarStatusWindowIdx: index(
       "capacity_hold_demand_alerts_biz_calendar_status_window_idx",
@@ -3210,6 +3264,11 @@ export const capacityHoldDemandAlerts = pgTable(
       columns: [table.bizId, table.calendarId],
       foreignColumns: [calendars.bizId, calendars.id],
       name: "capacity_hold_demand_alerts_biz_calendar_fk",
+    }),
+    capacityHoldDemandAlertsBizTimeScopeFk: foreignKey({
+      columns: [table.bizId, table.timeScopeId],
+      foreignColumns: [timeScopes.bizId, timeScopes.id],
+      name: "capacity_hold_demand_alerts_biz_time_scope_fk",
     }),
     capacityHoldDemandAlertsBizResourceFk: foreignKey({
       columns: [table.bizId, table.resourceId],
@@ -3551,6 +3610,14 @@ export const capacityHolds = pgTable(
       .references(() => calendars.id)
       .notNull(),
 
+    /**
+     * Canonical normalized scope pointer.
+     *
+     * This is the long-term shared scope identity for hold rows across
+     * schedulable domains.
+     */
+    timeScopeId: idRef("time_scope_id").references(() => timeScopes.id),
+
     /** Target scope discriminator for this hold row. */
     targetType: capacityHoldTargetTypeEnum("target_type").notNull(),
 
@@ -3717,6 +3784,11 @@ export const capacityHolds = pgTable(
       "capacity_holds_biz_target_status_window_idx",
     ).on(table.bizId, table.targetType, table.targetRefKey, table.status, table.startsAt, table.endsAt),
 
+    /** Canonical scope-pointer path for normalized hold lookups. */
+    capacityHoldsBizTimeScopeStatusWindowIdx: index(
+      "capacity_holds_biz_time_scope_status_window_idx",
+    ).on(table.bizId, table.timeScopeId, table.status, table.startsAt, table.endsAt),
+
     /**
      * Demand-scan fast path for alert projection workers.
      *
@@ -3770,6 +3842,11 @@ export const capacityHolds = pgTable(
       columns: [table.bizId, table.capacityHoldPolicyId],
       foreignColumns: [capacityHoldPolicies.bizId, capacityHoldPolicies.id],
       name: "capacity_holds_biz_policy_fk",
+    }),
+    capacityHoldsBizTimeScopeFk: foreignKey({
+      columns: [table.bizId, table.timeScopeId],
+      foreignColumns: [timeScopes.bizId, timeScopes.id],
+      name: "capacity_holds_biz_time_scope_fk",
     }),
 
     /** Tenant-safe FK to optional pool target. */

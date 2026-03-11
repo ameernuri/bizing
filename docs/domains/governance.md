@@ -8,12 +8,14 @@ tags:
 
 # Governance Domain
 
-This file is generated from route/schema source files and exists to keep domain docs synchronized with code reality.
+This file is generated from route/schema source files and the canonical domain manifest to keep docs synchronized with runtime mounts.
 
 ## Source
 
-- Route file: `/Users/ameer/bizing/code/apps/api/src/routes/governance.ts`
-- Schema file: `/Users/ameer/bizing/code/packages/db/src/schema/governance.ts`
+- Route file: `apps/api/src/routes/governance.ts`
+- Schema file: `packages/db/src/schema/governance.ts`
+- Mount path: `/`
+- Auth class (manifest): `machine_allowed`
 
 ## Route Intent (top JSDoc)
 
@@ -32,11 +34,11 @@ _No top JSDoc comment found._
 
 ## API Surface
 
-- `GET` `/bizes/:bizId/policy-breach-events`
-- `POST` `/bizes/:bizId/policy-breach-events`
-- `GET` `/bizes/:bizId/policy-consequence-events`
-- `POST` `/bizes/:bizId/policy-consequence-events`
-- `PATCH` `/bizes/:bizId/policy-consequence-events/:consequenceId`
+- `GET` `/api/v1/bizes/:bizId/policy-breach-events`
+- `POST` `/api/v1/bizes/:bizId/policy-breach-events`
+- `GET` `/api/v1/bizes/:bizId/policy-consequence-events`
+- `POST` `/api/v1/bizes/:bizId/policy-consequence-events`
+- `PATCH` `/api/v1/bizes/:bizId/policy-consequence-events/:consequenceId`
 
 ## Tables
 

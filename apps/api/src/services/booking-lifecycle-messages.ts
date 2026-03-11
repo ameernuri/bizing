@@ -1,10 +1,4 @@
-import dbPackage from '@bizing/db'
-
-const {
-  db,
-  outboundMessages,
-  outboundMessageEvents,
-} = dbPackage
+import { dispatchSimulatedOutboundMessage } from './simulated-outbound-dispatch.js'
 
 /**
  * Persist one simulated booking lifecycle message.
@@ -35,52 +29,25 @@ export async function createBookingLifecycleMessage(input: {
   templateSlug: string
   eventType: 'booking.confirmed' | 'booking.cancelled'
 }) {
-  const [message] = await db
-    .insert(outboundMessages)
-    .values({
-      bizId: input.bizId,
-      channel: 'email',
-      purpose: 'transactional',
-      recipientUserId: input.recipientUserId ?? null,
-      recipientRef: input.recipientRef,
-      status: 'delivered',
-      scheduledFor: new Date(),
-      sentAt: new Date(),
-      deliveredAt: new Date(),
-      providerKey: 'simulated_email',
-      providerMessageRef: `${input.templateSlug}-${input.bookingOrderId}`,
-      payload: {
-        subject: input.subject,
-        body: input.body,
-      },
-      metadata: {
-        bookingOrderId: input.bookingOrderId,
-        eventType: input.eventType,
-        templateSlug: input.templateSlug,
-      },
-    })
-    .returning()
-
-  await db.insert(outboundMessageEvents).values([
-    {
-      bizId: input.bizId,
-      outboundMessageId: message.id,
-      eventType: 'queued',
-      payload: { templateSlug: input.templateSlug },
+  const { message } = await dispatchSimulatedOutboundMessage({
+    bizId: input.bizId,
+    channel: 'email',
+    purpose: 'transactional',
+    recipientUserId: input.recipientUserId ?? null,
+    recipientRef: input.recipientRef,
+    status: 'delivered',
+    providerKey: 'simulated_email',
+    providerMessageRef: `${input.templateSlug}-${input.bookingOrderId}`,
+    payload: {
+      subject: input.subject,
+      body: input.body,
     },
-    {
-      bizId: input.bizId,
-      outboundMessageId: message.id,
-      eventType: 'sent',
-      payload: { providerKey: 'simulated_email' },
+    metadata: {
+      bookingOrderId: input.bookingOrderId,
+      eventType: input.eventType,
+      templateSlug: input.templateSlug,
     },
-    {
-      bizId: input.bizId,
-      outboundMessageId: message.id,
-      eventType: 'delivered',
-      payload: { recipientRef: input.recipientRef },
-    },
-  ])
+  })
 
   return message
 }

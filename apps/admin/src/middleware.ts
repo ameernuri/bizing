@@ -10,6 +10,12 @@ import { NextResponse, type NextRequest } from 'next/server'
 export function middleware(request: NextRequest) {
   const { pathname, search } = request.nextUrl
 
+  if (pathname === '/login') {
+    const signInUrl = new URL('/sign-in', request.url)
+    signInUrl.search = search
+    return NextResponse.redirect(signInUrl)
+  }
+
   // Never guard Next internals or static assets.
   if (
     pathname.startsWith('/_next') ||
@@ -20,19 +26,36 @@ export function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  const isLoginPage = pathname === '/login'
-  const hasSessionCookie = Boolean(request.cookies.get('better-auth.session_token')?.value)
+  const isPublicPath =
+    pathname === '/' ||
+    pathname === '/sign-in' ||
+    pathname === '/book' ||
+    pathname.startsWith('/book/')
+  const configuredCookiePrefix =
+    process.env.NEXT_PUBLIC_BETTER_AUTH_COOKIE_PREFIX?.trim() ||
+    process.env.BETTER_AUTH_COOKIE_PREFIX?.trim() ||
+    'bizing-auth'
+  const sessionCookieCandidates = [
+    `${configuredCookiePrefix}.session_token`,
+    'bizing-auth.session_token',
+    'better-auth.session_token',
+  ]
+  const hasSessionCookie = sessionCookieCandidates.some((cookieName) =>
+    Boolean(request.cookies.get(cookieName)?.value),
+  )
 
-  if (isLoginPage) {
-    // Always allow reaching /login. Client-side auth context will redirect
-    // authenticated users, while stale cookies can still recover here.
+  if (isPublicPath) {
+    // Public surfaces stay reachable without auth:
+    // - `/` (marketing/home)
+    // - `/sign-in` (auth)
+    // - `/book` (customer booking)
     return NextResponse.next()
   }
 
   if (!hasSessionCookie) {
-    const loginUrl = new URL('/login', request.url)
-    loginUrl.searchParams.set('next', `${pathname}${search}`)
-    return NextResponse.redirect(loginUrl)
+    const signInUrl = new URL('/sign-in', request.url)
+    signInUrl.searchParams.set('next', `${pathname}${search}`)
+    return NextResponse.redirect(signInUrl)
   }
 
   return NextResponse.next()

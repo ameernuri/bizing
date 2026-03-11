@@ -8,12 +8,14 @@ tags:
 
 # Instruments Domain
 
-This file is generated from route/schema source files and exists to keep domain docs synchronized with code reality.
+This file is generated from route/schema source files and the canonical domain manifest to keep docs synchronized with runtime mounts.
 
 ## Source
 
-- Route file: `/Users/ameer/bizing/code/apps/api/src/routes/instruments.ts`
-- Schema file: `/Users/ameer/bizing/code/packages/db/src/schema/instruments.ts`
+- Route file: `apps/api/src/routes/instruments.ts`
+- Schema file: `packages/db/src/schema/instruments.ts`
+- Mount path: `/`
+- Auth class (manifest): `machine_allowed`
 
 ## Route Intent (top JSDoc)
 
@@ -40,33 +42,25 @@ _No top JSDoc comment found._
 
 ## API Surface
 
-- `GET` `/bizes/:bizId/instruments`
-- `POST` `/bizes/:bizId/instruments`
-- `GET` `/bizes/:bizId/instruments/:instrumentId`
-- `PATCH` `/bizes/:bizId/instruments/:instrumentId`
-- `GET` `/bizes/:bizId/instruments/:instrumentId/items`
-- `POST` `/bizes/:bizId/instruments/:instrumentId/items`
-- `GET` `/bizes/:bizId/instrument-bindings`
-- `POST` `/bizes/:bizId/instrument-bindings`
-- `GET` `/bizes/:bizId/instrument-runs`
-- `POST` `/bizes/:bizId/instrument-runs`
-- `GET` `user`
-- `GET` `user`
-- `GET` `/bizes/:bizId/instrument-runs/:instrumentRunId`
-- `GET` `/bizes/:bizId/instrument-runs/:instrumentRunId/events`
-- `GET` `/bizes/:bizId/instrument-runs/:instrumentRunId/responses`
-- `POST` `/bizes/:bizId/instrument-runs/:instrumentRunId/responses`
-- `GET` `user`
-- `POST` `/bizes/:bizId/instrument-runs/:instrumentRunId/submit`
-- `GET` `user`
-- `POST` `/bizes/:bizId/instrument-runs/:instrumentRunId/evaluate`
-- `GET` `user`
-- `GET` `/public/bizes/:bizId/instrument-runs/:instrumentRunId`
-- `GET` `user`
-- `POST` `/public/bizes/:bizId/instrument-runs/:instrumentRunId/responses`
-- `GET` `user`
-- `POST` `/public/bizes/:bizId/instrument-runs/:instrumentRunId/submit`
-- `GET` `user`
+- `GET` `/api/v1/bizes/:bizId/instruments`
+- `POST` `/api/v1/bizes/:bizId/instruments`
+- `GET` `/api/v1/bizes/:bizId/instruments/:instrumentId`
+- `PATCH` `/api/v1/bizes/:bizId/instruments/:instrumentId`
+- `GET` `/api/v1/bizes/:bizId/instruments/:instrumentId/items`
+- `POST` `/api/v1/bizes/:bizId/instruments/:instrumentId/items`
+- `GET` `/api/v1/bizes/:bizId/instrument-bindings`
+- `POST` `/api/v1/bizes/:bizId/instrument-bindings`
+- `GET` `/api/v1/bizes/:bizId/instrument-runs`
+- `POST` `/api/v1/bizes/:bizId/instrument-runs`
+- `GET` `/api/v1/bizes/:bizId/instrument-runs/:instrumentRunId`
+- `GET` `/api/v1/bizes/:bizId/instrument-runs/:instrumentRunId/events`
+- `GET` `/api/v1/bizes/:bizId/instrument-runs/:instrumentRunId/responses`
+- `POST` `/api/v1/bizes/:bizId/instrument-runs/:instrumentRunId/responses`
+- `POST` `/api/v1/bizes/:bizId/instrument-runs/:instrumentRunId/submit`
+- `POST` `/api/v1/bizes/:bizId/instrument-runs/:instrumentRunId/evaluate`
+- `GET` `/api/v1/public/bizes/:bizId/instrument-runs/:instrumentRunId`
+- `POST` `/api/v1/public/bizes/:bizId/instrument-runs/:instrumentRunId/responses`
+- `POST` `/api/v1/public/bizes/:bizId/instrument-runs/:instrumentRunId/submit`
 
 ## Tables
 

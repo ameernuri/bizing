@@ -7,6 +7,7 @@ import { ArrowLeft, ChevronDown, ChevronRight, FileJson2, Loader2, MessageSquare
 import { sagaApi, type SagaArtifact, type SagaArtifactContent, type SagaCoverageDetail, type SagaDefinitionLinksDetail, type SagaRunDetail, type SagaRunStep } from '@/lib/sagas-api'
 import { SnapshotRenderer, type SnapshotDocument } from '@/components/sagas/snapshot-renderer'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -15,6 +16,7 @@ import { Separator } from '@/components/ui/separator'
 import { cn } from '@/lib/utils'
 import { EmptyState, LoadError, LoadingGrid, PageIntro, RunStatusBadge } from './common'
 import { useSagaRealtime } from '@/lib/use-saga-realtime'
+import { apiUrl } from '@/lib/api'
 
 const ReactJson = dynamic(() => import('react-json-view'), { ssr: false })
 
@@ -81,12 +83,40 @@ function safeParseSnapshot(content: string): SnapshotDocument | null {
   }
 }
 
+function asRecord(value: unknown): Record<string, unknown> | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null
+  return value as Record<string, unknown>
+}
+
+function extractReplayCall(step: SagaRunStep) {
+  const root = asRecord(step.resultPayload)
+  const apiCalls = Array.isArray(root?.apiCalls) ? root.apiCalls : []
+  const candidate = asRecord(apiCalls[apiCalls.length - 1] ?? apiCalls[0])
+  if (!candidate) return null
+  const method = typeof candidate.method === 'string' ? candidate.method.toUpperCase() : null
+  const path = typeof candidate.path === 'string' ? candidate.path : null
+  if (!method || !path || !path.startsWith('/api/')) return null
+  return {
+    method,
+    path,
+    requestBody: candidate.requestBody,
+  }
+}
+
 export function SagaRunDetailPage({ runId }: { runId: string }) {
   const [detail, setDetail] = useState<SagaRunDetail | null>(null)
   const [coverage, setCoverage] = useState<SagaCoverageDetail | null>(null)
   const [links, setLinks] = useState<SagaDefinitionLinksDetail | null>(null)
   const [artifactContent, setArtifactContent] = useState<SagaArtifactContent | null>(null)
   const [artifactOpen, setArtifactOpen] = useState(false)
+  const [replayOpen, setReplayOpen] = useState(false)
+  const [replayResult, setReplayResult] = useState<{
+    step: SagaRunStep
+    status: number
+    ok: boolean
+    responseBody: unknown
+  } | null>(null)
+  const [replayBusyId, setReplayBusyId] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isExecuting, setIsExecuting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -194,6 +224,39 @@ export function SagaRunDetailPage({ runId }: { runId: string }) {
     return grouped
   }, [detail?.artifacts])
   const snapshotDocument = artifactContent ? safeParseSnapshot(artifactContent.content) : null
+
+  async function replayStepCall(step: SagaRunStep) {
+    const call = extractReplayCall(step)
+    if (!call || replayBusyId) return
+    setReplayBusyId(step.id)
+    try {
+      const hasBody = !['GET', 'HEAD'].includes(call.method) && call.requestBody !== undefined
+      const response = await fetch(apiUrl(call.path), {
+        method: call.method,
+        credentials: 'include',
+        headers: hasBody ? { 'content-type': 'application/json' } : undefined,
+        body: hasBody ? JSON.stringify(call.requestBody) : undefined,
+      })
+      const text = await response.text()
+      let responseBody: unknown = text
+      try {
+        responseBody = text ? JSON.parse(text) : null
+      } catch {
+        responseBody = text
+      }
+      setReplayResult({
+        step,
+        status: response.status,
+        ok: response.ok,
+        responseBody,
+      })
+      setReplayOpen(true)
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Replay call failed.')
+    } finally {
+      setReplayBusyId(null)
+    }
+  }
 
   return (
     <div className="flex flex-1 flex-col">
@@ -405,6 +468,18 @@ export function SagaRunDetailPage({ runId }: { runId: string }) {
                                       theme="monokai"
                                       style={{ background: 'transparent', fontSize: '12px' }}
                                     />
+                                    {extractReplayCall(step) ? (
+                                      <div className="mt-3">
+                                        <Button
+                                          size="sm"
+                                          variant="outline"
+                                          onClick={() => void replayStepCall(step)}
+                                          disabled={replayBusyId === step.id}
+                                        >
+                                          {replayBusyId === step.id ? 'Replaying...' : 'Replay last API call'}
+                                        </Button>
+                                      </div>
+                                    ) : null}
                                   </div>
                                 ) : null}
                                 {artifacts.length ? (
@@ -470,6 +545,42 @@ export function SagaRunDetailPage({ runId }: { runId: string }) {
               )
             ) : null}
           </ScrollArea>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={replayOpen} onOpenChange={setReplayOpen}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>Replay step call</DialogTitle>
+          </DialogHeader>
+          {replayResult ? (
+            <ScrollArea className="max-h-[75vh] pr-4">
+              <div className="space-y-4">
+                <div className="rounded-lg border p-4">
+                  <p className="font-medium">{replayResult.step.title ?? replayResult.step.stepKey}</p>
+                  <p className="text-sm text-muted-foreground">{replayResult.step.actorKey}</p>
+                  <div className="mt-2 flex items-center gap-2">
+                    <Badge variant={replayResult.ok ? 'default' : 'destructive'}>
+                      {replayResult.status}
+                    </Badge>
+                  </div>
+                </div>
+                <ReactJson
+                  src={
+                    (typeof replayResult.responseBody === 'object' && replayResult.responseBody !== null
+                      ? (replayResult.responseBody as Record<string, unknown>)
+                      : { value: replayResult.responseBody }) as Record<string, unknown>
+                  }
+                  name={false}
+                  collapsed={2}
+                  displayDataTypes={false}
+                  enableClipboard={false}
+                  theme="monokai"
+                  style={{ background: 'transparent', fontSize: '12px' }}
+                />
+              </div>
+            </ScrollArea>
+          ) : null}
         </DialogContent>
       </Dialog>
     </div>

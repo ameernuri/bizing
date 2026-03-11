@@ -8,12 +8,14 @@ tags:
 
 # Progression Domain
 
-This file is generated from route/schema source files and exists to keep domain docs synchronized with code reality.
+This file is generated from route/schema source files and the canonical domain manifest to keep docs synchronized with runtime mounts.
 
 ## Source
 
-- Route file: `/Users/ameer/bizing/code/apps/api/src/routes/progression.ts`
-- Schema file: `/Users/ameer/bizing/code/packages/db/src/schema/progression.ts`
+- Route file: `apps/api/src/routes/progression.ts`
+- Schema file: `packages/db/src/schema/progression.ts`
+- Mount path: `/`
+- Auth class (manifest): `machine_allowed`
 
 ## Route Intent (top JSDoc)
 
@@ -37,14 +39,14 @@ _No top JSDoc comment found._
 
 ## API Surface
 
-- `GET` `/bizes/:bizId/requirement-sets`
-- `POST` `/bizes/:bizId/requirement-sets`
-- `GET` `/bizes/:bizId/requirement-sets/:requirementSetId/nodes`
-- `POST` `/bizes/:bizId/requirement-nodes`
-- `POST` `/bizes/:bizId/requirement-edges`
-- `GET` `/bizes/:bizId/requirement-evaluations`
-- `POST` `/bizes/:bizId/requirement-evaluations`
-- `POST` `/bizes/:bizId/requirement-evidence-links`
+- `GET` `/api/v1/bizes/:bizId/requirement-sets`
+- `POST` `/api/v1/bizes/:bizId/requirement-sets`
+- `GET` `/api/v1/bizes/:bizId/requirement-sets/:requirementSetId/nodes`
+- `POST` `/api/v1/bizes/:bizId/requirement-nodes`
+- `POST` `/api/v1/bizes/:bizId/requirement-edges`
+- `GET` `/api/v1/bizes/:bizId/requirement-evaluations`
+- `POST` `/api/v1/bizes/:bizId/requirement-evaluations`
+- `POST` `/api/v1/bizes/:bizId/requirement-evidence-links`
 
 ## Tables
 

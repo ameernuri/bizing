@@ -15,12 +15,14 @@ import {
   Unlink2,
 } from 'lucide-react'
 import {
+  type OodaBlocker,
   oodaApi,
   type OodaGapType,
   type OodaLoop,
   type OodaLoopAction,
   type OodaLoopEntry,
   type OodaLoopLink,
+  type OodaReorientItem,
 } from '@/lib/ooda-api'
 import {
   sagaApi,
@@ -41,6 +43,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
 import { LoadError, LoadingGrid, PageIntro, RunProgressBackdrop, RunStatusBadge } from './common'
+import { apiUrl } from '@/lib/api'
 
 const ReactJson = dynamic(() => import('react-json-view'), { ssr: false })
 
@@ -155,12 +158,21 @@ type ResolvedLink = {
   href: string | null
 }
 
+type ReplayResult = {
+  blocker: OodaBlocker
+  status: number
+  ok: boolean
+  body: unknown
+}
+
 export function OodaLoopDetailPage({ loopId }: { loopId: string }) {
   const [detail, setDetail] = useState<LoopDetailState | null>(null)
   const [definitions, setDefinitions] = useState<SagaDefinitionSummary[]>([])
   const [useCases, setUseCases] = useState<SagaUseCaseDefinition[]>([])
   const [personas, setPersonas] = useState<SagaPersonaDefinition[]>([])
   const [runs, setRuns] = useState<SagaRunSummary[]>([])
+  const [blockers, setBlockers] = useState<OodaBlocker[]>([])
+  const [reorient, setReorient] = useState<OodaReorientItem[]>([])
 
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -184,6 +196,9 @@ export function OodaLoopDetailPage({ loopId }: { loopId: string }) {
   const [onlyUnresolved, setOnlyUnresolved] = useState(true)
 
   const [selectedAction, setSelectedAction] = useState<OodaLoopAction | null>(null)
+  const [replayOpen, setReplayOpen] = useState(false)
+  const [replayResult, setReplayResult] = useState<ReplayResult | null>(null)
+  const [replayBusyId, setReplayBusyId] = useState<string | null>(null)
 
   const [entryForm, setEntryForm] = useState({
     entryType: 'signal' as OodaLoopEntry['entryType'],
@@ -231,12 +246,13 @@ export function OodaLoopDetailPage({ loopId }: { loopId: string }) {
     }
 
     try {
-      const [loopDetail, defs, ucRows, personaRows, runRows] = await Promise.all([
+      const [loopDetail, defs, ucRows, personaRows, runRows, blockerPayload] = await Promise.all([
         oodaApi.fetchLoopDetail(loopId),
         sagaApi.fetchDefinitions(),
         sagaApi.fetchUseCases(),
         sagaApi.fetchPersonas(),
         sagaApi.fetchRuns({ limit: 5000, mineOnly: false, includeArchived: true }),
+        oodaApi.fetchLoopBlockers(loopId, { limit: 40 }),
       ])
 
       setDetail(loopDetail)
@@ -244,6 +260,8 @@ export function OodaLoopDetailPage({ loopId }: { loopId: string }) {
       setUseCases(ucRows)
       setPersonas(personaRows)
       setRuns(runRows)
+      setBlockers(blockerPayload.blockers)
+      setReorient(blockerPayload.reorient)
 
       setEditLoopForm({
         title: loopDetail.loop.title,
@@ -401,6 +419,77 @@ export function OodaLoopDetailPage({ loopId }: { loopId: string }) {
     })
   }, [detail?.entries, onlyUnresolved])
 
+  const blockerSummary = useMemo(() => {
+    return {
+      total: blockers.length,
+      replayable: blockers.filter((item) => Boolean(item.repro)).length,
+      strongEvidence: blockers.filter((item) => item.evidenceQuality === 'strong').length,
+      weakEvidence: blockers.filter((item) => item.evidenceQuality === 'weak').length,
+    }
+  }, [blockers])
+
+  const suggestedSagaKeys = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          blockers
+            .map((item) => item.sagaKey)
+            .filter((value): value is string => typeof value === 'string' && value.length > 0),
+        ),
+      ).slice(0, 4),
+    [blockers],
+  )
+
+  async function runReplay(blocker: OodaBlocker) {
+    if (!blocker.repro || replayBusyId) return
+    setReplayBusyId(blocker.id)
+    setError(null)
+    try {
+      const method = blocker.repro.method.toUpperCase()
+      const hasBody = !['GET', 'HEAD'].includes(method) && blocker.repro.requestBody !== undefined
+      const response = await fetch(apiUrl(blocker.repro.path), {
+        method,
+        credentials: 'include',
+        headers: hasBody ? { 'content-type': 'application/json' } : undefined,
+        body: hasBody ? JSON.stringify(blocker.repro.requestBody) : undefined,
+      })
+      const text = await response.text()
+      let body: unknown = text
+      try {
+        body = text ? JSON.parse(text) : null
+      } catch {
+        body = text
+      }
+      setReplayResult({
+        blocker,
+        status: response.status,
+        ok: response.ok,
+        body,
+      })
+      setReplayOpen(true)
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Replay call failed.')
+    } finally {
+      setReplayBusyId(null)
+    }
+  }
+
+  async function runSagaFromLoopByKey(sagaKey: string, mode: 'dry_run' | 'live' = 'dry_run') {
+    if (!detail || !sagaKey.trim()) return
+    setIsRunning(true)
+    try {
+      const created = await oodaApi.createLoopRun(detail.loop.id, {
+        sagaKey: sagaKey.trim(),
+        mode,
+        actionTitle: `Execute ${sagaKey.trim()} from mission`,
+      })
+      window.location.href = `/ooda/runs/${created.run.run.id}`
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Failed to start run from mission.')
+      setIsRunning(false)
+    }
+  }
+
   async function saveLoopEdits() {
     if (!detail) return
     setIsSavingLoop(true)
@@ -501,19 +590,8 @@ export function OodaLoopDetailPage({ loopId }: { loopId: string }) {
   }
 
   async function runSagaFromLoop() {
-    if (!detail || !runForm.sagaKey.trim()) return
-    setIsRunning(true)
-    try {
-      const created = await oodaApi.createLoopRun(detail.loop.id, {
-        sagaKey: runForm.sagaKey.trim(),
-        mode: runForm.mode,
-        actionTitle: `Execute ${runForm.sagaKey.trim()} from mission`,
-      })
-      window.location.href = `/ooda/runs/${created.run.run.id}`
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Failed to start run from mission.')
-      setIsRunning(false)
-    }
+    if (!runForm.sagaKey.trim()) return
+    await runSagaFromLoopByKey(runForm.sagaKey, runForm.mode)
   }
 
   async function generateDraft() {
@@ -674,6 +752,149 @@ export function OodaLoopDetailPage({ loopId }: { loopId: string }) {
                     <Play className="mr-2 h-4 w-4" />
                     {isRunning ? 'Starting run...' : 'Start run'}
                   </Button>
+                </CardContent>
+              </Card>
+            </div>
+
+            <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between gap-2">
+                    <div>
+                      <CardTitle>Top blockers</CardTitle>
+                      <CardDescription>
+                        Failure-first queue for this mission. Each row shows expected vs actual and gives direct next actions.
+                      </CardDescription>
+                    </div>
+                    <Button variant="outline" size="sm" onClick={() => void load({ background: true })}>
+                      <RefreshCw className="mr-2 h-4 w-4" />
+                      Refresh blockers
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="grid grid-cols-4 gap-2 text-center text-xs text-muted-foreground">
+                    <div className="rounded-lg border p-2">
+                      <p className="text-base font-semibold text-foreground">{blockerSummary.total}</p>
+                      <p>total</p>
+                    </div>
+                    <div className="rounded-lg border p-2">
+                      <p className="text-base font-semibold text-foreground">{blockerSummary.replayable}</p>
+                      <p>replayable</p>
+                    </div>
+                    <div className="rounded-lg border p-2">
+                      <p className="text-base font-semibold text-foreground">{blockerSummary.strongEvidence}</p>
+                      <p>strong proof</p>
+                    </div>
+                    <div className="rounded-lg border p-2">
+                      <p className="text-base font-semibold text-foreground">{blockerSummary.weakEvidence}</p>
+                      <p>weak proof</p>
+                    </div>
+                  </div>
+
+                  {blockers.length === 0 ? (
+                    <p className="rounded-lg border p-3 text-sm text-muted-foreground">No blockers detected for this mission.</p>
+                  ) : (
+                    blockers.slice(0, 10).map((blocker) => (
+                      <div key={blocker.id} className="rounded-lg border p-3">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="space-y-1">
+                            <p className="font-medium">{blocker.title}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {blocker.source} · {blocker.status} · {blocker.failureSignature ?? 'NO_SIGNATURE'}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline" className={toneForSeverity(blocker.severity)}>
+                              {blocker.severity}
+                            </Badge>
+                            <Badge variant="outline">{blocker.evidenceQuality === 'strong' ? 'strong proof' : 'weak proof'}</Badge>
+                          </div>
+                        </div>
+
+                        <div className="mt-2 grid gap-2 md:grid-cols-2">
+                          <div className="rounded-md border p-2">
+                            <p className="text-xs uppercase tracking-wide text-muted-foreground">Expected</p>
+                            <p className="mt-1 text-sm">{blocker.expectedResult ?? 'No expected result recorded.'}</p>
+                          </div>
+                          <div className="rounded-md border p-2">
+                            <p className="text-xs uppercase tracking-wide text-muted-foreground">Actual</p>
+                            <p className="mt-1 text-sm">{blocker.actualResult ?? blocker.summary}</p>
+                          </div>
+                        </div>
+
+                        <div className="mt-3 flex flex-wrap items-center gap-2">
+                          {blocker.sagaRunId ? (
+                            <Button size="sm" variant="outline" asChild>
+                              <Link href={`/ooda/runs/${blocker.sagaRunId}`}>Open run</Link>
+                            </Button>
+                          ) : null}
+                          {blocker.repro ? (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => void runReplay(blocker)}
+                              disabled={replayBusyId === blocker.id}
+                            >
+                              {replayBusyId === blocker.id ? 'Replaying...' : 'Replay API call'}
+                            </Button>
+                          ) : null}
+                          {blocker.sagaKey ? (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => void runSagaFromLoopByKey(blocker.sagaKey ?? '', 'dry_run')}
+                            >
+                              Re-run saga
+                            </Button>
+                          ) : null}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Reorient now</CardTitle>
+                  <CardDescription>
+                    Top root causes and the most useful next actions for this mission.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {reorient.length === 0 ? (
+                    <p className="rounded-lg border p-3 text-sm text-muted-foreground">No recurring cause cluster yet.</p>
+                  ) : (
+                    reorient.map((item) => (
+                      <div key={item.signature} className="rounded-lg border p-3">
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="font-medium">{item.signature}</p>
+                          <Badge variant="outline">{item.count}</Badge>
+                        </div>
+                        <p className="mt-1 text-xs text-muted-foreground">{item.exampleTitle}</p>
+                        <p className="mt-2 text-sm">{item.recommendation}</p>
+                      </div>
+                    ))
+                  )}
+
+                  {suggestedSagaKeys.length > 0 ? (
+                    <div className="rounded-lg border p-3">
+                      <p className="text-sm font-medium">Suggested immediate reruns</p>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {suggestedSagaKeys.map((sagaKey) => (
+                          <Button
+                            key={sagaKey}
+                            size="sm"
+                            variant="outline"
+                            onClick={() => void runSagaFromLoopByKey(sagaKey, 'dry_run')}
+                          >
+                            {sagaKey}
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
                 </CardContent>
               </Card>
             </div>
@@ -1298,6 +1519,65 @@ export function OodaLoopDetailPage({ loopId }: { loopId: string }) {
           ) : null}
           <DialogFooter>
             <Button variant="outline" onClick={() => setActionInspectOpen(false)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={replayOpen} onOpenChange={setReplayOpen}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>Replay result</DialogTitle>
+          </DialogHeader>
+          {replayResult ? (
+            <ScrollArea className="max-h-[72vh] pr-3">
+              <div className="space-y-4">
+                <div className="rounded-lg border p-4">
+                  <p className="font-medium">{replayResult.blocker.title}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {replayResult.blocker.repro?.method} {replayResult.blocker.repro?.path}
+                  </p>
+                  <div className="mt-2 flex items-center gap-2">
+                    <Badge variant={replayResult.ok ? 'default' : 'destructive'}>
+                      {replayResult.status}
+                    </Badge>
+                    <Badge variant="outline">
+                      {replayResult.ok ? 'success' : 'failed'}
+                    </Badge>
+                  </div>
+                </div>
+
+                <div>
+                  <p className="mb-2 text-sm font-medium">Request body</p>
+                  <ReactJson
+                    src={(replayResult.blocker.repro?.requestBody as Record<string, unknown>) ?? {}}
+                    theme="monokai"
+                    name={false}
+                    displayDataTypes={false}
+                    displayObjectSize={false}
+                    collapsed={2}
+                    style={{ borderRadius: 8, padding: 12 }}
+                  />
+                </div>
+
+                <div>
+                  <p className="mb-2 text-sm font-medium">Response body</p>
+                  <ReactJson
+                    src={(typeof replayResult.body === 'object' && replayResult.body !== null
+                      ? (replayResult.body as Record<string, unknown>)
+                      : { value: replayResult.body }) as Record<string, unknown>}
+                    theme="monokai"
+                    name={false}
+                    displayDataTypes={false}
+                    displayObjectSize={false}
+                    collapsed={2}
+                    style={{ borderRadius: 8, padding: 12 }}
+                  />
+                </div>
+              </div>
+            </ScrollArea>
+          ) : null}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setReplayOpen(false)}>Close</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -51,8 +51,8 @@ export function RequireRole({
           <CardDescription>Sign in to continue.</CardDescription>
         </CardHeader>
         <CardContent>
-          <Link href="/login">
-            <Button>Go to login</Button>
+          <Link href="/sign-in">
+            <Button>Go to sign in</Button>
           </Link>
         </CardContent>
       </Card>

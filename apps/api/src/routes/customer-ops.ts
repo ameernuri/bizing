@@ -15,7 +15,7 @@
  */
 
 import { Hono } from "hono";
-import { and, asc, desc, eq, or } from "drizzle-orm";
+import { and, asc, desc, eq, or, sql } from "drizzle-orm";
 import { z } from "zod";
 import dbPackage from "@bizing/db";
 import { requireAclPermission, requireAuth, requireBizAccess } from "../middleware/auth.js";
@@ -123,8 +123,11 @@ const pagedQuerySchema = z.object({
   perPage: z.string().optional(),
 });
 
+const customerProfileStatuses = ["shadow", "claimed", "merged", "archived"] as const;
+const customerIdentityHandleStatuses = ["active", "inactive", "suspended", "archived"] as const;
+
 const customerProfileCreateSchema = z.object({
-  status: z.string().default("shadow"),
+  status: z.enum(customerProfileStatuses).default("shadow"),
   displayName: z.string().max(240).optional(),
   primaryEmail: z.string().email().max(320).optional(),
   primaryPhone: z.string().max(40).optional(),
@@ -149,7 +152,7 @@ const customerIdentityHandleCreateSchema = z.object({
   handleType: z.string().min(1).max(60),
   normalizedValue: z.string().min(1).max(500),
   displayValue: z.string().max(500).optional(),
-  status: z.string().max(32).default("active"),
+  status: z.enum(customerIdentityHandleStatuses).default("active"),
   metadata: z.record(z.unknown()).optional(),
 });
 
@@ -416,13 +419,18 @@ customerOpsRoutes.get(
     const parsed = pagedQuerySchema.safeParse(c.req.query());
     if (!parsed.success) return fail(c, "VALIDATION_ERROR", "Invalid query.", 400, parsed.error.flatten());
     const { page, perPage, offset } = pagination(parsed.data);
-    const rows = await db.query.customerProfiles.findMany({
-      where: eq(customerProfiles.bizId, bizId),
-      orderBy: [desc(customerProfiles.firstSeenAt)],
-      limit: perPage,
-      offset,
-    });
-    return ok(c, rows, 200, { pagination: { page, perPage, total: rows.length, hasMore: rows.length === perPage } });
+    const where = eq(customerProfiles.bizId, bizId);
+    const [rows, countRows] = await Promise.all([
+      db.query.customerProfiles.findMany({
+        where,
+        orderBy: [desc(customerProfiles.firstSeenAt)],
+        limit: perPage,
+        offset,
+      }),
+      db.select({ count: sql<number>`count(*)::int` }).from(customerProfiles).where(where),
+    ]);
+    const total = Number(countRows[0]?.count ?? 0);
+    return ok(c, rows, 200, { pagination: { page, perPage, total, hasMore: page * perPage < total } });
   },
 );
 
@@ -646,13 +654,18 @@ customerOpsRoutes.get(
     const parsed = pagedQuerySchema.safeParse(c.req.query());
     if (!parsed.success) return fail(c, "VALIDATION_ERROR", "Invalid query.", 400, parsed.error.flatten());
     const { page, perPage, offset } = pagination(parsed.data);
-    const rows = await db.query.customerTimelineEvents.findMany({
-      where: and(eq(customerTimelineEvents.bizId, bizId), eq(customerTimelineEvents.customerProfileId, profileId)),
-      orderBy: [desc(customerTimelineEvents.occurredAt)],
-      limit: perPage,
-      offset,
-    });
-    return ok(c, rows, 200, { pagination: { page, perPage, total: rows.length, hasMore: rows.length === perPage } });
+    const where = and(eq(customerTimelineEvents.bizId, bizId), eq(customerTimelineEvents.customerProfileId, profileId));
+    const [rows, countRows] = await Promise.all([
+      db.query.customerTimelineEvents.findMany({
+        where,
+        orderBy: [desc(customerTimelineEvents.occurredAt)],
+        limit: perPage,
+        offset,
+      }),
+      db.select({ count: sql<number>`count(*)::int` }).from(customerTimelineEvents).where(where),
+    ]);
+    const total = Number(countRows[0]?.count ?? 0);
+    return ok(c, rows, 200, { pagination: { page, perPage, total, hasMore: page * perPage < total } });
   },
 );
 
@@ -706,19 +719,24 @@ customerOpsRoutes.get(
     }).safeParse(c.req.query());
     if (!parsed.success) return fail(c, "VALIDATION_ERROR", "Invalid query.", 400, parsed.error.flatten());
     const { page, perPage, offset } = pagination(parsed.data);
-    const rows = await db.query.supportCases.findMany({
-      where: and(
-        eq(supportCases.bizId, bizId),
-        parsed.data.status ? eq(supportCases.status, parsed.data.status) : undefined,
-        parsed.data.priority ? eq(supportCases.priority, parsed.data.priority) : undefined,
-        parsed.data.assignedUserId ? eq(supportCases.assignedUserId, parsed.data.assignedUserId) : undefined,
-        parsed.data.customerProfileId ? eq(supportCases.customerProfileId, parsed.data.customerProfileId) : undefined,
-      ),
-      orderBy: [desc(supportCases.openedAt)],
-      limit: perPage,
-      offset,
-    });
-    return ok(c, rows, 200, { pagination: { page, perPage, total: rows.length, hasMore: rows.length === perPage } });
+    const where = and(
+      eq(supportCases.bizId, bizId),
+      parsed.data.status ? eq(supportCases.status, parsed.data.status) : undefined,
+      parsed.data.priority ? eq(supportCases.priority, parsed.data.priority) : undefined,
+      parsed.data.assignedUserId ? eq(supportCases.assignedUserId, parsed.data.assignedUserId) : undefined,
+      parsed.data.customerProfileId ? eq(supportCases.customerProfileId, parsed.data.customerProfileId) : undefined,
+    );
+    const [rows, countRows] = await Promise.all([
+      db.query.supportCases.findMany({
+        where,
+        orderBy: [desc(supportCases.openedAt)],
+        limit: perPage,
+        offset,
+      }),
+      db.select({ count: sql<number>`count(*)::int` }).from(supportCases).where(where),
+    ]);
+    const total = Number(countRows[0]?.count ?? 0);
+    return ok(c, rows, 200, { pagination: { page, perPage, total, hasMore: page * perPage < total } });
   },
 );
 
@@ -1159,18 +1177,23 @@ customerOpsRoutes.get(
     }).safeParse(c.req.query());
     if (!parsed.success) return fail(c, "VALIDATION_ERROR", "Invalid query.", 400, parsed.error.flatten());
     const { page, perPage, offset } = pagination(parsed.data);
-    const rows = await db.query.customerJourneyEnrollments.findMany({
-      where: and(
-        eq(customerJourneyEnrollments.bizId, bizId),
-        parsed.data.customerJourneyId ? eq(customerJourneyEnrollments.customerJourneyId, parsed.data.customerJourneyId) : undefined,
-        parsed.data.customerProfileId ? eq(customerJourneyEnrollments.customerProfileId, parsed.data.customerProfileId) : undefined,
-        parsed.data.status ? eq(customerJourneyEnrollments.status, parsed.data.status) : undefined,
-      ),
-      orderBy: [desc(customerJourneyEnrollments.enteredAt)],
-      limit: perPage,
-      offset,
-    });
-    return ok(c, rows, 200, { pagination: { page, perPage, total: rows.length, hasMore: rows.length === perPage } });
+    const where = and(
+      eq(customerJourneyEnrollments.bizId, bizId),
+      parsed.data.customerJourneyId ? eq(customerJourneyEnrollments.customerJourneyId, parsed.data.customerJourneyId) : undefined,
+      parsed.data.customerProfileId ? eq(customerJourneyEnrollments.customerProfileId, parsed.data.customerProfileId) : undefined,
+      parsed.data.status ? eq(customerJourneyEnrollments.status, parsed.data.status) : undefined,
+    );
+    const [rows, countRows] = await Promise.all([
+      db.query.customerJourneyEnrollments.findMany({
+        where,
+        orderBy: [desc(customerJourneyEnrollments.enteredAt)],
+        limit: perPage,
+        offset,
+      }),
+      db.select({ count: sql<number>`count(*)::int` }).from(customerJourneyEnrollments).where(where),
+    ]);
+    const total = Number(countRows[0]?.count ?? 0);
+    return ok(c, rows, 200, { pagination: { page, perPage, total, hasMore: page * perPage < total } });
   },
 );
 
@@ -1278,19 +1301,24 @@ customerOpsRoutes.get(
     }).safeParse(c.req.query());
     if (!parsed.success) return fail(c, "VALIDATION_ERROR", "Invalid query.", 400, parsed.error.flatten());
     const { page, perPage, offset } = pagination(parsed.data);
-    const rows = await db.query.crmActivities.findMany({
-      where: and(
-        eq(crmActivities.bizId, bizId),
-        parsed.data.customerProfileId ? eq(crmActivities.customerProfileId, parsed.data.customerProfileId) : undefined,
-        parsed.data.crmOpportunityId ? eq(crmActivities.crmOpportunityId, parsed.data.crmOpportunityId) : undefined,
-        parsed.data.ownerUserId ? eq(crmActivities.ownerUserId, parsed.data.ownerUserId) : undefined,
-        parsed.data.status ? eq(crmActivities.status, parsed.data.status) : undefined,
-      ),
-      orderBy: [desc(crmActivities.id)],
-      limit: perPage,
-      offset,
-    });
-    return ok(c, rows, 200, { pagination: { page, perPage, total: rows.length, hasMore: rows.length === perPage } });
+    const where = and(
+      eq(crmActivities.bizId, bizId),
+      parsed.data.customerProfileId ? eq(crmActivities.customerProfileId, parsed.data.customerProfileId) : undefined,
+      parsed.data.crmOpportunityId ? eq(crmActivities.crmOpportunityId, parsed.data.crmOpportunityId) : undefined,
+      parsed.data.ownerUserId ? eq(crmActivities.ownerUserId, parsed.data.ownerUserId) : undefined,
+      parsed.data.status ? eq(crmActivities.status, parsed.data.status) : undefined,
+    );
+    const [rows, countRows] = await Promise.all([
+      db.query.crmActivities.findMany({
+        where,
+        orderBy: [desc(crmActivities.id)],
+        limit: perPage,
+        offset,
+      }),
+      db.select({ count: sql<number>`count(*)::int` }).from(crmActivities).where(where),
+    ]);
+    const total = Number(countRows[0]?.count ?? 0);
+    return ok(c, rows, 200, { pagination: { page, perPage, total, hasMore: page * perPage < total } });
   },
 );
 
@@ -1350,19 +1378,24 @@ customerOpsRoutes.get(
     }).safeParse(c.req.query());
     if (!parsed.success) return fail(c, "VALIDATION_ERROR", "Invalid query.", 400, parsed.error.flatten());
     const { page, perPage, offset } = pagination(parsed.data);
-    const rows = await db.query.crmTasks.findMany({
-      where: and(
-        eq(crmTasks.bizId, bizId),
-        parsed.data.assignedUserId ? eq(crmTasks.assignedUserId, parsed.data.assignedUserId) : undefined,
-        parsed.data.crmLeadId ? eq(crmTasks.crmLeadId, parsed.data.crmLeadId) : undefined,
-        parsed.data.status ? eq(crmTasks.status, parsed.data.status) : undefined,
-        parsed.data.priority ? eq(crmTasks.priority, parsed.data.priority) : undefined,
-      ),
-      orderBy: [desc(crmTasks.id)],
-      limit: perPage,
-      offset,
-    });
-    return ok(c, rows, 200, { pagination: { page, perPage, total: rows.length, hasMore: rows.length === perPage } });
+    const where = and(
+      eq(crmTasks.bizId, bizId),
+      parsed.data.assignedUserId ? eq(crmTasks.assignedUserId, parsed.data.assignedUserId) : undefined,
+      parsed.data.crmLeadId ? eq(crmTasks.crmLeadId, parsed.data.crmLeadId) : undefined,
+      parsed.data.status ? eq(crmTasks.status, parsed.data.status) : undefined,
+      parsed.data.priority ? eq(crmTasks.priority, parsed.data.priority) : undefined,
+    );
+    const [rows, countRows] = await Promise.all([
+      db.query.crmTasks.findMany({
+        where,
+        orderBy: [desc(crmTasks.id)],
+        limit: perPage,
+        offset,
+      }),
+      db.select({ count: sql<number>`count(*)::int` }).from(crmTasks).where(where),
+    ]);
+    const total = Number(countRows[0]?.count ?? 0);
+    return ok(c, rows, 200, { pagination: { page, perPage, total, hasMore: page * perPage < total } });
   },
 );
 
@@ -1580,18 +1613,23 @@ customerOpsRoutes.get(
     }).safeParse(c.req.query());
     if (!parsed.success) return fail(c, "VALIDATION_ERROR", "Invalid query.", 400, parsed.error.flatten());
     const { page, perPage, offset } = pagination(parsed.data);
-    const rows = await db.query.customerPlaybookRuns.findMany({
-      where: and(
-        eq(customerPlaybookRuns.bizId, bizId),
-        parsed.data.customerPlaybookId ? eq(customerPlaybookRuns.customerPlaybookId, parsed.data.customerPlaybookId) : undefined,
-        parsed.data.status ? eq(customerPlaybookRuns.status, parsed.data.status) : undefined,
-        parsed.data.customerProfileId ? eq(customerPlaybookRuns.customerProfileId, parsed.data.customerProfileId) : undefined,
-      ),
-      orderBy: [desc(customerPlaybookRuns.startedAt)],
-      limit: perPage,
-      offset,
-    });
-    return ok(c, rows, 200, { pagination: { page, perPage, total: rows.length, hasMore: rows.length === perPage } });
+    const where = and(
+      eq(customerPlaybookRuns.bizId, bizId),
+      parsed.data.customerPlaybookId ? eq(customerPlaybookRuns.customerPlaybookId, parsed.data.customerPlaybookId) : undefined,
+      parsed.data.status ? eq(customerPlaybookRuns.status, parsed.data.status) : undefined,
+      parsed.data.customerProfileId ? eq(customerPlaybookRuns.customerProfileId, parsed.data.customerProfileId) : undefined,
+    );
+    const [rows, countRows] = await Promise.all([
+      db.query.customerPlaybookRuns.findMany({
+        where,
+        orderBy: [desc(customerPlaybookRuns.startedAt)],
+        limit: perPage,
+        offset,
+      }),
+      db.select({ count: sql<number>`count(*)::int` }).from(customerPlaybookRuns).where(where),
+    ]);
+    const total = Number(countRows[0]?.count ?? 0);
+    return ok(c, rows, 200, { pagination: { page, perPage, total, hasMore: page * perPage < total } });
   },
 );
 

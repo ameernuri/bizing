@@ -27,6 +27,7 @@ type SagaDefinition = {
   sagaKey: string
   title: string
   status: 'draft' | 'active' | 'archived'
+  depth: 'shallow' | 'medium' | 'deep'
 }
 
 type SagaRunStep = {
@@ -186,6 +187,76 @@ function getStepContract(stepKey: string): StepContract | null {
           { label: 'Create or list channel entity link', anyOf: [/\/channel-entity-links/] },
         ],
       }
+    case 'owner-register-growth-localization':
+      return {
+        description: 'Growth localization API should create resource/value and resolve with fallback.',
+        endpointRules: [
+          {
+            label: 'Localization resource create endpoint called',
+            anyOf: [/\/growth\/localization\/resources$/],
+          },
+          {
+            label: 'Localization value create endpoint called',
+            anyOf: [/\/growth\/localization\/resources\/[^/]+\/values$/],
+          },
+          {
+            label: 'Localization resolve endpoint called',
+            anyOf: [/\/growth\/localization\/resolve$/],
+          },
+        ],
+      }
+    case 'owner-launch-growth-experiment':
+      return {
+        description: 'Growth experiment API should create experiment and variants.',
+        endpointRules: [
+          {
+            label: 'Experiment create endpoint called',
+            anyOf: [/\/growth\/experiments$/],
+          },
+          {
+            label: 'Experiment variant endpoint called',
+            anyOf: [/\/growth\/experiments\/[^/]+\/variants$/],
+          },
+        ],
+      }
+    case 'customer-growth-experiment-assignment':
+      return {
+        description: 'Growth assignment API should persist deterministic subject assignment.',
+        endpointRules: [
+          {
+            label: 'Experiment assignment endpoint called',
+            anyOf: [/\/growth\/experiments\/[^/]+\/assignments$/],
+          },
+        ],
+      }
+    case 'owner-run-growth-activation-sync':
+      return {
+        description: 'Growth activation API should create activation and activation run.',
+        endpointRules: [
+          {
+            label: 'Marketing activation create endpoint called',
+            anyOf: [/\/growth\/marketing-activations$/],
+          },
+          {
+            label: 'Activation run endpoint called',
+            anyOf: [/\/growth\/marketing-activations\/[^/]+\/runs$/],
+          },
+        ],
+      }
+    case 'owner-record-growth-conversion-metric':
+      return {
+        description: 'Growth measurements and summary endpoints should expose conversion metrics.',
+        endpointRules: [
+          {
+            label: 'Experiment measurement endpoint called',
+            anyOf: [/\/growth\/experiments\/[^/]+\/measurements$/],
+          },
+          {
+            label: 'Experiment summary endpoint called',
+            anyOf: [/\/growth\/experiments\/[^/]+\/summary$/],
+          },
+        ],
+      }
     case 'customer-advanced-payment-flow':
       return {
         description: 'Advanced payment flow should hit checkout and intent read-model endpoints.',
@@ -227,6 +298,78 @@ function getStepContract(stepKey: string): StepContract | null {
           {
             label: 'Cross-biz offers or booking-orders endpoint attempted',
             anyOf: [/\/offers$/, /\/booking-orders$/],
+          },
+        ],
+      }
+    case 'inventory-owner-create-baseline':
+      return {
+        description: 'Inventory baseline should create supply partner and replenishment run records.',
+        endpointRules: [
+          {
+            label: 'Supply partner creation endpoint called',
+            anyOf: [/\/supply-partners$/],
+          },
+          {
+            label: 'Replenishment run creation endpoint called',
+            anyOf: [/\/inventory-replenishment-runs$/],
+          },
+        ],
+      }
+    case 'inventory-owner-create-procurement-order':
+      return {
+        description: 'Inventory lifecycle should create at least one procurement order.',
+        endpointRules: [
+          {
+            label: 'Procurement order creation endpoint called',
+            anyOf: [/\/inventory-procurement-orders$/],
+          },
+        ],
+      }
+    case 'value-owner-post-ledger-entry':
+      return {
+        description: 'Value ledger step should post to account ledger entries endpoint.',
+        endpointRules: [
+          {
+            label: 'Ledger post endpoint called',
+            anyOf: [/\/value-accounts\/[^/]+\/ledger-entries$/],
+          },
+        ],
+      }
+    case 'value-owner-complete-transfer':
+      return {
+        description: 'Value transfer step should create transfer and execute transfer decision endpoint.',
+        endpointRules: [
+          {
+            label: 'Transfer creation endpoint called',
+            anyOf: [/\/value-transfers$/],
+          },
+          {
+            label: 'Transfer decision endpoint called',
+            anyOf: [/\/value-transfers\/[^/]+\/decision$/],
+          },
+        ],
+      }
+    case 'workforce-owner-progress-hire':
+      return {
+        description: 'Workforce hire step should invoke application hire transition endpoint.',
+        endpointRules: [
+          {
+            label: 'Workforce hire endpoint called',
+            anyOf: [/\/workforce-applications\/[^/]+\/hire$/],
+          },
+        ],
+      }
+    case 'workforce-owner-run-performance-cycle':
+      return {
+        description: 'Workforce performance step should create cycle and review records.',
+        endpointRules: [
+          {
+            label: 'Performance cycle endpoint called',
+            anyOf: [/\/workforce-performance-cycles$/],
+          },
+          {
+            label: 'Performance review endpoint called',
+            anyOf: [/\/workforce-performance-reviews$/],
           },
         ],
       }
@@ -279,14 +422,17 @@ type RunContext = {
   locationId?: string
   secondaryLocationId?: string
   tertiaryLocationId?: string
+  serviceGroupId?: string
   offerId?: string
   offerVersionId?: string
+  offerCalendarId?: string
   serviceId?: string
   serviceProductId?: string
   queueId?: string
   hostResourceId?: string
   assetResourceId?: string
   supplyCalendarId?: string
+  timeScopeIdsByRefKey?: Record<string, string>
   agentCredentialId?: string
   agentApiKey?: string
   agentAccessToken?: string
@@ -323,6 +469,14 @@ type RunContext = {
   customerPlaybookRunId?: string
   marketingAudienceSegmentId?: string
   marketingAudienceSyncRunId?: string
+  growthLocalizationResourceId?: string
+  growthLocalizationValueId?: string
+  growthExperimentId?: string
+  growthExperimentControlVariantId?: string
+  growthExperimentTreatmentVariantId?: string
+  growthExperimentAssignmentId?: string
+  growthMarketingActivationId?: string
+  growthMarketingActivationRunId?: string
   slaBreachId?: string
   enterpriseScopeId?: string
   enterpriseDelegationId?: string
@@ -389,6 +543,25 @@ type RunContext = {
   commitmentProviderSubjectId?: string
   commitmentCustomerSubjectType?: string
   commitmentCustomerSubjectId?: string
+  supplyPartnerId?: string
+  inventoryReplenishmentRunId?: string
+  inventoryProcurementOrderId?: string
+  valueProgramId?: string
+  valueSourceAccountId?: string
+  valueTargetAccountId?: string
+  valueTransferId?: string
+  valueSeedLedgerEntryId?: string
+  valueLastLedgerEntryId?: string
+  workforceDepartmentId?: string
+  workforcePositionId?: string
+  workforceRequisitionId?: string
+  workforceCandidateId?: string
+  workforceApplicationId?: string
+  workforceAssignmentId?: string
+  workforcePerformanceCycleId?: string
+  workforcePerformanceReviewId?: string
+  holeLoopId?: string
+  holeEntryId?: string
   ticketArtifactId?: string
   ticketPublicCode?: string
   ticketRawToken?: string
@@ -429,6 +602,11 @@ const TRUSTED_ORIGIN = process.env.ADMIN_APP_ORIGIN || 'http://localhost:9000'
 const MAX_SAGAS = Number(process.env.SAGA_LIMIT || '0')
 const SAGA_OFFSET = Math.max(0, Number(process.env.SAGA_OFFSET || '0'))
 const ONLY_SAGA_KEY = process.env.SAGA_KEY || ''
+const SAGA_DEPTH_FILTER = (() => {
+  const raw = (process.env.SAGA_DEPTH || 'all').trim().toLowerCase()
+  if (raw === 'shallow' || raw === 'medium' || raw === 'deep') return raw
+  return 'all'
+})()
 const SESSION_PASSWORD = process.env.SAGA_TEST_PASSWORD || 'pass123456'
 const SAGA_CONCURRENCY = Math.max(1, Number(process.env.SAGA_CONCURRENCY || '4'))
 const HTTP_TIMEOUT_MS = Math.max(1_000, Number(process.env.SAGA_HTTP_TIMEOUT_MS || '45000'))
@@ -678,11 +856,23 @@ function cookieFromSetCookie(setCookieHeader: string | null): string {
   if (!setCookieHeader) {
     throw new Error('Missing Set-Cookie header from auth response.')
   }
-  const tokenMatch = setCookieHeader.match(/better-auth\.session_token=[^;]+/)
-  if (!tokenMatch) {
-    throw new Error('Could not extract better-auth.session_token from Set-Cookie.')
+  /**
+   * Accept canonical Better Auth cookie names with optional custom prefixes.
+   *
+   * ELI5:
+   * We now namespace cookies (`bizing-auth.session_token`) to avoid localhost
+   * cross-app collisions. Older/local setups may still emit
+   * `better-auth.session_token`.
+   */
+  const matches = setCookieHeader.match(/(?:^|,\s*)([a-z0-9-]+\.session_token=[^;]+)/gi) ?? []
+  const preferred =
+    matches.find((entry) => entry.includes('bizing-auth.session_token=')) ??
+    matches.find((entry) => entry.includes('better-auth.session_token=')) ??
+    matches[0]
+  if (!preferred) {
+    throw new Error('Could not extract *.session_token cookie from Set-Cookie.')
   }
-  return tokenMatch[0]
+  return preferred.trim().replace(/^,\s*/, '')
 }
 
 async function requestJson<T = unknown>(
@@ -761,6 +951,10 @@ async function requestJson<T = unknown>(
     if (!options.raw && payload && typeof payload === 'object' && 'success' in (payload as JsonObject)) {
       const asRecord = payload as JsonObject
       if (asRecord.success === false) {
+        const expectedFailureStatus = accepted.includes(response.status) && response.status >= 400
+        if (expectedFailureStatus) {
+          return { status: response.status, payload }
+        }
         throw new Error(`API failure for ${method} ${path}: ${JSON.stringify(payload)}`)
       }
     }
@@ -839,6 +1033,70 @@ function hasAnyToolByPattern(toolNames: Set<string>, patterns: RegExp[]) {
 function getApiData<T>(payload: unknown): T {
   const envelope = payload as { success: boolean; data: T }
   return envelope.data
+}
+
+async function ensureTimeScope(
+  ctx: RunContext,
+  input: {
+    scopeType:
+      | 'biz'
+      | 'user'
+      | 'location'
+      | 'calendar'
+      | 'schedule_subject'
+      | 'resource'
+      | 'capacity_pool'
+      | 'service'
+      | 'service_product'
+      | 'offer'
+      | 'offer_version'
+      | 'product'
+      | 'sellable'
+      | 'custom_subject'
+    scopeRefKey: string
+    scopeRefType?: string
+    scopeRefId?: string
+    displayName?: string
+  },
+): Promise<string> {
+  if (!ctx.bizId) throw new Error('Cannot create time scope before bizId exists.')
+  if (!ctx.timeScopeIdsByRefKey) ctx.timeScopeIdsByRefKey = {}
+  const cached = ctx.timeScopeIdsByRefKey[input.scopeRefKey]
+  if (cached) return cached
+
+  const action = getApiData<{ actionRequest?: { outputPayload?: { row?: { id?: string } } } }>(
+    (
+      await requestJson(`/api/v1/bizes/${ctx.bizId}/actions/execute`, {
+        method: 'POST',
+        cookie: ctx.owner.cookie,
+        acceptStatuses: [200, 201],
+        body: {
+          actionKey: 'crud.create',
+          payload: {
+            tableKey: 'timeScopes',
+            operation: 'create',
+            data: {
+              scopeType: input.scopeType,
+              scopeRefType: input.scopeRefType ?? null,
+              scopeRefId: input.scopeRefId ?? null,
+              scopeRefKey: input.scopeRefKey,
+              displayName: input.displayName ?? `Time Scope ${input.scopeRefKey}`,
+              isActive: true,
+              metadata: {
+                source: 'rerun-sagas.ensureTimeScope',
+              },
+            },
+          },
+        },
+      })
+    ).payload,
+  )
+  const id = action.actionRequest?.outputPayload?.row?.id
+  if (!id) {
+    throw new Error(`Failed to create time scope for ${input.scopeRefKey}.`)
+  }
+  ctx.timeScopeIdsByRefKey[input.scopeRefKey] = id
+  return id
 }
 
 function applyPositiveJitter(baseMs: number, jitterMs: number) {
@@ -1180,7 +1438,7 @@ async function executeStepDelay(ctx: RunContext, step: SagaRunStep) {
 
 async function listSagaDefinitions(owner: AuthSession): Promise<SagaDefinition[]> {
   const fetchLimit = MAX_SAGAS > 0 ? Math.max(MAX_SAGAS + SAGA_OFFSET, 1) : 2000
-  const query = `?sync=true&limit=${fetchLimit}`
+  const query = `?sync=true&limit=${fetchLimit}${SAGA_DEPTH_FILTER === 'all' ? '' : `&depth=${SAGA_DEPTH_FILTER}`}`
   const response = await requestJson<{ success: true; data: SagaDefinition[] }>(
     `/api/v1/ooda/sagas/specs${query}`,
     { cookie: owner.cookie, acceptStatuses: [200] },
@@ -2311,8 +2569,34 @@ async function inviteAndAcceptMember(ctx: RunContext) {
   return { memberEmail: member.email, invitationId }
 }
 
+async function ensureServiceGroup(ctx: RunContext, namePrefix = 'Primary Catalog', slugPrefix = 'primary-catalog') {
+  if (!ctx.bizId) throw new Error('bizId required before service group creation.')
+  if (ctx.serviceGroupId) {
+    const existing = getApiData<Array<{ id: string }>>((await requestJson(`/api/v1/bizes/${ctx.bizId}/service-groups`, {
+      cookie: ctx.owner.cookie,
+      acceptStatuses: [200],
+    })).payload).find((row) => row.id === ctx.serviceGroupId)
+    if (existing) return { id: ctx.serviceGroupId }
+  }
+
+  const serviceGroup = getApiData<{ id: string }>((await requestJson(`/api/v1/bizes/${ctx.bizId}/service-groups`, {
+    method: 'POST',
+    cookie: ctx.owner.cookie,
+    body: {
+      name: `${namePrefix} ${randomSuffix(4)}`,
+      slug: `${slugPrefix}-${randomSuffix(6)}`,
+      status: 'active',
+    },
+    acceptStatuses: [201],
+  })).payload)
+
+  ctx.serviceGroupId = serviceGroup.id
+  return serviceGroup
+}
+
 async function createOffer(ctx: RunContext) {
   if (!ctx.bizId) throw new Error('bizId required before offer creation.')
+  const serviceGroup = await ensureServiceGroup(ctx)
 
   const offerResponse = await requestJson<{ success: true; data: { id: string } }>(
     `/api/v1/bizes/${ctx.bizId}/offers`,
@@ -2320,6 +2604,7 @@ async function createOffer(ctx: RunContext) {
       method: 'POST',
       cookie: ctx.owner.cookie,
       body: {
+        serviceGroupId: serviceGroup.id,
         name: 'Primary Service Offer',
         slug: `offer-${randomSuffix(8)}`,
         executionMode: 'slot',
@@ -2338,6 +2623,7 @@ async function createOffer(ctx: RunContext) {
 
 async function createOfferVersion(ctx: RunContext) {
   if (!ctx.bizId || !ctx.offerId) throw new Error('bizId/offerId required before offer version creation.')
+  const versionNumber = await nextOfferVersionNumber(ctx, ctx.offerId)
 
   const versionResponse = await requestJson<{ success: true; data: { id: string } }>(
     `/api/v1/bizes/${ctx.bizId}/offers/${ctx.offerId}/versions`,
@@ -2345,7 +2631,7 @@ async function createOfferVersion(ctx: RunContext) {
       method: 'POST',
       cookie: ctx.owner.cookie,
       body: {
-        version: 1,
+        version: versionNumber,
         status: 'published',
         durationMode: 'fixed',
         defaultDurationMin: 50,
@@ -2357,12 +2643,339 @@ async function createOfferVersion(ctx: RunContext) {
   )
   const version = getApiData<{ id: string }>(versionResponse.payload)
   ctx.offerVersionId = version.id
+  await ensureOfferSchedulingCalendar(ctx)
 
   return { offerVersionId: ctx.offerVersionId }
 }
 
+async function createIsolatedOfferVersion(
+  ctx: RunContext,
+  input: {
+    serviceGroupName: string
+    serviceGroupSlugPrefix: string
+    offerName: string
+    offerSlugPrefix: string
+    executionMode?: 'slot' | 'queue' | 'request' | 'auction' | 'async' | 'route_trip' | 'open_access' | 'itinerary'
+    offerStatus?: 'draft' | 'active' | 'inactive' | 'archived'
+    offerPublished?: boolean
+    versionStatus?: 'draft' | 'published' | 'superseded' | 'retired'
+    durationMode?: 'fixed' | 'flexible' | 'multi_day'
+    defaultDurationMin?: number
+    minDurationMin?: number
+    maxDurationMin?: number
+    durationStepMin?: number
+    basePriceMinor?: number
+    currency?: string
+    timezone?: string
+  },
+) {
+  if (!ctx.bizId) throw new Error('bizId required before isolated offer/version creation.')
+
+  const serviceGroup = getApiData<{ id: string }>((await requestJson(`/api/v1/bizes/${ctx.bizId}/service-groups`, {
+    method: 'POST',
+    cookie: ctx.owner.cookie,
+    body: {
+      name: `${input.serviceGroupName} ${randomSuffix(4)}`,
+      slug: `${input.serviceGroupSlugPrefix}-${randomSuffix(6)}`,
+      status: 'active',
+    },
+    acceptStatuses: [201],
+  })).payload)
+
+  const offer = getApiData<{ id: string }>((await requestJson(`/api/v1/bizes/${ctx.bizId}/offers`, {
+    method: 'POST',
+    cookie: ctx.owner.cookie,
+    body: {
+      serviceGroupId: serviceGroup.id,
+      name: input.offerName,
+      slug: `${input.offerSlugPrefix}-${randomSuffix(8)}`,
+      executionMode: input.executionMode ?? 'slot',
+      status: input.offerStatus ?? 'active',
+      isPublished: input.offerPublished ?? true,
+      timezone: input.timezone ?? 'UTC',
+    },
+    acceptStatuses: [201],
+  })).payload)
+
+  const versionNumber = await nextOfferVersionNumber(ctx, offer.id)
+  const version = getApiData<{ id: string }>((await requestJson(`/api/v1/bizes/${ctx.bizId}/offers/${offer.id}/versions`, {
+    method: 'POST',
+    cookie: ctx.owner.cookie,
+    body: {
+      version: versionNumber,
+      status: input.versionStatus ?? 'published',
+      durationMode: input.durationMode ?? 'fixed',
+      defaultDurationMin: input.defaultDurationMin ?? 60,
+      minDurationMin: input.minDurationMin,
+      maxDurationMin: input.maxDurationMin,
+      durationStepMin: input.durationStepMin ?? 15,
+      basePriceMinor: input.basePriceMinor ?? 15000,
+      currency: input.currency ?? 'USD',
+    },
+    acceptStatuses: [201],
+  })).payload)
+  await ensureSchedulingCalendarForOfferVersion(ctx, version.id)
+
+  return {
+    serviceGroupId: serviceGroup.id,
+    offerId: offer.id,
+    offerVersionId: version.id,
+  }
+}
+
+async function createOfferComponentFixture(
+  ctx: RunContext,
+  input: {
+    offerId: string
+    offerVersionId: string
+    name: string
+    slugPrefix: string
+    targetType: 'host' | 'company_host' | 'asset' | 'venue'
+    mode?: 'required' | 'optional'
+    selectorMatchMode?: 'any' | 'all'
+    minQuantity?: number
+    maxQuantity?: number
+    allowSubstitution?: boolean
+    sortOrder?: number
+    description?: string
+    metadata?: Record<string, unknown>
+  },
+) {
+  if (!ctx.bizId) throw new Error('bizId required before offer component creation.')
+  return getApiData<{ id: string }>((await requestJson(`/api/v1/bizes/${ctx.bizId}/offers/${input.offerId}/versions/${input.offerVersionId}/components`, {
+    method: 'POST',
+    cookie: ctx.owner.cookie,
+    body: {
+      name: input.name,
+      slug: `${input.slugPrefix}-${randomSuffix(6)}`,
+      targetType: input.targetType,
+      mode: input.mode ?? 'required',
+      selectorMatchMode: input.selectorMatchMode ?? 'any',
+      minQuantity: input.minQuantity ?? 1,
+      maxQuantity: input.maxQuantity,
+      allowSubstitution: input.allowSubstitution ?? true,
+      sortOrder: input.sortOrder ?? 100,
+      description: input.description,
+      metadata: input.metadata ?? {},
+    },
+    acceptStatuses: [201],
+  })).payload)
+}
+
+async function createOfferComponentSelectorFixture(
+  ctx: RunContext,
+  input: {
+    offerId: string
+    offerVersionId: string
+    componentId: string
+    selectorType: 'resource' | 'resource_type' | 'capability_template' | 'location' | 'custom_subject'
+    resourceId?: string
+    resourceType?: 'host' | 'company_host' | 'asset' | 'venue'
+    capabilityTemplateId?: string
+    locationId?: string
+    subjectType?: string
+    subjectId?: string
+    weight?: number
+    metadata?: Record<string, unknown>
+  },
+) {
+  if (!ctx.bizId) throw new Error('bizId required before offer selector creation.')
+  return getApiData<{ id: string }>((await requestJson(`/api/v1/bizes/${ctx.bizId}/offers/${input.offerId}/versions/${input.offerVersionId}/components/${input.componentId}/selectors`, {
+    method: 'POST',
+    cookie: ctx.owner.cookie,
+    body: {
+      selectorType: input.selectorType,
+      resourceId: input.resourceId,
+      resourceType: input.resourceType,
+      capabilityTemplateId: input.capabilityTemplateId,
+      locationId: input.locationId,
+      subjectType: input.subjectType,
+      subjectId: input.subjectId,
+      weight: input.weight ?? 100,
+      metadata: input.metadata ?? {},
+    },
+    acceptStatuses: [201],
+  })).payload)
+}
+
+async function nextOfferVersionNumber(ctx: RunContext, offerId: string) {
+  if (!ctx.bizId) throw new Error('bizId required before offer version creation.')
+  const versions = getApiData<Array<{ version: number }>>((await requestJson(
+    `/api/v1/bizes/${ctx.bizId}/offers/${offerId}/versions`,
+    {
+      cookie: ctx.owner.cookie,
+      acceptStatuses: [200],
+    },
+  )).payload)
+  const maxVersion = versions.reduce((max, row) => Math.max(max, Number(row.version ?? 0)), 0)
+  return maxVersion + 1
+}
+
+async function createBaseOfferSchedulingCalendar(ctx: RunContext) {
+  if (!ctx.bizId) {
+    throw new Error('bizId required before calendar setup.')
+  }
+  const calendar = getApiData<{ id: string }>((await requestJson(`/api/v1/bizes/${ctx.bizId}/calendars`, {
+    method: 'POST',
+    cookie: ctx.owner.cookie,
+    body: {
+      name: `Offer Calendar ${randomSuffix(4)}`,
+      timezone: 'UTC',
+      slotDurationMin: 30,
+      slotIntervalMin: 15,
+      minAdvanceBookingHours: 24,
+      maxAdvanceBookingDays: 60,
+      defaultMode: 'unavailable_by_default',
+    },
+    acceptStatuses: [201],
+  })).payload)
+
+  for (const dayOfWeek of [0, 1, 2, 3, 4, 5, 6]) {
+    await requestJson(`/api/v1/bizes/${ctx.bizId}/calendars/${calendar.id}/availability-rules`, {
+      method: 'POST',
+      cookie: ctx.owner.cookie,
+      body: {
+        name: `Default Daily Availability ${dayOfWeek}`,
+        mode: 'recurring',
+        frequency: 'weekly',
+        dayOfWeek,
+        startTime: '09:00',
+        endTime: '21:00',
+        action: 'available',
+        priority: 100,
+        isActive: true,
+      },
+      acceptStatuses: [201],
+    })
+  }
+
+  return calendar.id
+}
+
+async function ensureSchedulingCalendarForOfferVersion(
+  ctx: RunContext,
+  offerVersionId: string,
+  existingCalendarId?: string | null,
+) {
+  if (!ctx.bizId) {
+    throw new Error('bizId required before calendar setup.')
+  }
+
+  const ensureOfferVersionBinding = async (calendarId: string) => {
+    const bindings = getApiData<Array<{ offerVersionId?: string | null }>>((await requestJson(
+      `/api/v1/bizes/${ctx.bizId}/calendar-bindings?calendarId=${calendarId}&ownerType=offer_version`,
+      {
+        cookie: ctx.owner.cookie,
+        acceptStatuses: [200],
+      },
+    )).payload)
+    if (bindings.some((row) => row.offerVersionId === offerVersionId)) return
+    await requestJson(`/api/v1/bizes/${ctx.bizId}/calendar-bindings`, {
+      method: 'POST',
+      cookie: ctx.owner.cookie,
+      body: {
+        calendarId,
+        ownerType: 'offer_version',
+        offerVersionId,
+        isPrimary: true,
+        isRequired: true,
+        isActive: true,
+      },
+      acceptStatuses: [201],
+    })
+  }
+
+  if (existingCalendarId) {
+    const existing = getApiData<Array<{ id: string }>>((await requestJson(`/api/v1/bizes/${ctx.bizId}/calendars`, {
+      cookie: ctx.owner.cookie,
+      acceptStatuses: [200],
+    })).payload).find((row) => row.id === existingCalendarId)
+    if (existing) {
+      await ensureOfferVersionBinding(existingCalendarId)
+      return existingCalendarId
+    }
+  }
+
+  const calendarId = await createBaseOfferSchedulingCalendar(ctx)
+  await ensureOfferVersionBinding(calendarId)
+  return calendarId
+}
+
+async function ensureOfferSchedulingCalendar(ctx: RunContext) {
+  if (!ctx.bizId) {
+    throw new Error('bizId required before calendar setup.')
+  }
+  if (!ctx.offerVersionId) {
+    if (ctx.offerCalendarId) {
+      const existing = getApiData<Array<{ id: string }>>((await requestJson(`/api/v1/bizes/${ctx.bizId}/calendars`, {
+        cookie: ctx.owner.cookie,
+        acceptStatuses: [200],
+      })).payload).find((row) => row.id === ctx.offerCalendarId)
+      if (existing) return ctx.offerCalendarId
+    }
+    ctx.offerCalendarId = await createBaseOfferSchedulingCalendar(ctx)
+    return ctx.offerCalendarId
+  }
+  ctx.offerCalendarId = await ensureSchedulingCalendarForOfferVersion(
+    ctx,
+    ctx.offerVersionId,
+    ctx.offerCalendarId,
+  )
+  return ctx.offerCalendarId
+}
+
+async function addOfferVersionWeeklyAvailability(ctx: RunContext, input: {
+  dayOfWeek: number
+  startTime: string
+  endTime: string
+  name?: string
+}) {
+  const calendarId = await ensureOfferSchedulingCalendar(ctx)
+  return requestJson(`/api/v1/bizes/${ctx.bizId}/calendars/${calendarId}/availability-rules`, {
+    method: 'POST',
+    cookie: ctx.owner.cookie,
+    body: {
+      name: input.name ?? `Availability ${input.dayOfWeek} ${input.startTime}-${input.endTime}`,
+      mode: 'recurring',
+      frequency: 'weekly',
+      dayOfWeek: input.dayOfWeek,
+      startTime: input.startTime,
+      endTime: input.endTime,
+      action: 'available',
+      priority: 100,
+      isActive: true,
+    },
+    acceptStatuses: [201],
+  })
+}
+
+async function addOfferVersionBlockedWindow(ctx: RunContext, input: {
+  startAt: string
+  endAt: string
+  name?: string
+}) {
+  const calendarId = await ensureOfferSchedulingCalendar(ctx)
+  return requestJson(`/api/v1/bizes/${ctx.bizId}/calendars/${calendarId}/availability-rules`, {
+    method: 'POST',
+    cookie: ctx.owner.cookie,
+    body: {
+      name: input.name ?? 'Blocked Window',
+      mode: 'timestamp_range',
+      startAt: input.startAt,
+      endAt: input.endAt,
+      action: 'unavailable',
+      priority: 10,
+      isActive: true,
+    },
+    acceptStatuses: [201],
+  })
+}
+
 async function publishOffer(ctx: RunContext) {
   if (!ctx.bizId || !ctx.offerId) throw new Error('bizId/offerId required before publish.')
+  if (ctx.offerVersionId) {
+    await ensureOfferSchedulingCalendar(ctx)
+  }
   await requestJson(`/api/v1/bizes/${ctx.bizId}/actions/execute`, {
     method: 'POST',
     cookie: ctx.owner.cookie,
@@ -2384,6 +2997,431 @@ async function createCustomer(ctx: RunContext, key: 'customer1' | 'customer2') {
   const customer = await createAuthSession(`${key}-${ctx.sagaKey}`)
   ctx[key] = customer
   return customer
+}
+
+async function ensureCoverageMember(
+  ctx: RunContext,
+  role = 'manager',
+): Promise<{ memberId: string; userId: string; role: string }> {
+  if (!ctx.bizId) await createBiz(ctx)
+  if (!ctx.member) {
+    ctx.member = await createAuthSession(`member-${ctx.sagaKey}`)
+  }
+  const member = await ensureBizMember(ctx, ctx.member.userId, role)
+  return { memberId: member.id, userId: member.userId, role: member.role }
+}
+
+async function ensureHoleBaseline(ctx: RunContext) {
+  if (!ctx.bizId) {
+    await createBiz(ctx)
+  }
+  if (!ctx.locationId) {
+    await createLocation(ctx)
+  }
+
+  if (!ctx.holeLoopId) {
+    const created = getApiData<{ id: string }>(
+      (
+        await requestJson('/api/v1/ooda/loops', {
+          method: 'POST',
+          cookie: ctx.owner.cookie,
+          body: {
+            title: `Hole baseline ${ctx.sagaKey}`,
+            objective: `Proactive hole validation fixture for ${ctx.sagaKey}`,
+            status: 'active',
+            bizId: ctx.bizId ?? null,
+          },
+          acceptStatuses: [200, 201],
+        })
+      ).payload,
+    )
+    ctx.holeLoopId = created.id
+  }
+
+  return { bizId: ctx.bizId, locationId: ctx.locationId, loopId: ctx.holeLoopId }
+}
+
+async function ensureHoleMember(ctx: RunContext) {
+  await ensureHoleBaseline(ctx)
+  if (!ctx.member) {
+    ctx.member = await createAuthSession(`member-${ctx.sagaKey}`)
+  }
+  const member = await ensureBizMember(ctx, ctx.member.userId, 'manager')
+  return { memberId: member.id, userId: member.userId, role: member.role }
+}
+
+async function ensureHoleCustomer(ctx: RunContext) {
+  await ensureHoleBaseline(ctx)
+  if (!ctx.customer1) {
+    ctx.customer1 = await createCustomer(ctx, 'customer1')
+  }
+  return { userId: ctx.customer1.userId, email: ctx.customer1.email }
+}
+
+async function ensureHoleAdversary(ctx: RunContext) {
+  if (!ctx.adversary) {
+    ctx.adversary = await createAuthSession(`adversary-${ctx.sagaKey}`)
+  }
+  return { userId: ctx.adversary.userId, email: ctx.adversary.email }
+}
+
+async function ensureInventoryCoverageFixture(ctx: RunContext) {
+  if (!ctx.bizId) await createBiz(ctx)
+  if (!ctx.locationId) await createLocation(ctx)
+
+  if (!ctx.supplyPartnerId) {
+    const partner = getApiData<{ id: string }>(
+      (
+        await requestJson<{ success: true; data: { id: string } }>(
+          `/api/v1/bizes/${ctx.bizId}/supply-partners`,
+          {
+            method: 'POST',
+            cookie: ctx.owner.cookie,
+            body: {
+              partnerType: 'supplier',
+              status: 'active',
+              name: `Coverage Supply ${randomSuffix(6)}`,
+              slug: `coverage-supply-${randomSuffix(8)}`,
+              defaultLeadTimeDays: 5,
+              orderingPolicy: {
+                minOrderValueMinor: 10000,
+                cadence: 'weekly',
+              },
+              metadata: {
+                source: 'rerun-sagas.inventory',
+                sagaKey: ctx.sagaKey,
+              },
+            },
+            acceptStatuses: [201],
+          },
+        )
+      ).payload,
+    )
+    ctx.supplyPartnerId = partner.id
+  }
+
+  if (!ctx.inventoryReplenishmentRunId) {
+    const startsAt = new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString()
+    const endsAt = new Date(Date.now() + 26 * 60 * 60 * 1000).toISOString()
+    const run = getApiData<{ id: string }>(
+      (
+        await requestJson<{ success: true; data: { id: string } }>(
+          `/api/v1/bizes/${ctx.bizId}/inventory-replenishment-runs`,
+          {
+            method: 'POST',
+            cookie: ctx.owner.cookie,
+            body: {
+              status: 'pending',
+              triggerType: 'manual',
+              windowStartsAt: startsAt,
+              windowEndsAt: endsAt,
+              summary: {
+                source: 'coverage',
+                mode: 'manual',
+              },
+              metadata: {
+                source: 'rerun-sagas.inventory',
+                sagaKey: ctx.sagaKey,
+              },
+            },
+            acceptStatuses: [201],
+          },
+        )
+      ).payload,
+    )
+    ctx.inventoryReplenishmentRunId = run.id
+  }
+
+  return {
+    bizId: ctx.bizId as string,
+    locationId: ctx.locationId as string,
+    supplyPartnerId: ctx.supplyPartnerId as string,
+    inventoryReplenishmentRunId: ctx.inventoryReplenishmentRunId as string,
+  }
+}
+
+async function ensureValueCoverageFixture(ctx: RunContext) {
+  if (!ctx.bizId) await createBiz(ctx)
+  const member = await ensureCoverageMember(ctx)
+
+  if (!ctx.valueProgramId) {
+    const program = getApiData<{ id: string }>(
+      (
+        await requestJson<{ success: true; data: { id: string } }>(
+          `/api/v1/bizes/${ctx.bizId}/value-programs`,
+          {
+            method: 'POST',
+            cookie: ctx.owner.cookie,
+            body: {
+              name: `Coverage Value Program ${randomSuffix(4)}`,
+              slug: `coverage-value-${randomSuffix(8)}`,
+              kind: 'loyalty',
+              accountModel: 'user',
+              unitKind: 'points',
+              status: 'active',
+              currency: 'USD',
+              allowNegativeBalance: false,
+              allowTransfers: true,
+              policy: {
+                earnMode: 'manual',
+              },
+              metadata: {
+                source: 'rerun-sagas.value',
+                sagaKey: ctx.sagaKey,
+              },
+            },
+            acceptStatuses: [201],
+          },
+        )
+      ).payload,
+    )
+    ctx.valueProgramId = program.id
+  }
+
+  if (!ctx.valueSourceAccountId) {
+    const source = getApiData<{ id: string }>(
+      (
+        await requestJson<{ success: true; data: { id: string } }>(
+          `/api/v1/bizes/${ctx.bizId}/value-accounts`,
+          {
+            method: 'POST',
+            cookie: ctx.owner.cookie,
+            body: {
+              valueProgramId: ctx.valueProgramId,
+              accountNumber: `SRC-${randomSuffix(10)}`,
+              status: 'active',
+              ownerModel: 'user',
+              ownerUserId: ctx.owner.userId,
+              metadata: {
+                role: 'source',
+                source: 'rerun-sagas.value',
+              },
+            },
+            acceptStatuses: [201],
+          },
+        )
+      ).payload,
+    )
+    ctx.valueSourceAccountId = source.id
+  }
+
+  if (!ctx.valueTargetAccountId) {
+    const target = getApiData<{ id: string }>(
+      (
+        await requestJson<{ success: true; data: { id: string } }>(
+          `/api/v1/bizes/${ctx.bizId}/value-accounts`,
+          {
+            method: 'POST',
+            cookie: ctx.owner.cookie,
+            body: {
+              valueProgramId: ctx.valueProgramId,
+              accountNumber: `DST-${randomSuffix(10)}`,
+              status: 'active',
+              ownerModel: 'user',
+              ownerUserId: member.userId,
+              metadata: {
+                role: 'target',
+                source: 'rerun-sagas.value',
+              },
+            },
+            acceptStatuses: [201],
+          },
+        )
+      ).payload,
+    )
+    ctx.valueTargetAccountId = target.id
+  }
+
+  if (!ctx.valueSeedLedgerEntryId) {
+    const seeded = getApiData<{ id: string }>(
+      (
+        await requestJson<{ success: true; data: { id: string } }>(
+          `/api/v1/bizes/${ctx.bizId}/value-accounts/${ctx.valueSourceAccountId}/ledger-entries`,
+          {
+            method: 'POST',
+            cookie: ctx.owner.cookie,
+            body: {
+              valueProgramId: ctx.valueProgramId,
+              entryType: 'earn',
+              unitsDelta: 500,
+              description: 'Initial coverage seed balance',
+              idempotencyKey: `seed-${ctx.runId}-${randomSuffix(6)}`,
+              sourceRefType: 'saga_run',
+              sourceRefId: ctx.runId,
+              metadata: {
+                source: 'rerun-sagas.value',
+                seed: true,
+              },
+            },
+            acceptStatuses: [201],
+          },
+        )
+      ).payload,
+    )
+    ctx.valueSeedLedgerEntryId = seeded.id
+  }
+
+  return {
+    bizId: ctx.bizId as string,
+    valueProgramId: ctx.valueProgramId as string,
+    sourceAccountId: ctx.valueSourceAccountId as string,
+    targetAccountId: ctx.valueTargetAccountId as string,
+    memberUserId: member.userId,
+  }
+}
+
+async function ensureWorkforceCoverageFixture(ctx: RunContext) {
+  if (!ctx.bizId) await createBiz(ctx)
+  if (!ctx.locationId) await createLocation(ctx)
+
+  if (!ctx.workforceDepartmentId) {
+    const department = getApiData<{ id: string }>(
+      (
+        await requestJson<{ success: true; data: { id: string } }>(
+          `/api/v1/bizes/${ctx.bizId}/workforce-departments`,
+          {
+            method: 'POST',
+            cookie: ctx.owner.cookie,
+            body: {
+              name: `Operations ${randomSuffix(4)}`,
+              slug: `ops-${randomSuffix(8)}`,
+              status: 'active',
+              sortOrder: 100,
+              metadata: {
+                source: 'rerun-sagas.workforce',
+                sagaKey: ctx.sagaKey,
+              },
+            },
+            acceptStatuses: [201],
+          },
+        )
+      ).payload,
+    )
+    ctx.workforceDepartmentId = department.id
+  }
+
+  if (!ctx.workforcePositionId) {
+    const position = getApiData<{ id: string }>(
+      (
+        await requestJson<{ success: true; data: { id: string } }>(
+          `/api/v1/bizes/${ctx.bizId}/workforce-positions`,
+          {
+            method: 'POST',
+            cookie: ctx.owner.cookie,
+            body: {
+              workforceDepartmentId: ctx.workforceDepartmentId,
+              locationId: ctx.locationId,
+              title: `Service Specialist ${randomSuffix(4)}`,
+              positionCode: `SRV-${randomSuffix(6).toUpperCase()}`,
+              status: 'active',
+              employmentClass: 'employee',
+              timeCommitment: 'full_time',
+              headcountTarget: 2,
+              headcountFilled: 0,
+              isHiringEnabled: true,
+              metadata: {
+                source: 'rerun-sagas.workforce',
+              },
+            },
+            acceptStatuses: [201],
+          },
+        )
+      ).payload,
+    )
+    ctx.workforcePositionId = position.id
+  }
+
+  if (!ctx.workforceRequisitionId) {
+    const requisition = getApiData<{ id: string }>(
+      (
+        await requestJson<{ success: true; data: { id: string } }>(
+          `/api/v1/bizes/${ctx.bizId}/workforce-requisitions`,
+          {
+            method: 'POST',
+            cookie: ctx.owner.cookie,
+            body: {
+              workforcePositionId: ctx.workforcePositionId,
+              workforceDepartmentId: ctx.workforceDepartmentId,
+              locationId: ctx.locationId,
+              title: `Coverage Hiring Req ${randomSuffix(4)}`,
+              status: 'open',
+              openingCount: 1,
+              filledCount: 0,
+              priority: 50,
+              openedAt: new Date().toISOString(),
+              metadata: {
+                source: 'rerun-sagas.workforce',
+                sagaKey: ctx.sagaKey,
+              },
+            },
+            acceptStatuses: [201],
+          },
+        )
+      ).payload,
+    )
+    ctx.workforceRequisitionId = requisition.id
+  }
+
+  if (!ctx.workforceCandidateId) {
+    const candidate = getApiData<{ id: string }>(
+      (
+        await requestJson<{ success: true; data: { id: string } }>(
+          `/api/v1/bizes/${ctx.bizId}/workforce-candidates`,
+          {
+            method: 'POST',
+            cookie: ctx.owner.cookie,
+            body: {
+              status: 'interviewing',
+              fullName: `Candidate ${randomSuffix(6)}`,
+              primaryEmail: `candidate-${randomSuffix(8)}@example.com`,
+              sourceChannel: 'saga_runner',
+              metadata: {
+                source: 'rerun-sagas.workforce',
+              },
+            },
+            acceptStatuses: [201],
+          },
+        )
+      ).payload,
+    )
+    ctx.workforceCandidateId = candidate.id
+  }
+
+  if (!ctx.workforceApplicationId) {
+    const application = getApiData<{ id: string }>(
+      (
+        await requestJson<{ success: true; data: { id: string } }>(
+          `/api/v1/bizes/${ctx.bizId}/workforce-applications`,
+          {
+            method: 'POST',
+            cookie: ctx.owner.cookie,
+            body: {
+              workforceRequisitionId: ctx.workforceRequisitionId,
+              workforceCandidateId: ctx.workforceCandidateId,
+              status: 'interview',
+              appliedAt: new Date().toISOString(),
+              currency: 'USD',
+              metadata: {
+                source: 'rerun-sagas.workforce',
+              },
+            },
+            acceptStatuses: [201],
+          },
+        )
+      ).payload,
+    )
+    ctx.workforceApplicationId = application.id
+  }
+
+  return {
+    bizId: ctx.bizId as string,
+    locationId: ctx.locationId as string,
+    workforceDepartmentId: ctx.workforceDepartmentId as string,
+    workforcePositionId: ctx.workforcePositionId as string,
+    workforceRequisitionId: ctx.workforceRequisitionId as string,
+    workforceCandidateId: ctx.workforceCandidateId as string,
+    workforceApplicationId: ctx.workforceApplicationId as string,
+  }
 }
 
 async function ensureBizMember(
@@ -2436,7 +3474,21 @@ async function createBooking(
   if (!ctx.bizId || !ctx.offerId || !ctx.offerVersionId) {
     throw new Error('bizId/offerId/offerVersionId required before booking.')
   }
-  const { start, end } = bookingWindow(offsetHours)
+  const availabilityResponse = await requestJson<{
+    success: true
+    data: { slots: Array<{ startAt: string; endAt: string }> }
+  }>(
+    `/api/v1/public/bizes/${ctx.bizId}/offers/${ctx.offerId}/availability?offerVersionId=${ctx.offerVersionId}&limit=10`,
+    {
+      cookie: actor.cookie,
+      acceptStatuses: [200],
+    },
+  )
+  const availability = getApiData<{ slots: Array<{ startAt: string; endAt: string }> }>(availabilityResponse.payload)
+  const firstSlot = availability.slots[0]
+  const { start, end } = firstSlot
+    ? { start: firstSlot.startAt, end: firstSlot.endAt }
+    : bookingWindow(offsetHours)
   const response = await requestJson<{
     success: true
     data: {
@@ -4600,12 +5652,14 @@ async function ensureEducationFixture(ctx: RunContext) {
 
 async function createAdHocOffer(ctx: RunContext) {
   if (!ctx.bizId) throw new Error('bizId required before creating ad-hoc offer.')
+  const serviceGroup = await ensureServiceGroup(ctx, 'Ad Hoc Catalog', 'ad-hoc-catalog')
   const offerResponse = await requestJson<{ success: true; data: { id: string } }>(
     `/api/v1/bizes/${ctx.bizId}/offers`,
     {
       method: 'POST',
       cookie: ctx.owner.cookie,
       body: {
+        serviceGroupId: serviceGroup.id,
         name: 'Ad Hoc Meeting',
         slug: `ad-hoc-${randomSuffix(8)}`,
         executionMode: 'slot',
@@ -4648,6 +5702,35 @@ async function createAdHocOffer(ctx: RunContext) {
     },
   )
   const version = getApiData<{ id: string }>(versionResponse.payload)
+
+  const calendar = getApiData<{ id: string }>((await requestJson(`/api/v1/bizes/${ctx.bizId}/calendars`, {
+    method: 'POST',
+    cookie: ctx.owner.cookie,
+    body: {
+      name: `Ad Hoc Meeting Calendar ${randomSuffix(4)}`,
+      timezone: 'UTC',
+      slotDurationMin: 30,
+      slotIntervalMin: 15,
+      minAdvanceBookingHours: 0,
+      maxAdvanceBookingDays: 2,
+      defaultMode: 'available_by_default',
+    },
+    acceptStatuses: [201],
+  })).payload)
+
+  await requestJson(`/api/v1/bizes/${ctx.bizId}/calendar-bindings`, {
+    method: 'POST',
+    cookie: ctx.owner.cookie,
+    body: {
+      calendarId: calendar.id,
+      ownerType: 'offer_version',
+      offerVersionId: version.id,
+      isPrimary: true,
+      isRequired: true,
+      isActive: true,
+    },
+    acceptStatuses: [201],
+  })
 
   ctx.oneOffOfferId = offer.id
   ctx.oneOffOfferVersionId = version.id
@@ -4777,6 +5860,16 @@ async function runUcNeedValidationStep(
       'claimed by someone else',
       'auto-refresh showing new availability',
       'equal opportunity (no priority tiers)',
+    ][ucNeedIndex - 1] ?? instruction
+  }
+
+  if (ctx.sagaKey.startsWith('uc-319-') && ucNeedIndex !== null) {
+    instruction = [
+      'automation hook catalog exposes supported internal handlers and discovered hook points',
+      'one generic execute endpoint can run hook bindings for any targetType/targetRefId pair',
+      'binding filters (targetType/targetRef scoping) prevent cross-domain drift',
+      'idempotency keys guarantee replay-safe hook execution for repeated calls',
+      'workflow/review signal materialization is consistent regardless of source domain',
     ][ucNeedIndex - 1] ?? instruction
   }
 
@@ -7539,123 +8632,61 @@ async function runUcNeedValidationStep(
       },
       acceptStatuses: [201],
     })).payload)
-    const group = getApiData<{ id: string }>((await requestJson(`/api/v1/bizes/${ctx.bizId}/service-groups`, {
-      method: 'POST',
-      cookie: ctx.owner.cookie,
-      body: {
-        name: `Equipment Services ${randomSuffix(4)}`,
-        slug: `equipment-services-${randomSuffix(6)}`,
-        status: 'active',
-      },
-      acceptStatuses: [201],
-    })).payload)
-    const serviceA = getApiData<{ id: string }>((await requestJson(`/api/v1/bizes/${ctx.bizId}/services`, {
-      method: 'POST',
-      cookie: ctx.owner.cookie,
-      body: {
-        serviceGroupId: group.id,
-        name: 'Service A',
-        slug: `service-a-${randomSuffix(6)}`,
-        type: 'appointment',
-        visibility: 'public',
-        status: 'active',
-      },
-      acceptStatuses: [201],
-    })).payload)
-    const serviceB = getApiData<{ id: string }>((await requestJson(`/api/v1/bizes/${ctx.bizId}/services`, {
-      method: 'POST',
-      cookie: ctx.owner.cookie,
-      body: {
-        serviceGroupId: group.id,
-        name: 'Service B',
-        slug: `service-b-${randomSuffix(6)}`,
-        type: 'appointment',
-        visibility: 'public',
-        status: 'active',
-      },
-      acceptStatuses: [201],
-    })).payload)
-    const productA = getApiData<{ id: string }>((await requestJson(`/api/v1/bizes/${ctx.bizId}/service-products`, {
-      method: 'POST',
-      cookie: ctx.owner.cookie,
-      body: {
-        name: 'Product A',
-        slug: `product-a-${randomSuffix(6)}`,
-        kind: 'booking',
-        durationMode: 'fixed',
-        defaultDurationMinutes: 60,
-        basePriceAmountMinorUnits: 10000,
-        isPublished: false,
-        status: 'draft',
-      },
-      acceptStatuses: [201],
-    })).payload)
-    const productB = getApiData<{ id: string }>((await requestJson(`/api/v1/bizes/${ctx.bizId}/service-products`, {
-      method: 'POST',
-      cookie: ctx.owner.cookie,
-      body: {
-        name: 'Product B',
-        slug: `product-b-${randomSuffix(6)}`,
-        kind: 'booking',
-        durationMode: 'fixed',
-        defaultDurationMinutes: 60,
-        basePriceAmountMinorUnits: 10000,
-        isPublished: false,
-        status: 'draft',
-      },
-      acceptStatuses: [201],
-    })).payload)
-    await requestJson(`/api/v1/bizes/${ctx.bizId}/service-products/${productA.id}/services`, {
-      method: 'POST',
-      cookie: ctx.owner.cookie,
-      body: { serviceId: serviceA.id, requirementMode: 'required', minQuantity: 1 },
-      acceptStatuses: [201],
+    const offerA = await createIsolatedOfferVersion(ctx, {
+      serviceGroupName: 'Equipment Services',
+      serviceGroupSlugPrefix: 'equipment-services',
+      offerName: 'Service A',
+      offerSlugPrefix: 'service-a',
+      basePriceMinor: 10000,
+      offerPublished: false,
+      offerStatus: 'draft',
+      versionStatus: 'draft',
     })
-    await requestJson(`/api/v1/bizes/${ctx.bizId}/service-products/${productB.id}/services`, {
-      method: 'POST',
-      cookie: ctx.owner.cookie,
-      body: { serviceId: serviceB.id, requirementMode: 'required', minQuantity: 1 },
-      acceptStatuses: [201],
+    const offerB = await createIsolatedOfferVersion(ctx, {
+      serviceGroupName: 'Equipment Services',
+      serviceGroupSlugPrefix: 'equipment-services',
+      offerName: 'Service B',
+      offerSlugPrefix: 'service-b',
+      basePriceMinor: 10000,
+      offerPublished: false,
+      offerStatus: 'draft',
+      versionStatus: 'draft',
     })
-    const groupA = getApiData<{ id: string }>((await requestJson(`/api/v1/bizes/${ctx.bizId}/service-products/${productA.id}/requirement-groups`, {
-      method: 'POST',
-      cookie: ctx.owner.cookie,
-      body: {
-        name: 'Asset A only',
-        slug: `asset-a-${randomSuffix(6)}`,
-        targetResourceType: 'asset',
-        requirementMode: 'required',
-      },
-      acceptStatuses: [201],
-    })).payload)
-    const groupB = getApiData<{ id: string }>((await requestJson(`/api/v1/bizes/${ctx.bizId}/service-products/${productB.id}/requirement-groups`, {
-      method: 'POST',
-      cookie: ctx.owner.cookie,
-      body: {
-        name: 'Asset B only',
-        slug: `asset-b-${randomSuffix(6)}`,
-        targetResourceType: 'asset',
-        requirementMode: 'required',
-      },
-      acceptStatuses: [201],
-    })).payload)
-    await requestJson(`/api/v1/bizes/${ctx.bizId}/service-products/${productA.id}/requirement-groups/${groupA.id}/selectors`, {
-      method: 'POST',
-      cookie: ctx.owner.cookie,
-      body: { selectorType: 'resource', resourceId: fixture.resourceId },
-      acceptStatuses: [201],
+    const componentA = await createOfferComponentFixture(ctx, {
+      offerId: offerA.offerId,
+      offerVersionId: offerA.offerVersionId,
+      name: 'Asset A only',
+      slugPrefix: 'asset-a',
+      targetType: 'asset',
+      mode: 'required',
     })
-    await requestJson(`/api/v1/bizes/${ctx.bizId}/service-products/${productB.id}/requirement-groups/${groupB.id}/selectors`, {
-      method: 'POST',
-      cookie: ctx.owner.cookie,
-      body: { selectorType: 'resource', resourceId: alternateAsset.id },
-      acceptStatuses: [201],
+    const componentB = await createOfferComponentFixture(ctx, {
+      offerId: offerB.offerId,
+      offerVersionId: offerB.offerVersionId,
+      name: 'Asset B only',
+      slugPrefix: 'asset-b',
+      targetType: 'asset',
+      mode: 'required',
     })
-    const selectorsA = getApiData<Array<{ resourceId?: string | null }>>((await requestJson(`/api/v1/bizes/${ctx.bizId}/service-products/${productA.id}/requirement-groups/${groupA.id}/selectors`, {
+    await createOfferComponentSelectorFixture(ctx, {
+      offerId: offerA.offerId,
+      offerVersionId: offerA.offerVersionId,
+      componentId: componentA.id,
+      selectorType: 'resource',
+      resourceId: fixture.resourceId,
+    })
+    await createOfferComponentSelectorFixture(ctx, {
+      offerId: offerB.offerId,
+      offerVersionId: offerB.offerVersionId,
+      componentId: componentB.id,
+      selectorType: 'resource',
+      resourceId: alternateAsset.id,
+    })
+    const selectorsA = getApiData<Array<{ resourceId?: string | null }>>((await requestJson(`/api/v1/bizes/${ctx.bizId}/offers/${offerA.offerId}/versions/${offerA.offerVersionId}/components/${componentA.id}/selectors`, {
       cookie: ctx.owner.cookie,
       acceptStatuses: [200],
     })).payload)
-    const selectorsB = getApiData<Array<{ resourceId?: string | null }>>((await requestJson(`/api/v1/bizes/${ctx.bizId}/service-products/${productB.id}/requirement-groups/${groupB.id}/selectors`, {
+    const selectorsB = getApiData<Array<{ resourceId?: string | null }>>((await requestJson(`/api/v1/bizes/${ctx.bizId}/offers/${offerB.offerId}/versions/${offerB.offerVersionId}/components/${componentB.id}/selectors`, {
       cookie: ctx.owner.cookie,
       acceptStatuses: [200],
     })).payload)
@@ -7663,10 +8694,10 @@ async function runUcNeedValidationStep(
       blockStep(step.stepKey, 'Different services could not be constrained to different equipment via requirement selectors.', { selectorsA, selectorsB })
     }
     return {
-      note: 'Validated different service products can require different equipment through canonical selector groups.',
+      note: 'Validated different offer versions can require different equipment through canonical component selectors.',
       evidence: {
-        productA: { id: productA.id, resourceId: fixture.resourceId },
-        productB: { id: productB.id, resourceId: alternateAsset.id },
+        offerA: { id: offerA.offerVersionId, resourceId: fixture.resourceId },
+        offerB: { id: offerB.offerVersionId, resourceId: alternateAsset.id },
       },
     }
   }
@@ -9357,7 +10388,7 @@ async function runUcNeedValidationStep(
             endsAt: fixture.endsAt.toISOString(),
             isPrimary: true,
           },
-          acceptStatuses: [201],
+          acceptStatuses: [200, 201],
         },
       ),
       requestJson<{ success: true; data: { id: string; roleLabel: string | null; isPrimary: boolean } }>(
@@ -9374,7 +10405,7 @@ async function runUcNeedValidationStep(
             endsAt: fixture.endsAt.toISOString(),
             isPrimary: false,
           },
-          acceptStatuses: [201],
+          acceptStatuses: [200, 201],
         },
       ),
     ])
@@ -9538,7 +10569,7 @@ async function runUcNeedValidationStep(
             endsAt: fixture.endsAt.toISOString(),
             isPrimary: true,
           },
-          acceptStatuses: [201],
+          acceptStatuses: [200, 201],
         },
       ),
       requestJson<{ success: true; data: { id: string } }>(
@@ -9555,7 +10586,7 @@ async function runUcNeedValidationStep(
             endsAt: fixture.endsAt.toISOString(),
             isPrimary: false,
           },
-          acceptStatuses: [201],
+          acceptStatuses: [200, 201],
         },
       ),
     ])
@@ -9608,7 +10639,7 @@ async function runUcNeedValidationStep(
             endsAt: fixture.endsAt.toISOString(),
             isPrimary: true,
           },
-          acceptStatuses: [201],
+          acceptStatuses: [200, 201],
         },
       ),
       requestJson<{ success: true; data: { id: string } }>(
@@ -9625,7 +10656,7 @@ async function runUcNeedValidationStep(
             endsAt: fixture.endsAt.toISOString(),
             isPrimary: false,
           },
-          acceptStatuses: [201],
+          acceptStatuses: [200, 201],
         },
       ),
     ])
@@ -10559,7 +11590,7 @@ async function runUcNeedValidationStep(
             defaultAdjustmentValue: adjustmentValue,
             isEnabled: true,
           },
-          acceptStatuses: [201],
+          acceptStatuses: [200, 201],
         },
       )
       return getApiData<{ id: string; locationId: string | null }>(response.payload)
@@ -11000,19 +12031,11 @@ async function runUcNeedValidationStep(
     }
     const nextSaturday = nextUtcWeekday(6)
     const followingSaturday = new Date(nextSaturday.getTime() + 7 * 24 * 60 * 60 * 1000)
-    await requestJson(`/api/v1/bizes/${ctx.bizId}`, {
-      method: 'PATCH',
-      cookie: ctx.owner.cookie,
-      body: {
-        metadata: {
-          availability: {
-            weekly: {
-              sat: ['14:00-22:00'],
-            },
-          },
-        },
-      },
-      acceptStatuses: [200],
+    await addOfferVersionWeeklyAvailability(ctx, {
+      dayOfWeek: 6,
+      startTime: '14:00',
+      endTime: '22:00',
+      name: 'Limited Date Saturday Availability',
     })
     const allowedRange = {
       startAt: new Date(Date.UTC(nextSaturday.getUTCFullYear(), nextSaturday.getUTCMonth(), nextSaturday.getUTCDate(), 14, 0, 0)).toISOString(),
@@ -15018,7 +16041,7 @@ async function runUcNeedValidationStep(
         extensionPermissionDefinitionId: getApiData<{ id: string }>((await requestJson(`/api/v1/bizes/${ctx.bizId}/extensions/catalog/${fixture.extensionDefinitionId}/permissions`, {
           method: 'POST',
           cookie: ctx.owner.cookie,
-          acceptStatuses: [201],
+          acceptStatuses: [200, 201],
           body: {
             permissionKey: `phi-process-${randomSuffix(4)}`,
             name: 'Process PHI',
@@ -15777,12 +16800,12 @@ async function runUcNeedValidationStep(
     })).payload)
     const binding = getApiData<{ id: string; scopeRefType: string | null; scopeRefId: string | null }>((await requestJson(`/api/v1/bizes/${ctx.bizId}/config-bindings`, {
       method: 'POST', cookie: ctx.owner.cookie, acceptStatuses: [201],
-      body: { configSetId: set.id, targetEntity: 'service_products', targetField: 'status', scopeRefType: 'service_family', scopeRefId: 'family-spa', isPrimary: true },
+      body: { configSetId: set.id, targetEntity: 'offer_versions', targetField: 'status', scopeRefType: 'offer_family', scopeRefId: 'family-spa', isPrimary: true },
     })).payload)
-    const resolved = getApiData<{ resolved: { id: string } | null }>((await requestJson(`/api/v1/bizes/${ctx.bizId}/config-bindings/resolve?targetEntity=service_products&targetField=status&scopeRefType=service_family&scopeRefId=family-spa`, {
+    const resolved = getApiData<{ resolved: { id: string } | null }>((await requestJson(`/api/v1/bizes/${ctx.bizId}/config-bindings/resolve?targetEntity=offer_versions&targetField=status&scopeRefType=offer_family&scopeRefId=family-spa`, {
       cookie: ctx.owner.cookie, acceptStatuses: [200],
     })).payload)
-    if (binding.scopeRefType !== 'service_family' || resolved.resolved?.id !== binding.id) {
+    if (binding.scopeRefType !== 'offer_family' || resolved.resolved?.id !== binding.id) {
       blockStep(step.stepKey, 'Scope override binding did not resolve for the requested scoped domain.', { binding, resolved })
     }
     return { note: 'Validated config bindings can target optional scope references beyond biz and location.', evidence: { binding, resolved } }
@@ -16340,12 +17363,15 @@ async function runUcNeedValidationStep(
     }
     if (!ctx.offerId) await createOffer(ctx)
     if (!ctx.offerVersionId) await createOfferVersion(ctx)
+    const holdTimeScopeId = await ensureTimeScope(ctx, {
+      scopeType: 'offer_version',
+      scopeRefKey: `offer_version:${ctx.offerVersionId}`,
+      displayName: 'Offer Version Hold Scope',
+    })
     const hold = getApiData<{ id: string; status: string; targetType: string; sourceSignalType: string }>((await requestJson(`/api/v1/bizes/${ctx.bizId}/calendars/${ctx.supplyCalendarId}/capacity-holds`, {
       method: 'POST', cookie: ctx.owner.cookie, acceptStatuses: [201],
       body: {
-        targetType: 'offer_version',
-        offerVersionId: ctx.offerVersionId,
-        targetRefKey: `offer_version:${ctx.offerVersionId}`,
+        timeScopeId: holdTimeScopeId,
         startsAt: new Date(Date.now() + 20 * 60 * 1000).toISOString(),
         endsAt: new Date(Date.now() + 50 * 60 * 1000).toISOString(),
         sourceSignalType: 'queue_eta',
@@ -16753,106 +17779,80 @@ async function runUcNeedValidationStep(
   }
 
   if (instruction.includes('selector mode for resource_type') || instruction.includes('shape-invariant enforcement so only correct selector payload is present') || instruction.includes('matching engine path that can resolve any host style requirements cleanly') || instruction.includes('coexistence with specific-resource and capability selectors')) {
-    const serviceId = await ensureServiceValidationFixture(ctx)
-    const product = getApiData<{ id: string }>((await requestJson(`/api/v1/bizes/${ctx.bizId}/service-products`, {
-      method: 'POST',
-      cookie: ctx.owner.cookie,
-      body: {
-        name: 'Any Host Product',
-        slug: `any-host-${randomSuffix(6)}`,
-        kind: 'booking',
-        durationMode: 'fixed',
-        defaultDurationMinutes: 60,
-        basePriceAmountMinorUnits: 10000,
-        isPublished: false,
-        status: 'draft',
-      },
-      acceptStatuses: [201],
-    })).payload)
-    await requestJson(`/api/v1/bizes/${ctx.bizId}/service-products/${product.id}/services`, {
-      method: 'POST',
-      cookie: ctx.owner.cookie,
-      body: { serviceId, requirementMode: 'required', minQuantity: 1 },
-      acceptStatuses: [201],
+    const offer = await createIsolatedOfferVersion(ctx, {
+      serviceGroupName: 'Host Matching',
+      serviceGroupSlugPrefix: 'host-matching',
+      offerName: 'Any Host Offer',
+      offerSlugPrefix: 'any-host',
+      offerPublished: false,
+      offerStatus: 'draft',
+      versionStatus: 'draft',
+      basePriceMinor: 10000,
     })
-    const group = getApiData<{ id: string }>((await requestJson(`/api/v1/bizes/${ctx.bizId}/service-products/${product.id}/requirement-groups`, {
-      method: 'POST',
-      cookie: ctx.owner.cookie,
-      body: {
-        name: 'Any host',
-        slug: `any-host-${randomSuffix(6)}`,
-        targetResourceType: 'host',
-        requirementMode: 'required',
-      },
-      acceptStatuses: [201],
-    })).payload)
-    await requestJson(`/api/v1/bizes/${ctx.bizId}/service-products/${product.id}/requirement-groups/${group.id}/selectors`, {
-      method: 'POST',
-      cookie: ctx.owner.cookie,
-      body: { selectorType: 'resource_type', resourceType: 'host', description: 'Any host can satisfy this requirement.' },
-      acceptStatuses: [201],
+    const component = await createOfferComponentFixture(ctx, {
+      offerId: offer.offerId,
+      offerVersionId: offer.offerVersionId,
+      name: 'Any host',
+      slugPrefix: 'any-host',
+      targetType: 'host',
+      mode: 'required',
     })
-    const selectors = getApiData<Array<{ selectorType: string; resourceType?: string | null; resourceId?: string | null; capabilityTemplateId?: string | null }>>((await requestJson(`/api/v1/bizes/${ctx.bizId}/service-products/${product.id}/requirement-groups/${group.id}/selectors`, {
+    await createOfferComponentSelectorFixture(ctx, {
+      offerId: offer.offerId,
+      offerVersionId: offer.offerVersionId,
+      componentId: component.id,
+      selectorType: 'resource_type',
+      resourceType: 'host',
+    })
+    const selectors = getApiData<Array<{ selectorType: string; resourceType?: string | null; resourceId?: string | null; capabilityTemplateId?: string | null }>>((await requestJson(`/api/v1/bizes/${ctx.bizId}/offers/${offer.offerId}/versions/${offer.offerVersionId}/components/${component.id}/selectors`, {
       cookie: ctx.owner.cookie,
       acceptStatuses: [200],
     })).payload)
     if (!selectors.some((row) => row.selectorType === 'resource_type' && row.resourceType === 'host' && row.resourceId == null && row.capabilityTemplateId == null)) {
-      blockStep(step.stepKey, 'Resource-type selector did not persist with the expected shape.', { product, group, selectors })
+      blockStep(step.stepKey, 'Resource-type selector did not persist with the expected shape.', { offer, component, selectors })
     }
-    return { note: 'Validated service-product requirements can express generic any-host style selection through the resource_type selector mode.', evidence: { product, group, selectors } }
+    return { note: 'Validated offer-version components can express generic any-host style selection through the resource_type selector mode.', evidence: { offer, component, selectors } }
   }
 
   if (instruction.includes('selector mode for custom_subject') || instruction.includes('subject registry-backed referential integrity') || instruction.includes('tenant-safe filtering by subject type + subject id') || instruction.includes('compatibility with normal selector logic')) {
-    const serviceId = await ensureServiceValidationFixture(ctx)
     const subjectType = 'custom.provider_pool'
     const subjectId = `pool-${randomSuffix(6)}`
     await ensureSubjectRegistryRow(ctx, { subjectType, subjectId, displayName: 'Shared Provider Pool', category: 'custom' })
-    const product = getApiData<{ id: string }>((await requestJson(`/api/v1/bizes/${ctx.bizId}/service-products`, {
-      method: 'POST',
-      cookie: ctx.owner.cookie,
-      body: {
-        name: 'Custom Subject Product',
-        slug: `custom-subject-${randomSuffix(6)}`,
-        kind: 'booking',
-        durationMode: 'fixed',
-        defaultDurationMinutes: 45,
-        basePriceAmountMinorUnits: 9000,
-        isPublished: false,
-        status: 'draft',
-      },
-      acceptStatuses: [201],
-    })).payload)
-    await requestJson(`/api/v1/bizes/${ctx.bizId}/service-products/${product.id}/services`, {
-      method: 'POST',
-      cookie: ctx.owner.cookie,
-      body: { serviceId, requirementMode: 'required', minQuantity: 1 },
-      acceptStatuses: [201],
+    const offer = await createIsolatedOfferVersion(ctx, {
+      serviceGroupName: 'Subject Matching',
+      serviceGroupSlugPrefix: 'subject-matching',
+      offerName: 'Custom Subject Offer',
+      offerSlugPrefix: 'custom-subject',
+      offerPublished: false,
+      offerStatus: 'draft',
+      versionStatus: 'draft',
+      defaultDurationMin: 45,
+      basePriceMinor: 9000,
     })
-    const group = getApiData<{ id: string }>((await requestJson(`/api/v1/bizes/${ctx.bizId}/service-products/${product.id}/requirement-groups`, {
-      method: 'POST',
-      cookie: ctx.owner.cookie,
-      body: {
-        name: 'Custom subject group',
-        slug: `custom-subject-${randomSuffix(6)}`,
-        targetResourceType: 'host',
-        requirementMode: 'optional',
-      },
-      acceptStatuses: [201],
-    })).payload)
-    await requestJson(`/api/v1/bizes/${ctx.bizId}/service-products/${product.id}/requirement-groups/${group.id}/selectors`, {
-      method: 'POST',
-      cookie: ctx.owner.cookie,
-      body: { selectorType: 'custom_subject', subjectType, subjectId },
-      acceptStatuses: [201],
+    const component = await createOfferComponentFixture(ctx, {
+      offerId: offer.offerId,
+      offerVersionId: offer.offerVersionId,
+      name: 'Custom subject group',
+      slugPrefix: 'custom-subject',
+      targetType: 'host',
+      mode: 'optional',
     })
-    const selectors = getApiData<Array<{ selectorType: string; subjectType?: string | null; subjectId?: string | null }>>((await requestJson(`/api/v1/bizes/${ctx.bizId}/service-products/${product.id}/requirement-groups/${group.id}/selectors`, {
+    await createOfferComponentSelectorFixture(ctx, {
+      offerId: offer.offerId,
+      offerVersionId: offer.offerVersionId,
+      componentId: component.id,
+      selectorType: 'custom_subject',
+      subjectType,
+      subjectId,
+    })
+    const selectors = getApiData<Array<{ selectorType: string; subjectType?: string | null; subjectId?: string | null }>>((await requestJson(`/api/v1/bizes/${ctx.bizId}/offers/${offer.offerId}/versions/${offer.offerVersionId}/components/${component.id}/selectors`, {
       cookie: ctx.owner.cookie,
       acceptStatuses: [200],
     })).payload)
     if (!selectors.some((row) => row.selectorType === 'custom_subject' && row.subjectType === subjectType && row.subjectId === subjectId)) {
-      blockStep(step.stepKey, 'Custom subject selector did not persist with the expected subject registry linkage.', { product, group, selectors })
+      blockStep(step.stepKey, 'Custom subject selector did not persist with the expected subject registry linkage.', { offer, component, selectors })
     }
-    return { note: 'Validated service-product requirements can target registry-backed custom subjects without forking the selector model.', evidence: { product, group, selectors, subjectType, subjectId } }
+    return { note: 'Validated offer-version components can target registry-backed custom subjects without forking the selector model.', evidence: { offer, component, selectors, subjectType, subjectId } }
   }
 
   if (instruction.includes('projection checkpoints with scope') || instruction.includes('health states (healthy/lagging/degraded/failed)') || instruction.includes('lag seconds + last applied timestamp') || instruction.includes('last lifecycle-event cursor for replay/recovery workflows') || instruction.includes('which projections are stale/broken right now')) {
@@ -17286,27 +18286,23 @@ async function runUcNeedValidationStep(
   }
 
   if (instruction.includes('pricing mode flags per sellable') || instruction.includes('minimum amount for flexible pricing') || instruction.includes('currency-aware checkout handling') || instruction.includes('tax and invoice support across pricing modes') || instruction.includes('unified reporting across free and paid conversions')) {
-    const product = getApiData<{ id: string }>((await requestJson(`/api/v1/bizes/${ctx.bizId}/service-products`, {
-      method: 'POST',
-      cookie: ctx.owner.cookie,
-      body: {
-        name: 'Flexible Pricing Product',
-        slug: `flex-pricing-${randomSuffix(6)}`,
-        kind: 'booking',
-        durationMode: 'fixed',
-        defaultDurationMinutes: 60,
-        basePriceAmountMinorUnits: 0,
-        isPublished: true,
-        status: 'active',
-      },
-      acceptStatuses: [201],
-    })).payload)
-    const sellables = getApiData<Array<{ id: string; kind: string; source: { serviceProductId?: string | null } }>>((await requestJson(`/api/v1/bizes/${ctx.bizId}/sellables?serviceProductId=${product.id}`, {
+    const offer = await createIsolatedOfferVersion(ctx, {
+      serviceGroupName: 'Flexible Pricing',
+      serviceGroupSlugPrefix: 'flex-pricing',
+      offerName: 'Flexible Pricing Offer',
+      offerSlugPrefix: 'flex-pricing',
+      offerPublished: true,
+      offerStatus: 'active',
+      versionStatus: 'published',
+      defaultDurationMin: 60,
+      basePriceMinor: 0,
+    })
+    const sellables = getApiData<Array<{ id: string; kind: string; source: { offerVersionId?: string | null } }>>((await requestJson(`/api/v1/bizes/${ctx.bizId}/sellables?offerVersionId=${offer.offerVersionId}`, {
       cookie: ctx.owner.cookie,
       acceptStatuses: [200],
     })).payload)
     const sellable = sellables[0]
-    if (!sellable) blockStep(step.stepKey, 'Service product did not expose a canonical sellable id.', { product, sellables })
+    if (!sellable) blockStep(step.stepKey, 'Offer version did not expose a canonical sellable id.', { offer, sellables })
     const freeMode = getApiData<{ id: string; mode: string; currency: string }>((await requestJson(`/api/v1/bizes/${ctx.bizId}/sellable-pricing-modes`, {
       method: 'POST',
       cookie: ctx.owner.cookie,
@@ -17337,9 +18333,9 @@ async function runUcNeedValidationStep(
       acceptStatuses: [200],
     })).payload)
     if (!pricingModes.some((row) => row.id === freeMode.id && row.mode === 'free') || !pricingModes.some((row) => row.id === flexibleMode.id && row.mode === 'flexible' && row.currency === 'EUR') || minimumThreshold.thresholdType !== 'minimum' || override.overrideType !== 'absolute' || !taxFxFixture.taxProfileId || !taxFxFixture.fxRateSnapshotId) {
-      blockStep(step.stepKey, 'Flexible sellable pricing did not preserve pricing mode, minimum threshold, FX/tax, and override evidence.', { product, sellable, pricingModes, freeMode, flexibleMode, minimumThreshold, override, taxFxFixture })
+      blockStep(step.stepKey, 'Flexible sellable pricing did not preserve pricing mode, minimum threshold, FX/tax, and override evidence.', { offer, sellable, pricingModes, freeMode, flexibleMode, minimumThreshold, override, taxFxFixture })
     }
-    return { note: 'Validated one canonical sellable can expose free and flexible pricing modes, minimum thresholds, tax/fx context, and shared reporting identity.', evidence: { product, sellable, pricingModes, minimumThreshold, override, taxFxFixture } }
+    return { note: 'Validated one canonical offer-version sellable can expose free and flexible pricing modes, minimum thresholds, tax/fx context, and shared reporting identity.', evidence: { offer, sellable, pricingModes, minimumThreshold, override, taxFxFixture } }
   }
 
   if (instruction.includes('waitlist queue with position') || instruction.includes('pay to join waitlist ($5 fee)') || instruction.includes('automatic offer when slot opens') || instruction.includes('time to accept (2 hours)') || instruction.includes('auto-confirm if customer opted into instant accept') || instruction.includes('fee policy if offer is declined after acceptance') || instruction.includes('priority tiers (members first)') || instruction.includes('refund if never gets spot')) {
@@ -17697,25 +18693,21 @@ async function runUcNeedValidationStep(
           method: 'POST',
           cookie: ctx.owner.cookie,
           body: selection,
-          acceptStatuses: [201],
+          acceptStatuses: [200, 201],
         })
       }
-      const serviceProduct = getApiData<{ id: string }>((await requestJson(`/api/v1/bizes/${ctx.bizId}/service-products`, {
-        method: 'POST',
-        cookie: ctx.owner.cookie,
-        body: {
-          name: 'White Glove Setup',
-          slug: `white-glove-${randomSuffix(6)}`,
-          kind: 'booking',
-          durationMode: 'fixed',
-          defaultDurationMinutes: 60,
-          basePriceAmountMinorUnits: 5000,
-          isPublished: true,
-          status: 'active',
-        },
-        acceptStatuses: [201],
-      })).payload)
-      const serviceSellables = getApiData<Array<{ id: string }>>((await requestJson(`/api/v1/bizes/${ctx.bizId}/sellables?serviceProductId=${serviceProduct.id}`, {
+      const setupOffer = await createIsolatedOfferVersion(ctx, {
+        serviceGroupName: 'Launch Services',
+        serviceGroupSlugPrefix: 'launch-services',
+        offerName: 'White Glove Setup',
+        offerSlugPrefix: 'white-glove',
+        offerPublished: true,
+        offerStatus: 'active',
+        versionStatus: 'published',
+        defaultDurationMin: 60,
+        basePriceMinor: 5000,
+      })
+      const serviceSellables = getApiData<Array<{ id: string }>>((await requestJson(`/api/v1/bizes/${ctx.bizId}/sellables?offerVersionId=${setupOffer.offerVersionId}`, {
         cookie: ctx.owner.cookie,
         acceptStatuses: [200],
       })).payload)
@@ -17744,7 +18736,7 @@ async function runUcNeedValidationStep(
       await requestJson(`/api/v1/bizes/${ctx.bizId}/product-bundles/${bundle.id}/components`, {
         method: 'POST',
         cookie: ctx.owner.cookie,
-        body: { productBundleId: bundle.id, requirementMode: 'required', targetType: 'service_product', serviceProductId: serviceProduct.id, minQuantity: 1, defaultQuantity: 1, priceMode: 'surcharge', surchargeMinor: 2500 },
+        body: { productBundleId: bundle.id, requirementMode: 'required', targetType: 'offer', offerId: setupOffer.offerId, minQuantity: 1, defaultQuantity: 1, priceMode: 'surcharge', surchargeMinor: 2500 },
         acceptStatuses: [201],
       })
       const discountCampaign = getApiData<{ id: string; scope: string }>((await requestJson(`/api/v1/bizes/${ctx.bizId}/discount-campaigns`, {
@@ -17774,7 +18766,7 @@ async function runUcNeedValidationStep(
       await requestJson(`/api/v1/bizes/${ctx.bizId}/checkout-sessions/${session.id}/items`, {
         method: 'POST',
         cookie: ctx.owner.cookie,
-        body: { itemType: 'sellable', sellableId: serviceSellables[0]?.id, displayName: 'White Glove Setup', quantity: 1, unitPriceMinor: 2500, lineSubtotalMinor: 2500, taxMinor: 0, feeMinor: 0, discountMinor: 0, totalMinor: 2500, currency: 'USD', metadata: { fulfillmentTrace: 'service_product' } },
+        body: { itemType: 'sellable', sellableId: serviceSellables[0]?.id, displayName: 'White Glove Setup', quantity: 1, unitPriceMinor: 2500, lineSubtotalMinor: 2500, taxMinor: 0, feeMinor: 0, discountMinor: 0, totalMinor: 2500, currency: 'USD', metadata: { fulfillmentTrace: 'offer_version' } },
         acceptStatuses: [201],
       })
       await requestJson(`/api/v1/bizes/${ctx.bizId}/checkout-sessions/${session.id}/events`, {
@@ -17788,10 +18780,10 @@ async function runUcNeedValidationStep(
         getApiData<Array<{ id: string; valueKey: string }>>((await requestJson(`/api/v1/bizes/${ctx.bizId}/sellables/${baseSellableId}/variant-dimensions/${planDimension.id}/values`, { cookie: ctx.owner.cookie, acceptStatuses: [200] })).payload),
         getApiData<Array<{ id: string; pricingMode: string }>>((await requestJson(`/api/v1/bizes/${ctx.bizId}/sellables/${baseSellableId}/variants`, { cookie: ctx.owner.cookie, acceptStatuses: [200] })).payload),
         getApiData<Array<{ id: string; sellableVariantDimensionValueId: string }>>((await requestJson(`/api/v1/bizes/${ctx.bizId}/sellable-variants/${teamVariant.id}/selections`, { cookie: ctx.owner.cookie, acceptStatuses: [200] })).payload),
-        getApiData<Array<{ targetType: string; productId?: string | null; serviceProductId?: string | null }>>((await requestJson(`/api/v1/bizes/${ctx.bizId}/product-bundles/${bundle.id}/components`, { cookie: ctx.owner.cookie, acceptStatuses: [200] })).payload),
+        getApiData<Array<{ targetType: string; productId?: string | null; offerId?: string | null }>>((await requestJson(`/api/v1/bizes/${ctx.bizId}/product-bundles/${bundle.id}/components`, { cookie: ctx.owner.cookie, acceptStatuses: [200] })).payload),
         getApiData<{ session: { id: string; campaignReference: string | null }; items: Array<{ sellableId?: string | null; totalMinor: number; metadata?: Record<string, unknown> | null }>; events: Array<{ eventType: string; payload?: Record<string, unknown> | null }> }>((await requestJson(`/api/v1/bizes/${ctx.bizId}/checkout-sessions/${session.id}`, { cookie: ctx.owner.cookie, acceptStatuses: [200] })).payload),
       ])
-      fixtureStore.uc200CatalogFixture = { baseProduct, proProduct, teamProduct, baseSellableId, proSellableId, teamSellableId, planDimension, languageDimension, basicValue, proValue, teamValue, englishValue, spanishValue, proVariant, teamVariant, serviceProduct, serviceSellableId: serviceSellables[0]?.id, bundleProduct, bundleSellableId: bundleSellables[0]?.id, bundle, discountCampaign, discountCode, session, dimensions, planValues, variants, teamSelections, bundleComponents, checkoutDetail }
+      fixtureStore.uc200CatalogFixture = { baseProduct, proProduct, teamProduct, baseSellableId, proSellableId, teamSellableId, planDimension, languageDimension, basicValue, proValue, teamValue, englishValue, spanishValue, proVariant, teamVariant, setupOffer, serviceSellableId: serviceSellables[0]?.id, bundleProduct, bundleSellableId: bundleSellables[0]?.id, bundle, discountCampaign, discountCode, session, dimensions, planValues, variants, teamSelections, bundleComponents, checkoutDetail }
     }
     const fixture = fixtureStore.uc200CatalogFixture as Record<string, any>
     if (instruction.includes('variant dimensions')) {
@@ -17801,10 +18793,10 @@ async function runUcNeedValidationStep(
       return { note: 'Validated one sellable family can expose typed variant dimensions, values, and concrete variant rows through the canonical API.', evidence: fixture }
     }
     if (instruction.includes('bundle composition across product and service sellables')) {
-      if (!fixture.bundleComponents?.some((row: any) => row.targetType === 'product' && row.productId === fixture.baseProduct.id) || !fixture.bundleComponents?.some((row: any) => row.targetType === 'service_product' && row.serviceProductId === fixture.serviceProduct.id)) {
+      if (!fixture.bundleComponents?.some((row: any) => row.targetType === 'product' && row.productId === fixture.baseProduct.id) || !fixture.bundleComponents?.some((row: any) => row.targetType === 'offer' && row.offerId === fixture.setupOffer.offerId)) {
         blockStep(step.stepKey, 'Bundle API did not preserve cross-product/service composition.', fixture)
       }
-      return { note: 'Validated product bundles can compose product and service-product sellables in one canonical commercial package.', evidence: fixture }
+      return { note: 'Validated product bundles can compose product and offer-backed service sellables in one canonical commercial package.', evidence: fixture }
     }
     if (instruction.includes('differential pricing and discount behavior by variant/bundle')) {
       if (fixture.proVariant.pricingMode !== 'delta' || fixture.teamVariant.pricingMode !== 'override' || fixture.discountCampaign.scope !== 'sellable' || !fixture.checkoutDetail?.events?.some((row: any) => row.eventType === 'coupon_applied')) {
@@ -17994,7 +18986,7 @@ async function runUcNeedValidationStep(
           method: 'POST',
           cookie: ctx.owner.cookie,
           body: { marketingCampaignId: recoveryCampaign.id, stepType: 'message', status: 'active', ...stepDef },
-          acceptStatuses: [201],
+          acceptStatuses: [200, 201],
         })
       }
       const discountCampaign = getApiData<{ id: string }>((await requestJson(`/api/v1/bizes/${ctx.bizId}/discount-campaigns`, {
@@ -18102,34 +19094,30 @@ async function runUcNeedValidationStep(
         body: { name: 'Affiliate Webinar', slug: `affiliate-webinar-${randomSuffix(5)}`, basePriceMinor: 22000, currency: 'USD', type: 'digital', status: 'active' },
         acceptStatuses: [201],
       })).payload)
-      const serviceProduct = getApiData<{ id: string }>((await requestJson(`/api/v1/bizes/${ctx.bizId}/service-products`, {
-        method: 'POST',
-        cookie: ctx.owner.cookie,
-        body: {
-          name: 'Affiliate Setup Call',
-          slug: `affiliate-setup-${randomSuffix(5)}`,
-          kind: 'booking',
-          durationMode: 'fixed',
-          defaultDurationMinutes: 45,
-          basePriceAmountMinorUnits: 6000,
-          isPublished: true,
-          status: 'active',
-        },
-        acceptStatuses: [201],
-      })).payload)
+      const setupOffer = await createIsolatedOfferVersion(ctx, {
+        serviceGroupName: 'Affiliate Services',
+        serviceGroupSlugPrefix: 'affiliate-services',
+        offerName: 'Affiliate Setup Call',
+        offerSlugPrefix: 'affiliate-setup',
+        offerPublished: true,
+        offerStatus: 'active',
+        versionStatus: 'published',
+        defaultDurationMin: 45,
+        basePriceMinor: 6000,
+      })
       const [productSellables, serviceSellables] = await Promise.all([
         getApiData<Array<{ id: string }>>((await requestJson(`/api/v1/bizes/${ctx.bizId}/sellables?productId=${product.id}`, { cookie: ctx.owner.cookie, acceptStatuses: [200] })).payload),
-        getApiData<Array<{ id: string }>>((await requestJson(`/api/v1/bizes/${ctx.bizId}/sellables?serviceProductId=${serviceProduct.id}`, { cookie: ctx.owner.cookie, acceptStatuses: [200] })).payload),
+        getApiData<Array<{ id: string }>>((await requestJson(`/api/v1/bizes/${ctx.bizId}/sellables?offerVersionId=${setupOffer.offerVersionId}`, { cookie: ctx.owner.cookie, acceptStatuses: [200] })).payload),
       ])
       const productSellableId = productSellables[0]?.id
       const serviceSellableId = serviceSellables[0]?.id
       if (!productSellableId || !serviceSellableId) {
-        blockStep(step.stepKey, 'Affiliate fixture could not resolve canonical sellables for product/service scopes.', { product, serviceProduct, productSellables, serviceSellables })
+        blockStep(step.stepKey, 'Affiliate fixture could not resolve canonical sellables for product/service scopes.', { product, setupOffer, productSellables, serviceSellables })
       }
 
       const commissionRules = [
         { scopeType: 'product', targetId: product.id, rewardType: 'cash', amountMinor: 4000 },
-        { scopeType: 'service_product', targetId: serviceProduct.id, rewardType: 'cash', percentBps: 1500 },
+        { scopeType: 'offer_version', targetId: setupOffer.offerVersionId, rewardType: 'cash', percentBps: 1500 },
         { scopeType: 'category', categoryKey: 'webinar', rewardType: 'credit', amountMinor: 2000 },
       ]
       const program = getApiData<{ id: string; policy: Record<string, unknown> | null }>((await requestJson(`/api/v1/bizes/${ctx.bizId}/referral-programs`, {
@@ -18141,7 +19129,7 @@ async function runUcNeedValidationStep(
           isActive: true,
           policy: {
             requiresAffiliateIdentity: true,
-            allowedScopes: ['product', 'service_product', 'category'],
+            allowedScopes: ['product', 'offer_version', 'category'],
             commissionRules,
           },
         },
@@ -18156,7 +19144,7 @@ async function runUcNeedValidationStep(
           sellableId: productSellableId,
           status: 'active',
           attributionWindowMinutes: 60 * 24 * 7,
-          metadata: { allowedPromotionScopes: ['product', 'service_product'] },
+          metadata: { allowedPromotionScopes: ['product', 'offer_version'] },
         },
         acceptStatuses: [201],
       })).payload)
@@ -18254,7 +19242,7 @@ async function runUcNeedValidationStep(
       ])
       fixtureStore.uc203ReferralFixture = {
         product,
-        serviceProduct,
+        setupOffer,
         productSellableId,
         serviceSellableId,
         commissionRules,
@@ -18286,10 +19274,10 @@ async function runUcNeedValidationStep(
     }
     if (instruction.includes('commission rules by product/service/category')) {
       const rules = fixture.commissionRules ?? []
-      if (!rules.some((row: any) => row.scopeType === 'product') || !rules.some((row: any) => row.scopeType === 'service_product') || !rules.some((row: any) => row.scopeType === 'category')) {
+      if (!rules.some((row: any) => row.scopeType === 'product') || !rules.some((row: any) => row.scopeType === 'offer_version') || !rules.some((row: any) => row.scopeType === 'category')) {
         blockStep(step.stepKey, 'Commission rules did not cover product, service, and category scopes.', fixture)
       }
-      return { note: 'Validated referral programs can carry commission rules scoped by product, service-product, and category without cloning the program.', evidence: fixture }
+      return { note: 'Validated referral programs can carry commission rules scoped by product, offer version, and category without cloning the program.', evidence: fixture }
     }
     if (instruction.includes('reversal/chargeback-aware commission adjustments')) {
       if (fixture.eventReversed?.eventType !== 'reversed' || fixture.reversedGrant?.status !== 'reversed' || fixture.statement?.reversedMinor < 1000) {
@@ -18321,16 +19309,20 @@ async function runUcNeedValidationStep(
           method: 'POST',
           cookie: ctx.owner.cookie,
           body: { name: `Ticket Flow Calendar ${randomSuffix(4)}` },
-          acceptStatuses: [201],
+          acceptStatuses: [200, 201],
         })).payload)
         ctx.supplyCalendarId = calendar.id
       }
+      const checkoutHoldScopeId = await ensureTimeScope(ctx, {
+        scopeType: 'calendar',
+        scopeRefKey: `calendar:${ctx.supplyCalendarId}`,
+        displayName: 'Checkout Hold Scope',
+      })
       const hold = getApiData<{ id: string; status: string; endsAt: string }>((await requestJson(`/api/v1/bizes/${ctx.bizId}/calendars/${ctx.supplyCalendarId}/capacity-holds`, {
         method: 'POST',
         cookie: ctx.owner.cookie,
         body: {
-          targetType: 'calendar',
-          targetRefKey: `ticket_checkout:${randomSuffix(6)}`,
+          timeScopeId: checkoutHoldScopeId,
           startsAt: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
           endsAt: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
           sourceSignalType: 'manual',
@@ -18595,7 +19587,7 @@ async function runUcNeedValidationStep(
               itinerarySessionIds: edu.sessionIds,
             },
           },
-          acceptStatuses: [201],
+          acceptStatuses: [200, 201],
         })).payload),
       ])
       fixtureStore.uc205AgendaFixture = { edu, roomA, roomB, presenter, sessions, conflicts, agenda, reminder }
@@ -20719,13 +21711,17 @@ async function runUcNeedValidationStep(
           metadata: { rolledOverFromPeriod: '2026-02' },
         },
       })).payload)
+      const reservedHoldScopeId = await ensureTimeScope(ctx, {
+        scopeType: 'calendar',
+        scopeRefKey: `calendar:${calendar.id}`,
+        displayName: 'Reserved Recurring Slot Scope',
+      })
       const reservedHold = getApiData<{ id: string; status: string; effectMode: string }>((await requestJson(`/api/v1/bizes/${ctx.bizId}/calendars/${calendar.id}/capacity-holds`, {
         method: 'POST',
         cookie: ctx.owner.cookie,
         acceptStatuses: [201],
         body: {
-          targetType: 'calendar',
-          targetRefKey: 'tuesday_1400_reserved',
+          timeScopeId: reservedHoldScopeId,
           effectMode: 'advisory',
           quantity: 1,
           startsAt: '2026-04-14T14:00:00.000Z',
@@ -21124,11 +22120,12 @@ async function runUcNeedValidationStep(
 
   if (instruction.includes('variable duration selection (30 minutes to 4 hours)') || instruction.includes('hourly pricing that scales with duration') || instruction.includes('availability shown in variable chunks') || instruction.includes('automatic buffer calculation based on selected duration') || instruction.includes('booking summary 2.5 hours @ $100/hr = $250')) {
     const offer = await createOffer(ctx)
+    const versionNumber = await nextOfferVersionNumber(ctx, offer.offerId)
     const version = getApiData<{ id: string; durationMode: string; minDurationMin?: number | null; maxDurationMin?: number | null; durationStepMin?: number | null; basePriceMinor: number; pricingModel?: Record<string, unknown> | null }>((await requestJson(`/api/v1/bizes/${ctx.bizId}/offers/${offer.offerId}/versions`, {
       method: 'POST',
       cookie: ctx.owner.cookie,
       body: {
-        version: 2,
+        version: versionNumber,
         status: 'published',
         durationMode: 'flexible',
         defaultDurationMin: 60,
@@ -21206,7 +22203,74 @@ async function runUcNeedContractProbe(
     keywords: string[]
     endpoints: Array<(bizId: string) => string>
     note: string
+    probe?: () => Promise<StepResultPayload>
   }> = [
+    {
+      name: 'commercial-line-execution',
+      keywords: [
+        'line execution',
+        'line-level',
+        'fulfillment state',
+        'commercial state',
+        'payment allocation',
+        'timeline mode',
+      ],
+      endpoints: [],
+      note: 'Validated unified booking line commercial+fulfillment execution truth through the canonical line-execution read model.',
+      probe: async () => {
+        const bookingId = ctx.bookingIds[0]
+        if (!bookingId) {
+          blockStep(step.stepKey, 'No booking fixture exists for line execution validation; a booking order id is required before probing line execution.', {
+            sagaKey: ctx.sagaKey,
+            bookingIds: ctx.bookingIds,
+          })
+        }
+        const detail = getApiData<{
+          bookingOrderId: string
+          orderStatus: string
+          summary: Record<string, unknown>
+          lines: Array<{
+            id: string
+            lineType: string
+            commercial?: Record<string, unknown> | null
+            fulfillment?: Record<string, unknown> | null
+            executionStatus?: string | null
+            timeline?: unknown
+          }>
+        }>((await requestJson(`/api/v1/bizes/${ctx.bizId}/booking-orders/${bookingId}/line-execution?includeTimeline=true`, {
+          cookie: ctx.owner.cookie,
+          acceptStatuses: [200],
+        })).payload)
+
+        const firstLine = detail.lines[0]
+        const hasCoreShape =
+          detail.bookingOrderId === bookingId &&
+          Array.isArray(detail.lines) &&
+          detail.lines.length > 0 &&
+          isRecord(firstLine.commercial) &&
+          typeof firstLine.executionStatus === 'string' &&
+          isRecord(firstLine.fulfillment)
+
+        const hasTimeline = Array.isArray(firstLine.timeline)
+        if (!hasCoreShape || !hasTimeline) {
+          blockStep(step.stepKey, 'Line execution read model is missing required commercial/fulfillment/execution/timeline shape for deterministic lifecycle evidence.', {
+            detail,
+            firstLine,
+          })
+        }
+
+        return {
+          note: 'Validated one canonical line-execution read returns payment allocations, fulfillment linkage state, and timeline evidence in a single deterministic payload.',
+          evidence: {
+            contract: 'commercial-line-execution',
+            bookingOrderId: detail.bookingOrderId,
+            orderStatus: detail.orderStatus,
+            summary: detail.summary,
+            firstLine,
+          },
+        }
+      },
+    },
     {
       name: 'crm-opportunity',
       keywords: ['opportunity', 'deal', 'stage', 'probability', 'close-won', 'close-lost'],
@@ -21364,6 +22428,10 @@ async function runUcNeedContractProbe(
       ],
       note: 'Validated the generic action/event/workflow backbone used by advanced UC needs.',
     }
+
+  if (contract.probe) {
+    return await contract.probe()
+  }
 
   const probes: Array<Record<string, unknown>> = []
   for (const endpoint of contract.endpoints) {
@@ -30271,62 +31339,57 @@ async function runPersonaScenarioValidationStep(
         },
         acceptStatuses: [201],
       })).payload)
-      const eventProduct = getApiData<{ id: string }>((await requestJson(`/api/v1/bizes/${ctx.bizId}/service-products`, {
-        method: 'POST',
-        cookie: ctx.owner.cookie,
-        body: {
-          name: 'Wedding Package',
-          slug: `wedding-${randomSuffix(6)}`,
-          kind: 'hybrid',
-          durationMode: 'fixed',
-          defaultDurationMinutes: 240,
-          basePriceAmountMinorUnits: 1500000,
-          currency: 'USD',
-          status: 'active',
-          isPublished: true,
-        },
-        acceptStatuses: [201],
-      })).payload)
-      const primaryGroup = getApiData<{ id: string }>((await requestJson(`/api/v1/bizes/${ctx.bizId}/service-products/${eventProduct.id}/requirement-groups`, {
-        method: 'POST',
-        cookie: ctx.owner.cookie,
-        body: {
-          name: 'Primary Venue Requirement',
-          slug: `primary-venue-${randomSuffix(6)}`,
-          targetResourceType: 'venue',
-          requirementMode: 'required',
-          minQuantity: 1,
-        },
-        acceptStatuses: [201],
-      })).payload)
-      const backupGroup = getApiData<{ id: string }>((await requestJson(`/api/v1/bizes/${ctx.bizId}/service-products/${eventProduct.id}/requirement-groups`, {
-        method: 'POST',
-        cookie: ctx.owner.cookie,
-        body: {
-          name: 'Backup Venue Requirement',
-          slug: `backup-venue-${randomSuffix(6)}`,
-          targetResourceType: 'venue',
-          requirementMode: 'optional',
-          minQuantity: 1,
-        },
-        acceptStatuses: [201],
-      })).payload)
-      await requestJson(`/api/v1/bizes/${ctx.bizId}/service-products/${eventProduct.id}/requirement-groups/${primaryGroup.id}/selectors`, {
-        method: 'POST',
-        cookie: ctx.owner.cookie,
-        body: { selectorType: 'resource', resourceId: primaryVenue.id, resourceType: 'venue' },
-        acceptStatuses: [201],
+      const eventOffer = await createIsolatedOfferVersion(ctx, {
+        serviceGroupName: 'Event Packages',
+        serviceGroupSlugPrefix: 'event-packages',
+        offerName: 'Wedding Package',
+        offerSlugPrefix: 'wedding',
+        offerPublished: true,
+        offerStatus: 'active',
+        versionStatus: 'published',
+        defaultDurationMin: 240,
+        basePriceMinor: 1500000,
+        currency: 'USD',
       })
-      await requestJson(`/api/v1/bizes/${ctx.bizId}/service-products/${eventProduct.id}/requirement-groups/${backupGroup.id}/selectors`, {
-        method: 'POST',
-        cookie: ctx.owner.cookie,
-        body: { selectorType: 'resource', resourceId: backupVenue.id, resourceType: 'venue' },
-        acceptStatuses: [201],
+      const primaryGroup = await createOfferComponentFixture(ctx, {
+        offerId: eventOffer.offerId,
+        offerVersionId: eventOffer.offerVersionId,
+        name: 'Primary Venue Requirement',
+        slugPrefix: 'primary-venue',
+        targetType: 'venue',
+        mode: 'required',
+        minQuantity: 1,
+      })
+      const backupGroup = await createOfferComponentFixture(ctx, {
+        offerId: eventOffer.offerId,
+        offerVersionId: eventOffer.offerVersionId,
+        name: 'Backup Venue Requirement',
+        slugPrefix: 'backup-venue',
+        targetType: 'venue',
+        mode: 'optional',
+        minQuantity: 1,
+      })
+      await createOfferComponentSelectorFixture(ctx, {
+        offerId: eventOffer.offerId,
+        offerVersionId: eventOffer.offerVersionId,
+        componentId: primaryGroup.id,
+        selectorType: 'resource',
+        resourceId: primaryVenue.id,
+        resourceType: 'venue',
+      })
+      await createOfferComponentSelectorFixture(ctx, {
+        offerId: eventOffer.offerId,
+        offerVersionId: eventOffer.offerVersionId,
+        componentId: backupGroup.id,
+        selectorType: 'resource',
+        resourceId: backupVenue.id,
+        resourceType: 'venue',
       })
       fixtureStore.uc25Fixture = {
         quoteFixture,
         installmentFixture,
-        eventProductId: eventProduct.id,
+        eventOfferId: eventOffer.offerId,
+        eventOfferVersionId: eventOffer.offerVersionId,
         primaryGroupId: primaryGroup.id,
         backupGroupId: backupGroup.id,
         primaryVenueResourceId: primaryVenue.id,
@@ -30337,15 +31400,15 @@ async function runPersonaScenarioValidationStep(
     }
 
     const fixture = fixtureStore.uc25Fixture
-    const groups = getApiData<Array<Record<string, any>>>((await requestJson(`/api/v1/bizes/${ctx.bizId}/service-products/${fixture.eventProductId}/requirement-groups`, {
+    const groups = getApiData<Array<Record<string, any>>>((await requestJson(`/api/v1/bizes/${ctx.bizId}/offers/${fixture.eventOfferId}/versions/${fixture.eventOfferVersionId}/components`, {
       cookie: ctx.owner.cookie,
       acceptStatuses: [200],
     })).payload)
-    const primarySelectors = getApiData<Array<Record<string, any>>>((await requestJson(`/api/v1/bizes/${ctx.bizId}/service-products/${fixture.eventProductId}/requirement-groups/${fixture.primaryGroupId}/selectors`, {
+    const primarySelectors = getApiData<Array<Record<string, any>>>((await requestJson(`/api/v1/bizes/${ctx.bizId}/offers/${fixture.eventOfferId}/versions/${fixture.eventOfferVersionId}/components/${fixture.primaryGroupId}/selectors`, {
       cookie: ctx.owner.cookie,
       acceptStatuses: [200],
     })).payload)
-    const backupSelectors = getApiData<Array<Record<string, any>>>((await requestJson(`/api/v1/bizes/${ctx.bizId}/service-products/${fixture.eventProductId}/requirement-groups/${fixture.backupGroupId}/selectors`, {
+    const backupSelectors = getApiData<Array<Record<string, any>>>((await requestJson(`/api/v1/bizes/${ctx.bizId}/offers/${fixture.eventOfferId}/versions/${fixture.eventOfferVersionId}/components/${fixture.backupGroupId}/selectors`, {
       cookie: ctx.owner.cookie,
       acceptStatuses: [200],
     })).payload)
@@ -30354,7 +31417,7 @@ async function runPersonaScenarioValidationStep(
       if (!groups.some((row) => row.id === fixture.primaryGroupId)) {
         blockStep(step.stepKey, 'Multi-resource event requirement groups are missing.', { fixture, groups })
       }
-      return { note: 'Validated one event product can express multiple required resource groups for multi-resource bookings.', evidence: { fixture, groups } }
+      return { note: 'Validated one event offer version can express multiple required resource groups for multi-resource bookings.', evidence: { fixture, groups } }
     }
     if (instruction.includes('all must be available same time')) {
       if (!primarySelectors.length) {
@@ -30375,7 +31438,7 @@ async function runPersonaScenarioValidationStep(
       return { note: 'Validated partial-deposit payment schedules can be represented using installment plans/items.', evidence: { fixture: fixture.installmentFixture } }
     }
     if (instruction.includes('contingency planning (backup venues)')) {
-      if (!backupSelectors.length || !groups.some((row) => row.id === fixture.backupGroupId && row.requirementMode === 'optional')) {
+      if (!backupSelectors.length || !groups.some((row) => row.id === fixture.backupGroupId && row.mode === 'optional')) {
         blockStep(step.stepKey, 'Backup resource contingency is missing from requirement groups/selectors.', { fixture, groups, backupSelectors })
       }
       return { note: 'Validated contingency/backup resources are modeled as optional requirement groups with explicit selectors.', evidence: { fixture, backupSelectors } }
@@ -34582,40 +35645,10 @@ async function runPersonaScenarioValidationStep(
       blockStep(step.stepKey, 'No visible slot exists to validate emergency blocking.')
     }
 
-    const bizResponse = await requestJson<{ success: true; data: { metadata?: Record<string, unknown> } }>(
-      `/api/v1/bizes/${ctx.bizId}`,
-      { cookie: ctx.owner.cookie, acceptStatuses: [200] },
-    )
-    const biz = getApiData<{ metadata?: Record<string, unknown> }>(bizResponse.payload)
-    const metadata = { ...(biz.metadata ?? {}) }
-    const currentAvailability =
-      metadata.availability && typeof metadata.availability === 'object' && !Array.isArray(metadata.availability)
-        ? (metadata.availability as Record<string, unknown>)
-        : {}
-    const currentBlockedWindows = Array.isArray(currentAvailability.blockedWindows)
-      ? [...currentAvailability.blockedWindows]
-      : []
-
-    await requestJson(`/api/v1/bizes/${ctx.bizId}`, {
-      method: 'PATCH',
-      cookie: ctx.owner.cookie,
-      body: {
-        metadata: {
-          ...metadata,
-          availability: {
-            ...currentAvailability,
-            blockedWindows: [
-              ...currentBlockedWindows,
-              {
-                startAt: targetSlot.startAt,
-                endAt: targetSlot.endAt,
-                reason: 'emergency_hold',
-              },
-            ],
-          },
-        },
-      },
-      acceptStatuses: [200],
+    await addOfferVersionBlockedWindow(ctx, {
+      startAt: targetSlot.startAt,
+      endAt: targetSlot.endAt,
+      name: 'Emergency Hold',
     })
 
     const afterResponse = await requestJson<{
@@ -35778,6 +36811,718 @@ async function runPersonaScenarioValidationStep(
     }
   }
 
+  if (
+    instruction.includes('hook bindings can target checkout.pricing.before_commit with deterministic priority order') ||
+    instruction.includes('internal handler can add a 10% api fee line that appears like any native checkout line') ||
+    instruction.includes('repricing endpoint applies hook mutations idempotently without duplicate fee lines') ||
+    instruction.includes('generated fee lines retain source references for extension binding and mutation key') ||
+    instruction.includes('automation hook run records capture input/output snapshots, status, and duration') ||
+    instruction.includes('automation hook binding can emit workflow/review signals when checkout risk thresholds are exceeded') ||
+    instruction.includes('signal materialization creates review queue items and linked workflow instances deterministically') ||
+    instruction.includes('hook run records are queryable by hook point, target entity, and status for forensic replay') ||
+    instruction.includes('workflow linkage from hook run to queue/workflow artifacts is preserved in metadata') ||
+    instruction.includes('bindings can be managed through api (create/list/patch) with delivery-mode shape validation') ||
+    instruction.includes('repricing flow returns created review/workflow artifacts for immediate operator visibility')
+  ) {
+    const fixtureStore = ctx as RunContext & { uc317HookAutomationFixture?: Record<string, any> }
+    if (!fixtureStore.uc317HookAutomationFixture) {
+      const session = getApiData<{ id: string }>((await requestJson(`/api/v1/bizes/${ctx.bizId}/checkout-sessions`, {
+        method: 'POST',
+        cookie: ctx.owner.cookie,
+        body: {
+          status: 'active',
+          channel: 'web',
+          ownerUserId: ctx.owner.userId,
+          currency: 'USD',
+          subtotalMinor: 10000,
+          taxMinor: 0,
+          feeMinor: 0,
+          discountMinor: 0,
+          totalMinor: 10000,
+          metadata: { source: 'rerun-sagas-uc317' },
+        },
+        acceptStatuses: [201],
+      })).payload)
+
+      await requestJson(`/api/v1/bizes/${ctx.bizId}/checkout-sessions/${session.id}/items`, {
+        method: 'POST',
+        cookie: ctx.owner.cookie,
+        body: {
+          itemType: 'custom_fee',
+          displayName: 'Base Service Line',
+          quantity: 1,
+          unitPriceMinor: 10000,
+          lineSubtotalMinor: 10000,
+          taxMinor: 0,
+          feeMinor: 0,
+          discountMinor: 0,
+          totalMinor: 10000,
+          currency: 'USD',
+          metadata: { source: 'rerun-sagas-uc317' },
+        },
+        acceptStatuses: [201],
+      })
+
+      const feeBinding = getApiData<{ id: string; priority: number; hookPoint: string; name: string }>((await requestJson(`/api/v1/bizes/${ctx.bizId}/automation-hook-bindings`, {
+        method: 'POST',
+        cookie: ctx.owner.cookie,
+        body: {
+          name: `API Fee Hook ${randomSuffix(4)}`,
+          status: 'active',
+          hookPoint: 'checkout.pricing.before_commit',
+          priority: 10,
+          deliveryMode: 'internal_handler',
+          internalHandlerKey: 'pricing.api_fee_percent',
+          timeoutMs: 5000,
+          failureMode: 'fail_open',
+          workflowKey: null,
+          configuration: {
+            percent: 10,
+            sourceKey: 'api_fee_10',
+            label: 'API Fee (10%)',
+          },
+          metadata: { source: 'rerun-sagas-uc317' },
+        },
+        acceptStatuses: [201],
+      })).payload)
+
+      const riskBinding = getApiData<{ id: string; priority: number; hookPoint: string; name: string }>((await requestJson(`/api/v1/bizes/${ctx.bizId}/automation-hook-bindings`, {
+        method: 'POST',
+        cookie: ctx.owner.cookie,
+        body: {
+          name: `Risk Threshold Hook ${randomSuffix(4)}`,
+          status: 'active',
+          hookPoint: 'checkout.pricing.before_commit',
+          priority: 20,
+          deliveryMode: 'internal_handler',
+          internalHandlerKey: 'workflow.risk_threshold',
+          timeoutMs: 5000,
+          failureMode: 'fail_open',
+          workflowKey: 'checkout_risk_review_v1',
+          configuration: {
+            thresholdMinor: 5000,
+            queueSlug: `risk-review-${randomSuffix(4)}`,
+            queueName: 'Checkout Risk Review',
+            priority: 25,
+            riskScore: 80,
+            reason: 'High value checkout requires review.',
+          },
+          metadata: { source: 'rerun-sagas-uc318' },
+        },
+        acceptStatuses: [201],
+      })).payload)
+
+      const listBeforePatch = getApiData<Array<Record<string, any>>>((await requestJson(`/api/v1/bizes/${ctx.bizId}/automation-hook-bindings?hookPoint=checkout.pricing.before_commit`, {
+        cookie: ctx.owner.cookie,
+        acceptStatuses: [200],
+      })).payload)
+
+      const idempotencyKey = `uc317-${randomSuffix(10)}`
+      const firstReprice = getApiData<Record<string, any>>((await requestJson(`/api/v1/bizes/${ctx.bizId}/checkout-sessions/${session.id}/reprice`, {
+        method: 'POST',
+        cookie: ctx.owner.cookie,
+        body: { idempotencyKey },
+        acceptStatuses: [200],
+      })).payload)
+      const secondReprice = getApiData<Record<string, any>>((await requestJson(`/api/v1/bizes/${ctx.bizId}/checkout-sessions/${session.id}/reprice`, {
+        method: 'POST',
+        cookie: ctx.owner.cookie,
+        body: { idempotencyKey },
+        acceptStatuses: [200],
+      })).payload)
+
+      const runRows = getApiData<Array<Record<string, any>>>((await requestJson(`/api/v1/bizes/${ctx.bizId}/automation-hook-runs?hookPoint=checkout.pricing.before_commit&targetType=checkout_session&targetRefId=${session.id}`, {
+        cookie: ctx.owner.cookie,
+        acceptStatuses: [200],
+      })).payload)
+
+      const invalidPatch = await requestJson(`/api/v1/bizes/${ctx.bizId}/automation-hook-bindings/${feeBinding.id}`, {
+        method: 'PATCH',
+        cookie: ctx.owner.cookie,
+        raw: true,
+        body: { deliveryMode: 'webhook', webhookUrl: null },
+        acceptStatuses: [400],
+      })
+
+      const patchedRiskBinding = getApiData<Record<string, any>>((await requestJson(`/api/v1/bizes/${ctx.bizId}/automation-hook-bindings/${riskBinding.id}`, {
+        method: 'PATCH',
+        cookie: ctx.owner.cookie,
+        body: {
+          name: `${riskBinding.name} Updated`,
+          priority: 15,
+        },
+        acceptStatuses: [200],
+      })).payload)
+
+      const reviewItemId = firstReprice.createdReviewItems?.[0]?.id as string | undefined
+      const workflowInstanceId = firstReprice.createdWorkflowInstances?.[0]?.id as string | undefined
+      const reviewItem = reviewItemId
+        ? getApiData<Record<string, any>>((await requestJson(`/api/v1/bizes/${ctx.bizId}/review-queue-items/${reviewItemId}`, {
+            cookie: ctx.owner.cookie,
+            acceptStatuses: [200],
+          })).payload)
+        : null
+      const workflowDetail = workflowInstanceId
+        ? getApiData<{ workflow: Record<string, any>; steps: Array<Record<string, any>> }>((await requestJson(`/api/v1/bizes/${ctx.bizId}/workflows/${workflowInstanceId}`, {
+            cookie: ctx.owner.cookie,
+            acceptStatuses: [200],
+          })).payload)
+        : null
+
+      fixtureStore.uc317HookAutomationFixture = {
+        sessionId: session.id,
+        idempotencyKey,
+        feeBinding,
+        riskBinding,
+        listBeforePatch,
+        firstReprice,
+        secondReprice,
+        runRows,
+        invalidPatchStatus: invalidPatch.status,
+        invalidPatchPayload: invalidPatch.payload,
+        patchedRiskBinding,
+        reviewItem,
+        workflowDetail,
+      }
+    }
+
+    const fixture = fixtureStore.uc317HookAutomationFixture
+    const firstItems = Array.isArray(fixture.firstReprice?.items) ? fixture.firstReprice.items : []
+    const secondItems = Array.isArray(fixture.secondReprice?.items) ? fixture.secondReprice.items : []
+    const feeLineFirst = firstItems.find((row: Record<string, any>) =>
+      row.sourceKind === 'extension' &&
+      row.sourceRefId === fixture.feeBinding.id &&
+      row.sourceKey === 'api_fee_10',
+    )
+    const feeLinesSecond = secondItems.filter((row: Record<string, any>) =>
+      row.sourceKind === 'extension' &&
+      row.sourceRefId === fixture.feeBinding.id &&
+      row.sourceKey === 'api_fee_10',
+    )
+    const firstRunOrder = Array.isArray(fixture.firstReprice?.hookRuns)
+      ? fixture.firstReprice.hookRuns.map((row: Record<string, any>) => row.automationHookBindingId)
+      : []
+
+    if (instruction.includes('hook bindings can target checkout.pricing.before_commit with deterministic priority order')) {
+      const ordered = fixture.listBeforePatch
+        .filter((row: Record<string, any>) => row.id === fixture.feeBinding.id || row.id === fixture.riskBinding.id)
+        .map((row: Record<string, any>) => row.id)
+      if (
+        fixture.feeBinding.hookPoint !== 'checkout.pricing.before_commit' ||
+        fixture.riskBinding.hookPoint !== 'checkout.pricing.before_commit' ||
+        ordered[0] !== fixture.feeBinding.id ||
+        firstRunOrder[0] !== fixture.feeBinding.id
+      ) {
+        blockStep(step.stepKey, 'Checkout pricing hooks were not ordered deterministically by binding priority.', fixture)
+      }
+      return {
+        note: 'Validated checkout.pricing.before_commit bindings execute in deterministic priority order.',
+        evidence: {
+          feeBinding: fixture.feeBinding,
+          riskBinding: fixture.riskBinding,
+          orderedBindings: ordered,
+          firstRunOrder,
+        },
+      }
+    }
+
+    if (instruction.includes('internal handler can add a 10% api fee line that appears like any native checkout line')) {
+      if (!feeLineFirst || Number(feeLineFirst.feeMinor) !== 1000 || !String(feeLineFirst.displayName ?? '').toLowerCase().includes('api fee')) {
+        blockStep(step.stepKey, '10% API fee line was not materialized as a normal checkout line item.', { fixture, feeLineFirst })
+      }
+      return {
+        note: 'Validated pre-commit pricing hook can inject a 10% API fee line into checkout items.',
+        evidence: feeLineFirst,
+      }
+    }
+
+    if (instruction.includes('repricing endpoint applies hook mutations idempotently without duplicate fee lines')) {
+      if (feeLinesSecond.length !== 1) {
+        blockStep(step.stepKey, 'Repeated repricing produced duplicate extension fee lines.', {
+          feeLinesSecond,
+          secondItems,
+        })
+      }
+      return {
+        note: 'Validated repricing remains idempotent by upserting one stable extension fee line.',
+        evidence: {
+          idempotencyKey: fixture.idempotencyKey,
+          feeLineCount: feeLinesSecond.length,
+        },
+      }
+    }
+
+    if (instruction.includes('generated fee lines retain source references for extension binding and mutation key')) {
+      if (!feeLineFirst || feeLineFirst.sourceKind !== 'extension' || !feeLineFirst.sourceRefId || !feeLineFirst.sourceKey) {
+        blockStep(step.stepKey, 'Extension-generated fee line is missing source lineage fields.', { feeLineFirst })
+      }
+      return {
+        note: 'Validated generated pricing lines preserve source kind, source ref, and mutation key lineage.',
+        evidence: feeLineFirst,
+      }
+    }
+
+    if (instruction.includes('automation hook run records capture input/output snapshots, status, and duration')) {
+      const matchedRuns = fixture.runRows.filter((row: Record<string, any>) =>
+        row.automationHookBindingId === fixture.feeBinding.id || row.automationHookBindingId === fixture.riskBinding.id,
+      )
+      const hasSnapshots = matchedRuns.every((row: Record<string, any>) =>
+        row.inputPayload && row.outputPayload && typeof row.durationMs === 'number' && row.status,
+      )
+      if (!hasSnapshots || matchedRuns.length < 2) {
+        blockStep(step.stepKey, 'Automation hook run records are missing deterministic snapshot/status/duration evidence.', {
+          matchedRuns,
+        })
+      }
+      return {
+        note: 'Validated automation hook run rows persist input/output snapshots, status, and duration for each execution.',
+        evidence: matchedRuns,
+      }
+    }
+
+    if (instruction.includes('automation hook binding can emit workflow/review signals when checkout risk thresholds are exceeded')) {
+      const createdReview = Array.isArray(fixture.firstReprice?.createdReviewItems)
+        ? fixture.firstReprice.createdReviewItems
+        : []
+      const createdWorkflows = Array.isArray(fixture.firstReprice?.createdWorkflowInstances)
+        ? fixture.firstReprice.createdWorkflowInstances
+        : []
+      if (createdReview.length < 1 || createdWorkflows.length < 1) {
+        blockStep(step.stepKey, 'Risk-threshold hook did not emit review/workflow signals.', {
+          createdReview,
+          createdWorkflows,
+        })
+      }
+      return {
+        note: 'Validated risk-threshold hook emits review and workflow artifacts when checkout amount breaches threshold.',
+        evidence: {
+          createdReview,
+          createdWorkflows,
+        },
+      }
+    }
+
+    if (instruction.includes('signal materialization creates review queue items and linked workflow instances deterministically')) {
+      const workflow = fixture.workflowDetail?.workflow
+      if (!fixture.reviewItem?.id || !workflow?.id || workflow.reviewQueueItemId !== fixture.reviewItem.id || workflow.targetRefId !== fixture.sessionId) {
+        blockStep(step.stepKey, 'Review item and workflow instance were not deterministically linked.', {
+          reviewItem: fixture.reviewItem,
+          workflow,
+        })
+      }
+      return {
+        note: 'Validated hook signals deterministically materialize into linked review queue and workflow records.',
+        evidence: {
+          reviewItem: fixture.reviewItem,
+          workflow,
+        },
+      }
+    }
+
+    if (instruction.includes('hook run records are queryable by hook point, target entity, and status for forensic replay')) {
+      const hasTargetRuns = fixture.runRows.some((row: Record<string, any>) =>
+        row.hookPoint === 'checkout.pricing.before_commit' &&
+        row.targetType === 'checkout_session' &&
+        row.targetRefId === fixture.sessionId,
+      )
+      if (!hasTargetRuns) {
+        blockStep(step.stepKey, 'Hook run query did not return target-scoped forensic records.', fixture.runRows)
+      }
+      return {
+        note: 'Validated hook runs are queryable by hook point and target checkout entity for replay/debug.',
+        evidence: fixture.runRows,
+      }
+    }
+
+    if (instruction.includes('workflow linkage from hook run to queue/workflow artifacts is preserved in metadata')) {
+      const reviewMetadata = isRecord(fixture.reviewItem?.metadata) ? fixture.reviewItem.metadata : null
+      const workflowInput = isRecord(fixture.workflowDetail?.workflow?.inputPayload)
+        ? fixture.workflowDetail.workflow.inputPayload
+        : null
+      if (!reviewMetadata?.hookRunId || !workflowInput?.hookRunId || reviewMetadata.hookRunId !== workflowInput.hookRunId) {
+        blockStep(step.stepKey, 'Hook-run linkage metadata was not preserved across review/workflow artifacts.', {
+          reviewMetadata,
+          workflowInput,
+        })
+      }
+      return {
+        note: 'Validated hook-run metadata linkage is preserved across review queue and workflow artifacts.',
+        evidence: {
+          reviewMetadata,
+          workflowInput,
+        },
+      }
+    }
+
+    if (instruction.includes('bindings can be managed through api (create/list/patch) with delivery-mode shape validation')) {
+      if (
+        fixture.invalidPatchStatus !== 400 ||
+        !String(fixture.patchedRiskBinding?.name ?? '').includes('Updated') ||
+        Number(fixture.patchedRiskBinding?.priority ?? 0) !== 15
+      ) {
+        blockStep(step.stepKey, 'Automation hook binding management APIs did not enforce shape validation or patch behavior.', {
+          invalidPatchStatus: fixture.invalidPatchStatus,
+          patchedRiskBinding: fixture.patchedRiskBinding,
+        })
+      }
+      return {
+        note: 'Validated automation hook bindings support list/patch management and reject invalid delivery-mode shapes.',
+        evidence: {
+          invalidPatchStatus: fixture.invalidPatchStatus,
+          patchedRiskBinding: fixture.patchedRiskBinding,
+        },
+      }
+    }
+
+    if (instruction.includes('repricing flow returns created review/workflow artifacts for immediate operator visibility')) {
+      if (
+        !Array.isArray(fixture.firstReprice?.createdReviewItems) ||
+        fixture.firstReprice.createdReviewItems.length < 1 ||
+        !Array.isArray(fixture.firstReprice?.createdWorkflowInstances) ||
+        fixture.firstReprice.createdWorkflowInstances.length < 1
+      ) {
+        blockStep(step.stepKey, 'Repricing response did not include created review/workflow artifacts.', fixture.firstReprice)
+      }
+      return {
+        note: 'Validated repricing API returns created review/workflow artifacts inline for immediate operator visibility.',
+        evidence: {
+          createdReviewItems: fixture.firstReprice.createdReviewItems,
+          createdWorkflowInstances: fixture.firstReprice.createdWorkflowInstances,
+        },
+      }
+    }
+  }
+
+  if (
+    instruction.includes('automation hook catalog exposes supported internal handlers and discovered hook points') ||
+    instruction.includes('one generic execute endpoint can run hook bindings for any targettype/targetrefid pair') ||
+    instruction.includes('binding filters (targettype/targetref scoping) prevent cross-domain drift') ||
+    instruction.includes('idempotency keys guarantee replay-safe hook execution for repeated calls') ||
+    instruction.includes('workflow/review signal materialization is consistent regardless of source domain')
+  ) {
+    const fixtureStore = ctx as RunContext & { uc319AutomationRuntimeFixture?: Record<string, any> }
+    if (!fixtureStore.uc319AutomationRuntimeFixture) {
+      const hookPoint = `lifecycle.generic.${randomSuffix(6)}`
+      const bookingBinding = getApiData<{ id: string }>((await requestJson(`/api/v1/bizes/${ctx.bizId}/automation-hook-bindings`, {
+        method: 'POST',
+        cookie: ctx.owner.cookie,
+        body: {
+          name: `Generic Booking Hook ${randomSuffix(4)}`,
+          status: 'active',
+          hookPoint,
+          priority: 10,
+          deliveryMode: 'internal_handler',
+          internalHandlerKey: 'workflow.enqueue_review',
+          failureMode: 'fail_open',
+          configuration: {
+            queueSlug: `booking-review-${randomSuffix(4)}`,
+            queueName: 'Booking Lifecycle Review',
+            workflowKey: 'booking_lifecycle_review_v1',
+            priority: 20,
+            riskScore: 55,
+          },
+          filter: {
+            targetType: 'booking_order',
+            targetRefPrefix: 'booking_order_',
+          },
+        },
+        acceptStatuses: [201],
+      })).payload)
+      const fulfillmentBinding = getApiData<{ id: string }>((await requestJson(`/api/v1/bizes/${ctx.bizId}/automation-hook-bindings`, {
+        method: 'POST',
+        cookie: ctx.owner.cookie,
+        body: {
+          name: `Generic Fulfillment Hook ${randomSuffix(4)}`,
+          status: 'active',
+          hookPoint,
+          priority: 20,
+          deliveryMode: 'internal_handler',
+          internalHandlerKey: 'workflow.enqueue_review',
+          failureMode: 'fail_open',
+          configuration: {
+            queueSlug: `fulfillment-review-${randomSuffix(4)}`,
+            queueName: 'Fulfillment Lifecycle Review',
+            workflowKey: 'fulfillment_lifecycle_review_v1',
+            priority: 30,
+            riskScore: 60,
+          },
+          filter: {
+            targetType: 'fulfillment_unit',
+            targetRefPrefix: 'fulfillment_unit_',
+          },
+        },
+        acceptStatuses: [201],
+      })).payload)
+
+      const catalog = getApiData<{ hookPoints: string[]; internalHandlers: Array<{ handlerKey: string }> }>((await requestJson(`/api/v1/bizes/${ctx.bizId}/automation-hook-catalog`, {
+        cookie: ctx.owner.cookie,
+        acceptStatuses: [200],
+      })).payload)
+
+      const bookingTargetRefId = `booking_order_${randomSuffix(12)}`
+      const bookingIdempotencyKey = `uc319-booking-${randomSuffix(8)}`
+      const bookingExecute = getApiData<Record<string, any>>((await requestJson(`/api/v1/bizes/${ctx.bizId}/automation-hooks/execute`, {
+        method: 'POST',
+        cookie: ctx.owner.cookie,
+        body: {
+          hookPoint,
+          targetType: 'booking_order',
+          targetRefId: bookingTargetRefId,
+          idempotencyKey: bookingIdempotencyKey,
+          inputPayload: {
+            totalMinor: 25000,
+            source: 'uc-319-generic-runtime',
+          },
+        },
+        acceptStatuses: [200],
+      })).payload)
+      const bookingReplay = getApiData<Record<string, any>>((await requestJson(`/api/v1/bizes/${ctx.bizId}/automation-hooks/execute`, {
+        method: 'POST',
+        cookie: ctx.owner.cookie,
+        body: {
+          hookPoint,
+          targetType: 'booking_order',
+          targetRefId: bookingTargetRefId,
+          idempotencyKey: bookingIdempotencyKey,
+          inputPayload: {
+            totalMinor: 25000,
+            source: 'uc-319-generic-runtime',
+          },
+        },
+        acceptStatuses: [200],
+      })).payload)
+
+      const fulfillmentTargetRefId = `fulfillment_unit_${randomSuffix(12)}`
+      const fulfillmentExecute = getApiData<Record<string, any>>((await requestJson(`/api/v1/bizes/${ctx.bizId}/automation-hooks/execute`, {
+        method: 'POST',
+        cookie: ctx.owner.cookie,
+        body: {
+          hookPoint,
+          targetType: 'fulfillment_unit',
+          targetRefId: fulfillmentTargetRefId,
+          idempotencyKey: `uc319-fulfillment-${randomSuffix(8)}`,
+          inputPayload: {
+            totalMinor: 9000,
+            source: 'uc-319-generic-runtime',
+          },
+        },
+        acceptStatuses: [200],
+      })).payload)
+
+      const crossDomainExecute = getApiData<Record<string, any>>((await requestJson(`/api/v1/bizes/${ctx.bizId}/automation-hooks/execute`, {
+        method: 'POST',
+        cookie: ctx.owner.cookie,
+        body: {
+          hookPoint,
+          targetType: 'resource',
+          targetRefId: `resource_${randomSuffix(10)}`,
+          idempotencyKey: `uc319-resource-${randomSuffix(8)}`,
+          inputPayload: {
+            totalMinor: 1234,
+          },
+        },
+        acceptStatuses: [200],
+      })).payload)
+
+      const bookingRuns = getApiData<Array<Record<string, any>>>((await requestJson(`/api/v1/bizes/${ctx.bizId}/automation-hook-runs?hookPoint=${encodeURIComponent(hookPoint)}&targetType=booking_order&targetRefId=${bookingTargetRefId}`, {
+        cookie: ctx.owner.cookie,
+        acceptStatuses: [200],
+      })).payload)
+      const fulfillmentRuns = getApiData<Array<Record<string, any>>>((await requestJson(`/api/v1/bizes/${ctx.bizId}/automation-hook-runs?hookPoint=${encodeURIComponent(hookPoint)}&targetType=fulfillment_unit&targetRefId=${fulfillmentTargetRefId}`, {
+        cookie: ctx.owner.cookie,
+        acceptStatuses: [200],
+      })).payload)
+
+      fixtureStore.uc319AutomationRuntimeFixture = {
+        hookPoint,
+        bookingBinding,
+        fulfillmentBinding,
+        catalog,
+        bookingExecute,
+        bookingReplay,
+        fulfillmentExecute,
+        crossDomainExecute,
+        bookingRuns,
+        fulfillmentRuns,
+      }
+    }
+
+    const fixture = fixtureStore.uc319AutomationRuntimeFixture as Record<string, any>
+
+    if (instruction.includes('automation hook catalog exposes supported internal handlers and discovered hook points')) {
+      const handlerKeys = new Set((fixture.catalog?.internalHandlers ?? []).map((row: any) => row.handlerKey))
+      if (!fixture.catalog?.hookPoints?.includes(fixture.hookPoint) || !handlerKeys.has('workflow.enqueue_review')) {
+        blockStep(step.stepKey, 'Automation hook catalog did not expose discovered hook points and internal handler registry.', fixture.catalog)
+      }
+      return {
+        note: 'Validated automation hook catalog exposes discovered hook points and supported internal handlers.',
+        evidence: fixture.catalog,
+      }
+    }
+
+    if (instruction.includes('one generic execute endpoint can run hook bindings for any targettype/targetrefid pair')) {
+      if (
+        (fixture.bookingExecute?.createdReviewItems?.length ?? 0) < 1 ||
+        (fixture.bookingExecute?.createdWorkflowInstances?.length ?? 0) < 1 ||
+        (fixture.fulfillmentExecute?.createdReviewItems?.length ?? 0) < 1 ||
+        (fixture.fulfillmentExecute?.createdWorkflowInstances?.length ?? 0) < 1
+      ) {
+        blockStep(step.stepKey, 'Generic automation execute endpoint did not materialize workflow/review artifacts across target domains.', {
+          bookingExecute: fixture.bookingExecute,
+          fulfillmentExecute: fixture.fulfillmentExecute,
+        })
+      }
+      return {
+        note: 'Validated one generic automation execute endpoint runs hook bindings for booking and fulfillment targets.',
+        evidence: {
+          bookingExecute: fixture.bookingExecute,
+          fulfillmentExecute: fixture.fulfillmentExecute,
+        },
+      }
+    }
+
+    if (instruction.includes('binding filters (targettype/targetref scoping) prevent cross-domain drift')) {
+      const crossRuns = Array.isArray(fixture.crossDomainExecute?.hookRuns) ? fixture.crossDomainExecute.hookRuns : []
+      const allSkipped = crossRuns.every((row: Record<string, any>) => row.status === 'skipped')
+      if (!allSkipped || (fixture.crossDomainExecute?.createdReviewItems?.length ?? 0) !== 0) {
+        blockStep(step.stepKey, 'Binding filter scoping did not prevent cross-domain execution drift.', {
+          crossDomainExecute: fixture.crossDomainExecute,
+        })
+      }
+      return {
+        note: 'Validated binding target filters skip non-matching target domains deterministically.',
+        evidence: fixture.crossDomainExecute,
+      }
+    }
+
+    if (instruction.includes('idempotency keys guarantee replay-safe hook execution for repeated calls')) {
+      const replayCreated = (fixture.bookingReplay?.createdReviewItems?.length ?? 0) + (fixture.bookingReplay?.createdWorkflowInstances?.length ?? 0)
+      const runIds = (fixture.bookingRuns ?? []).map((row: Record<string, any>) => row.id)
+      const uniqueRunIds = new Set(runIds)
+      if (replayCreated !== 0 || uniqueRunIds.size !== runIds.length) {
+        blockStep(step.stepKey, 'Generic automation execution replay created duplicate artifacts or duplicated run records.', {
+          bookingReplay: fixture.bookingReplay,
+          bookingRuns: fixture.bookingRuns,
+        })
+      }
+      return {
+        note: 'Validated idempotent replay returns existing hook runs without duplicating workflow/review side effects.',
+        evidence: {
+          bookingReplay: fixture.bookingReplay,
+          bookingRuns: fixture.bookingRuns,
+        },
+      }
+    }
+
+    if (instruction.includes('workflow/review signal materialization is consistent regardless of source domain')) {
+      const bookingRunStatuses = new Set((fixture.bookingRuns ?? []).map((row: Record<string, any>) => row.status))
+      const fulfillmentRunStatuses = new Set((fixture.fulfillmentRuns ?? []).map((row: Record<string, any>) => row.status))
+      if (!bookingRunStatuses.has('succeeded') || !fulfillmentRunStatuses.has('succeeded')) {
+        blockStep(step.stepKey, 'Workflow/review materialization did not produce consistent succeeded runs across domains.', {
+          bookingRuns: fixture.bookingRuns,
+          fulfillmentRuns: fixture.fulfillmentRuns,
+        })
+      }
+      return {
+        note: 'Validated workflow/review signal materialization uses one consistent runtime contract across booking and fulfillment targets.',
+        evidence: {
+          bookingRuns: fixture.bookingRuns,
+          fulfillmentRuns: fixture.fulfillmentRuns,
+        },
+      }
+    }
+  }
+
+  if (instruction.includes('fail-closed hook mode blocks commit when a critical pricing hook fails')) {
+    const session = getApiData<{ id: string }>((await requestJson(`/api/v1/bizes/${ctx.bizId}/checkout-sessions`, {
+      method: 'POST',
+      cookie: ctx.owner.cookie,
+      body: {
+        status: 'active',
+        channel: 'web',
+        ownerUserId: ctx.owner.userId,
+        currency: 'USD',
+        subtotalMinor: 5000,
+        totalMinor: 5000,
+      },
+      acceptStatuses: [201],
+    })).payload)
+    await requestJson(`/api/v1/bizes/${ctx.bizId}/checkout-sessions/${session.id}/items`, {
+      method: 'POST',
+      cookie: ctx.owner.cookie,
+      body: {
+        itemType: 'custom_fee',
+        displayName: 'Critical Priced Line',
+        quantity: 1,
+        unitPriceMinor: 5000,
+        lineSubtotalMinor: 5000,
+        taxMinor: 0,
+        feeMinor: 0,
+        discountMinor: 0,
+        totalMinor: 5000,
+        currency: 'USD',
+      },
+      acceptStatuses: [201],
+    })
+    const failingBinding = getApiData<{ id: string }>((await requestJson(`/api/v1/bizes/${ctx.bizId}/automation-hook-bindings`, {
+      method: 'POST',
+      cookie: ctx.owner.cookie,
+      body: {
+        name: `Critical Fail Closed ${randomSuffix(4)}`,
+        status: 'active',
+        hookPoint: 'checkout.pricing.before_commit',
+        priority: 1,
+        deliveryMode: 'internal_handler',
+        internalHandlerKey: 'pricing.handler_does_not_exist',
+        timeoutMs: 5000,
+        failureMode: 'fail_closed',
+        configuration: {},
+      },
+      acceptStatuses: [201],
+    })).payload)
+    const failResponse = await requestJson(`/api/v1/bizes/${ctx.bizId}/checkout-sessions/${session.id}/reprice`, {
+      method: 'POST',
+      cookie: ctx.owner.cookie,
+      raw: true,
+      body: { idempotencyKey: `fail-closed-${randomSuffix(8)}` },
+      acceptStatuses: [409],
+    })
+    const failedRuns = getApiData<Array<Record<string, any>>>((await requestJson(`/api/v1/bizes/${ctx.bizId}/automation-hook-runs?targetType=checkout_session&targetRefId=${session.id}`, {
+      cookie: ctx.owner.cookie,
+      acceptStatuses: [200],
+    })).payload)
+    const sessionDetail = getApiData<{ items: Array<Record<string, any>> }>((await requestJson(`/api/v1/bizes/${ctx.bizId}/checkout-sessions/${session.id}`, {
+      cookie: ctx.owner.cookie,
+      acceptStatuses: [200],
+    })).payload)
+    await requestJson(`/api/v1/bizes/${ctx.bizId}/automation-hook-bindings/${failingBinding.id}`, {
+      method: 'PATCH',
+      cookie: ctx.owner.cookie,
+      body: { status: 'inactive' },
+      acceptStatuses: [200],
+    })
+    const generatedLines = sessionDetail.items.filter((row) => row.sourceKind === 'extension')
+    if (
+      failResponse.status !== 409 ||
+      generatedLines.length > 0 ||
+      failedRuns.some((row) => row.automationHookBindingId === failingBinding.id)
+    ) {
+      blockStep(step.stepKey, 'Fail-closed hook did not block checkout repricing on critical hook failure.', {
+        failStatus: failResponse.status,
+        failedRuns,
+        generatedLines,
+      })
+    }
+    return {
+      note: 'Validated fail-closed mode blocks repricing when a critical hook execution fails.',
+      evidence: {
+        failStatus: failResponse.status,
+        failedRuns,
+        generatedLines,
+      },
+    }
+  }
+
   const deterministicPersonaProbe = await runPersonaScenarioContractProbe(ctx, step, instruction)
   if (deterministicPersonaProbe) return deterministicPersonaProbe
 
@@ -36047,21 +37792,15 @@ async function runStep(ctx: RunContext, step: SagaRunStep): Promise<StepResultPa
     }
 
     case 'owner-configure-hours':
-      await patchBizMetadata(ctx, {
-        availability: {
-          timezone: 'UTC',
-          weekly: {
-            mon: ['09:00-17:00'],
-            tue: ['09:00-17:00'],
-            wed: ['09:00-17:00'],
-            thu: ['09:00-17:00'],
-            fri: ['09:00-17:00'],
-          },
-          leadTimeHours: 24,
-          maxAdvanceDays: 60,
-        },
-      })
-      return { note: 'Hours/lead-time baseline configured on biz metadata.' }
+      for (const dayOfWeek of [1, 2, 3, 4, 5]) {
+        await addOfferVersionWeeklyAvailability(ctx, {
+          dayOfWeek,
+          startTime: '09:00',
+          endTime: '17:00',
+          name: `Business Hours ${dayOfWeek}`,
+        })
+      }
+      return { note: 'Hours/lead-time baseline configured on explicit offer-version calendar bindings.' }
 
     case 'owner-configure-pricing':
       await patchBizMetadata(ctx, {
@@ -36291,6 +38030,495 @@ async function runStep(ctx: RunContext, step: SagaRunStep): Promise<StepResultPa
           entityLinkId: entityLink.id,
           listedStateCount: listedStates.length,
           listedLinkCount: listedLinks.length,
+        },
+      }
+    }
+
+    case 'owner-register-growth-localization': {
+      if (!ctx.bizId) throw new Error('bizId required before growth localization configuration.')
+
+      const resourceResponse = await requestJson<{ success: true; data: { id: string; key: string } }>(
+        `/api/v1/bizes/${ctx.bizId}/growth/localization/resources`,
+        {
+          method: 'POST',
+          cookie: ctx.owner.cookie,
+          body: {
+            key: `hero.tagline.${toSlug(ctx.sagaKey, 24)}`,
+            name: `Hero tagline ${randomSuffix(4)}`,
+            targetType: 'biz',
+            targetRefId: ctx.bizId,
+            fieldKey: 'hero_tagline',
+            defaultLocale: 'en-US',
+            status: 'active',
+            metadata: { source: 'saga-rerun' },
+          },
+          acceptStatuses: [200, 201],
+        },
+      )
+      const resource = getApiData<{ id: string; key: string }>(resourceResponse.payload)
+      ctx.growthLocalizationResourceId = resource.id
+
+      const englishValueResponse = await requestJson<{ success: true; data: { id: string; locale: string; version: number } }>(
+        `/api/v1/bizes/${ctx.bizId}/growth/localization/resources/${resource.id}/values`,
+        {
+          method: 'POST',
+          cookie: ctx.owner.cookie,
+          body: {
+            locale: 'en-US',
+            contentText: 'Start simple. Scale with confidence.',
+            sourceType: 'manual',
+            status: 'active',
+            isCurrent: true,
+            metadata: { source: 'saga-rerun' },
+          },
+          acceptStatuses: [201],
+        },
+      )
+      const englishValue = getApiData<{ id: string; locale: string; version: number }>(englishValueResponse.payload)
+      ctx.growthLocalizationValueId = englishValue.id
+
+      await requestJson<{ success: true; data: { id: string; locale: string; version: number } }>(
+        `/api/v1/bizes/${ctx.bizId}/growth/localization/resources/${resource.id}/values`,
+        {
+          method: 'POST',
+          cookie: ctx.owner.cookie,
+          body: {
+            locale: 'es-ES',
+            contentText: 'Empieza simple. Escala sin fricción.',
+            sourceType: 'manual',
+            status: 'active',
+            isCurrent: true,
+            metadata: { source: 'saga-rerun' },
+          },
+          acceptStatuses: [201],
+        },
+      )
+
+      const resolveResponse = await requestJson<{
+        success: true
+        data: { resolvedLocale: string; fallbackChain: string[]; value: { locale: string; contentText: string | null } }
+      }>(
+        `/api/v1/bizes/${ctx.bizId}/growth/localization/resolve`,
+        {
+          method: 'POST',
+          cookie: ctx.owner.cookie,
+          body: {
+            targetType: 'biz',
+            targetRefId: ctx.bizId,
+            fieldKey: 'hero_tagline',
+            locale: 'es-MX',
+            fallbackLocales: ['es-ES', 'en-US'],
+          },
+          acceptStatuses: [200],
+        },
+      )
+      const resolved = getApiData<{
+        resolvedLocale: string
+        fallbackChain: string[]
+        value: { locale: string; contentText: string | null }
+      }>(resolveResponse.payload)
+      if (resolved.resolvedLocale !== 'es-ES') {
+        blockStep(stepKey, 'Localization fallback did not resolve expected locale.', {
+          expectedResolvedLocale: 'es-ES',
+          actualResolvedLocale: resolved.resolvedLocale,
+          fallbackChain: resolved.fallbackChain,
+        })
+      }
+
+      return {
+        note: 'Growth localization resources, values, and fallback resolution validated.',
+        evidence: {
+          growthLocalizationResourceId: resource.id,
+          growthLocalizationValueId: englishValue.id,
+          resolvedLocale: resolved.resolvedLocale,
+          resolvedContent: resolved.value.contentText,
+        },
+      }
+    }
+
+    case 'owner-launch-growth-experiment': {
+      if (!ctx.bizId) throw new Error('bizId required before growth experiment setup.')
+
+      const experimentResponse = await requestJson<{ success: true; data: { id: string; key: string } }>(
+        `/api/v1/bizes/${ctx.bizId}/growth/experiments`,
+        {
+          method: 'POST',
+          cookie: ctx.owner.cookie,
+          body: {
+            key: `checkout-flow-${toSlug(ctx.sagaKey, 24)}-${randomSuffix(6)}`,
+            name: `Checkout flow experiment ${randomSuffix(4)}`,
+            status: 'active',
+            hypothesis: 'A simplified checkout layout increases conversion rate.',
+            objectiveType: 'conversion_rate',
+            assignmentUnitType: 'subject',
+            assignmentStrategy: 'weighted_hash',
+            targetType: 'checkout',
+            targetRefId: ctx.bizId,
+            metadata: { source: 'saga-rerun' },
+          },
+          acceptStatuses: [200, 201],
+        },
+      )
+      const experiment = getApiData<{ id: string; key: string }>(experimentResponse.payload)
+      ctx.growthExperimentId = experiment.id
+
+      const controlVariantResponse = await requestJson<{ success: true; data: { id: string; allocationBps: number } }>(
+        `/api/v1/bizes/${ctx.bizId}/growth/experiments/${experiment.id}/variants`,
+        {
+          method: 'POST',
+          cookie: ctx.owner.cookie,
+          body: {
+            variantKey: 'control',
+            name: 'Control',
+            status: 'active',
+            isControl: true,
+            allocationBps: 5000,
+            treatment: {
+              checkoutLayout: 'baseline',
+            },
+            metadata: { source: 'saga-rerun' },
+          },
+          acceptStatuses: [200, 201],
+        },
+      )
+      const controlVariant = getApiData<{ id: string; allocationBps: number }>(controlVariantResponse.payload)
+      ctx.growthExperimentControlVariantId = controlVariant.id
+
+      const treatmentVariantResponse = await requestJson<{ success: true; data: { id: string; allocationBps: number } }>(
+        `/api/v1/bizes/${ctx.bizId}/growth/experiments/${experiment.id}/variants`,
+        {
+          method: 'POST',
+          cookie: ctx.owner.cookie,
+          body: {
+            variantKey: 'treatment_a',
+            name: 'Treatment A',
+            status: 'active',
+            isControl: false,
+            allocationBps: 5000,
+            treatment: {
+              checkoutLayout: 'condensed',
+              includeFeeDisclosureInline: true,
+            },
+            metadata: { source: 'saga-rerun' },
+          },
+          acceptStatuses: [200, 201],
+        },
+      )
+      const treatmentVariant = getApiData<{ id: string; allocationBps: number }>(treatmentVariantResponse.payload)
+      ctx.growthExperimentTreatmentVariantId = treatmentVariant.id
+
+      const listVariantsResponse = await requestJson<{ success: true; data: Array<{ id: string }> }>(
+        `/api/v1/bizes/${ctx.bizId}/growth/experiments/${experiment.id}/variants`,
+        {
+          cookie: ctx.owner.cookie,
+          acceptStatuses: [200],
+        },
+      )
+      const listedVariants = getApiData<Array<{ id: string }>>(listVariantsResponse.payload)
+      const hasControl = listedVariants.some((row) => row.id === controlVariant.id)
+      const hasTreatment = listedVariants.some((row) => row.id === treatmentVariant.id)
+      if (!hasControl || !hasTreatment) {
+        blockStep(stepKey, 'Experiment variants were created but not listed by API.', {
+          experimentId: experiment.id,
+          controlVariantId: controlVariant.id,
+          treatmentVariantId: treatmentVariant.id,
+          listedVariantCount: listedVariants.length,
+        })
+      }
+
+      return {
+        note: 'Growth experiment and control/treatment variants configured.',
+        evidence: {
+          growthExperimentId: experiment.id,
+          controlVariantId: controlVariant.id,
+          treatmentVariantId: treatmentVariant.id,
+          listedVariantCount: listedVariants.length,
+        },
+      }
+    }
+
+    case 'customer-growth-experiment-assignment': {
+      if (!ctx.bizId) throw new Error('bizId required before experiment assignment.')
+      if (!ctx.growthExperimentId) {
+        blockStep(stepKey, 'Growth experiment must be configured before assignment.', {
+          requiredStep: 'owner-launch-growth-experiment',
+        })
+      }
+      if (!ctx.customer1) {
+        ctx.customer1 = await createCustomer(ctx, 'customer1')
+      }
+
+      const assignmentResponse = await requestJson<{
+        success: true
+        data: { id: string; growthExperimentVariantId: string; status: string }
+        meta?: { reused?: boolean }
+      }>(
+        `/api/v1/bizes/${ctx.bizId}/growth/experiments/${ctx.growthExperimentId}/assignments`,
+        {
+          method: 'POST',
+          cookie: ctx.owner.cookie,
+          body: {
+            growthExperimentVariantId: ctx.growthExperimentTreatmentVariantId ?? null,
+            subjectType: 'customer_user',
+            subjectRefId: ctx.customer1.userId,
+            assignmentKey: `cust-${ctx.customer1.userId}`,
+            status: 'exposed',
+            exposedAt: new Date().toISOString(),
+            sourceType: 'api',
+            metadata: { source: 'saga-rerun' },
+          },
+          acceptStatuses: [200, 201],
+        },
+      )
+      const assignment = getApiData<{ id: string; growthExperimentVariantId: string; status: string }>(
+        assignmentResponse.payload,
+      )
+      ctx.growthExperimentAssignmentId = assignment.id
+
+      const listAssignmentsResponse = await requestJson<{
+        success: true
+        data: Array<{ id: string; growthExperimentVariantId: string }>
+      }>(
+        `/api/v1/bizes/${ctx.bizId}/growth/experiments/${ctx.growthExperimentId}/assignments?subjectType=customer_user&subjectRefId=${ctx.customer1.userId}`,
+        {
+          cookie: ctx.owner.cookie,
+          acceptStatuses: [200],
+        },
+      )
+      const listedAssignments = getApiData<Array<{ id: string; growthExperimentVariantId: string }>>(
+        listAssignmentsResponse.payload,
+      )
+      const listed = listedAssignments.some((row) => row.id === assignment.id)
+      if (!listed) {
+        blockStep(stepKey, 'Experiment assignment not visible in list endpoint.', {
+          growthExperimentAssignmentId: assignment.id,
+          listedAssignmentCount: listedAssignments.length,
+        })
+      }
+
+      return {
+        note: 'Experiment assignment/exposure persisted and read back for customer subject.',
+        evidence: {
+          growthExperimentAssignmentId: assignment.id,
+          growthExperimentVariantId: assignment.growthExperimentVariantId,
+          status: assignment.status,
+          listedAssignmentCount: listedAssignments.length,
+        },
+      }
+    }
+
+    case 'owner-run-growth-activation-sync': {
+      if (!ctx.bizId) throw new Error('bizId required before growth activation run.')
+      if (!ctx.growthExperimentId || !ctx.growthExperimentTreatmentVariantId) {
+        blockStep(stepKey, 'Growth experiment variants must exist before activation sync.', {
+          requiredStep: 'owner-launch-growth-experiment',
+        })
+      }
+
+      const activationResponse = await requestJson<{ success: true; data: { id: string; key: string } }>(
+        `/api/v1/bizes/${ctx.bizId}/growth/marketing-activations`,
+        {
+          method: 'POST',
+          cookie: ctx.owner.cookie,
+          body: {
+            key: `meta-retarget-${toSlug(ctx.sagaKey, 24)}-${randomSuffix(6)}`,
+            name: `Meta retarget sync ${randomSuffix(4)}`,
+            status: 'active',
+            provider: 'meta_ads',
+            sourceType: 'experiment_variant',
+            growthExperimentId: ctx.growthExperimentId,
+            growthExperimentVariantId: ctx.growthExperimentTreatmentVariantId,
+            destinationRef: `meta-campaign-${randomSuffix(8)}`,
+            syncMode: 'push',
+            publishPolicy: {
+              mode: 'delta',
+              includeOfflineConversions: true,
+            },
+            metadata: { source: 'saga-rerun' },
+          },
+          acceptStatuses: [200, 201],
+        },
+      )
+      const activation = getApiData<{ id: string; key: string }>(activationResponse.payload)
+      ctx.growthMarketingActivationId = activation.id
+
+      const runResponse = await requestJson<{
+        success: true
+        data: {
+          run: { id: string; status: string; publishedCount: number; syncedCount: number; failedCount: number }
+          items: Array<{ id: string; status: string }>
+        }
+      }>(
+        `/api/v1/bizes/${ctx.bizId}/growth/marketing-activations/${activation.id}/runs`,
+        {
+          method: 'POST',
+          cookie: ctx.owner.cookie,
+          body: {
+            status: 'succeeded',
+            triggerSource: 'manual',
+            publishedCount: 2,
+            syncedCount: 2,
+            failedCount: 0,
+            inputPayload: {
+              source: 'saga-rerun',
+            },
+            outputPayload: {
+              publishedDestination: 'meta_ads',
+            },
+            items: [
+              {
+                itemType: 'audience_member',
+                itemRefId: `segment-member-${randomSuffix(6)}`,
+                status: 'synced',
+              },
+              {
+                itemType: 'conversion',
+                itemRefId: `offline-conversion-${randomSuffix(6)}`,
+                status: 'published',
+              },
+            ],
+            metadata: { source: 'saga-rerun' },
+          },
+          acceptStatuses: [201],
+        },
+      )
+      const runPayload = getApiData<{
+        run: { id: string; status: string; publishedCount: number; syncedCount: number; failedCount: number }
+        items: Array<{ id: string; status: string }>
+      }>(runResponse.payload)
+      ctx.growthMarketingActivationRunId = runPayload.run.id
+
+      const runsResponse = await requestJson<{ success: true; data: Array<{ id: string }> }>(
+        `/api/v1/bizes/${ctx.bizId}/growth/marketing-activations/${activation.id}/runs`,
+        {
+          cookie: ctx.owner.cookie,
+          acceptStatuses: [200],
+        },
+      )
+      const listedRuns = getApiData<Array<{ id: string }>>(runsResponse.payload)
+
+      const itemsResponse = await requestJson<{ success: true; data: Array<{ id: string; status: string }> }>(
+        `/api/v1/bizes/${ctx.bizId}/growth/marketing-activation-runs/${runPayload.run.id}/items`,
+        {
+          cookie: ctx.owner.cookie,
+          acceptStatuses: [200],
+        },
+      )
+      const listedItems = getApiData<Array<{ id: string; status: string }>>(itemsResponse.payload)
+      if (!listedRuns.some((row) => row.id === runPayload.run.id) || listedItems.length < 2) {
+        blockStep(stepKey, 'Growth activation run or run items were not fully queryable.', {
+          growthMarketingActivationId: activation.id,
+          growthMarketingActivationRunId: runPayload.run.id,
+          listedRunCount: listedRuns.length,
+          listedItemCount: listedItems.length,
+        })
+      }
+
+      return {
+        note: 'Growth marketing activation run executed with item-level sync evidence.',
+        evidence: {
+          growthMarketingActivationId: activation.id,
+          growthMarketingActivationRunId: runPayload.run.id,
+          runStatus: runPayload.run.status,
+          listedRunCount: listedRuns.length,
+          listedItemCount: listedItems.length,
+        },
+      }
+    }
+
+    case 'owner-record-growth-conversion-metric': {
+      if (!ctx.bizId) throw new Error('bizId required before growth conversion metric recording.')
+      if (!ctx.growthExperimentId || !ctx.growthExperimentTreatmentVariantId) {
+        blockStep(stepKey, 'Growth experiment context must exist before conversion metric recording.', {
+          requiredStep: 'owner-launch-growth-experiment',
+        })
+      }
+
+      const conversionSubjectRef = `converted-${randomSuffix(8)}`
+      await requestJson<{
+        success: true
+        data: { id: string; status: string }
+      }>(
+        `/api/v1/bizes/${ctx.bizId}/growth/experiments/${ctx.growthExperimentId}/assignments`,
+        {
+          method: 'POST',
+          cookie: ctx.owner.cookie,
+          body: {
+            growthExperimentVariantId: ctx.growthExperimentTreatmentVariantId,
+            subjectType: 'session',
+            subjectRefId: conversionSubjectRef,
+            assignmentKey: conversionSubjectRef,
+            status: 'converted',
+            exposedAt: new Date().toISOString(),
+            convertedAt: new Date().toISOString(),
+            conversionEventKey: 'booking.completed',
+            conversionValueMinor: 12500,
+            currency: 'USD',
+            sourceType: 'api',
+            metadata: { source: 'saga-rerun' },
+          },
+          acceptStatuses: [200, 201],
+        },
+      )
+
+      const measurementResponse = await requestJson<{ success: true; data: { id: string; metricKey: string } }>(
+        `/api/v1/bizes/${ctx.bizId}/growth/experiments/${ctx.growthExperimentId}/measurements`,
+        {
+          method: 'POST',
+          cookie: ctx.owner.cookie,
+          body: {
+            growthExperimentVariantId: ctx.growthExperimentTreatmentVariantId,
+            growthExperimentAssignmentId: ctx.growthExperimentAssignmentId ?? null,
+            metricKey: 'conversion_rate',
+            metricValue: 0.25,
+            metricUnit: 'ratio',
+            sourceType: 'api',
+            payload: {
+              window: '7d',
+            },
+            metadata: { source: 'saga-rerun' },
+          },
+          acceptStatuses: [201],
+        },
+      )
+      const measurement = getApiData<{ id: string; metricKey: string }>(measurementResponse.payload)
+
+      const summaryResponse = await requestJson<{
+        success: true
+        data: {
+          totals: { assignments: number; conversions: number; measurementCount: number; conversionValueMinor: number }
+          perVariant: Array<{
+            variant: { id: string }
+            counts: { conversions: number; conversionValueMinor: number }
+          }>
+        }
+      }>(
+        `/api/v1/bizes/${ctx.bizId}/growth/experiments/${ctx.growthExperimentId}/summary`,
+        {
+          cookie: ctx.owner.cookie,
+          acceptStatuses: [200],
+        },
+      )
+      const summary = getApiData<{
+        totals: { assignments: number; conversions: number; measurementCount: number; conversionValueMinor: number }
+        perVariant: Array<{
+          variant: { id: string }
+          counts: { conversions: number; conversionValueMinor: number }
+        }>
+      }>(summaryResponse.payload)
+
+      if (summary.totals.measurementCount < 1 || summary.totals.conversions < 1) {
+        blockStep(stepKey, 'Growth experiment summary did not reflect conversion evidence.', {
+          totals: summary.totals,
+        })
+      }
+
+      return {
+        note: 'Growth conversion measurement recorded and reflected in experiment summary.',
+        evidence: {
+          growthExperimentMeasurementId: measurement.id,
+          metricKey: measurement.metricKey,
+          totals: summary.totals,
         },
       }
     }
@@ -36800,6 +39028,1148 @@ async function runStep(ctx: RunContext, step: SagaRunStep): Promise<StepResultPa
       }
     }
 
+    // Proactive hole-coverage pack executors (generated by generate-hole-sagas.ts)
+    case 'owner-auth-context': {
+      const auth = getApiData<{ userId: string; authSource: string; role: string | null }>(
+        (
+          await requestJson('/api/v1/auth/me', {
+            cookie: ctx.owner.cookie,
+            acceptStatuses: [200],
+          })
+        ).payload,
+      )
+      return {
+        note: 'Owner auth context validated.',
+        evidence: {
+          userId: auth.userId,
+          authSource: auth.authSource,
+          role: auth.role,
+        },
+      }
+    }
+
+    case 'inventory-owner-create-baseline': {
+      const fixture = await ensureInventoryCoverageFixture(ctx)
+      return {
+        note: 'Inventory baseline fixtures created (supply partner + replenishment run).',
+        evidence: fixture,
+      }
+    }
+
+    case 'inventory-owner-create-procurement-order': {
+      const fixture = await ensureInventoryCoverageFixture(ctx)
+      const created = getApiData<{ id: string; status: string }>(
+        (
+          await requestJson<{ success: true; data: { id: string; status: string } }>(
+            `/api/v1/bizes/${ctx.bizId}/inventory-procurement-orders`,
+            {
+              method: 'POST',
+              cookie: ctx.owner.cookie,
+              body: {
+                supplyPartnerId: fixture.supplyPartnerId,
+                status: 'draft',
+                orderNumber: `PO-${randomSuffix(10).toUpperCase()}`,
+                currency: 'USD',
+                inventoryReplenishmentRunId: fixture.inventoryReplenishmentRunId,
+                orderedTotalMinor: 25000,
+                receivedTotalMinor: 0,
+                invoicedTotalMinor: 0,
+                orderedAt: new Date().toISOString(),
+                notes: 'Coverage procurement order',
+                metadata: {
+                  source: 'rerun-sagas.inventory',
+                  sagaKey: ctx.sagaKey,
+                },
+              },
+              acceptStatuses: [201],
+            },
+          )
+        ).payload,
+      )
+      ctx.inventoryProcurementOrderId = created.id
+      return {
+        note: 'Procurement order created for replenishment lifecycle coverage.',
+        evidence: {
+          supplyPartnerId: fixture.supplyPartnerId,
+          inventoryReplenishmentRunId: fixture.inventoryReplenishmentRunId,
+          inventoryProcurementOrderId: created.id,
+          status: created.status,
+        },
+      }
+    }
+
+    case 'inventory-member-update-procurement-order': {
+      const fixture = await ensureInventoryCoverageFixture(ctx)
+      const member = await ensureCoverageMember(ctx)
+
+      if (!ctx.inventoryProcurementOrderId) {
+        const created = getApiData<{ id: string }>(
+          (
+            await requestJson<{ success: true; data: { id: string } }>(
+              `/api/v1/bizes/${ctx.bizId}/inventory-procurement-orders`,
+              {
+                method: 'POST',
+                cookie: ctx.owner.cookie,
+                body: {
+                  supplyPartnerId: fixture.supplyPartnerId,
+                  status: 'draft',
+                  orderNumber: `PO-${randomSuffix(10).toUpperCase()}`,
+                  currency: 'USD',
+                  inventoryReplenishmentRunId: fixture.inventoryReplenishmentRunId,
+                  orderedTotalMinor: 18000,
+                  receivedTotalMinor: 0,
+                  invoicedTotalMinor: 0,
+                  orderedAt: new Date().toISOString(),
+                },
+                acceptStatuses: [201],
+              },
+            )
+          ).payload,
+        )
+        ctx.inventoryProcurementOrderId = created.id
+      }
+
+      const submittedAt = new Date().toISOString()
+      const updated = getApiData<{ id: string; status: string; submittedAt: string | null }>(
+        (
+          await requestJson<{ success: true; data: { id: string; status: string; submittedAt: string | null } }>(
+            `/api/v1/bizes/${ctx.bizId}/inventory-procurement-orders/${ctx.inventoryProcurementOrderId}`,
+            {
+              method: 'PATCH',
+              cookie: ctx.member?.cookie,
+              body: {
+                status: 'submitted',
+                submittedAt,
+                notes: 'Member submitted procurement order',
+                metadata: {
+                  source: 'rerun-sagas.inventory',
+                  actor: 'biz_member',
+                },
+              },
+              acceptStatuses: [200],
+            },
+          )
+        ).payload,
+      )
+
+      return {
+        note: 'Member updated procurement lifecycle successfully.',
+        evidence: {
+          member,
+          inventoryProcurementOrderId: updated.id,
+          status: updated.status,
+          submittedAt: updated.submittedAt,
+        },
+      }
+    }
+
+    case 'inventory-owner-read-replenishment-state': {
+      const fixture = await ensureInventoryCoverageFixture(ctx)
+      const [partnersRes, runsRes, suggestionsRes, ordersRes] = await Promise.all([
+        requestJson(`/api/v1/bizes/${ctx.bizId}/supply-partners`, {
+          cookie: ctx.owner.cookie,
+          acceptStatuses: [200],
+        }),
+        requestJson(`/api/v1/bizes/${ctx.bizId}/inventory-replenishment-runs`, {
+          cookie: ctx.owner.cookie,
+          acceptStatuses: [200],
+        }),
+        requestJson(
+          `/api/v1/bizes/${ctx.bizId}/inventory-replenishment-suggestions?inventoryReplenishmentRunId=${fixture.inventoryReplenishmentRunId}`,
+          {
+            cookie: ctx.owner.cookie,
+            acceptStatuses: [200],
+          },
+        ),
+        requestJson(`/api/v1/bizes/${ctx.bizId}/inventory-procurement-orders`, {
+          cookie: ctx.owner.cookie,
+          acceptStatuses: [200],
+        }),
+      ])
+
+      const partners = getApiData<Array<Record<string, unknown>>>(partnersRes.payload)
+      const runs = getApiData<Array<Record<string, unknown>>>(runsRes.payload)
+      const suggestions = getApiData<Array<Record<string, unknown>>>(suggestionsRes.payload)
+      const orders = getApiData<Array<Record<string, unknown>>>(ordersRes.payload)
+
+      return {
+        note: 'Inventory replenishment + procurement read models are queryable.',
+        evidence: {
+          supplyPartnerCount: partners.length,
+          replenishmentRunCount: runs.length,
+          suggestionCount: suggestions.length,
+          procurementOrderCount: orders.length,
+          sampleOrder: orders[0] ?? null,
+        },
+      }
+    }
+
+    case 'inventory-owner-idempotent-procurement-patch': {
+      const fixture = await ensureInventoryCoverageFixture(ctx)
+      if (!ctx.inventoryProcurementOrderId) {
+        const created = getApiData<{ id: string }>(
+          (
+            await requestJson<{ success: true; data: { id: string } }>(
+              `/api/v1/bizes/${ctx.bizId}/inventory-procurement-orders`,
+              {
+                method: 'POST',
+                cookie: ctx.owner.cookie,
+                body: {
+                  supplyPartnerId: fixture.supplyPartnerId,
+                  status: 'draft',
+                  orderNumber: `PO-${randomSuffix(10).toUpperCase()}`,
+                  currency: 'USD',
+                  inventoryReplenishmentRunId: fixture.inventoryReplenishmentRunId,
+                  orderedTotalMinor: 12000,
+                  receivedTotalMinor: 0,
+                  invoicedTotalMinor: 0,
+                  orderedAt: new Date().toISOString(),
+                },
+                acceptStatuses: [201],
+              },
+            )
+          ).payload,
+        )
+        ctx.inventoryProcurementOrderId = created.id
+      }
+
+      const patchPayload = {
+        status: 'acknowledged',
+        acknowledgedAt: new Date().toISOString(),
+        notes: 'Replay-safe procurement patch',
+        metadata: {
+          source: 'rerun-sagas.inventory',
+          replay: true,
+        },
+      }
+
+      const first = await requestJson(
+        `/api/v1/bizes/${ctx.bizId}/inventory-procurement-orders/${ctx.inventoryProcurementOrderId}`,
+        {
+          method: 'PATCH',
+          cookie: ctx.owner.cookie,
+          body: patchPayload,
+          acceptStatuses: [200],
+        },
+      )
+      const second = await requestJson(
+        `/api/v1/bizes/${ctx.bizId}/inventory-procurement-orders/${ctx.inventoryProcurementOrderId}`,
+        {
+          method: 'PATCH',
+          cookie: ctx.owner.cookie,
+          body: patchPayload,
+          acceptStatuses: [200],
+        },
+      )
+
+      return {
+        note: 'Repeated procurement patch remained deterministic.',
+        evidence: {
+          inventoryProcurementOrderId: ctx.inventoryProcurementOrderId,
+          firstStatus: first.status,
+          secondStatus: second.status,
+        },
+      }
+    }
+
+    case 'inventory-adversary-cross-scope-denied': {
+      await ensureInventoryCoverageFixture(ctx)
+      const adversary = await ensureHoleAdversary(ctx)
+      const response = await requestJson(`/api/v1/bizes/${ctx.bizId}/inventory-procurement-orders`, {
+        cookie: ctx.adversary?.cookie,
+        acceptStatuses: [200, 401, 403, 404],
+      })
+      if (response.status === 200) {
+        blockStep(stepKey, 'Adversary unexpectedly read inventory procurement data.', {
+          status: response.status,
+          endpoint: `/api/v1/bizes/${ctx.bizId}/inventory-procurement-orders`,
+        })
+      }
+      return {
+        note: 'Adversary inventory read attempt is denied.',
+        evidence: {
+          adversary,
+          status: response.status,
+          boundaryProtected: response.status >= 400,
+        },
+      }
+    }
+
+    case 'value-owner-create-baseline': {
+      const fixture = await ensureValueCoverageFixture(ctx)
+      return {
+        note: 'Value program + account baseline created with seeded source balance.',
+        evidence: fixture,
+      }
+    }
+
+    case 'value-owner-post-ledger-entry': {
+      const fixture = await ensureValueCoverageFixture(ctx)
+      const posted = getApiData<{ id: string; valueAccountId: string; balanceAfterUnits: number }>(
+        (
+          await requestJson<{
+            success: true
+            data: { id: string; valueAccountId: string; balanceAfterUnits: number }
+          }>(
+            `/api/v1/bizes/${ctx.bizId}/value-accounts/${fixture.sourceAccountId}/ledger-entries`,
+            {
+              method: 'POST',
+              cookie: ctx.owner.cookie,
+              body: {
+                valueProgramId: fixture.valueProgramId,
+                entryType: 'earn',
+                unitsDelta: 120,
+                description: 'Coverage ledger earn event',
+                idempotencyKey: `ledger-${ctx.runId}-${randomSuffix(6)}`,
+                sourceRefType: 'saga_run_step',
+                sourceRefId: `${ctx.runId}:${stepKey}`,
+                metadata: {
+                  source: 'rerun-sagas.value',
+                  stepKey,
+                },
+              },
+              acceptStatuses: [201],
+            },
+          )
+        ).payload,
+      )
+      ctx.valueLastLedgerEntryId = posted.id
+      return {
+        note: 'Ledger entry posted and source account balance advanced.',
+        evidence: {
+          valueProgramId: fixture.valueProgramId,
+          valueAccountId: posted.valueAccountId,
+          valueLedgerEntryId: posted.id,
+          balanceAfterUnits: posted.balanceAfterUnits,
+        },
+      }
+    }
+
+    case 'value-owner-complete-transfer': {
+      const fixture = await ensureValueCoverageFixture(ctx)
+      const createdTransfer = getApiData<{ id: string; status: string; units: number }>(
+        (
+          await requestJson<{ success: true; data: { id: string; status: string; units: number } }>(
+            `/api/v1/bizes/${ctx.bizId}/value-transfers`,
+            {
+              method: 'POST',
+              cookie: ctx.owner.cookie,
+              body: {
+                valueProgramId: fixture.valueProgramId,
+                sourceValueAccountId: fixture.sourceAccountId,
+                targetValueAccountId: fixture.targetAccountId,
+                units: 40,
+                reason: 'Coverage transfer request',
+                notes: 'Transfer for lifecycle validation',
+                metadata: {
+                  source: 'rerun-sagas.value',
+                  sagaKey: ctx.sagaKey,
+                },
+              },
+              acceptStatuses: [201],
+            },
+          )
+        ).payload,
+      )
+      ctx.valueTransferId = createdTransfer.id
+
+      const completedPayload = (
+        await requestJson<{ success: true; data: Record<string, unknown> }>(
+          `/api/v1/bizes/${ctx.bizId}/value-transfers/${ctx.valueTransferId}/decision`,
+          {
+            method: 'PATCH',
+            cookie: ctx.owner.cookie,
+            body: {
+              status: 'completed',
+              autoComplete: true,
+              notes: 'Coverage transfer completion',
+              metadata: {
+                source: 'rerun-sagas.value',
+              },
+            },
+            acceptStatuses: [200],
+          },
+        )
+      ).payload
+
+      const completed = getApiData<Record<string, unknown>>(completedPayload)
+      const transfer = isRecord(completed.transfer) ? completed.transfer : null
+      const sourceEntry = isRecord(completed.sourceEntry) ? completed.sourceEntry : null
+      const targetEntry = isRecord(completed.targetEntry) ? completed.targetEntry : null
+
+      if (sourceEntry && typeof sourceEntry.id === 'string') {
+        ctx.valueLastLedgerEntryId = sourceEntry.id
+      }
+
+      return {
+        note: 'Value transfer completed with paired ledger entries.',
+        evidence: {
+          valueTransferId:
+            (transfer && typeof transfer.id === 'string' ? transfer.id : ctx.valueTransferId) ?? null,
+          transferStatus:
+            (transfer && typeof transfer.status === 'string' ? transfer.status : null) ?? null,
+          sourceLedgerEntryId:
+            sourceEntry && typeof sourceEntry.id === 'string' ? sourceEntry.id : null,
+          targetLedgerEntryId:
+            targetEntry && typeof targetEntry.id === 'string' ? targetEntry.id : null,
+        },
+      }
+    }
+
+    case 'value-owner-read-ledger-state': {
+      const fixture = await ensureValueCoverageFixture(ctx)
+      const [programsRes, accountsRes, sourceLedgerRes, targetLedgerRes, transfersRes] = await Promise.all([
+        requestJson(`/api/v1/bizes/${ctx.bizId}/value-programs`, {
+          cookie: ctx.owner.cookie,
+          acceptStatuses: [200],
+        }),
+        requestJson(`/api/v1/bizes/${ctx.bizId}/value-accounts?valueProgramId=${fixture.valueProgramId}`, {
+          cookie: ctx.owner.cookie,
+          acceptStatuses: [200],
+        }),
+        requestJson(`/api/v1/bizes/${ctx.bizId}/value-accounts/${fixture.sourceAccountId}/ledger-entries`, {
+          cookie: ctx.owner.cookie,
+          acceptStatuses: [200],
+        }),
+        requestJson(`/api/v1/bizes/${ctx.bizId}/value-accounts/${fixture.targetAccountId}/ledger-entries`, {
+          cookie: ctx.owner.cookie,
+          acceptStatuses: [200],
+        }),
+        requestJson(`/api/v1/bizes/${ctx.bizId}/value-transfers`, {
+          cookie: ctx.owner.cookie,
+          acceptStatuses: [200],
+        }),
+      ])
+      const programs = getApiData<Array<Record<string, unknown>>>(programsRes.payload)
+      const accounts = getApiData<Array<Record<string, unknown>>>(accountsRes.payload)
+      const sourceLedger = getApiData<Array<Record<string, unknown>>>(sourceLedgerRes.payload)
+      const targetLedger = getApiData<Array<Record<string, unknown>>>(targetLedgerRes.payload)
+      const transfers = getApiData<Array<Record<string, unknown>>>(transfersRes.payload)
+      return {
+        note: 'Value read models reflect current program/account/ledger/transfer state.',
+        evidence: {
+          valueProgramCount: programs.length,
+          valueAccountCount: accounts.length,
+          sourceLedgerCount: sourceLedger.length,
+          targetLedgerCount: targetLedger.length,
+          transferCount: transfers.length,
+          sampleTransfer: transfers[0] ?? null,
+        },
+      }
+    }
+
+    case 'value-member-read-ledger-state': {
+      const fixture = await ensureValueCoverageFixture(ctx)
+      const member = await ensureCoverageMember(ctx)
+      const [accountsRes, transfersRes] = await Promise.all([
+        requestJson(`/api/v1/bizes/${ctx.bizId}/value-accounts?valueProgramId=${fixture.valueProgramId}`, {
+          cookie: ctx.member?.cookie,
+          acceptStatuses: [200],
+        }),
+        requestJson(`/api/v1/bizes/${ctx.bizId}/value-transfers`, {
+          cookie: ctx.member?.cookie,
+          acceptStatuses: [200],
+        }),
+      ])
+      const accounts = getApiData<Array<Record<string, unknown>>>(accountsRes.payload)
+      const transfers = getApiData<Array<Record<string, unknown>>>(transfersRes.payload)
+      return {
+        note: 'Member read access for value domain verified.',
+        evidence: {
+          member,
+          valueAccountCount: accounts.length,
+          transferCount: transfers.length,
+        },
+      }
+    }
+
+    case 'value-owner-idempotent-transfer-decision': {
+      const fixture = await ensureValueCoverageFixture(ctx)
+      if (!ctx.valueTransferId) {
+        const created = getApiData<{ id: string }>(
+          (
+            await requestJson<{ success: true; data: { id: string } }>(
+              `/api/v1/bizes/${ctx.bizId}/value-transfers`,
+              {
+                method: 'POST',
+                cookie: ctx.owner.cookie,
+                body: {
+                  valueProgramId: fixture.valueProgramId,
+                  sourceValueAccountId: fixture.sourceAccountId,
+                  targetValueAccountId: fixture.targetAccountId,
+                  units: 10,
+                  reason: 'Coverage idempotency transfer',
+                  metadata: {
+                    source: 'rerun-sagas.value',
+                  },
+                },
+                acceptStatuses: [201],
+              },
+            )
+          ).payload,
+        )
+        ctx.valueTransferId = created.id
+      }
+
+      const first = await requestJson(
+        `/api/v1/bizes/${ctx.bizId}/value-transfers/${ctx.valueTransferId}/decision`,
+        {
+          method: 'PATCH',
+          cookie: ctx.owner.cookie,
+          body: {
+            status: 'completed',
+            autoComplete: true,
+            notes: 'Idempotency completion #1',
+          },
+          acceptStatuses: [200, 409],
+        },
+      )
+      const second = await requestJson(
+        `/api/v1/bizes/${ctx.bizId}/value-transfers/${ctx.valueTransferId}/decision`,
+        {
+          method: 'PATCH',
+          cookie: ctx.owner.cookie,
+          body: {
+            status: 'completed',
+            autoComplete: true,
+            notes: 'Idempotency completion #2',
+          },
+          acceptStatuses: [200, 409],
+        },
+      )
+
+      return {
+        note: 'Repeated transfer completion remained conflict-safe.',
+        evidence: {
+          valueTransferId: ctx.valueTransferId,
+          firstStatus: first.status,
+          secondStatus: second.status,
+        },
+      }
+    }
+
+    case 'value-adversary-cross-scope-denied': {
+      await ensureValueCoverageFixture(ctx)
+      const adversary = await ensureHoleAdversary(ctx)
+      const response = await requestJson(`/api/v1/bizes/${ctx.bizId}/value-transfers`, {
+        cookie: ctx.adversary?.cookie,
+        acceptStatuses: [200, 401, 403, 404],
+      })
+      if (response.status === 200) {
+        blockStep(stepKey, 'Adversary unexpectedly read value transfer data.', {
+          status: response.status,
+          endpoint: `/api/v1/bizes/${ctx.bizId}/value-transfers`,
+        })
+      }
+      return {
+        note: 'Adversary value read attempt is denied.',
+        evidence: {
+          adversary,
+          status: response.status,
+          boundaryProtected: response.status >= 400,
+        },
+      }
+    }
+
+    case 'workforce-owner-create-baseline': {
+      const fixture = await ensureWorkforceCoverageFixture(ctx)
+      return {
+        note: 'Workforce baseline fixtures created (department, position, requisition, candidate, application).',
+        evidence: fixture,
+      }
+    }
+
+    case 'workforce-owner-progress-hire': {
+      const fixture = await ensureWorkforceCoverageFixture(ctx)
+      const member = await ensureCoverageMember(ctx)
+      const hired = getApiData<Record<string, unknown>>(
+        (
+          await requestJson<{ success: true; data: Record<string, unknown> }>(
+            `/api/v1/bizes/${ctx.bizId}/workforce-applications/${fixture.workforceApplicationId}/hire`,
+            {
+              method: 'POST',
+              cookie: ctx.owner.cookie,
+              body: {
+                userId: member.userId,
+                workforcePositionId: fixture.workforcePositionId,
+                employmentClass: 'employee',
+                timeCommitment: 'full_time',
+                assignmentTitle: `Coverage Assignment ${randomSuffix(4)}`,
+                startsAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+                isPrimary: true,
+                allocationBasisPoints: 10000,
+                metadata: {
+                  source: 'rerun-sagas.workforce',
+                  sagaKey: ctx.sagaKey,
+                },
+              },
+              acceptStatuses: [200],
+            },
+          )
+        ).payload,
+      )
+      const assignment = isRecord(hired.assignment) ? hired.assignment : null
+      const assignmentId =
+        assignment && typeof assignment.id === 'string' ? assignment.id : ctx.workforceAssignmentId ?? null
+      if (!assignmentId) {
+        blockStep(stepKey, 'Hire response did not include a workforce assignment id.', {
+          hirePayload: hired,
+        })
+      }
+      ctx.workforceAssignmentId = assignmentId
+      return {
+        note: 'Workforce hire workflow completed with assignment linkage.',
+        evidence: {
+          workforceApplicationId: fixture.workforceApplicationId,
+          workforceAssignmentId: assignmentId,
+          alreadyHired: hired.alreadyHired === true,
+        },
+      }
+    }
+
+    case 'workforce-owner-run-performance-cycle': {
+      const fixture = await ensureWorkforceCoverageFixture(ctx)
+      if (!ctx.workforceAssignmentId) {
+        const member = await ensureCoverageMember(ctx)
+        const hired = getApiData<Record<string, unknown>>(
+          (
+            await requestJson<{ success: true; data: Record<string, unknown> }>(
+              `/api/v1/bizes/${ctx.bizId}/workforce-applications/${fixture.workforceApplicationId}/hire`,
+              {
+                method: 'POST',
+                cookie: ctx.owner.cookie,
+                body: {
+                  userId: member.userId,
+                  workforcePositionId: fixture.workforcePositionId,
+                  employmentClass: 'employee',
+                  timeCommitment: 'full_time',
+                  assignmentTitle: `Coverage Assignment ${randomSuffix(4)}`,
+                  startsAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+                  isPrimary: true,
+                  allocationBasisPoints: 10000,
+                },
+                acceptStatuses: [200],
+              },
+            )
+          ).payload,
+        )
+        const assignment = isRecord(hired.assignment) ? hired.assignment : null
+        if (assignment && typeof assignment.id === 'string') {
+          ctx.workforceAssignmentId = assignment.id
+        }
+      }
+      if (!ctx.workforceAssignmentId) {
+        blockStep(stepKey, 'Missing workforce assignment before performance cycle setup.')
+      }
+
+      if (!ctx.workforcePerformanceCycleId) {
+        const cycle = getApiData<{ id: string }>(
+          (
+            await requestJson<{ success: true; data: { id: string } }>(
+              `/api/v1/bizes/${ctx.bizId}/workforce-performance-cycles`,
+              {
+                method: 'POST',
+                cookie: ctx.owner.cookie,
+                body: {
+                  name: `Coverage Cycle ${randomSuffix(4)}`,
+                  slug: `coverage-cycle-${randomSuffix(8)}`,
+                  status: 'active',
+                  startsAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+                  endsAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+                  metadata: {
+                    source: 'rerun-sagas.workforce',
+                  },
+                },
+                acceptStatuses: [201],
+              },
+            )
+          ).payload,
+        )
+        ctx.workforcePerformanceCycleId = cycle.id
+      }
+
+      if (!ctx.workforcePerformanceReviewId) {
+        const review = getApiData<{ id: string; status: string }>(
+          (
+            await requestJson<{ success: true; data: { id: string; status: string } }>(
+              `/api/v1/bizes/${ctx.bizId}/workforce-performance-reviews`,
+              {
+                method: 'POST',
+                cookie: ctx.owner.cookie,
+                body: {
+                  workforcePerformanceCycleId: ctx.workforcePerformanceCycleId,
+                  workforceAssignmentId: ctx.workforceAssignmentId,
+                  status: 'submitted',
+                  scoreBasisPoints: 8700,
+                  submittedAt: new Date().toISOString(),
+                  managerAssessment: {
+                    summary: 'Strong coverage performance baseline.',
+                  },
+                  goals: {
+                    focus: ['quality', 'throughput'],
+                  },
+                  metadata: {
+                    source: 'rerun-sagas.workforce',
+                  },
+                },
+                acceptStatuses: [201],
+              },
+            )
+          ).payload,
+        )
+        ctx.workforcePerformanceReviewId = review.id
+      }
+
+      const completed = getApiData<{ id: string; status: string; completedAt: string | null }>(
+        (
+          await requestJson<{
+            success: true
+            data: { id: string; status: string; completedAt: string | null }
+          }>(
+            `/api/v1/bizes/${ctx.bizId}/workforce-performance-reviews/${ctx.workforcePerformanceReviewId}`,
+            {
+              method: 'PATCH',
+              cookie: ctx.owner.cookie,
+              body: {
+                status: 'completed',
+                scoreBasisPoints: 8900,
+                completedAt: new Date().toISOString(),
+                managerAssessment: {
+                  summary: 'Completed by saga coverage runner.',
+                  highlights: ['hiring throughput', 'execution quality'],
+                },
+                metadata: {
+                  source: 'rerun-sagas.workforce',
+                  completedBy: 'owner',
+                },
+              },
+              acceptStatuses: [200],
+            },
+          )
+        ).payload,
+      )
+
+      return {
+        note: 'Performance cycle + review workflow completed for hired assignment.',
+        evidence: {
+          workforcePerformanceCycleId: ctx.workforcePerformanceCycleId,
+          workforcePerformanceReviewId: completed.id,
+          workforceAssignmentId: ctx.workforceAssignmentId,
+          status: completed.status,
+          completedAt: completed.completedAt,
+        },
+      }
+    }
+
+    case 'workforce-member-read-workforce-state': {
+      await ensureWorkforceCoverageFixture(ctx)
+      const member = await ensureCoverageMember(ctx)
+      const [requisitionsRes, applicationsRes, reviewsRes] = await Promise.all([
+        requestJson(`/api/v1/bizes/${ctx.bizId}/workforce-requisitions`, {
+          cookie: ctx.member?.cookie,
+          acceptStatuses: [200],
+        }),
+        requestJson(`/api/v1/bizes/${ctx.bizId}/workforce-applications`, {
+          cookie: ctx.member?.cookie,
+          acceptStatuses: [200],
+        }),
+        requestJson(
+          `/api/v1/bizes/${ctx.bizId}/workforce-performance-reviews${ctx.workforcePerformanceCycleId ? `?workforcePerformanceCycleId=${encodeURIComponent(ctx.workforcePerformanceCycleId)}` : ''}`,
+          {
+            cookie: ctx.member?.cookie,
+            acceptStatuses: [200],
+          },
+        ),
+      ])
+      const requisitions = getApiData<Array<Record<string, unknown>>>(requisitionsRes.payload)
+      const applications = getApiData<Array<Record<string, unknown>>>(applicationsRes.payload)
+      const reviews = getApiData<Array<Record<string, unknown>>>(reviewsRes.payload)
+      return {
+        note: 'Member read path for workforce lifecycle state is available.',
+        evidence: {
+          member,
+          requisitionCount: requisitions.length,
+          applicationCount: applications.length,
+          reviewCount: reviews.length,
+        },
+      }
+    }
+
+    case 'workforce-owner-idempotent-review-update': {
+      await ensureWorkforceCoverageFixture(ctx)
+      if (!ctx.workforcePerformanceReviewId) {
+        blockStep(stepKey, 'Performance review id is required before idempotent review replay.')
+      }
+      const patchPayload = {
+        status: 'completed',
+        scoreBasisPoints: 9000,
+        completedAt: new Date().toISOString(),
+        metadata: {
+          source: 'rerun-sagas.workforce',
+          replay: true,
+        },
+      }
+      const first = await requestJson(
+        `/api/v1/bizes/${ctx.bizId}/workforce-performance-reviews/${ctx.workforcePerformanceReviewId}`,
+        {
+          method: 'PATCH',
+          cookie: ctx.owner.cookie,
+          body: patchPayload,
+          acceptStatuses: [200],
+        },
+      )
+      const second = await requestJson(
+        `/api/v1/bizes/${ctx.bizId}/workforce-performance-reviews/${ctx.workforcePerformanceReviewId}`,
+        {
+          method: 'PATCH',
+          cookie: ctx.owner.cookie,
+          body: patchPayload,
+          acceptStatuses: [200],
+        },
+      )
+      return {
+        note: 'Repeated performance review update remained deterministic.',
+        evidence: {
+          workforcePerformanceReviewId: ctx.workforcePerformanceReviewId,
+          firstStatus: first.status,
+          secondStatus: second.status,
+        },
+      }
+    }
+
+    case 'workforce-adversary-cross-scope-denied': {
+      await ensureWorkforceCoverageFixture(ctx)
+      const adversary = await ensureHoleAdversary(ctx)
+      const response = await requestJson(`/api/v1/bizes/${ctx.bizId}/workforce-requisitions`, {
+        cookie: ctx.adversary?.cookie,
+        acceptStatuses: [200, 401, 403, 404],
+      })
+      if (response.status === 200) {
+        blockStep(stepKey, 'Adversary unexpectedly read workforce requisitions.', {
+          status: response.status,
+          endpoint: `/api/v1/bizes/${ctx.bizId}/workforce-requisitions`,
+        })
+      }
+      return {
+        note: 'Adversary workforce read attempt is denied.',
+        evidence: {
+          adversary,
+          status: response.status,
+          boundaryProtected: response.status >= 400,
+        },
+      }
+    }
+
+    case 'owner-endpoint-discovery':
+    case 'owner-discovery-and-contract': {
+      const catalog = getApiData<{
+        generatedAt: string
+        endpointCount?: number
+        routes?: Array<{ path: string; method: string }>
+        endpoints?: Array<{ path: string; method: string }>
+      }>(
+        (
+          await requestJson('/api/v1/agents/openapi/catalog', {
+            cookie: ctx.owner.cookie,
+            acceptStatuses: [200],
+          })
+        ).payload,
+      )
+      const endpoints = Array.isArray(catalog.endpoints)
+        ? catalog.endpoints
+        : Array.isArray(catalog.routes)
+          ? catalog.routes
+          : []
+      return {
+        note: 'Endpoint discovery validated through OpenAPI catalog.',
+        evidence: {
+          generatedAt: catalog.generatedAt,
+          routeCount: catalog.endpointCount ?? endpoints.length,
+          sampleRoutes: endpoints.slice(0, 5),
+        },
+      }
+    }
+
+    case 'owner-minimal-domain-write-read':
+    case 'owner-create-domain-baseline':
+    case 'owner-bootstrap-fixtures': {
+      const baseline = await ensureHoleBaseline(ctx)
+      const loop = getApiData<{ id: string; title: string; status: string }>(
+        (
+          await requestJson(`/api/v1/ooda/loops/${baseline.loopId}`, {
+            cookie: ctx.owner.cookie,
+            acceptStatuses: [200],
+          })
+        ).payload,
+      )
+      return {
+        note: 'Hole baseline entities were created and read back successfully.',
+        evidence: {
+          bizId: baseline.bizId,
+          locationId: baseline.locationId,
+          holeLoopId: baseline.loopId,
+          loopTitle: loop.title,
+          loopStatus: loop.status,
+        },
+      }
+    }
+
+    case 'owner-validate-contract-shape': {
+      await ensureHoleBaseline(ctx)
+      const loops = getApiData<Array<{ id: string; loopKey: string; status: string }>>(
+        (
+          await requestJson('/api/v1/ooda/loops?limit=20', {
+            cookie: ctx.owner.cookie,
+            acceptStatuses: [200],
+          })
+        ).payload,
+      )
+      return {
+        note: 'Loop list contract shape validated.',
+        evidence: {
+          count: loops.length,
+          sample: loops.slice(0, 3),
+        },
+      }
+    }
+
+    case 'member-operational-update':
+    case 'member-operational-flow': {
+      const member = await ensureHoleMember(ctx)
+      const patched = getApiData<{ id: string; title: string; updatedAt: string }>(
+        (
+          await requestJson(`/api/v1/ooda/loops/${ctx.holeLoopId}`, {
+            method: 'PATCH',
+            cookie: ctx.member?.cookie,
+            body: {
+              title: `Hole baseline ${ctx.sagaKey} member ${randomSuffix(4)}`,
+            },
+            acceptStatuses: [200],
+          })
+        ).payload,
+      )
+      return {
+        note: 'Member role successfully performed an operational loop update.',
+        evidence: {
+          member,
+          loopId: patched.id,
+          updatedTitle: patched.title,
+          updatedAt: patched.updatedAt,
+        },
+      }
+    }
+
+    case 'customer-facing-flow':
+    case 'customer-primary-flow':
+    case 'customer-secondary-flow': {
+      const customer = await ensureHoleCustomer(ctx)
+      const overview = getApiData<{ health?: Record<string, unknown>; activeLoops?: unknown[] }>(
+        (
+          await requestJson('/api/v1/ooda/overview', {
+            cookie: ctx.customer1?.cookie,
+            acceptStatuses: [200],
+          })
+        ).payload,
+      )
+      return {
+        note: 'Customer actor exercised read-safe lifecycle surface.',
+        evidence: {
+          customer,
+          hasHealth: Boolean(overview.health),
+          activeLoopCount: Array.isArray(overview.activeLoops) ? overview.activeLoops.length : 0,
+        },
+      }
+    }
+
+    case 'owner-idempotent-repeat':
+    case 'owner-idempotent-replay': {
+      await ensureHoleBaseline(ctx)
+      const body = {
+        targetType: 'saga_run',
+        targetId: ctx.runId,
+        relationRole: 'evidence',
+      }
+      const first = await requestJson(`/api/v1/ooda/loops/${ctx.holeLoopId}/links`, {
+        method: 'POST',
+        cookie: ctx.owner.cookie,
+        body,
+        acceptStatuses: [200, 201, 409],
+      })
+      const second = await requestJson(`/api/v1/ooda/loops/${ctx.holeLoopId}/links`, {
+        method: 'POST',
+        cookie: ctx.owner.cookie,
+        body,
+        acceptStatuses: [200, 201, 409],
+      })
+      return {
+        note: 'Repeated link intent executed with conflict-safe behavior.',
+        evidence: {
+          firstStatus: first.status,
+          secondStatus: second.status,
+          loopId: ctx.holeLoopId,
+        },
+      }
+    }
+
+    case 'owner-check-derived-reads':
+    case 'owner-evidence-review':
+    case 'owner-audit-signal-check':
+    case 'owner-e2e-trace-collection':
+    case 'owner-policy-reason-check': {
+      await ensureHoleBaseline(ctx)
+      const blockers = getApiData<{ summary: Record<string, unknown>; blockers: unknown[]; reorient: unknown[] }>(
+        (
+          await requestJson(`/api/v1/ooda/loops/${ctx.holeLoopId}/blockers?limit=10`, {
+            cookie: ctx.owner.cookie,
+            acceptStatuses: [200],
+          })
+        ).payload,
+      )
+      return {
+        note: 'Derived blocker and reorient evidence was collected.',
+        evidence: {
+          loopId: ctx.holeLoopId,
+          blockerCount: blockers.blockers.length,
+          reorientCount: blockers.reorient.length,
+          summary: blockers.summary,
+        },
+      }
+    }
+
+    case 'adversary-cross-scope-denied':
+    case 'adversary-boundary-attempt':
+    case 'adversary-cross-scope-read':
+    case 'adversary-cross-scope-write': {
+      await ensureHoleBaseline(ctx)
+      const adversary = await ensureHoleAdversary(ctx)
+      const response = await requestJson(`/api/v1/ooda/loops/${ctx.holeLoopId}`, {
+        cookie: ctx.adversary?.cookie,
+        acceptStatuses: [200, 401, 403, 404],
+      })
+      return {
+        note: 'Adversary boundary attempt executed for security signal collection.',
+        evidence: {
+          adversary,
+          loopId: ctx.holeLoopId,
+          status: response.status,
+          boundaryProtected: response.status >= 400,
+        },
+      }
+    }
+
+    case 'owner-concurrency-check': {
+      await ensureHoleBaseline(ctx)
+      const one = requestJson(`/api/v1/ooda/loops/${ctx.holeLoopId}`, {
+        method: 'PATCH',
+        cookie: ctx.owner.cookie,
+        body: { priority: 40 },
+        acceptStatuses: [200],
+      })
+      const two = requestJson(`/api/v1/ooda/loops/${ctx.holeLoopId}`, {
+        method: 'PATCH',
+        cookie: ctx.owner.cookie,
+        body: { priority: 75 },
+        acceptStatuses: [200],
+      })
+      const [r1, r2] = await Promise.all([one, two])
+      return {
+        note: 'Concurrent updates completed without transport-level failure.',
+        evidence: {
+          loopId: ctx.holeLoopId,
+          statuses: [r1.status, r2.status],
+        },
+      }
+    }
+
+    case 'owner-induced-failure': {
+      await ensureHoleBaseline(ctx)
+      const response = await requestJson(`/api/v1/ooda/loops/${ctx.holeLoopId}`, {
+        method: 'PATCH',
+        cookie: ctx.owner.cookie,
+        raw: true,
+        body: {
+          currentPhase: 'invalid_phase_value',
+        },
+        acceptStatuses: [400, 422],
+      })
+      const envelope =
+        response.payload && typeof response.payload === 'object'
+          ? (response.payload as Record<string, unknown>)
+          : null
+      const errorCode =
+        envelope && typeof envelope.error === 'object' && envelope.error
+          ? ((envelope.error as Record<string, unknown>).code as string | undefined)
+          : undefined
+      return {
+        note: 'Controlled failure path produced deterministic validation response.',
+        evidence: {
+          loopId: ctx.holeLoopId,
+          status: response.status,
+          errorCode: errorCode ?? null,
+        },
+      }
+    }
+
+    case 'owner-recovery-flow': {
+      await ensureHoleBaseline(ctx)
+      const loop = getApiData<{ id: string; currentPhase: string; status: string }>(
+        (
+          await requestJson(`/api/v1/ooda/loops/${ctx.holeLoopId}`, {
+            method: 'PATCH',
+            cookie: ctx.owner.cookie,
+            body: {
+              currentPhase: 'act',
+              status: 'active',
+            },
+            acceptStatuses: [200],
+          })
+        ).payload,
+      )
+      return {
+        note: 'Recovery patch restored loop to active state.',
+        evidence: {
+          loopId: loop.id,
+          phase: loop.currentPhase,
+          status: loop.status,
+        },
+      }
+    }
+
+    case 'owner-closeout-summary': {
+      await ensureHoleBaseline(ctx)
+      const entry = getApiData<{ id: string; status: string }>(
+        (
+          await requestJson(`/api/v1/ooda/loops/${ctx.holeLoopId}/entries`, {
+            method: 'POST',
+            cookie: ctx.owner.cookie,
+            body: {
+              phase: 'act',
+              entryType: 'result',
+              title: `Hole closeout ${ctx.sagaKey}`,
+              bodyMarkdown: 'Automated hole-pack closeout summary.',
+              status: 'resolved',
+              sourceType: 'system',
+              linkedSagaRunId: ctx.runId,
+              evidence: {
+                apiTraceRef: `trace:${ctx.runId}:owner-closeout-summary`,
+                reportNote: 'Auto closeout from proactive hole pack',
+              },
+            },
+            acceptStatuses: [201],
+          })
+        ).payload,
+      )
+      ctx.holeEntryId = entry.id
+      return {
+        note: 'Closeout summary entry persisted to OODA loop.',
+        evidence: {
+          loopId: ctx.holeLoopId,
+          entryId: entry.id,
+          status: entry.status,
+        },
+      }
+    }
+
     case 'runner-submit-artifacts': {
       const markdown = [
         '# Auto Saga Report',
@@ -37113,6 +40483,7 @@ async function main() {
   }
 
   console.log(`Running ${toRun.length} saga(s) against ${API_BASE_URL}...`)
+  console.log(`Depth filter: ${SAGA_DEPTH_FILTER}`)
   if (SAGA_FAST_MODE) {
     console.log(
       `Fast mode enabled (traces=${SAGA_ATTACH_API_TRACES ? 'on' : 'off'}, snapshots=${SAGA_ATTACH_SNAPSHOTS ? 'on' : 'off'}, in_progress=${SAGA_STEP_TRANSITION_IN_PROGRESS ? 'on' : 'off'}, coverage=${SAGA_PERSIST_COVERAGE ? 'on' : 'off'}).`,

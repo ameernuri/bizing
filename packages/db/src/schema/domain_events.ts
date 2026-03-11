@@ -13,6 +13,7 @@ import { bizes } from "./bizes";
 import { users } from "./users";
 import { subjects } from "./subjects";
 import { actionRequests, actionExecutions } from "./action_backbone";
+import { eventProjectionCheckpointStatusEnum } from "./enums";
 
 /**
  * domain_events
@@ -116,6 +117,31 @@ export const domainEvents = pgTable(
       table.occurredAt,
     ),
 
+    /**
+     * Tenant-safe request reference.
+     *
+     * ELI5:
+     * If an event says it came from an action request, both rows must belong to
+     * the same biz.
+     */
+    domainEventsActionRequestTenantFk: foreignKey({
+      columns: [table.bizId, table.actionRequestId],
+      foreignColumns: [actionRequests.bizId, actionRequests.id],
+      name: "domain_events_action_request_tenant_fk",
+    }),
+
+    /**
+     * Tenant-safe execution reference.
+     *
+     * Prevents an event in one biz from pointing at an execution row in
+     * another biz.
+     */
+    domainEventsActionExecutionTenantFk: foreignKey({
+      columns: [table.bizId, table.actionExecutionId],
+      foreignColumns: [actionExecutions.bizId, actionExecutions.id],
+      name: "domain_events_action_execution_tenant_fk",
+    }),
+
     domainEventsSubjectFk: foreignKey({
       columns: [table.bizId, table.subjectType, table.subjectId],
       foreignColumns: [subjects.bizId, subjects.subjectType, subjects.subjectId],
@@ -151,7 +177,7 @@ export const eventProjectionCheckpoints = pgTable(
     consumerRef: varchar("consumer_ref", { length: 160 }).notNull(),
     lastDomainEventId: idRef("last_domain_event_id").references(() => domainEvents.id),
     lastProcessedAt: timestamp("last_processed_at", { withTimezone: true }),
-    status: varchar("status", { length: 32 }).default("active").notNull(),
+    status: eventProjectionCheckpointStatusEnum("status").default("active").notNull(),
     lagHint: integer("lag_hint").default(0).notNull(),
     metadata: jsonb("metadata").default({}).notNull(),
 
@@ -167,5 +193,16 @@ export const eventProjectionCheckpoints = pgTable(
       table.projectionKey,
       table.consumerRef,
     ),
+
+    /**
+     * Tenant-safe cursor pointer into the domain-event stream.
+     *
+     * Ensures one checkpoint cannot accidentally point at another biz's event.
+     */
+    eventProjectionCheckpointsLastEventTenantFk: foreignKey({
+      columns: [table.bizId, table.lastDomainEventId],
+      foreignColumns: [domainEvents.bizId, domainEvents.id],
+      name: "event_projection_consumers_last_event_tenant_fk",
+    }),
   }),
 );

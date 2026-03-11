@@ -1,14 +1,8 @@
 /**
- * Service catalog routes (biz-scoped).
+ * Service-group routes (biz-scoped).
  *
- * ELI5:
- * - `service_groups` organize services into logical buckets ("Hair", "Medical", "Consulting").
- * - `services` define the operational service intent (duration/approval/visibility/policies).
- * - commercial packaging is handled by `service_products` in a separate module.
- *
- * Why this route file exists:
- * - Gives agents/API clients first-class CRUD over service intent primitives.
- * - Keeps ACL explicit so each operation can be permissioned by biz admins.
+ * Catalog grouping is the only remaining concern in this domain after folding
+ * the old service/service-product split into grouped offers + offer versions.
  */
 
 import { Hono } from "hono";
@@ -26,7 +20,7 @@ import {
 import { persistCanonicalAction } from "../services/action-runtime.js";
 import { fail, ok, parsePositiveInt } from "./_api.js";
 
-const { db, serviceGroups, services } = dbPackage;
+const { db, serviceGroups } = dbPackage;
 
 const listServiceGroupsQuerySchema = z.object({
   page: z.string().optional(),
@@ -47,49 +41,6 @@ const createServiceGroupBodySchema = z.object({
 });
 
 const updateServiceGroupBodySchema = createServiceGroupBodySchema.partial();
-
-const listServicesQuerySchema = z.object({
-  page: z.string().optional(),
-  perPage: z.string().optional(),
-  serviceGroupId: z.string().optional(),
-  status: z.enum(["draft", "active", "inactive", "archived"]).optional(),
-  type: z.enum(["appointment", "class", "rental", "multi_day", "call"]).optional(),
-  visibility: z.enum(["public", "private", "internal"]).optional(),
-  requiresApproval: z.enum(["true", "false"]).optional(),
-  allowWaitlist: z.enum(["true", "false"]).optional(),
-  search: z.string().optional(),
-  sortBy: z.enum(["name"]).optional(),
-  sortOrder: z.enum(["asc", "desc"]).optional(),
-});
-
-const createServiceBodySchema = z.object({
-  serviceGroupId: z.string().min(1),
-  name: z.string().min(1).max(255),
-  slug: z.string().min(1).max(100).regex(/^[a-z0-9-]+$/),
-  description: z.string().max(2000).optional(),
-  type: z.enum(["appointment", "class", "rental", "multi_day", "call"]).default("appointment"),
-  typeConfigValueId: z.string().optional(),
-  visibility: z.enum(["public", "private", "internal"]).default("public"),
-  visibilityConfigValueId: z.string().optional(),
-  minAdvanceBookingHours: z.number().int().min(0).nullable().optional(),
-  maxAdvanceBookingDays: z.number().int().min(0).nullable().optional(),
-  bookingCutoffMinutes: z.number().int().min(0).nullable().optional(),
-  requiresApproval: z.boolean().default(false),
-  allowWaitlist: z.boolean().default(true),
-  allowOverbooking: z.boolean().default(false),
-  minCancellationNoticeHours: z.number().int().min(0).nullable().optional(),
-  minRescheduleNoticeHours: z.number().int().min(0).nullable().optional(),
-  bookingPolicy: z.record(z.unknown()).optional(),
-  cancellationPolicy: z.record(z.unknown()).optional(),
-  depositPolicy: z.record(z.unknown()).optional(),
-  eligibilityPolicy: z.record(z.unknown()).optional(),
-  metadata: z.record(z.unknown()).optional(),
-  isSelfBookable: z.boolean().optional(),
-  status: z.enum(["draft", "active", "inactive", "archived"]).default("active"),
-  statusConfigValueId: z.string().optional(),
-});
-
-const updateServiceBodySchema = createServiceBodySchema.partial().omit({ serviceGroupId: true });
 
 async function executeBizAction(c: Parameters<typeof getCurrentUser>[0], bizId: string, actionKey: string, payload: Record<string, unknown>) {
   const user = getCurrentUser(c);
@@ -252,6 +203,51 @@ serviceRoutes.delete(
   },
 );
 
+const { services } = dbPackage;
+
+const listServicesQuerySchema = z.object({
+  page: z.string().optional(),
+  perPage: z.string().optional(),
+  serviceGroupId: z.string().optional(),
+  status: z.enum(["draft", "active", "inactive", "archived"]).optional(),
+  type: z.enum(["appointment", "class", "rental", "multi_day", "call"]).optional(),
+  visibility: z.enum(["public", "private", "internal"]).optional(),
+  requiresApproval: z.enum(["true", "false"]).optional(),
+  allowWaitlist: z.enum(["true", "false"]).optional(),
+  search: z.string().optional(),
+  sortBy: z.enum(["name"]).optional(),
+  sortOrder: z.enum(["asc", "desc"]).optional(),
+});
+
+const createServiceBodySchema = z.object({
+  serviceGroupId: z.string().min(1),
+  name: z.string().min(1).max(255),
+  slug: z.string().min(1).max(100).regex(/^[a-z0-9-]+$/),
+  description: z.string().max(2000).optional(),
+  type: z.enum(["appointment", "class", "rental", "multi_day", "call"]).default("appointment"),
+  typeConfigValueId: z.string().optional(),
+  visibility: z.enum(["public", "private", "internal"]).default("public"),
+  visibilityConfigValueId: z.string().optional(),
+  minAdvanceBookingHours: z.number().int().min(0).nullable().optional(),
+  maxAdvanceBookingDays: z.number().int().min(0).nullable().optional(),
+  bookingCutoffMinutes: z.number().int().min(0).nullable().optional(),
+  requiresApproval: z.boolean().default(false),
+  allowWaitlist: z.boolean().default(true),
+  allowOverbooking: z.boolean().default(false),
+  minCancellationNoticeHours: z.number().int().min(0).nullable().optional(),
+  minRescheduleNoticeHours: z.number().int().min(0).nullable().optional(),
+  bookingPolicy: z.record(z.unknown()).optional(),
+  cancellationPolicy: z.record(z.unknown()).optional(),
+  depositPolicy: z.record(z.unknown()).optional(),
+  eligibilityPolicy: z.record(z.unknown()).optional(),
+  metadata: z.record(z.unknown()).optional(),
+  isSelfBookable: z.boolean().optional(),
+  status: z.enum(["draft", "active", "inactive", "archived"]).default("active"),
+  statusConfigValueId: z.string().optional(),
+});
+
+const updateServiceBodySchema = createServiceBodySchema.partial().omit({ serviceGroupId: true });
+
 serviceRoutes.get(
   "/bizes/:bizId/services",
   requireAuth,
@@ -264,20 +260,7 @@ serviceRoutes.get(
       return fail(c, "VALIDATION_ERROR", "Invalid query parameters.", 400, parsed.error.flatten());
     }
 
-    const {
-      page,
-      perPage,
-      serviceGroupId,
-      status,
-      type,
-      visibility,
-      requiresApproval,
-      allowWaitlist,
-      search,
-      sortBy = "name",
-      sortOrder = "desc",
-    } = parsed.data;
-
+    const { page, perPage, serviceGroupId, status, type, visibility, requiresApproval, allowWaitlist, search, sortBy = "name", sortOrder = "desc" } = parsed.data;
     const pageNum = parsePositiveInt(page, 1);
     const perPageNum = Math.min(parsePositiveInt(perPage, 20), 100);
 
@@ -307,12 +290,7 @@ serviceRoutes.get(
 
     const total = countRows[0]?.count ?? 0;
     return ok(c, rows, 200, {
-      pagination: {
-        page: pageNum,
-        perPage: perPageNum,
-        total,
-        hasMore: pageNum * perPageNum < total,
-      },
+      pagination: { page: pageNum, perPage: perPageNum, total, hasMore: pageNum * perPageNum < total },
     });
   },
 );
@@ -330,13 +308,11 @@ serviceRoutes.post(
       return fail(c, "VALIDATION_ERROR", "Invalid request body.", 400, parsed.error.flatten());
     }
 
-    const parentGroup = await db.query.serviceGroups.findFirst({
+    const serviceGroup = await db.query.serviceGroups.findFirst({
       where: and(eq(serviceGroups.bizId, bizId), eq(serviceGroups.id, parsed.data.serviceGroupId)),
       columns: { id: true },
     });
-    if (!parentGroup) {
-      return fail(c, "BAD_REQUEST", "serviceGroupId is not in this biz.", 400);
-    }
+    if (!serviceGroup) return fail(c, "BAD_REQUEST", "serviceGroupId is not in this biz.", 400);
 
     const action = await executeBizAction(c, bizId, "service.create", parsed.data);
     const createdId = (action.actionRequest as { outputPayload?: Record<string, unknown> }).outputPayload?.serviceId;
@@ -344,7 +320,6 @@ serviceRoutes.post(
       where: and(eq(services.bizId, bizId), eq(services.id, String(createdId))),
     });
     if (!created) return fail(c, "INTERNAL_ERROR", "Service action succeeded but row could not be reloaded.", 500);
-
     return ok(c, created, 201);
   },
 );
@@ -382,16 +357,12 @@ serviceRoutes.patch(
     });
     if (!existing) return fail(c, "NOT_FOUND", "Service not found.", 404);
 
-    const action = await executeBizAction(c, bizId, "service.update", {
-      serviceId,
-      ...parsed.data,
-    });
+    const action = await executeBizAction(c, bizId, "service.update", { serviceId, ...parsed.data });
     const updatedId = (action.actionRequest as { outputPayload?: Record<string, unknown> }).outputPayload?.serviceId;
     const updated = await db.query.services.findFirst({
       where: and(eq(services.bizId, bizId), eq(services.id, String(updatedId))),
     });
     if (!updated) return fail(c, "INTERNAL_ERROR", "Service action succeeded but row could not be reloaded.", 500);
-
     return ok(c, updated);
   },
 );
@@ -414,7 +385,6 @@ serviceRoutes.delete(
       where: and(eq(services.bizId, bizId), eq(services.id, String(updatedId))),
     });
     if (!updated) return fail(c, "INTERNAL_ERROR", "Service action succeeded but row could not be reloaded.", 500);
-
     return ok(c, updated);
   },
 );

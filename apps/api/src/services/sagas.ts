@@ -4,6 +4,7 @@ import path from 'node:path'
 import { and, asc, desc, eq, inArray, sql } from 'drizzle-orm'
 import dbPackage from '@bizing/db'
 import { normalizeSagaSpec, sagaSpecSchema, type SagaSpec } from '../sagas/spec-schema.js'
+import { resolveSagaDepth } from '../sagas/depth.js'
 import type { SnapshotDocument } from '../sagas/snapshot-schema.js'
 import { publishSagaRuntimeEvent } from './saga-events.js'
 
@@ -87,6 +88,8 @@ type PersonaDocEntry = {
   testScenarios: string[]
   rawMarkdown: string
 }
+
+type SagaDepth = 'shallow' | 'medium' | 'deep'
 
 type SchemaCoverageUseCaseEntry = {
   ucRef: string
@@ -215,6 +218,7 @@ type GenerateSagaSpecsOptions = {
   limitUseCases?: number
   maxPersonasPerUseCase?: number
   overwrite?: boolean
+  actorUserId?: string
 }
 
 type GeneratedSagaFile = {
@@ -362,30 +366,15 @@ function toProjectRelative(absPath: string): string {
   return path.relative(PROJECT_ROOT, absPath).replaceAll('\\', '/')
 }
 
-function fromProjectRelative(relativePath: string): string {
-  return path.resolve(PROJECT_ROOT, relativePath)
-}
-
-async function exists(absPath: string): Promise<boolean> {
-  try {
-    await fs.access(absPath)
-    return true
-  } catch {
-    return false
-  }
-}
-
 /**
- * Ensure saga directories exist before any read/write operation.
+ * Saga runtime is DB-native.
+ *
+ * ELI5:
+ * This used to create on-disk directories for saga specs/runs/reports.
+ * We now keep saga definitions/runs/artifacts in DB, so this is a no-op.
  */
 export async function ensureSagaFilesystem() {
-  await Promise.all([
-    fs.mkdir(SAGA_BASE_DIR, { recursive: true }),
-    fs.mkdir(SAGA_SPECS_DIR, { recursive: true }),
-    fs.mkdir(SAGA_RUNS_DIR, { recursive: true }),
-    fs.mkdir(SAGA_REPORTS_DIR, { recursive: true }),
-    fs.mkdir(SAGA_DOCS_DIR, { recursive: true }),
-  ])
+  return
 }
 
 /**
@@ -1700,6 +1689,69 @@ function buildUcSpecificStepExtensions(uc: UseCaseDocEntry): UcSpecificStepExten
     })
   }
 
+  if (/(localization|localize|translated|translation|multilingual|i18n|locale fallback|locale)/i.test(text)) {
+    addStep('businessConfiguration', 'owner-register-growth-localization', {
+      title: 'Register localization resources and translated values',
+      actorKey: 'biz_owner',
+      intent: 'Validate first-class localization resource + value lifecycle for this UC.',
+      instruction:
+        'Create localization resource slots and locale values, then resolve localized content using locale fallback order.',
+      expectedResult:
+        'Localization resources and values are persisted, versioned, and resolvable through canonical growth endpoints.',
+      tags: ['growth', 'localization'],
+    })
+  }
+
+  if (/(a\/b|ab test|experiment|variant|control group|multivariate|traffic split)/i.test(text)) {
+    addStep('businessConfiguration', 'owner-launch-growth-experiment', {
+      title: 'Launch an experiment with explicit variants',
+      actorKey: 'biz_owner',
+      intent: 'Validate first-class experiment and variant setup from UC needs.',
+      instruction:
+        'Create one experiment, define control/treatment variants with deterministic allocation, and verify experiment metadata is queryable.',
+      expectedResult:
+        'Experiment setup is persisted as a reusable contract with auditable variant allocations.',
+      tags: ['growth', 'experimentation'],
+    })
+    addStep('customerLifecycle', 'customer-growth-experiment-assignment', {
+      title: 'Assign and expose customer to experiment variant',
+      actorKey: 'customer_1',
+      intent: 'Validate deterministic variant assignment and exposure tracking.',
+      instruction:
+        'Record customer assignment/exposure in experiment flow and verify assignment can be read back for the same subject.',
+      expectedResult:
+        'Assignment is deterministic, persisted, and reusable for follow-up conversion attribution.',
+      tags: ['growth', 'experimentation', 'customer-journey'],
+    })
+  }
+
+  if (
+    /(ad platform|\bads\b|\butm\b|offline conversion|attribution loop|campaign publish|retarget|audience sync|\broas\b)/i.test(
+      text,
+    )
+  ) {
+    addStep('operationsFollowUp', 'owner-run-growth-activation-sync', {
+      title: 'Run growth activation publish/sync cycle',
+      actorKey: 'biz_owner',
+      intent: 'Validate marketing activation contract and execution run lifecycle.',
+      instruction:
+        'Create a marketing activation contract and execute at least one activation run with item-level outcomes.',
+      expectedResult:
+        'Activation runs are queryable with item-level statuses and workflow/event hooks available for automation.',
+      tags: ['growth', 'activation', 'marketing'],
+    })
+    addStep('reportingCloseout', 'owner-record-growth-conversion-metric', {
+      title: 'Record conversion attribution metrics',
+      actorKey: 'biz_owner',
+      intent: 'Validate conversion measurement flow tied to experiments and activations.',
+      instruction:
+        'Persist conversion-centric experiment measurement data and verify summary metrics expose conversion outcomes by variant.',
+      expectedResult:
+        'Conversion attribution metrics are available for KPI/reporting closeout in this UC.',
+      tags: ['growth', 'attribution', 'reporting'],
+    })
+  }
+
   if (/(hipaa|privacy|compliance|residency|background check|certification|license|id verification)/i.test(text)) {
     addStep('operationsFollowUp', 'owner-validate-compliance-controls', {
       title: 'Validate compliance and credential controls',
@@ -1948,11 +2000,12 @@ function buildSagaSpec(uc: UseCaseDocEntry, persona: PersonaDocEntry): SagaSpec 
     })),
   })
 
-  return sagaSpecSchema.parse({
+  const parsed = sagaSpecSchema.parse({
     schemaVersion: 'saga.v1',
     sagaKey,
     title: `${uc.ucRef} • ${uc.title} • ${persona.name}`,
     description: `Comprehensive lifecycle saga derived from ${uc.ucRef} and persona ${persona.personaRef}. Needs summary: ${needsSummary}`,
+    depth: 'medium',
     tags: ['uc-derived', 'persona-derived', 'lifecycle', 'api-first', 'agents'],
     source: {
       useCaseRef: uc.ucRef,
@@ -2111,7 +2164,7 @@ function buildSagaSpec(uc: UseCaseDocEntry, persona: PersonaDocEntry): SagaSpec 
         'catalog-publish',
         4,
         'Catalog And Publish',
-        'Owner creates services/offers/products and publishes sellable catalog entries.',
+        'Owner creates service groups/offers/products and publishes grouped catalog entries.',
         [
           {
             stepKey: 'owner-create-offer',
@@ -2349,18 +2402,22 @@ function buildSagaSpec(uc: UseCaseDocEntry, persona: PersonaDocEntry): SagaSpec 
       coverageTargets: ucExtensions.coverageTargets,
     },
   })
+
+  return {
+    ...parsed,
+    depth: resolveSagaDepth(parsed),
+  }
 }
 
 /**
  * Generate JSON saga specs from use-cases/personas markdown sources.
  */
 export async function generateSagaSpecsFromDocs(options: GenerateSagaSpecsOptions = {}) {
-  await ensureSagaFilesystem()
-
   const useCaseFile = options.useCaseFile || DEFAULT_USE_CASES_FILE
   const personaFile = options.personaFile || DEFAULT_PERSONAS_FILE
   const overwrite = options.overwrite ?? true
   const maxPersonasPerUseCase = Math.max(1, options.maxPersonasPerUseCase ?? 1)
+  const actorUserId = options.actorUserId ?? 'system'
 
   const useCases = await parseUseCasesFromMarkdown(useCaseFile)
   const personas = await parsePersonasFromMarkdown(personaFile)
@@ -2405,17 +2462,21 @@ export async function generateSagaSpecsFromDocs(options: GenerateSagaSpecsOption
 
     for (const persona of personaCandidates.slice(0, maxPersonasPerUseCase)) {
       const spec = buildSagaSpec(uc, persona)
-      const filePath = path.join(SAGA_SPECS_DIR, `${spec.sagaKey}.json`)
-      if (!overwrite && (await exists(filePath))) {
+      const existing = await getSagaDefinitionByKey(spec.sagaKey)
+      if (!overwrite && existing) {
         continue
       }
 
-      const serialized = `${JSON.stringify(spec, null, 2)}\n`
-      await fs.writeFile(filePath, serialized, 'utf8')
+      const saved = await upsertSagaDefinitionSpec({
+        spec,
+        actorUserId,
+        status: existing?.status ?? 'active',
+        sourceFilePath: defaultDbSpecPath(spec.sagaKey),
+      })
       generated.push({
         sagaKey: spec.sagaKey,
         title: spec.title,
-        filePath: toProjectRelative(filePath),
+        filePath: saved.definition.specFilePath,
         useCaseRef: spec.source.useCaseRef,
         personaRef: spec.source.personaRef,
       })
@@ -2425,14 +2486,7 @@ export async function generateSagaSpecsFromDocs(options: GenerateSagaSpecsOption
   return generated
 }
 
-async function readSagaSpecFromDiskByRelativePath(specRelativePath: string): Promise<SagaSpec> {
-  const absPath = fromProjectRelative(specRelativePath)
-  const payload = await fs.readFile(absPath, 'utf8')
-  const parsed = JSON.parse(payload) as unknown
-  return normalizeSagaSpec(parsed)
-}
-
-async function readSagaSpecFromDefinition(definition: { id: string; specFilePath: string }) {
+async function readSagaSpecFromDefinition(definition: { id: string; sagaKey?: string }) {
   try {
     const revision = await db.query.sagaDefinitionRevisions.findFirst({
       where: and(
@@ -2448,135 +2502,36 @@ async function readSagaSpecFromDefinition(definition: { id: string; specFilePath
   } catch (error) {
     if (!isMissingRelationError(error)) throw error
   }
-  return readSagaSpecFromDiskByRelativePath(definition.specFilePath)
+  throw new Error(
+    `Missing current DB spec revision for saga definition '${definition.sagaKey ?? definition.id}'.`,
+  )
 }
 
 /**
- * Read all JSON spec files from `testing/sagas/specs`.
+ * Legacy compatibility shim.
+ *
+ * ELI5:
+ * Specs are DB-native now, so there is no required filesystem scan.
  */
 export async function listSagaSpecFiles(): Promise<Array<{ absPath: string; relativePath: string }>> {
-  await ensureSagaFilesystem()
-  const entries = await fs.readdir(SAGA_SPECS_DIR, { withFileTypes: true })
-  return entries
-    .filter((entry) => entry.isFile() && entry.name.endsWith('.json'))
-    .map((entry) => {
-      const absPath = path.join(SAGA_SPECS_DIR, entry.name)
-      return {
-        absPath,
-        relativePath: toProjectRelative(absPath),
-      }
-    })
+  return []
 }
 
 /**
- * Synchronize file-based saga specs into `saga_definitions` for API querying.
+ * Synchronize saga definitions from canonical DB state.
+ *
+ * ELI5:
+ * Older flows called this to import JSON files into DB.
+ * Saga definitions now live in DB directly, so sync means "return current
+ * definitions" rather than reading files.
  */
-export async function syncSagaDefinitionsFromDisk(actorUserId?: string) {
-  await ensureSagaFilesystem()
-  const files = await listSagaSpecFiles()
-  const synced: Array<{ sagaKey: string; title: string; specFilePath: string }> = []
-
-  for (const file of files) {
-    const raw = await fs.readFile(file.absPath, 'utf8')
-    const parsed = normalizeSagaSpec(JSON.parse(raw))
-    const specChecksum = checksum(raw)
-
-    const [definition] = await db
-      .insert(sagaDefinitions)
-      .values({
-        sagaKey: parsed.sagaKey,
-        title: parsed.title,
-        description: parsed.description,
-        status: 'active',
-        sourceUseCaseRef: parsed.source.useCaseRef,
-        sourcePersonaRef: parsed.source.personaRef,
-        sourceUseCaseFile: parsed.source.useCaseFile,
-        sourcePersonaFile: parsed.source.personaFile,
-        specVersion: parsed.schemaVersion,
-        specFilePath: file.relativePath,
-        specChecksum,
-        metadata: {
-          tags: parsed.tags,
-          generatedAt: parsed.source.generatedAt,
-        },
-      })
-      .onConflictDoUpdate({
-        target: sagaDefinitions.sagaKey,
-        set: {
-          title: parsed.title,
-          description: parsed.description,
-          sourceUseCaseRef: parsed.source.useCaseRef,
-          sourcePersonaRef: parsed.source.personaRef,
-          sourceUseCaseFile: parsed.source.useCaseFile,
-          sourcePersonaFile: parsed.source.personaFile,
-          specVersion: parsed.schemaVersion,
-          specFilePath: file.relativePath,
-          specChecksum,
-          metadata: {
-            tags: parsed.tags,
-            generatedAt: parsed.source.generatedAt,
-          },
-        },
-      })
-      .returning()
-
-    try {
-      const currentRevision = definition
-        ? await db.query.sagaDefinitionRevisions.findFirst({
-            where: and(
-              eq(sagaDefinitionRevisions.sagaDefinitionId, definition.id),
-              eq(sagaDefinitionRevisions.isCurrent, true),
-            ),
-            orderBy: [desc(sagaDefinitionRevisions.revisionNumber)],
-          })
-        : null
-
-      if (definition && (!currentRevision || currentRevision.specChecksum !== specChecksum)) {
-        await db
-          .update(sagaDefinitionRevisions)
-          .set({
-            isCurrent: false,
-          })
-          .where(
-            and(
-              eq(sagaDefinitionRevisions.sagaDefinitionId, definition.id),
-              eq(sagaDefinitionRevisions.isCurrent, true),
-            ),
-          )
-
-        const [maxRevisionRow] = await db
-          .select({
-            max: sql<number>`coalesce(max(${sagaDefinitionRevisions.revisionNumber}), 0)`.mapWith(Number),
-          })
-          .from(sagaDefinitionRevisions)
-          .where(eq(sagaDefinitionRevisions.sagaDefinitionId, definition.id))
-
-        const nextRevision = (maxRevisionRow?.max ?? 0) + 1
-        await db.insert(sagaDefinitionRevisions).values({
-          sagaDefinitionId: definition.id,
-          revisionNumber: nextRevision,
-          specVersion: parsed.schemaVersion,
-          specChecksum,
-          specJson: parsed,
-          sourceFilePath: file.relativePath,
-          isCurrent: true,
-          metadata: {
-            source: "syncSagaDefinitionsFromDisk",
-          },
-        })
-      }
-    } catch (error) {
-      if (!isMissingRelationError(error)) throw error
-    }
-
-    synced.push({
-      sagaKey: parsed.sagaKey,
-      title: parsed.title,
-      specFilePath: file.relativePath,
-    })
-  }
-
-  return synced
+export async function syncSagaDefinitions(_actorUserId?: string) {
+  const definitions = await listSagaDefinitions({ limit: 20_000 })
+  return definitions.map((definition) => ({
+    sagaKey: definition.sagaKey,
+    title: definition.title,
+    specFilePath: definition.specFilePath,
+  }))
 }
 
 /**
@@ -2773,6 +2728,7 @@ export async function upsertSagaDefinitionSpec(input: {
   revisionMetadata?: Record<string, unknown>
 }) {
   const parsed = normalizeSagaSpec(input.spec)
+  const depth = resolveSagaDepth(parsed)
   if (input.sagaKey && input.sagaKey !== parsed.sagaKey) {
     throw new Error(`sagaKey mismatch: path=${input.sagaKey} body=${parsed.sagaKey}`)
   }
@@ -2781,7 +2737,7 @@ export async function upsertSagaDefinitionSpec(input: {
   const specChecksum = checksum(serialized)
   const sourceFilePath = input.sourceFilePath ?? defaultDbSpecPath(parsed.sagaKey)
   const existing = await getSagaDefinitionByKey(parsed.sagaKey)
-  const mergedMetadata =
+  const mergedMetadataBase =
     input.metadata ??
     (existing?.metadata && typeof existing.metadata === 'object'
       ? (existing.metadata as Record<string, unknown>)
@@ -2789,6 +2745,13 @@ export async function upsertSagaDefinitionSpec(input: {
           tags: parsed.tags,
           generatedAt: parsed.source.generatedAt,
         })
+  const mergedMetadata: Record<string, unknown> = {
+    ...mergedMetadataBase,
+    tags: parsed.tags,
+    generatedAt: parsed.source.generatedAt,
+    depth,
+    depthSource: "definition.upsert",
+  }
 
   const [definition] = await db
     .insert(sagaDefinitions)
@@ -2798,6 +2761,7 @@ export async function upsertSagaDefinitionSpec(input: {
       title: parsed.title,
       description: parsed.description,
       status: input.status ?? existing?.status ?? 'active',
+      depth,
       sourceUseCaseRef: parsed.source.useCaseRef ?? null,
       sourcePersonaRef: parsed.source.personaRef ?? null,
       sourceUseCaseFile: parsed.source.useCaseFile ?? null,
@@ -2814,6 +2778,7 @@ export async function upsertSagaDefinitionSpec(input: {
         title: parsed.title,
         description: parsed.description,
         status: input.status ?? existing?.status ?? 'active',
+        depth,
         sourceUseCaseRef: parsed.source.useCaseRef ?? null,
         sourcePersonaRef: parsed.source.personaRef ?? null,
         sourceUseCaseFile: parsed.source.useCaseFile ?? null,
@@ -2904,15 +2869,82 @@ export async function deleteSagaDefinitionByKey(input: {
  */
 export async function listSagaDefinitions(params?: {
   status?: 'draft' | 'active' | 'archived'
+  depth?: SagaDepth
   search?: string
   limit?: number
 }) {
   const limit = Math.min(Math.max(params?.limit ?? 200, 1), 1000)
   return db.query.sagaDefinitions.findMany({
-    where: params?.status ? eq(sagaDefinitions.status, params.status) : undefined,
+    where: and(
+      params?.status ? eq(sagaDefinitions.status, params.status) : undefined,
+      params?.depth ? eq(sagaDefinitions.depth, params.depth) : undefined,
+    ),
     orderBy: [asc(sagaDefinitions.sagaKey)],
     limit,
   })
+}
+
+/**
+ * Recompute and persist effective saga depth for all definitions.
+ *
+ * ELI5:
+ * This is the "make the library honest" utility.
+ * It re-reads each saga spec, classifies its real complexity, and stores the
+ * depth on the definition row so filters and runner presets stay truthful.
+ */
+export async function reclassifySagaDefinitionDepths(input?: {
+  actorUserId?: string
+  status?: 'draft' | 'active' | 'archived'
+  limit?: number
+}) {
+  const limit = Math.min(Math.max(input?.limit ?? 10000, 1), 20000)
+  const rows = await db.query.sagaDefinitions.findMany({
+    where: and(
+      sql`deleted_at IS NULL`,
+      input?.status ? eq(sagaDefinitions.status, input.status) : undefined,
+    ),
+    orderBy: [asc(sagaDefinitions.sagaKey)],
+    limit,
+  })
+
+  let updated = 0
+  const totals: Record<SagaDepth, number> = {
+    shallow: 0,
+    medium: 0,
+    deep: 0,
+  }
+
+  for (const row of rows) {
+    const spec = await readSagaSpecFromDefinition(row)
+    const depth = resolveSagaDepth(spec)
+    totals[depth] += 1
+    const currentMetadata =
+      row.metadata && typeof row.metadata === "object"
+        ? (row.metadata as Record<string, unknown>)
+        : {}
+
+    if (row.depth === depth && currentMetadata.depth === depth) continue
+
+    await db
+      .update(sagaDefinitions)
+      .set({
+        depth,
+        metadata: {
+          ...currentMetadata,
+          depth,
+          depthSource: "definition.reclassify",
+          depthReclassifiedAt: new Date().toISOString(),
+        },
+      })
+      .where(eq(sagaDefinitions.id, row.id))
+    updated += 1
+  }
+
+  return {
+    total: rows.length,
+    updated,
+    totals,
+  }
 }
 
 /**
@@ -4522,6 +4554,7 @@ export async function createSagaRun(input: CreateSagaRunInput) {
       bizId: input.bizId,
       status: 'pending',
       mode: input.mode ?? spec.defaults.runMode,
+      depth: definition.depth ?? resolveSagaDepth(spec),
       requestedByUserId: input.requestedByUserId,
       runnerLabel: input.runnerLabel,
       definitionChecksum: definition.specChecksum,
@@ -4595,7 +4628,6 @@ export async function createSagaRun(input: CreateSagaRunInput) {
     )
   }
 
-  await ensureSagaRunDirectories(createdRun.id)
   publishSagaRuntimeEvent({
     eventType: 'run.created',
     runId: createdRun.id,
@@ -4610,15 +4642,6 @@ export async function createSagaRun(input: CreateSagaRunInput) {
     },
   })
   return getSagaRunDetail(createdRun.id)
-}
-
-async function ensureSagaRunDirectories(runId: string) {
-  await ensureSagaFilesystem()
-  await Promise.all([
-    fs.mkdir(path.join(SAGA_RUNS_DIR, runId), { recursive: true }),
-    fs.mkdir(path.join(SAGA_RUNS_DIR, runId, 'snapshots'), { recursive: true }),
-    fs.mkdir(path.join(SAGA_RUNS_DIR, runId, 'artifacts'), { recursive: true }),
-  ])
 }
 
 type SagaRunCoverageClassification = 'full' | 'partial' | 'gap'
@@ -5492,11 +5515,13 @@ function jsonToYaml(value: unknown, depth = 0): string {
 }
 
 /**
- * Save one run artifact file and index it in DB.
+ * Save one run artifact and index it in DB.
+ *
+ * ELI5:
+ * Artifact payloads are DB-native. `storagePath` is kept as a virtual pointer
+ * (`db://...`) so all evidence references still have a stable location string.
  */
 export async function saveSagaArtifact(input: SaveArtifactInput) {
-  await ensureSagaRunDirectories(input.runId)
-
   const stepId = await resolveStepId(input.runId, input.stepKey)
   const safeRelativePath = input.fileName
     .split(/[\\/]+/)
@@ -5506,13 +5531,10 @@ export async function saveSagaArtifact(input: SaveArtifactInput) {
 
   const fallbackFileName = `artifact-${Date.now()}.txt`
   const storageRelativePath = safeRelativePath || fallbackFileName
-  const absPath = path.join(SAGA_RUNS_DIR, input.runId, storageRelativePath)
-  await fs.mkdir(path.dirname(absPath), { recursive: true })
-  await fs.writeFile(absPath, input.body, 'utf8')
+  const storagePath = `db://sagas/runs/${input.runId}/${storageRelativePath}`
 
   const size = Buffer.byteLength(input.body, 'utf8')
   const digest = checksum(input.body)
-  const relativePath = toProjectRelative(absPath)
 
   const [artifact] = await db
     .insert(sagaRunArtifacts)
@@ -5521,7 +5543,7 @@ export async function saveSagaArtifact(input: SaveArtifactInput) {
       sagaRunStepId: stepId,
       artifactType: input.artifactType,
       title: input.title,
-      storagePath: relativePath,
+      storagePath,
       contentType: input.contentType,
       byteSize: size,
       checksum: digest,
@@ -5563,7 +5585,6 @@ export async function saveSagaArtifact(input: SaveArtifactInput) {
  * Save a snapshot (structured UI snapshot) as JSON or YAML text.
  */
 export async function saveSagaSnapshot(input: SaveSnapshotInput) {
-  await ensureSagaRunDirectories(input.runId)
   const ext = input.format === 'yaml' ? 'yaml' : 'json'
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
   const fileName = `${timestamp}-${slugify(input.document.screenKey) || 'screen'}.${ext}`
@@ -5593,11 +5614,6 @@ export async function saveSagaSnapshot(input: SaveSnapshotInput) {
  * Save the final run report as markdown and index it as artifact.
  */
 export async function saveSagaReport(input: SaveReportInput) {
-  await ensureSagaFilesystem()
-  const reportFileName = `${input.runId}.md`
-  const reportAbsPath = path.join(SAGA_REPORTS_DIR, reportFileName)
-  await fs.writeFile(reportAbsPath, input.markdown, 'utf8')
-
   await db
     .update(sagaRuns)
     .set({
@@ -5622,6 +5638,7 @@ export async function saveSagaReport(input: SaveReportInput) {
  */
 export async function listSagaRuns(params?: {
   sagaKey?: string
+  depth?: SagaDepth
   status?: 'pending' | 'running' | 'passed' | 'failed' | 'cancelled'
   limit?: number
   requestedByUserId?: string
@@ -5631,6 +5648,7 @@ export async function listSagaRuns(params?: {
   const where = and(
     params?.includeArchived ? undefined : sql`deleted_at IS NULL`,
     params?.sagaKey ? eq(sagaRuns.sagaKey, params.sagaKey) : undefined,
+    params?.depth ? eq(sagaRuns.depth, params.depth) : undefined,
     params?.status ? eq(sagaRuns.status, params.status) : undefined,
     params?.requestedByUserId ? eq(sagaRuns.requestedByUserId, params.requestedByUserId) : undefined,
   )
@@ -5817,12 +5835,7 @@ export async function readArtifactsContent(artifactIds: string[]) {
   return Promise.all(
     rows.map(async (row) => {
       const contentFromDb = typeof row.bodyText === 'string' ? row.bodyText : ''
-      const content =
-        contentFromDb.length > 0
-          ? contentFromDb
-          : await fs
-              .readFile(fromProjectRelative(row.storagePath), 'utf8')
-              .catch(() => '')
+      const content = contentFromDb
       return {
         artifact: row,
         content,

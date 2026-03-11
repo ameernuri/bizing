@@ -29,6 +29,7 @@ const {
   compensationAssignmentRoles,
   resources,
   bookingOrders,
+  bookingOrderLines,
 } = dbPackage
 
 async function createFulfillmentRow<
@@ -83,6 +84,7 @@ const activeAssignmentStatuses = new Set(['reserved', 'confirmed', 'in_progress'
 
 const createFulfillmentUnitBodySchema = z.object({
   bookingOrderId: z.string(),
+  bookingOrderLineId: z.string().optional(),
   kind: z.enum(['service_task', 'rental_segment', 'transport_leg', 'queue_service', 'async_review']).default('service_task'),
   status: z.enum(['planned', 'ready', 'held', 'in_progress', 'completed', 'cancelled', 'blocked']).default('planned'),
   code: z.string().max(140).optional(),
@@ -157,6 +159,19 @@ fulfillmentRoutes.post(
     })
     if (!booking) return fail(c, 'NOT_FOUND', 'Booking order not found.', 404)
 
+    if (parsed.data.bookingOrderLineId) {
+      const line = await db.query.bookingOrderLines.findFirst({
+        where: and(
+          eq(bookingOrderLines.bizId, bizId),
+          eq(bookingOrderLines.bookingOrderId, parsed.data.bookingOrderId),
+          eq(bookingOrderLines.id, parsed.data.bookingOrderLineId),
+        ),
+      })
+      if (!line) {
+        return fail(c, 'VALIDATION_ERROR', 'bookingOrderLineId must belong to the provided bookingOrderId.', 400)
+      }
+    }
+
     const unit = await createFulfillmentRow(
       c,
       bizId,
@@ -164,6 +179,7 @@ fulfillmentRoutes.post(
       {
         bizId,
         bookingOrderId: parsed.data.bookingOrderId,
+        bookingOrderLineId: parsed.data.bookingOrderLineId ?? null,
         kind: parsed.data.kind,
         status: parsed.data.status,
         code: parsed.data.code,

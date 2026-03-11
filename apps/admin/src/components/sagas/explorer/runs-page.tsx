@@ -2,11 +2,12 @@
 
 import Link from 'next/link'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { sagaApi, type SagaDefinitionSummary, type SagaRunSummary } from '@/lib/sagas-api'
+import { sagaApi, type SagaDefinitionSummary, type SagaDepth, type SagaRunSummary } from '@/lib/sagas-api'
 import { useSagaRealtime } from '@/lib/use-saga-realtime'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { EmptyState, LoadError, LoadingGrid, PageIntro, RunProgressBackdrop, RunStatusBadge, SearchToolbar, summarizeRuns } from './common'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { EmptyState, LoadError, LoadingGrid, PageIntro, RunProgressBackdrop, RunStatusBadge, SagaDepthBadge, SearchToolbar, summarizeRuns } from './common'
 
 function groupRuns(runs: SagaRunSummary[], definitions: SagaDefinitionSummary[]) {
   const definitionBySagaKey = new Map(definitions.map((definition) => [definition.sagaKey, definition]))
@@ -34,6 +35,7 @@ export function SagaRunsPage() {
   const [runs, setRuns] = useState<SagaRunSummary[]>([])
   const [definitions, setDefinitions] = useState<SagaDefinitionSummary[]>([])
   const [query, setQuery] = useState('')
+  const [depthFilter, setDepthFilter] = useState<'all' | SagaDepth>('all')
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const realtimeRefreshRef = useRef<number | null>(null)
@@ -84,11 +86,13 @@ export function SagaRunsPage() {
   const grouped = useMemo(() => groupRuns(runs, definitions), [runs, definitions])
   const filtered = useMemo(() => {
     const needle = query.trim().toLowerCase()
-    if (!needle) return grouped
-    return grouped.filter((group) =>
+    const byDepth =
+      depthFilter === 'all' ? grouped : grouped.filter((group) => group.latest.depth === depthFilter)
+    if (!needle) return byDepth
+    return byDepth.filter((group) =>
       [group.sagaKey, group.definition?.title ?? '', group.definition?.description ?? ''].some((value) => value.toLowerCase().includes(needle)),
     )
-  }, [grouped, query])
+  }, [depthFilter, grouped, query])
 
   return (
     <div className="flex flex-1 flex-col">
@@ -97,7 +101,27 @@ export function SagaRunsPage() {
         title="Saga runs"
         description="Runs are grouped by saga definition so you can inspect current health first, then drill into the exact attempt that failed or passed."
       />
-      <SearchToolbar value={query} onChange={setQuery} placeholder="Search runs by saga key or definition title" meta={`${filtered.length} of ${grouped.length} saga groups`} />
+      <SearchToolbar
+        value={query}
+        onChange={setQuery}
+        placeholder="Search runs by saga key or definition title"
+        meta={
+          <div className="flex items-center gap-3">
+            <Select value={depthFilter} onValueChange={(value) => setDepthFilter(value as 'all' | SagaDepth)}>
+              <SelectTrigger className="h-8 w-[160px]">
+                <SelectValue placeholder="All depths" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All depths</SelectItem>
+                <SelectItem value="shallow">Shallow</SelectItem>
+                <SelectItem value="medium">Medium</SelectItem>
+                <SelectItem value="deep">Deep</SelectItem>
+              </SelectContent>
+            </Select>
+            <span>{filtered.length} of {grouped.length} saga groups</span>
+          </div>
+        }
+      />
       <div className="flex-1 p-6">
         {error ? <LoadError message={error} onRetry={() => void load()} /> : null}
         {isLoading ? (
@@ -115,7 +139,10 @@ export function SagaRunsPage() {
                       <CardTitle className="text-base">{group.definition?.title ?? group.sagaKey}</CardTitle>
                       <CardDescription>{group.sagaKey}</CardDescription>
                     </div>
-                    <RunStatusBadge status={group.latest.status} />
+                    <div className="flex items-center gap-2">
+                      <SagaDepthBadge depth={group.latest.depth} />
+                      <RunStatusBadge status={group.latest.status} />
+                    </div>
                   </div>
                   <p className="text-sm text-muted-foreground">{group.definition?.description ?? 'No definition description attached.'}</p>
                 </CardHeader>

@@ -13,6 +13,11 @@ import { bizes } from "./bizes";
 import { debugSnapshots } from "./projections";
 import { users } from "./users";
 import { subjects } from "./subjects";
+import {
+  actionExecutionStatusEnum,
+  actionIdempotencyStatusEnum,
+  actionRequestStatusEnum,
+} from "./enums";
 
 /**
  * action_requests
@@ -121,7 +126,7 @@ export const actionRequests = pgTable(
      * This is not the same as the final business object state.
      * It only answers what happened to the request.
      */
-    status: varchar("status", { length: 32 }).default("pending").notNull(),
+    status: actionRequestStatusEnum("status").default("pending").notNull(),
 
     /**
      * Risk lane used by policy/approval logic.
@@ -279,7 +284,7 @@ export const actionIdempotencyKeys = pgTable(
     requestHash: varchar("request_hash", { length: 128 }).notNull(),
 
     /** Current replay status for this key. */
-    status: varchar("status", { length: 32 }).default("reserved").notNull(),
+    status: actionIdempotencyStatusEnum("status").default("reserved").notNull(),
 
     /** When this key should stop being reused. */
     expiresAt: timestamp("expires_at", { withTimezone: true }),
@@ -353,7 +358,7 @@ export const actionExecutions = pgTable(
     phaseKey: varchar("phase_key", { length: 100 }).notNull(),
 
     /** Execution result. */
-    status: varchar("status", { length: 32 }).default("pending").notNull(),
+    status: actionExecutionStatusEnum("status").default("pending").notNull(),
 
     /** Machine-friendly error/failure code when status is not success. */
     failureCode: varchar("failure_code", { length: 120 }),

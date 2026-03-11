@@ -8,12 +8,14 @@ tags:
 
 # Extensions Domain
 
-This file is generated from route/schema source files and exists to keep domain docs synchronized with code reality.
+This file is generated from route/schema source files and the canonical domain manifest to keep docs synchronized with runtime mounts.
 
 ## Source
 
-- Route file: `/Users/ameer/bizing/code/apps/api/src/routes/extensions.ts`
-- Schema file: `/Users/ameer/bizing/code/packages/db/src/schema/extensions.ts`
+- Route file: `apps/api/src/routes/extensions.ts`
+- Schema file: `packages/db/src/schema/extensions.ts`
+- Mount path: `/`
+- Auth class (manifest): `machine_allowed`
 
 ## Route Intent (top JSDoc)
 
@@ -35,22 +37,22 @@ _No top JSDoc comment found._
 
 ## API Surface
 
-- `GET` `/extensions/catalog`
-- `POST` `/extensions/catalog`
-- `POST` `/bizes/:bizId/extensions/catalog`
-- `GET` `/bizes/:bizId/extensions/installs`
-- `POST` `/bizes/:bizId/extensions/installs`
-- `PATCH` `/bizes/:bizId/extensions/installs/:installId`
-- `GET` `/bizes/:bizId/extensions/installs/:installId`
-- `POST` `/bizes/:bizId/extensions/catalog/:extensionDefinitionId/permissions`
-- `GET` `/bizes/:bizId/extensions/installs/:installId/permissions`
-- `POST` `/bizes/:bizId/extensions/installs/:installId/permission-grants`
-- `PATCH` `/bizes/:bizId/extensions/installs/:installId/permission-grants/:grantId`
-- `GET` `/bizes/:bizId/extensions/installs/:installId/state-documents`
-- `POST` `/bizes/:bizId/extensions/installs/:installId/state-documents`
-- `PATCH` `/bizes/:bizId/extensions/installs/:installId/state-documents/:documentId`
-- `GET` `/bizes/:bizId/extensions/installs/:installId/projection-checkpoints`
-- `POST` `/bizes/:bizId/extensions/installs/:installId/projection-checkpoints`
+- `GET` `/api/v1/extensions/catalog`
+- `POST` `/api/v1/extensions/catalog`
+- `POST` `/api/v1/bizes/:bizId/extensions/catalog`
+- `GET` `/api/v1/bizes/:bizId/extensions/installs`
+- `POST` `/api/v1/bizes/:bizId/extensions/installs`
+- `PATCH` `/api/v1/bizes/:bizId/extensions/installs/:installId`
+- `GET` `/api/v1/bizes/:bizId/extensions/installs/:installId`
+- `POST` `/api/v1/bizes/:bizId/extensions/catalog/:extensionDefinitionId/permissions`
+- `GET` `/api/v1/bizes/:bizId/extensions/installs/:installId/permissions`
+- `POST` `/api/v1/bizes/:bizId/extensions/installs/:installId/permission-grants`
+- `PATCH` `/api/v1/bizes/:bizId/extensions/installs/:installId/permission-grants/:grantId`
+- `GET` `/api/v1/bizes/:bizId/extensions/installs/:installId/state-documents`
+- `POST` `/api/v1/bizes/:bizId/extensions/installs/:installId/state-documents`
+- `PATCH` `/api/v1/bizes/:bizId/extensions/installs/:installId/state-documents/:documentId`
+- `GET` `/api/v1/bizes/:bizId/extensions/installs/:installId/projection-checkpoints`
+- `POST` `/api/v1/bizes/:bizId/extensions/installs/:installId/projection-checkpoints`
 
 ## Tables
 
@@ -61,6 +63,12 @@ _No top JSDoc comment found._
 - `extension_state_documents`
 - `lifecycle_event_subscriptions`
 - `lifecycle_event_deliveries`
+- `lifecycle_hook_contracts`
+- `lifecycle_hook_contract_versions`
+- `lifecycle_hook_invocations`
+- `automation_hook_bindings`
+- `automation_hook_runs`
+- `lifecycle_hook_effect_events`
 - `idempotency_keys`
 - `extension_service_connections`
 - `extension_service_object_links`

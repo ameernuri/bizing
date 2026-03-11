@@ -13,6 +13,7 @@ import {
   getCurrentAuthCredentialId,
   getCurrentAuthSource,
   getCurrentUser,
+  getSession,
   requireAclPermission,
   requireAuth,
   requireBizAccess,
@@ -21,17 +22,24 @@ import { executeCrudRouteAction } from '../services/action-route-bridge.js'
 import { appendAuditEvent, createOperationalAlert } from '../lib/audit-log.js'
 import { sanitizePlainText, sanitizeUnknown } from '../lib/sanitize.js'
 import { fail, ok, parsePositiveInt } from './_api.js'
+import { dispatchSimulatedOutboundMessage } from '../services/simulated-outbound-dispatch.js'
 
-const { db, auditEvents, auditStreams, bizes, members } = dbPackage
+const { db, auditEvents, auditStreams, bizes, members, users, outboundMessages } = dbPackage
 
 const listQuerySchema = z.object({
   page: z.string().optional(),
   perPage: z.string().optional(),
   status: z.enum(['draft', 'active', 'inactive', 'archived']).optional(),
+  visibility: z.enum(['published', 'unpublished', 'private']).optional(),
   type: z.enum(['individual', 'small_business', 'enterprise']).optional(),
   search: z.string().optional(),
   sortBy: z.enum(['name']).optional(),
   sortOrder: z.enum(['asc', 'desc']).optional(),
+})
+
+const listPublicBizDirectoryQuerySchema = z.object({
+  limit: z.string().optional(),
+  search: z.string().optional(),
 })
 
 const createBizBodySchema = z.object({
@@ -40,6 +48,7 @@ const createBizBodySchema = z.object({
   type: z.enum(['individual', 'small_business', 'enterprise']).default('small_business'),
   timezone: z.string().min(1).max(50).default('UTC'),
   currency: z.string().regex(/^[A-Z]{3}$/).default('USD'),
+  visibility: z.enum(['published', 'unpublished', 'private']).default('published'),
   logoUrl: z.string().url().max(500).optional(),
   metadata: z.record(z.unknown()).optional(),
 })
@@ -49,6 +58,7 @@ const updateBizBodySchema = z.object({
   slug: z.string().min(1).max(100).regex(/^[a-z0-9-]+$/).optional(),
   type: z.enum(['individual', 'small_business', 'enterprise']).optional(),
   status: z.enum(['draft', 'active', 'inactive', 'archived']).optional(),
+  visibility: z.enum(['published', 'unpublished', 'private']).optional(),
   timezone: z.string().min(1).max(50).optional(),
   currency: z.string().regex(/^[A-Z]{3}$/).optional(),
   logoUrl: z.string().url().max(500).optional().nullable(),
@@ -99,13 +109,14 @@ bizRoutes.get('/', requireAuth, async (c) => {
     return fail(c, 'VALIDATION_ERROR', 'Invalid query parameters.', 400, parsed.error.flatten())
   }
 
-  const { page, perPage, search, status, type, sortBy = 'name', sortOrder = 'desc' } = parsed.data
+  const { page, perPage, search, status, visibility, type, sortBy = 'name', sortOrder = 'desc' } = parsed.data
   const pageNum = parsePositiveInt(page, 1)
   const perPageNum = Math.min(parsePositiveInt(perPage, 20), 100)
 
   const where = and(
     eq(members.userId, user.id),
     status ? eq(bizes.status, status) : undefined,
+    visibility ? eq(bizes.visibility, visibility) : undefined,
     type ? eq(bizes.type, type) : undefined,
     search ? ilike(bizes.name, `%${search}%`) : undefined,
   )
@@ -121,6 +132,7 @@ bizRoutes.get('/', requireAuth, async (c) => {
         slug: bizes.slug,
         type: bizes.type,
         status: bizes.status,
+        visibility: bizes.visibility,
         timezone: bizes.timezone,
         currency: bizes.currency,
         logoUrl: bizes.logoUrl,
@@ -179,6 +191,7 @@ bizRoutes.post('/', requireAuth, async (c) => {
       slug: parsed.data.slug,
       type: parsed.data.type,
       status: 'active',
+      visibility: parsed.data.visibility,
       timezone: parsed.data.timezone,
       currency: parsed.data.currency,
       logoUrl: parsed.data.logoUrl ?? null,
@@ -216,6 +229,88 @@ bizRoutes.post('/', requireAuth, async (c) => {
   }
 
   return ok(c, created, 201)
+})
+
+/**
+ * Public business directory.
+ *
+ * Visibility rules:
+ * - `published`: shown to everyone.
+ * - `private`: shown only to authenticated members of that biz.
+ * - `unpublished`: never shown.
+ */
+bizRoutes.get('/public', async (c) => {
+  const parsed = listPublicBizDirectoryQuerySchema.safeParse(c.req.query())
+  if (!parsed.success) {
+    return fail(c, 'VALIDATION_ERROR', 'Invalid query parameters.', 400, parsed.error.flatten())
+  }
+
+  const session = await getSession(c)
+  const userId = session?.user?.id ? String(session.user.id) : null
+  const limit = Math.min(parsePositiveInt(parsed.data.limit, 50), 200)
+  const search = parsed.data.search?.trim()
+
+  const publishedRows = await db
+    .select({
+      id: bizes.id,
+      name: bizes.name,
+      slug: bizes.slug,
+      type: bizes.type,
+      status: bizes.status,
+      visibility: bizes.visibility,
+      timezone: bizes.timezone,
+      currency: bizes.currency,
+      logoUrl: bizes.logoUrl,
+      metadata: bizes.metadata,
+      access: sql<string>`'public'`,
+    })
+    .from(bizes)
+    .where(
+      and(
+        eq(bizes.status, 'active'),
+        eq(bizes.visibility, 'published'),
+        search ? ilike(bizes.name, `%${search}%`) : undefined,
+      ),
+    )
+    .orderBy(asc(bizes.name))
+    .limit(limit)
+
+  const privateRows = userId
+    ? await db
+        .select({
+          id: bizes.id,
+          name: bizes.name,
+          slug: bizes.slug,
+          type: bizes.type,
+          status: bizes.status,
+          visibility: bizes.visibility,
+          timezone: bizes.timezone,
+          currency: bizes.currency,
+          logoUrl: bizes.logoUrl,
+          metadata: bizes.metadata,
+          access: sql<string>`'member'`,
+        })
+        .from(bizes)
+        .innerJoin(members, eq(members.organizationId, bizes.id))
+        .where(
+          and(
+            eq(bizes.status, 'active'),
+            eq(bizes.visibility, 'private'),
+            eq(members.userId, userId),
+            search ? ilike(bizes.name, `%${search}%`) : undefined,
+          ),
+        )
+        .orderBy(asc(bizes.name))
+        .limit(limit)
+    : []
+
+  const merged = [...publishedRows, ...privateRows]
+  const deduped = new Map<string, (typeof merged)[number]>()
+  for (const row of merged) {
+    deduped.set(row.id, row)
+  }
+
+  return ok(c, Array.from(deduped.values()).slice(0, limit))
 })
 
 /**
@@ -336,6 +431,70 @@ bizRoutes.post(
       reason: parsed.data.reason,
       auditEventId: auditEvent.id,
     }, 201)
+  },
+)
+
+/**
+ * Owner onboarding welcome email.
+ *
+ * Sends a one-time simulated welcome email for the current authenticated owner
+ * so the first-run UX can show immediate communication evidence.
+ */
+bizRoutes.post(
+  '/:bizId/onboarding/welcome-email',
+  requireAuth,
+  requireBizAccess('bizId'),
+  requireAclPermission('communications.write', { bizIdParam: 'bizId' }),
+  async (c) => {
+    const bizId = c.req.param('bizId')
+    const user = getCurrentUser(c)
+    if (!user?.id) return fail(c, 'UNAUTHORIZED', 'Authentication required.', 401)
+
+    const recipientEmail = (user.email ?? '').trim().toLowerCase()
+    if (!recipientEmail) return fail(c, 'VALIDATION_ERROR', 'Current user email is required to send welcome email.', 400)
+
+    const existing = await db.query.outboundMessages.findFirst({
+      where: and(
+        eq(outboundMessages.bizId, bizId),
+        eq(outboundMessages.recipientUserId, user.id),
+        sql`${outboundMessages.metadata} ->> 'eventType' = 'owner_signup_welcome'`,
+      ),
+      orderBy: [desc(outboundMessages.scheduledFor), desc(outboundMessages.id)],
+    })
+
+    if (existing) {
+      return ok(c, { alreadySent: true, message: existing, events: [] })
+    }
+
+    const profile = await db.query.users.findFirst({
+      where: eq(users.id, user.id),
+      columns: { firstName: true, name: true },
+    })
+    const firstNameRaw =
+      (profile?.firstName?.trim() || profile?.name?.trim().split(/\s+/).filter(Boolean)[0] || 'there')
+    const firstName = sanitizePlainText(firstNameRaw)
+
+    const dispatched = await dispatchSimulatedOutboundMessage({
+      bizId,
+      channel: 'email',
+      purpose: 'transactional',
+      recipientUserId: user.id,
+      recipientRef: recipientEmail,
+      status: 'delivered',
+      providerKey: 'simulated_email',
+      providerMessageRef: `owner-welcome-${user.id}-${Date.now()}`,
+      payload: {
+        subject: 'Welcome to Bizing',
+        body: `Hi ${firstName}, your account is live and your starter workspace is ready. You can now set your schedule, publish your first offer, and start taking paid bookings.`,
+      },
+      metadata: {
+        eventType: 'owner_signup_welcome',
+        audience: 'owner',
+        templateSlug: 'owner_signup_welcome_v1',
+      },
+    })
+
+    return ok(c, { alreadySent: false, message: dispatched.message, events: dispatched.events }, 201)
   },
 )
 

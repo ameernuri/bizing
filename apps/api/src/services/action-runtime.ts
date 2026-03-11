@@ -6,6 +6,16 @@ import dbPackage from '@bizing/db'
 import type { AuthSource, CurrentUser } from '../middleware/auth.js'
 import { sanitizePlainText, sanitizeUnknown } from '../lib/sanitize.js'
 import { createBookingLifecycleMessage } from './booking-lifecycle-messages.js'
+import { validateBookingWindow } from './availability-resolver.js'
+import { resolveBookingCapacityWindow, syncBookingCapacityClaims } from './booking-capacity-claims.js'
+import { syncCapacityHoldReservationMirror } from './capacity-reservation-ledger.js'
+import { executeAutomationHooks } from './automation-hook-runtime.js'
+import {
+  executeGenericAutomationHookBinding,
+  finalizeGenericAutomationHookBinding,
+  type GenericAutomationHookExecutionResult,
+} from './automation-hook-bindings-runtime.js'
+import { dispatchWorkflowTriggers } from './workflow-trigger-runtime.js'
 
 const {
   db: baseDb,
@@ -21,6 +31,7 @@ const {
   serviceGroups,
   services,
   serviceProducts,
+  scheduleSubjects,
   calendars,
   calendarOverlays,
   availabilityRules,
@@ -33,9 +44,14 @@ const {
   sellables,
   sellableServiceProducts,
   sellableOfferVersions,
+  timeScopes,
 } = dbPackage
 
 type ActionDbExecutor = typeof baseDb
+type WorkflowMaterializationAggregate = {
+  createdReviewItems: Array<{ id: string }>
+  createdWorkflowInstances: Array<{ id: string; workflowKey: string }>
+}
 
 const actionDbContext = new AsyncLocalStorage<ActionDbExecutor>()
 
@@ -77,6 +93,13 @@ const bookingCreatePayloadSchema = z.object({
   offerVersionId: z.string().min(1),
   customerUserId: z.string().optional(),
   customerGroupAccountId: z.string().optional(),
+  locationId: z.string().min(1).optional(),
+  resourceId: z.string().min(1).optional(),
+  serviceProductId: z.string().min(1).optional(),
+  providerUserId: z.string().min(1).optional(),
+  acquisitionSource: z.string().min(1).max(120).optional(),
+  attendanceOutcome: z.string().min(1).max(40).optional(),
+  leadTimeMinutes: z.number().int().min(0).optional(),
   status: z
     .enum([
       'draft',
@@ -120,6 +143,7 @@ const offerPublishPayloadSchema = z.object({
 })
 
 const offerCreatePayloadSchema = z.object({
+  serviceGroupId: z.string().min(1),
   name: z.string().min(1).max(255),
   slug: z.string().min(1).max(140).regex(/^[a-z0-9-]+$/),
   description: z.string().max(4000).optional(),
@@ -690,6 +714,345 @@ function payloadTypeSummary(record: Record<string, unknown>) {
   return summary
 }
 
+function bookingMetadataString(
+  metadata: Record<string, unknown>,
+  key: string,
+): string | null {
+  const value = metadata[key]
+  if (typeof value !== 'string') return null
+  const trimmed = value.trim()
+  return trimmed.length > 0 ? trimmed : null
+}
+
+function bookingMetadataNonNegativeInt(
+  metadata: Record<string, unknown>,
+  key: string,
+): number | null {
+  const value = metadata[key]
+  if (typeof value !== 'number' || !Number.isFinite(value)) return null
+  const asInt = Math.floor(value)
+  return asInt >= 0 ? asInt : null
+}
+
+type CapacityScopeTableKey = 'capacityHoldPolicies' | 'capacityHoldDemandAlerts' | 'capacityHolds'
+
+type TimeScopeRow = {
+  id: string
+  scopeType: string
+  scopeRefType: string | null
+  scopeRefId: string | null
+  scopeRefKey: string
+  isActive: boolean
+}
+
+function isCapacityScopeManagedTable(tableKey: string): tableKey is CapacityScopeTableKey {
+  return (
+    tableKey === 'capacityHoldPolicies' ||
+    tableKey === 'capacityHoldDemandAlerts' ||
+    tableKey === 'capacityHolds'
+  )
+}
+
+function parseScopeRefKey(scopeRefKey: string): {
+  prefix: string
+  id: string | null
+  customRefType: string | null
+  customRefId: string | null
+} {
+  if (scopeRefKey === 'biz') {
+    return { prefix: 'biz', id: null, customRefType: null, customRefId: null }
+  }
+  const parts = scopeRefKey.split(':')
+  const prefix = parts[0] ?? ''
+  if (prefix === 'custom_subject') {
+    const customRefType = parts[1] ?? null
+    const customRefId = parts.slice(2).join(':') || null
+    return { prefix, id: null, customRefType, customRefId }
+  }
+  const id = parts.slice(1).join(':') || null
+  return { prefix, id, customRefType: null, customRefId: null }
+}
+
+function policyTargetTypeFromScope(scopeType: string): string | null {
+  switch (scopeType) {
+    case 'biz':
+    case 'location':
+    case 'calendar':
+    case 'resource':
+    case 'capacity_pool':
+    case 'service':
+    case 'service_product':
+    case 'offer':
+    case 'offer_version':
+    case 'product':
+    case 'sellable':
+    case 'custom_subject':
+      return scopeType
+    default:
+      return null
+  }
+}
+
+function holdTargetTypeFromScope(scopeType: string): string | null {
+  switch (scopeType) {
+    case 'calendar':
+    case 'capacity_pool':
+    case 'resource':
+    case 'offer_version':
+    case 'custom_subject':
+      return scopeType
+    default:
+      return null
+  }
+}
+
+function validationError(code: string, message: string, details?: Record<string, unknown>) {
+  return {
+    family: 'validation' as const,
+    code,
+    message,
+    retryable: false,
+    details,
+  }
+}
+
+function deriveScopeColumnsForPolicyLikeTable(
+  targetType: string,
+  parsedScope: ReturnType<typeof parseScopeRefKey>,
+  timeScope: TimeScopeRow,
+) {
+  const base: Record<string, unknown> = {
+    timeScopeId: timeScope.id,
+    targetType,
+    targetRefKey: timeScope.scopeRefKey,
+    locationId: null,
+    calendarId: null,
+    resourceId: null,
+    capacityPoolId: null,
+    serviceId: null,
+    serviceProductId: null,
+    offerId: null,
+    offerVersionId: null,
+    productId: null,
+    sellableId: null,
+    targetRefType: null,
+    targetRefId: null,
+  }
+
+  switch (targetType) {
+    case 'location':
+      base.locationId = parsedScope.id
+      break
+    case 'calendar':
+      base.calendarId = parsedScope.id
+      break
+    case 'resource':
+      base.resourceId = parsedScope.id
+      break
+    case 'capacity_pool':
+      base.capacityPoolId = parsedScope.id
+      break
+    case 'service':
+      base.serviceId = parsedScope.id
+      break
+    case 'service_product':
+      base.serviceProductId = parsedScope.id
+      break
+    case 'offer':
+      base.offerId = parsedScope.id
+      break
+    case 'offer_version':
+      base.offerVersionId = parsedScope.id
+      break
+    case 'product':
+      base.productId = parsedScope.id
+      break
+    case 'sellable':
+      base.sellableId = parsedScope.id
+      break
+    case 'custom_subject':
+      base.targetRefType = timeScope.scopeRefType ?? parsedScope.customRefType
+      base.targetRefId = timeScope.scopeRefId ?? parsedScope.customRefId
+      break
+    default:
+      break
+  }
+
+  return base
+}
+
+function deriveScopeColumnsForHoldTable(
+  targetType: string,
+  parsedScope: ReturnType<typeof parseScopeRefKey>,
+  timeScope: TimeScopeRow,
+) {
+  const base: Record<string, unknown> = {
+    timeScopeId: timeScope.id,
+    targetType,
+    targetRefKey: timeScope.scopeRefKey,
+    capacityPoolId: null,
+    resourceId: null,
+    offerVersionId: null,
+    targetRefType: null,
+    targetRefId: null,
+  }
+
+  switch (targetType) {
+    case 'calendar':
+      base.calendarId = parsedScope.id
+      break
+    case 'capacity_pool':
+      base.capacityPoolId = parsedScope.id
+      break
+    case 'resource':
+      base.resourceId = parsedScope.id
+      break
+    case 'offer_version':
+      base.offerVersionId = parsedScope.id
+      break
+    case 'custom_subject':
+      base.targetRefType = timeScope.scopeRefType ?? parsedScope.customRefType
+      base.targetRefId = timeScope.scopeRefId ?? parsedScope.customRefId
+      break
+    default:
+      break
+  }
+
+  return base
+}
+
+async function applyNormalizedTimeScopeForCrud(input: {
+  context: ActionContext
+  tableKey: string
+  operation: CrudOperation
+  payload: Record<string, unknown>
+  existingRow?: Record<string, unknown> | null
+}) {
+  if (!isCapacityScopeManagedTable(input.tableKey)) return input.payload
+
+  const payload = { ...input.payload }
+  const explicitScopeId =
+    typeof payload.timeScopeId === 'string' && payload.timeScopeId.trim().length > 0
+      ? payload.timeScopeId.trim()
+      : null
+  const existingScopeId =
+    input.existingRow && typeof input.existingRow.timeScopeId === 'string' && input.existingRow.timeScopeId.length > 0
+      ? input.existingRow.timeScopeId
+      : null
+  const effectiveScopeId = explicitScopeId ?? existingScopeId
+  if (!effectiveScopeId) {
+    throw validationError(
+      'TIME_SCOPE_REQUIRED',
+      `timeScopeId is required for ${input.tableKey} ${input.operation} writes.`,
+      { tableKey: input.tableKey, operation: input.operation },
+    )
+  }
+
+  const scope = await db.query.timeScopes.findFirst({
+    where: and(eq(timeScopes.bizId, input.context.bizId), eq(timeScopes.id, effectiveScopeId)),
+    columns: {
+      id: true,
+      scopeType: true,
+      scopeRefType: true,
+      scopeRefId: true,
+      scopeRefKey: true,
+      isActive: true,
+    },
+  })
+  if (!scope) {
+    throw validationError('TIME_SCOPE_NOT_FOUND', 'timeScopeId does not exist in this biz.', {
+      tableKey: input.tableKey,
+      timeScopeId: effectiveScopeId,
+    })
+  }
+  if (!scope.isActive) {
+    throw validationError('TIME_SCOPE_INACTIVE', 'timeScopeId is inactive and cannot be used for new writes.', {
+      tableKey: input.tableKey,
+      timeScopeId: effectiveScopeId,
+    })
+  }
+
+  const parsedScope = parseScopeRefKey(scope.scopeRefKey)
+  let derived: Record<string, unknown>
+  let expectedTargetType: string | null = null
+
+  if (input.tableKey === 'capacityHolds') {
+    expectedTargetType = holdTargetTypeFromScope(scope.scopeType)
+    if (!expectedTargetType) {
+      throw validationError(
+        'TIME_SCOPE_UNSUPPORTED_FOR_HOLD',
+        `timeScope scopeType '${scope.scopeType}' cannot back capacity holds.`,
+        { tableKey: input.tableKey, timeScopeId: effectiveScopeId, scopeType: scope.scopeType },
+      )
+    }
+    derived = deriveScopeColumnsForHoldTable(expectedTargetType, parsedScope, scope)
+    const effectiveCalendarId =
+      (typeof payload.calendarId === 'string' && payload.calendarId.length > 0
+        ? payload.calendarId
+        : input.existingRow && typeof input.existingRow.calendarId === 'string'
+          ? input.existingRow.calendarId
+          : null) ?? null
+    if (expectedTargetType === 'calendar') {
+      const expectedCalendarId = String(derived.calendarId ?? '')
+      if (effectiveCalendarId && effectiveCalendarId !== expectedCalendarId) {
+        throw validationError(
+          'CALENDAR_SCOPE_MISMATCH',
+          'calendarId conflicts with calendar encoded by timeScopeId.',
+          { providedCalendarId: effectiveCalendarId, expectedCalendarId, timeScopeId: effectiveScopeId },
+        )
+      }
+      derived.calendarId = expectedCalendarId
+    } else if (!effectiveCalendarId) {
+      throw validationError(
+        'CALENDAR_ID_REQUIRED',
+        'calendarId is required for non-calendar capacity hold targets.',
+        { targetType: expectedTargetType, timeScopeId: effectiveScopeId },
+      )
+    }
+  } else {
+    expectedTargetType = policyTargetTypeFromScope(scope.scopeType)
+    if (!expectedTargetType) {
+      throw validationError(
+        'TIME_SCOPE_UNSUPPORTED_FOR_POLICY',
+        `timeScope scopeType '${scope.scopeType}' cannot back ${input.tableKey}.`,
+        { tableKey: input.tableKey, timeScopeId: effectiveScopeId, scopeType: scope.scopeType },
+      )
+    }
+    derived = deriveScopeColumnsForPolicyLikeTable(expectedTargetType, parsedScope, scope)
+  }
+
+  if (typeof payload.targetType === 'string' && payload.targetType !== expectedTargetType) {
+    throw validationError(
+      'TARGET_TYPE_SCOPE_MISMATCH',
+      'targetType must match the type implied by timeScopeId.',
+      {
+        tableKey: input.tableKey,
+        providedTargetType: payload.targetType,
+        expectedTargetType,
+        timeScopeId: effectiveScopeId,
+      },
+    )
+  }
+  if (typeof payload.targetRefKey === 'string' && payload.targetRefKey !== scope.scopeRefKey) {
+    throw validationError(
+      'TARGET_REF_KEY_SCOPE_MISMATCH',
+      'targetRefKey is derived from timeScopeId and cannot conflict with it.',
+      {
+        tableKey: input.tableKey,
+        providedTargetRefKey: payload.targetRefKey,
+        expectedTargetRefKey: scope.scopeRefKey,
+        timeScopeId: effectiveScopeId,
+      },
+    )
+  }
+
+  return {
+    ...payload,
+    ...derived,
+    timeScopeId: effectiveScopeId,
+  }
+}
+
 /**
  * Resolve the tenant id that should own success artifacts for an action.
  *
@@ -929,6 +1292,75 @@ async function ensureSubjectRegistered(params: {
   return row
 }
 
+function scheduleClassFromSubjectType(subjectType: string): string | null {
+  switch (subjectType) {
+    case 'resource':
+    case 'service':
+    case 'service_product':
+    case 'offer':
+    case 'offer_version':
+    case 'location':
+    case 'coverage_lane':
+      return subjectType
+    default:
+      return null
+  }
+}
+
+async function ensureScheduleSubjectRegistered(params: {
+  bizId: string
+  subject: CanonicalSubjectDescriptor
+  metadata?: Record<string, unknown>
+  executor?: ActionDbExecutor
+}) {
+  const scheduleClass = scheduleClassFromSubjectType(params.subject.subjectType)
+  if (!scheduleClass) return null
+
+  const executor = params.executor ?? db
+  const where = and(
+    eq(scheduleSubjects.bizId, params.bizId),
+    eq(scheduleSubjects.subjectType, params.subject.subjectType),
+    eq(scheduleSubjects.subjectId, params.subject.subjectId),
+  )
+  let row = await executor.query.scheduleSubjects.findFirst({ where })
+  if (row) return row
+
+  await executor
+    .insert(scheduleSubjects)
+    .values({
+      bizId: params.bizId,
+      subjectType: params.subject.subjectType,
+      subjectId: params.subject.subjectId,
+      scheduleClass,
+      displayName: params.subject.displayName,
+      status: 'active',
+      schedulingMode: 'exclusive',
+      defaultCapacity: 1,
+      defaultLeadTimeMin: 0,
+      defaultBufferBeforeMin: 0,
+      defaultBufferAfterMin: 0,
+      shouldProjectTimeline: true,
+      policy: {},
+      metadata: sanitizeUnknown({
+        source: 'canonical-actions',
+        category: params.subject.category,
+        ...(params.metadata ?? {}),
+      }),
+    })
+    .onConflictDoNothing()
+
+  row = await executor.query.scheduleSubjects.findFirst({ where })
+  if (!row) {
+    throw {
+      family: 'internal',
+      code: 'SCHEDULE_SUBJECT_REGISTRATION_FAILED',
+      message: 'Action succeeded but schedule subject registration failed.',
+      retryable: true,
+    }
+  }
+  return row
+}
+
 async function ensureActionProjection(bizId: string, executor: ActionDbExecutor = db) {
   let projection = await executor.query.projections.findFirst({
     where: and(eq(projections.bizId, bizId), eq(projections.projectionKey, 'action_activity')),
@@ -966,6 +1398,71 @@ async function ensureActionProjection(bizId: string, executor: ActionDbExecutor 
   return projection
 }
 
+async function runActionLifecycleHooks(params: {
+  executor: ActionDbExecutor
+  bizId: string
+  actionRequestId: string
+  stage: 'before_execute' | 'after_execute'
+  input: CanonicalActionInput
+  context: ActionContext
+  targetType: string
+  targetRefId: string
+  actionOutputPayload?: Record<string, unknown>
+}) {
+  return executeAutomationHooks<GenericAutomationHookExecutionResult, WorkflowMaterializationAggregate>({
+    tx: params.executor,
+    bizId: params.bizId,
+    hookPoint: `action.${params.input.actionKey}.${params.stage}`,
+    triggerSource: 'action',
+    triggerRefId: params.actionRequestId,
+    targetType: params.targetType,
+    targetRefId: params.targetRefId,
+    idempotencyKey: params.input.idempotencyKey
+      ? `${params.input.idempotencyKey}:action:${params.stage}`
+      : `${params.actionRequestId}:${params.stage}`,
+    contextPayload: sanitizeUnknown({
+      actionRequestId: params.actionRequestId,
+      stage: params.stage,
+      requestId: params.context.requestId ?? null,
+      accessMode: params.context.accessMode,
+      actorType: actorTypeFromAuthSource(params.context.authSource),
+      actorUserId: params.context.user.id,
+    }) as Record<string, unknown>,
+    inputPayload: sanitizeUnknown({
+      actionKey: params.input.actionKey,
+      actionFamily: params.input.actionFamily ?? null,
+      targetType: params.targetType,
+      targetRefId: params.targetRefId,
+      inputPayload: params.input.payload,
+      outputPayload: params.actionOutputPayload ?? {},
+    }) as Record<string, unknown>,
+    executeBinding: ({ binding }) =>
+      executeGenericAutomationHookBinding({
+        binding,
+        hookPoint: binding.hookPoint,
+        targetType: params.targetType,
+        targetRefId: params.targetRefId,
+        inputPayload: sanitizeUnknown({
+          actionKey: params.input.actionKey,
+          actionFamily: params.input.actionFamily ?? null,
+          payload: params.input.payload,
+          outputPayload: params.actionOutputPayload ?? {},
+          stage: params.stage,
+        }) as Record<string, unknown>,
+      }),
+    finalizeBinding: ({ binding, run, executionResult }) =>
+      finalizeGenericAutomationHookBinding({
+        tx: params.executor,
+        bizId: params.bizId,
+        targetType: params.targetType,
+        targetRefId: params.targetRefId,
+        binding,
+        run,
+        executionResult,
+      }),
+  })
+}
+
 async function recordSuccessArtifacts(params: {
   bizId: string
   actionRequestId: string
@@ -977,6 +1474,15 @@ async function recordSuccessArtifacts(params: {
 }) {
   const executor = params.executor ?? db
   const subject = await ensureSubjectRegistered({
+    bizId: params.bizId,
+    subject: params.result.subject,
+    metadata: {
+      actionRequestId: params.actionRequestId,
+      actionKey: params.input.actionKey,
+    },
+    executor,
+  })
+  await ensureScheduleSubjectRegistered({
     bizId: params.bizId,
     subject: params.result.subject,
     metadata: {
@@ -1008,6 +1514,58 @@ async function recordSuccessArtifacts(params: {
       }),
     })
     .returning()
+
+  const domainEventHookExecution = await executeAutomationHooks<
+    GenericAutomationHookExecutionResult,
+    WorkflowMaterializationAggregate
+  >({
+    tx: executor,
+    bizId: params.bizId,
+    hookPoint: `event.${params.result.event.eventKey}.after_commit`,
+    triggerSource: 'event',
+    triggerRefId: domainEvent.id,
+    targetType: subject.subjectType,
+    targetRefId: subject.subjectId,
+    idempotencyKey: params.input.idempotencyKey
+      ? `${params.input.idempotencyKey}:event:${domainEvent.id}`
+      : domainEvent.id,
+    contextPayload: sanitizeUnknown({
+      actionRequestId: params.actionRequestId,
+      actionExecutionId: params.actionExecutionId,
+      eventId: domainEvent.id,
+      eventKey: domainEvent.eventKey,
+      actorUserId: params.context.user.id,
+    }) as Record<string, unknown>,
+    inputPayload: sanitizeUnknown({
+      domainEventId: domainEvent.id,
+      eventKey: domainEvent.eventKey,
+      eventFamily: domainEvent.eventFamily,
+      payload: domainEvent.payload ?? {},
+    }) as Record<string, unknown>,
+    executeBinding: ({ binding }) =>
+      executeGenericAutomationHookBinding({
+        binding,
+        hookPoint: binding.hookPoint,
+        targetType: subject.subjectType,
+        targetRefId: subject.subjectId,
+        inputPayload: sanitizeUnknown({
+          domainEventId: domainEvent.id,
+          eventKey: domainEvent.eventKey,
+          eventFamily: domainEvent.eventFamily,
+          payload: domainEvent.payload ?? {},
+        }) as Record<string, unknown>,
+      }),
+    finalizeBinding: ({ binding, run, executionResult }) =>
+      finalizeGenericAutomationHookBinding({
+        tx: executor,
+        bizId: params.bizId,
+        targetType: subject.subjectType,
+        targetRefId: subject.subjectId,
+        binding,
+        run,
+        executionResult,
+      }),
+  })
 
   const projection = await ensureActionProjection(params.bizId, executor)
   await executor
@@ -1051,7 +1609,28 @@ async function recordSuccessArtifacts(params: {
     ),
   })
 
-  return { domainEvent, projectionDocument }
+  const domainEventWorkflowDispatch = await dispatchWorkflowTriggers({
+    tx: executor,
+    bizId: params.bizId,
+    triggerSource: 'domain_event',
+    triggerRefId: domainEvent.id,
+    domainEventKey: domainEvent.eventKey,
+    targetType: subject.subjectType,
+    targetRefId: subject.subjectId,
+    inputPayload: sanitizeUnknown({
+      domainEventId: domainEvent.id,
+      eventKey: domainEvent.eventKey,
+      eventFamily: domainEvent.eventFamily,
+      payload: domainEvent.payload ?? {},
+      actionRequestId: params.actionRequestId,
+      actionExecutionId: params.actionExecutionId,
+    }) as Record<string, unknown>,
+    metadata: {
+      source: 'action-runtime.recordSuccessArtifacts',
+    },
+  })
+
+  return { domainEvent, projectionDocument, domainEventWorkflowDispatch, domainEventHookExecution }
 }
 
 async function previewBookingCreate(context: ActionContext, payload: Record<string, unknown>): Promise<ActionPreviewResult> {
@@ -1150,6 +1729,72 @@ async function executeBookingCreate(
 ): Promise<ActionExecuteResult> {
   const preview = await previewBookingCreate(context, payload)
   const normalized = bookingCreatePayloadSchema.parse(preview.normalizedPayload)
+  const metadata = sanitizeUnknown(normalized.metadata ?? {}) as Record<string, unknown>
+  if (normalized.locationId !== undefined) {
+    if (normalized.locationId) metadata.locationId = normalized.locationId
+    else delete metadata.locationId
+  }
+  if (normalized.resourceId !== undefined) {
+    if (normalized.resourceId) metadata.resourceId = normalized.resourceId
+    else delete metadata.resourceId
+  }
+  const locationId = normalized.locationId ?? bookingMetadataString(metadata, 'locationId')
+  const resourceId = normalized.resourceId ?? bookingMetadataString(metadata, 'resourceId')
+  const serviceProductId =
+    normalized.serviceProductId ?? bookingMetadataString(metadata, 'serviceProductId')
+  const providerUserId =
+    normalized.providerUserId ?? bookingMetadataString(metadata, 'providerUserId')
+  const acquisitionSource =
+    normalized.acquisitionSource ?? bookingMetadataString(metadata, 'acquisitionSource')
+  const attendanceOutcome =
+    normalized.attendanceOutcome ?? bookingMetadataString(metadata, 'attendanceOutcome')
+  const leadTimeMinutes =
+    normalized.leadTimeMinutes ?? bookingMetadataNonNegativeInt(metadata, 'leadTimeMinutes')
+  const offerVersion = await db.query.offerVersions.findFirst({
+    where: and(
+      eq(offerVersions.bizId, context.bizId),
+      eq(offerVersions.id, normalized.offerVersionId),
+    ),
+    columns: {
+      defaultDurationMin: true,
+    },
+  })
+  const bookingWindow = resolveBookingCapacityWindow({
+    startsAt: normalized.confirmedStartAt
+      ? new Date(normalized.confirmedStartAt)
+      : normalized.requestedStartAt
+        ? new Date(normalized.requestedStartAt)
+        : null,
+    endsAt: normalized.confirmedEndAt
+      ? new Date(normalized.confirmedEndAt)
+      : normalized.requestedEndAt
+        ? new Date(normalized.requestedEndAt)
+        : null,
+    durationMinutes: Number(offerVersion?.defaultDurationMin ?? 60),
+  })
+  if (bookingWindow.startsAt && bookingWindow.endsAt) {
+    const availabilityDecision = await validateBookingWindow({
+      bizId: context.bizId,
+      offerId: normalized.offerId,
+      offerVersionId: normalized.offerVersionId,
+      locationId,
+      serviceId: bookingMetadataString(metadata, 'serviceId'),
+      serviceProductId,
+      providerUserId,
+      resourceId,
+      slotStartAt: bookingWindow.startsAt,
+      slotEndAt: bookingWindow.endsAt,
+    })
+    if (!availabilityDecision.bookable) {
+      throw {
+        family: 'validation',
+        code: 'SLOT_UNAVAILABLE',
+        message: 'Selected time is not available under current availability policy.',
+        details: availabilityDecision,
+        retryable: false,
+      }
+    }
+  }
 
   const [created] = await db
     .insert(bookingOrders)
@@ -1159,6 +1804,12 @@ async function executeBookingCreate(
       offerVersionId: normalized.offerVersionId,
       customerUserId: normalized.customerUserId ?? context.user.id,
       customerGroupAccountId: normalized.customerGroupAccountId,
+      locationId,
+      serviceProductId,
+      providerUserId,
+      acquisitionSource,
+      attendanceOutcome,
+      leadTimeMinutes,
       status: normalized.status,
       currency: normalized.currency,
       subtotalMinor: normalized.subtotalMinor,
@@ -1173,9 +1824,21 @@ async function executeBookingCreate(
       actionRequestId,
       pricingSnapshot: sanitizeUnknown(normalized.pricingSnapshot ?? {}),
       policySnapshot: sanitizeUnknown(normalized.policySnapshot ?? {}),
-      metadata: sanitizeUnknown(normalized.metadata ?? {}),
+      metadata,
     })
     .returning()
+
+  await syncBookingCapacityClaims({
+    bizId: context.bizId,
+    bookingOrderId: created.id,
+    bookingStatus: created.status,
+    startsAt: bookingWindow.startsAt,
+    endsAt: bookingWindow.endsAt,
+    providerUserId,
+    resourceId,
+    actorUserId: context.user.id,
+    executor: db,
+  })
 
   const recipientUserId = normalized.customerUserId ?? context.user.id
   const recipientRef = await resolveRecipientEmail(recipientUserId, context.user.email)
@@ -1278,6 +1941,10 @@ async function executeBookingCancel(
     ...(existing.metadata && typeof existing.metadata === 'object' ? (existing.metadata as Record<string, unknown>) : {}),
     cancellationReason: normalized.reason ?? null,
   })
+  const existingMetadata =
+    existing.metadata && typeof existing.metadata === 'object' && !Array.isArray(existing.metadata)
+      ? (existing.metadata as Record<string, unknown>)
+      : {}
 
   const [updated] = await db
     .update(bookingOrders)
@@ -1288,6 +1955,18 @@ async function executeBookingCancel(
     })
     .where(and(eq(bookingOrders.bizId, context.bizId), eq(bookingOrders.id, existing.id)))
     .returning()
+
+  await syncBookingCapacityClaims({
+    bizId: context.bizId,
+    bookingOrderId: existing.id,
+    bookingStatus: 'cancelled',
+    startsAt: existing.confirmedStartAt ?? existing.requestedStartAt,
+    endsAt: existing.confirmedEndAt ?? existing.requestedEndAt,
+    providerUserId: existing.providerUserId,
+    resourceId: bookingMetadataString(existingMetadata, 'resourceId'),
+    actorUserId: context.user.id,
+    executor: db,
+  })
 
   const recipientRef = await resolveRecipientEmail(existing.customerUserId ?? null, context.user.email)
   await createBookingLifecycleMessage({
@@ -1716,7 +2395,7 @@ async function executeResourceDelete(
 }
 
 async function previewOfferCreate(
-  _context: ActionContext,
+  context: ActionContext,
   payload: Record<string, unknown>,
 ): Promise<ActionPreviewResult> {
   const parsed = offerCreatePayloadSchema.safeParse(payload)
@@ -1729,11 +2408,24 @@ async function previewOfferCreate(
       retryable: false,
     }
   }
+  const serviceGroup = await db.query.serviceGroups.findFirst({
+    where: and(eq(serviceGroups.bizId, context.bizId), eq(serviceGroups.id, parsed.data.serviceGroupId)),
+    columns: { id: true },
+  })
+  if (!serviceGroup) {
+    throw {
+      family: 'validation',
+      code: 'SERVICE_GROUP_NOT_FOUND',
+      message: 'The service group does not exist in this biz.',
+      retryable: false,
+    }
+  }
   return {
     summary: `Preview offer.create for ${parsed.data.slug}.`,
     normalizedPayload: parsed.data,
     effectSummary: {
       willCreate: 'offer',
+      serviceGroupId: parsed.data.serviceGroupId,
       slug: parsed.data.slug,
       executionMode: parsed.data.executionMode,
       isPublished: parsed.data.isPublished,
@@ -1753,6 +2445,7 @@ async function executeOfferCreate(
     .values({
       bizId: context.bizId,
       actionRequestId,
+      serviceGroupId: normalized.serviceGroupId,
       name: normalized.name,
       slug: normalized.slug,
       description: normalized.description,
@@ -1817,6 +2510,20 @@ async function previewOfferUpdate(
       retryable: false,
     }
   }
+  if (parsed.data.serviceGroupId) {
+    const serviceGroup = await db.query.serviceGroups.findFirst({
+      where: and(eq(serviceGroups.bizId, context.bizId), eq(serviceGroups.id, parsed.data.serviceGroupId)),
+      columns: { id: true },
+    })
+    if (!serviceGroup) {
+      throw {
+        family: 'validation',
+        code: 'SERVICE_GROUP_NOT_FOUND',
+        message: 'The service group does not exist in this biz.',
+        retryable: false,
+      }
+    }
+  }
   return {
     summary: `Preview offer.update for ${existing.id}.`,
     normalizedPayload: parsed.data,
@@ -1839,6 +2546,7 @@ async function executeOfferUpdate(
     .update(offers)
     .set({
       actionRequestId,
+      serviceGroupId: normalized.serviceGroupId,
       name: normalized.name,
       slug: normalized.slug,
       description: normalized.description,
@@ -3340,11 +4048,18 @@ async function executeGenericCrudAction(
   const deletedAtColumn = table.deletedAt as any | undefined
 
   if (operation === 'create') {
+    const createPayload = sanitizeUnknown({
+      ...(parsed.data ?? {}),
+      ...(bizIdColumn && !(parsed.data && 'bizId' in parsed.data) ? { bizId: context.bizId } : {}),
+    }) as Record<string, unknown>
+    const normalizedCreatePayload = await applyNormalizedTimeScopeForCrud({
+      context,
+      tableKey: parsed.tableKey,
+      operation,
+      payload: createPayload,
+    })
     const insertPayload = coerceTemporalPayload(
-      sanitizeUnknown({
-        ...(parsed.data ?? {}),
-        ...(bizIdColumn && !(parsed.data && 'bizId' in parsed.data) ? { bizId: context.bizId } : {}),
-      }) as Record<string, unknown>,
+      normalizedCreatePayload,
     )
 
     /**
@@ -3424,6 +4139,14 @@ async function executeGenericCrudAction(
       }
     }
     const created = createdRows[0]
+    if (parsed.tableKey === 'capacityHolds' && created && typeof created.id === 'string') {
+      await syncCapacityHoldReservationMirror({
+        bizId: context.bizId,
+        holdId: created.id,
+        actorUserId: context.user.id,
+        executor: db,
+      })
+    }
 
     const subjectType = parsed.subjectType ?? defaultSubjectTypeFromTableKey(parsed.tableKey)
     const subjectId = parsed.subjectId ?? String((created as { id?: string }).id ?? '')
@@ -3456,25 +4179,47 @@ async function executeGenericCrudAction(
   }
 
   if (operation === 'update') {
-    const patchPayload = coerceTemporalPayload(
-      sanitizeUnknown(parsed.patch ?? {}) as Record<string, unknown>,
-    )
     const whereClause = bizIdColumn && context.bizId
       ? and(eq(idColumn, parsed.id as string), eq(bizIdColumn, context.bizId))
       : eq(idColumn, parsed.id as string)
-    const updatedRows = (await db
-      .update(table as any)
-      .set(patchPayload as any)
+    const existingRows = (await db
+      .select()
+      .from(table as any)
       .where(whereClause as any)
-      .returning()) as any[]
-    const updated = updatedRows[0]
-    if (!updated) {
+      .limit(1)) as any[]
+    const existing = existingRows[0] as Record<string, unknown> | undefined
+    if (!existing) {
       throw {
         family: 'validation',
         code: 'CRUD_TARGET_NOT_FOUND',
         message: `No row found for update on ${parsed.tableKey} with id ${parsed.id}.`,
         retryable: false,
       }
+    }
+    const updatePayload = sanitizeUnknown(parsed.patch ?? {}) as Record<string, unknown>
+    const normalizedUpdatePayload = await applyNormalizedTimeScopeForCrud({
+      context,
+      tableKey: parsed.tableKey,
+      operation,
+      payload: updatePayload,
+      existingRow: existing,
+    })
+    const patchPayload = coerceTemporalPayload(
+      normalizedUpdatePayload,
+    )
+    const updatedRows = (await db
+      .update(table as any)
+      .set(patchPayload as any)
+      .where(whereClause as any)
+      .returning()) as any[]
+    const updated = updatedRows[0]
+    if (parsed.tableKey === 'capacityHolds' && updated && typeof updated.id === 'string') {
+      await syncCapacityHoldReservationMirror({
+        bizId: context.bizId,
+        holdId: updated.id,
+        actorUserId: context.user.id,
+        executor: db,
+      })
     }
     const subjectType = parsed.subjectType ?? defaultSubjectTypeFromTableKey(parsed.tableKey)
     const subjectId = parsed.subjectId ?? String(parsed.id)
@@ -3891,6 +4636,20 @@ export async function persistCanonicalAction(params: {
       .returning()
 
     try {
+      let beforeActionHooks: Awaited<ReturnType<typeof runActionLifecycleHooks>> | null = null
+      if (params.intentMode === 'execute' && requestedBizId) {
+        beforeActionHooks = await runActionLifecycleHooks({
+          executor,
+          bizId: requestedBizId,
+          actionRequestId: actionRequest.id,
+          stage: 'before_execute',
+          input,
+          context: params.context,
+          targetType: input.targetSubjectType ?? 'action_request',
+          targetRefId: input.targetSubjectId ?? actionRequest.id,
+        })
+      }
+
       const result =
         params.intentMode === 'dry_run'
           ? await previewAction(params.context, input)
@@ -3908,7 +4667,67 @@ export async function persistCanonicalAction(params: {
           ? resolveEffectiveActionBizId(requestedBizId, input, result as ActionExecuteResult)
           : requestedBizId
 
-      let successArtifacts: { domainEvent: unknown; projectionDocument: unknown | null } | null = null
+      if (
+        params.intentMode === 'execute' &&
+        effectiveBizId &&
+        effectiveBizId !== requestedBizId
+      ) {
+        await executor
+          .update(actionExecutions)
+          .set({ bizId: effectiveBizId })
+          .where(eq(actionExecutions.id, execution.id))
+        await executor
+          .update(actionRequests)
+          .set({ bizId: effectiveBizId })
+          .where(eq(actionRequests.id, actionRequest.id))
+      }
+
+      let actionWorkflowDispatch: Awaited<ReturnType<typeof dispatchWorkflowTriggers>> | null = null
+      let afterActionHooks: Awaited<ReturnType<typeof runActionLifecycleHooks>> | null = null
+      if (params.intentMode === 'execute' && effectiveBizId) {
+        const executeResult = result as ActionExecuteResult
+        actionWorkflowDispatch = await dispatchWorkflowTriggers({
+          tx: executor,
+          bizId: effectiveBizId,
+          triggerSource: 'action_request',
+          triggerRefId: actionRequest.id,
+          actionKey: input.actionKey,
+          targetType: executeResult.subject.subjectType,
+          targetRefId: executeResult.subject.subjectId,
+          inputPayload: sanitizeUnknown({
+            actionRequestId: actionRequest.id,
+            actionExecutionId: execution.id,
+            actionKey: input.actionKey,
+            actionFamily: input.actionFamily,
+            payload: input.payload,
+            outputPayload: executeResult.outputPayload,
+            effectSummary: executeResult.effectSummary,
+          }) as Record<string, unknown>,
+          metadata: {
+            source: 'action-runtime.persistCanonicalAction',
+            stage: 'after_execute',
+          },
+        })
+
+        afterActionHooks = await runActionLifecycleHooks({
+          executor,
+          bizId: effectiveBizId,
+          actionRequestId: actionRequest.id,
+          stage: 'after_execute',
+          input,
+          context: params.context,
+          targetType: executeResult.subject.subjectType,
+          targetRefId: executeResult.subject.subjectId,
+          actionOutputPayload: executeResult.outputPayload,
+        })
+      }
+
+      let successArtifacts: {
+        domainEvent: unknown
+        projectionDocument: unknown | null
+        domainEventWorkflowDispatch: Awaited<ReturnType<typeof dispatchWorkflowTriggers>>
+        domainEventHookExecution: Awaited<ReturnType<typeof executeAutomationHooks>>
+      } | null = null
       if (params.intentMode === 'execute' && effectiveBizId) {
         successArtifacts = await recordSuccessArtifacts({
           bizId: effectiveBizId,
@@ -3933,8 +4752,13 @@ export async function persistCanonicalAction(params: {
               ? {
                   domainEventId: (successArtifacts.domainEvent as { id?: string }).id ?? null,
                   projectionDocumentId: (successArtifacts.projectionDocument as { id?: string } | null)?.id ?? null,
+                  domainEventWorkflowDispatch: successArtifacts.domainEventWorkflowDispatch,
+                  domainEventHookInvocationId: successArtifacts.domainEventHookExecution.invocation.id,
                 }
               : {}),
+            beforeHookInvocationId: beforeActionHooks?.invocation.id ?? null,
+            afterHookInvocationId: afterActionHooks?.invocation.id ?? null,
+            actionWorkflowDispatch,
           }),
           completedAt: new Date(),
         })
@@ -3965,6 +4789,12 @@ export async function persistCanonicalAction(params: {
                   domainEventId: (successArtifacts?.domainEvent as { id?: string } | undefined)?.id ?? null,
                   projectionDocumentId:
                     (successArtifacts?.projectionDocument as { id?: string } | null | undefined)?.id ?? null,
+                  beforeHookInvocationId: beforeActionHooks?.invocation.id ?? null,
+                  afterHookInvocationId: afterActionHooks?.invocation.id ?? null,
+                  actionWorkflowDispatch,
+                  domainEventWorkflowDispatch: successArtifacts?.domainEventWorkflowDispatch ?? null,
+                  domainEventHookInvocationId:
+                    successArtifacts?.domainEventHookExecution.invocation.id ?? null,
                 })
               : sanitizeUnknown(result.effectSummary),
           statusReason: result.summary,

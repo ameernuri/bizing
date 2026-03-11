@@ -17,7 +17,7 @@ import {
   requireBizAccess,
 } from '../middleware/auth.js'
 import { executeCrudRouteAction } from '../services/action-route-bridge.js'
-import { ok } from './_api.js'
+import { fail, ok } from './_api.js'
 
 const {
   db,
@@ -57,13 +57,27 @@ async function createOperationsRow<TTableKey extends 'operationalDemands' | 'ope
   return result.row
 }
 
+const operationalDemandSourceTypeSchema = z.enum([
+  'fulfillment_unit',
+  'staffing_demand',
+  'custom_subject',
+])
+
+const operationalLifecycleStatusSchema = z.enum([
+  'draft',
+  'active',
+  'inactive',
+  'suspended',
+  'archived',
+])
+
 const createOperationalDemandBodySchema = z.object({
-  sourceType: z.enum(['fulfillment_unit', 'staffing_demand', 'custom_subject']),
+  sourceType: operationalDemandSourceTypeSchema,
   fulfillmentUnitId: z.string().optional(),
   staffingDemandId: z.string().optional(),
   customSubjectType: z.string().min(1).max(80).optional(),
   customSubjectId: z.string().min(1).max(140).optional(),
-  status: z.enum(['draft', 'active', 'inactive', 'suspended', 'archived']).default('active'),
+  status: operationalLifecycleStatusSchema.default('active'),
   sourceStatus: z.string().min(1).max(80),
   startsAt: z.string().datetime().optional(),
   endsAt: z.string().datetime().optional(),
@@ -83,7 +97,7 @@ const createOperationalAssignmentBodySchema = z.object({
   staffingAssignmentId: z.string().optional(),
   customSubjectType: z.string().min(1).max(80).optional(),
   customSubjectId: z.string().min(1).max(140).optional(),
-  status: z.enum(['draft', 'active', 'inactive', 'suspended', 'archived']).default('active'),
+  status: operationalLifecycleStatusSchema.default('active'),
   sourceStatus: z.string().min(1).max(80),
   startsAt: z.string().datetime(),
   endsAt: z.string().datetime().optional(),
@@ -92,6 +106,11 @@ const createOperationalAssignmentBodySchema = z.object({
   if (value.sourceType === 'fulfillment_assignment' && !value.fulfillmentAssignmentId) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'fulfillmentAssignmentId is required.' })
   if (value.sourceType === 'staffing_assignment' && !value.staffingAssignmentId) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'staffingAssignmentId is required.' })
   if (value.sourceType === 'custom_subject' && (!value.customSubjectType || !value.customSubjectId)) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'customSubjectType and customSubjectId are required.' })
+})
+
+const listOperationalDemandsQuerySchema = z.object({
+  status: operationalLifecycleStatusSchema.optional(),
+  sourceType: operationalDemandSourceTypeSchema.optional(),
 })
 
 function locationIdFromMetadata(metadata: unknown) {
@@ -104,12 +123,6 @@ function secondaryLocationIdsFromMetadata(metadata: unknown) {
   if (!metadata || typeof metadata !== 'object' || Array.isArray(metadata)) return []
   const value = (metadata as Record<string, unknown>).secondaryLocationIds
   return Array.isArray(value) ? value.filter((entry): entry is string => typeof entry === 'string' && entry.length > 0) : []
-}
-
-function offerIdFromMetadata(metadata: unknown) {
-  if (!metadata || typeof metadata !== 'object' || Array.isArray(metadata)) return null
-  const value = (metadata as Record<string, unknown>).offerId
-  return typeof value === 'string' && value.length > 0 ? value : null
 }
 
 function serviceProductIdFromMetadata(metadata: unknown) {
@@ -130,6 +143,48 @@ function providerUserIdFromMetadata(metadata: unknown) {
   return typeof value === 'string' && value.length > 0 ? value : null
 }
 
+type BookingAnalyticsRow = {
+  locationId: string | null
+  serviceProductId: string | null
+  providerUserId: string | null
+  acquisitionSource: string | null
+  attendanceOutcome: string | null
+  leadTimeMinutes: number | null
+  metadata: unknown
+}
+
+function bookingLocationId(row: BookingAnalyticsRow) {
+  return row.locationId ?? locationIdFromMetadata(row.metadata)
+}
+
+function bookingServiceProductId(row: BookingAnalyticsRow) {
+  return row.serviceProductId ?? serviceProductIdFromMetadata(row.metadata)
+}
+
+function bookingProviderUserId(row: BookingAnalyticsRow) {
+  return row.providerUserId ?? providerUserIdFromMetadata(row.metadata)
+}
+
+function bookingAcquisitionSource(row: BookingAnalyticsRow) {
+  return row.acquisitionSource ?? sourceFromMetadata(row.metadata)
+}
+
+function bookingAttendanceOutcome(row: BookingAnalyticsRow) {
+  if (typeof row.attendanceOutcome === 'string' && row.attendanceOutcome.length > 0) {
+    return row.attendanceOutcome
+  }
+  const metadata = row.metadata as Record<string, unknown> | null
+  return metadata && metadata.attendanceOutcome === 'no_show' ? 'no_show' : null
+}
+
+function bookingLeadTimeMinutes(row: BookingAnalyticsRow) {
+  if (typeof row.leadTimeMinutes === 'number' && Number.isFinite(row.leadTimeMinutes) && row.leadTimeMinutes >= 0) {
+    return row.leadTimeMinutes
+  }
+  const hintedLeadTime = Number((row.metadata as Record<string, unknown> | null)?.leadTimeMinutes ?? NaN)
+  return Number.isFinite(hintedLeadTime) && hintedLeadTime >= 0 ? hintedLeadTime : null
+}
+
 export const operationsRoutes = new Hono()
 
 operationsRoutes.get(
@@ -139,13 +194,16 @@ operationsRoutes.get(
   requireAclPermission('bizes.read', { bizIdParam: 'bizId' }),
   async (c) => {
     const bizId = c.req.param('bizId')
-    const status = c.req.query('status')
-    const sourceType = c.req.query('sourceType')
+    const parsed = listOperationalDemandsQuerySchema.safeParse(c.req.query())
+    if (!parsed.success) {
+      return fail(c, 'VALIDATION_ERROR', 'Invalid query parameters.', 400, parsed.error.flatten())
+    }
+
     const rows = await db.query.operationalDemands.findMany({
       where: and(
         eq(operationalDemands.bizId, bizId),
-        status ? eq(operationalDemands.status, status as typeof operationalDemands.$inferSelect.status) : undefined,
-      sourceType ? eq(operationalDemands.sourceType, sourceType as never) : undefined,
+        parsed.data.status ? eq(operationalDemands.status, parsed.data.status) : undefined,
+        parsed.data.sourceType ? eq(operationalDemands.sourceType, parsed.data.sourceType) : undefined,
       ),
       orderBy: [asc(operationalDemands.startsAt), asc(operationalDemands.priority)],
     })
@@ -162,6 +220,26 @@ operationsRoutes.post(
     const bizId = c.req.param('bizId')
     const parsed = createOperationalDemandBodySchema.safeParse(await c.req.json().catch(() => null))
     if (!parsed.success) return c.json({ success: false, error: { code: 'VALIDATION_ERROR', message: 'Invalid request body.', details: parsed.error.flatten() } }, 400)
+
+    const existing = await db.query.operationalDemands.findFirst({
+      where: and(
+        eq(operationalDemands.bizId, bizId),
+        parsed.data.sourceType === 'fulfillment_unit'
+          ? eq(operationalDemands.fulfillmentUnitId, parsed.data.fulfillmentUnitId ?? '')
+          : undefined,
+        parsed.data.sourceType === 'staffing_demand'
+          ? eq(operationalDemands.staffingDemandId, parsed.data.staffingDemandId ?? '')
+          : undefined,
+        parsed.data.sourceType === 'custom_subject'
+          ? eq(operationalDemands.customSubjectType, parsed.data.customSubjectType ?? '')
+          : undefined,
+        parsed.data.sourceType === 'custom_subject'
+          ? eq(operationalDemands.customSubjectId, parsed.data.customSubjectId ?? '')
+          : undefined,
+      ),
+    })
+    if (existing) return ok(c, existing)
+
     const row = await createOperationsRow(
       c,
       bizId,
@@ -219,6 +297,26 @@ operationsRoutes.post(
     const bizId = c.req.param('bizId')
     const parsed = createOperationalAssignmentBodySchema.safeParse(await c.req.json().catch(() => null))
     if (!parsed.success) return c.json({ success: false, error: { code: 'VALIDATION_ERROR', message: 'Invalid request body.', details: parsed.error.flatten() } }, 400)
+
+    const existing = await db.query.operationalAssignments.findFirst({
+      where: and(
+        eq(operationalAssignments.bizId, bizId),
+        parsed.data.sourceType === 'fulfillment_assignment'
+          ? eq(operationalAssignments.fulfillmentAssignmentId, parsed.data.fulfillmentAssignmentId ?? '')
+          : undefined,
+        parsed.data.sourceType === 'staffing_assignment'
+          ? eq(operationalAssignments.staffingAssignmentId, parsed.data.staffingAssignmentId ?? '')
+          : undefined,
+        parsed.data.sourceType === 'custom_subject'
+          ? eq(operationalAssignments.customSubjectType, parsed.data.customSubjectType ?? '')
+          : undefined,
+        parsed.data.sourceType === 'custom_subject'
+          ? eq(operationalAssignments.customSubjectId, parsed.data.customSubjectId ?? '')
+          : undefined,
+      ),
+    })
+    if (existing) return ok(c, existing)
+
     const row = await createOperationsRow(
       c,
       bizId,
@@ -268,7 +366,7 @@ operationsRoutes.get(
       }),
       db.query.bookingOrders.findMany({
         where: eq(bookingOrders.bizId, bizId),
-        columns: { id: true, status: true, totalMinor: true, metadata: true },
+        columns: { id: true, status: true, totalMinor: true, locationId: true, metadata: true },
       }),
       db.query.demandPricingPolicies.findMany({
         where: eq(demandPricingPolicies.bizId, bizId),
@@ -280,22 +378,106 @@ operationsRoutes.get(
       }),
     ])
 
-    const items = locationRows.map((location) => {
-      const locationBookings = bookingRows.filter((row) => locationIdFromMetadata(row.metadata) === location.id)
-      const locationResources = resourceRows.filter((row) => row.locationId === location.id)
-      const locationPolicies = pricingRows.filter((row) => row.locationId === location.id && row.isEnabled)
-      const locationQueues = queueRows.filter((row) => row.locationId === location.id && row.status !== 'archived')
-      const sharedHostUserIds = resourceRows
-        .filter((row) => {
-          if (row.type !== 'host' || !row.hostUserId) return false
-          const secondaryLocationIds = secondaryLocationIdsFromMetadata((row as unknown as { metadata?: unknown }).metadata)
-          return row.locationId === location.id || secondaryLocationIds.includes(location.id)
-        })
-        .map((row) => row.hostUserId as string)
-      const multiLocationHostCount = new Set(
-        sharedHostUserIds.filter((hostUserId) => resourceRows.filter((row) => row.hostUserId === hostUserId).length > 1),
-      ).size
+    const resourceAggByLocation = new Map<
+      string,
+      { total: number; hosts: number; venues: number; assets: number }
+    >()
+    const hostLocations = new Map<string, Set<string>>()
+    for (const row of resourceRows) {
+      if (!row.locationId) continue
+      const aggregate = resourceAggByLocation.get(row.locationId) ?? {
+        total: 0,
+        hosts: 0,
+        venues: 0,
+        assets: 0,
+      }
+      aggregate.total += 1
+      if (row.type === 'host') aggregate.hosts += 1
+      if (row.type === 'venue') aggregate.venues += 1
+      if (row.type === 'asset') aggregate.assets += 1
+      resourceAggByLocation.set(row.locationId, aggregate)
 
+      if (row.type === 'host' && row.hostUserId) {
+        const locationsForHost = hostLocations.get(row.hostUserId) ?? new Set<string>()
+        locationsForHost.add(row.locationId)
+        for (const secondaryLocationId of secondaryLocationIdsFromMetadata(
+          (row as unknown as { metadata?: unknown }).metadata,
+        )) {
+          locationsForHost.add(secondaryLocationId)
+        }
+        hostLocations.set(row.hostUserId, locationsForHost)
+      }
+    }
+    const multiLocationHostCountByLocation = new Map<string, number>()
+    for (const [, locationSet] of hostLocations) {
+      if (locationSet.size <= 1) continue
+      for (const locationId of locationSet) {
+        multiLocationHostCountByLocation.set(
+          locationId,
+          (multiLocationHostCountByLocation.get(locationId) ?? 0) + 1,
+        )
+      }
+    }
+
+    const bookingAggByLocation = new Map<string, { total: number; confirmed: number; revenueMinor: number }>()
+    for (const row of bookingRows) {
+      const locationId = row.locationId ?? locationIdFromMetadata(row.metadata)
+      if (!locationId) continue
+      const aggregate = bookingAggByLocation.get(locationId) ?? {
+        total: 0,
+        confirmed: 0,
+        revenueMinor: 0,
+      }
+      aggregate.total += 1
+      if (row.status === 'confirmed') aggregate.confirmed += 1
+      aggregate.revenueMinor += row.totalMinor
+      bookingAggByLocation.set(locationId, aggregate)
+    }
+
+    const policyAggByLocation = new Map<string, { activePolicyCount: number; policyNames: string[] }>()
+    for (const row of pricingRows) {
+      if (!row.locationId || !row.isEnabled) continue
+      const aggregate = policyAggByLocation.get(row.locationId) ?? {
+        activePolicyCount: 0,
+        policyNames: [],
+      }
+      aggregate.activePolicyCount += 1
+      aggregate.policyNames.push(row.name)
+      policyAggByLocation.set(row.locationId, aggregate)
+    }
+
+    const queueAggByLocation = new Map<string, { activeCount: number; queueNames: string[] }>()
+    for (const row of queueRows) {
+      if (!row.locationId || row.status === 'archived') continue
+      const aggregate = queueAggByLocation.get(row.locationId) ?? {
+        activeCount: 0,
+        queueNames: [],
+      }
+      aggregate.activeCount += 1
+      aggregate.queueNames.push(row.name)
+      queueAggByLocation.set(row.locationId, aggregate)
+    }
+
+    const items = locationRows.map((location) => {
+      const resourceAggregate = resourceAggByLocation.get(location.id) ?? {
+        total: 0,
+        hosts: 0,
+        venues: 0,
+        assets: 0,
+      }
+      const bookingAggregate = bookingAggByLocation.get(location.id) ?? {
+        total: 0,
+        confirmed: 0,
+        revenueMinor: 0,
+      }
+      const policyAggregate = policyAggByLocation.get(location.id) ?? {
+        activePolicyCount: 0,
+        policyNames: [],
+      }
+      const queueAggregate = queueAggByLocation.get(location.id) ?? {
+        activeCount: 0,
+        queueNames: [],
+      }
       return {
         locationId: location.id,
         name: location.name,
@@ -304,25 +486,12 @@ operationsRoutes.get(
         operatingHours: location.operatingHours,
         serviceArea: location.serviceArea,
         resources: {
-          total: locationResources.length,
-          hosts: locationResources.filter((row) => row.type === 'host').length,
-          venues: locationResources.filter((row) => row.type === 'venue').length,
-          assets: locationResources.filter((row) => row.type === 'asset').length,
-          multiLocationHostCount,
+          ...resourceAggregate,
+          multiLocationHostCount: multiLocationHostCountByLocation.get(location.id) ?? 0,
         },
-        bookings: {
-          total: locationBookings.length,
-          confirmed: locationBookings.filter((row) => row.status === 'confirmed').length,
-          revenueMinor: locationBookings.reduce((sum, row) => sum + row.totalMinor, 0),
-        },
-        demandPricing: {
-          activePolicyCount: locationPolicies.length,
-          policyNames: locationPolicies.map((row) => row.name),
-        },
-        queues: {
-          activeCount: locationQueues.length,
-          queueNames: locationQueues.map((row) => row.name),
-        },
+        bookings: bookingAggregate,
+        demandPricing: policyAggregate,
+        queues: queueAggregate,
       }
     })
 
@@ -374,6 +543,12 @@ operationsRoutes.get(
           id: true,
           offerId: true,
           offerVersionId: true,
+          locationId: true,
+          serviceProductId: true,
+          providerUserId: true,
+          acquisitionSource: true,
+          attendanceOutcome: true,
+          leadTimeMinutes: true,
           customerUserId: true,
           status: true,
           currency: true,
@@ -420,8 +595,9 @@ operationsRoutes.get(
     for (const row of bookingRows) {
       totalRevenueMinor += row.totalMinor
       statusCounts.set(row.status, (statusCounts.get(row.status) ?? 0) + 1)
-      sourceCounts.set(sourceFromMetadata(row.metadata), (sourceCounts.get(sourceFromMetadata(row.metadata)) ?? 0) + 1)
-      if (((row.metadata as Record<string, unknown> | null)?.attendanceOutcome) === 'no_show') noShowCount += 1
+      const source = bookingAcquisitionSource(row)
+      sourceCounts.set(source, (sourceCounts.get(source) ?? 0) + 1)
+      if (bookingAttendanceOutcome(row) === 'no_show') noShowCount += 1
 
       if (row.customerUserId) seenCustomerIds.add(row.customerUserId)
 
@@ -434,7 +610,7 @@ operationsRoutes.get(
       offerAggregate.revenueMinor += row.totalMinor
       offerCounts.set(row.offerId, offerAggregate)
 
-      const locationId = locationIdFromMetadata(row.metadata)
+      const locationId = bookingLocationId(row)
       if (locationId) {
         const locationAggregate = locationCounts.get(locationId) ?? {
           bookingCount: 0,
@@ -451,7 +627,7 @@ operationsRoutes.get(
         locationCounts.set(locationId, locationAggregate)
       }
 
-      const serviceProductId = serviceProductIdFromMetadata(row.metadata)
+      const serviceProductId = bookingServiceProductId(row)
       if (serviceProductId) {
         const current = serviceProductCounts.get(serviceProductId) ?? { bookingCount: 0, revenueMinor: 0 }
         current.bookingCount += 1
@@ -459,7 +635,7 @@ operationsRoutes.get(
         serviceProductCounts.set(serviceProductId, current)
       }
 
-      const providerUserId = providerUserIdFromMetadata(row.metadata)
+      const providerUserId = bookingProviderUserId(row)
       if (providerUserId) {
         const current = providerCounts.get(providerUserId) ?? { bookingCount: 0, confirmedCount: 0, revenueMinor: 0 }
         current.bookingCount += 1
@@ -491,8 +667,8 @@ operationsRoutes.get(
         dayAggregate.bookingCount += 1
         dayAggregate.revenueMinor += row.totalMinor
         dailyVolume.set(dayKey, dayAggregate)
-        const hintedLeadTime = Number((row.metadata as Record<string, unknown> | null)?.leadTimeMinutes ?? 0)
-        if (Number.isFinite(hintedLeadTime) && hintedLeadTime >= 0) {
+        const hintedLeadTime = bookingLeadTimeMinutes(row)
+        if (hintedLeadTime !== null) {
           leadTimeMinutesTotal += hintedLeadTime
           leadTimeCount += 1
         }

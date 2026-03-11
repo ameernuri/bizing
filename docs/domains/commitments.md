@@ -8,12 +8,14 @@ tags:
 
 # Commitments Domain
 
-This file is generated from route/schema source files and exists to keep domain docs synchronized with code reality.
+This file is generated from route/schema source files and the canonical domain manifest to keep docs synchronized with runtime mounts.
 
 ## Source
 
-- Route file: `/Users/ameer/bizing/code/apps/api/src/routes/commitments.ts`
-- Schema file: `/Users/ameer/bizing/code/packages/db/src/schema/commitments.ts`
+- Route file: `apps/api/src/routes/commitments.ts`
+- Schema file: `packages/db/src/schema/commitments.ts`
+- Mount path: `/`
+- Auth class (manifest): `machine_allowed`
 
 ## Route Intent (top JSDoc)
 
@@ -37,27 +39,27 @@ _No top JSDoc comment found._
 
 ## API Surface
 
-- `GET` `/bizes/:bizId/commitment-contracts`
-- `POST` `/bizes/:bizId/commitment-contracts`
-- `GET` `/bizes/:bizId/commitment-contracts/:contractId/obligations`
-- `POST` `/bizes/:bizId/commitment-contracts/:contractId/obligations`
-- `PATCH` `/bizes/:bizId/commitment-contracts/:contractId/obligations/:obligationId`
-- `GET` `/bizes/:bizId/commitment-contracts/:contractId/milestones`
-- `POST` `/bizes/:bizId/commitment-contracts/:contractId/milestones`
-- `PATCH` `/bizes/:bizId/commitment-contracts/:contractId/milestones/:milestoneId`
-- `GET` `/bizes/:bizId/commitment-contracts/:contractId/milestones/:milestoneId/obligations`
-- `POST` `/bizes/:bizId/commitment-contracts/:contractId/milestones/:milestoneId/obligations`
-- `GET` `/bizes/:bizId/secured-balance-accounts`
-- `POST` `/bizes/:bizId/secured-balance-accounts`
-- `GET` `/bizes/:bizId/secured-balance-accounts/:accountId/ledger-entries`
-- `POST` `/bizes/:bizId/secured-balance-accounts/:accountId/ledger-entries`
-- `GET` `/bizes/:bizId/secured-balance-ledger-entries/:entryId/allocations`
-- `POST` `/bizes/:bizId/secured-balance-ledger-entries/:entryId/allocations`
-- `GET` `/bizes/:bizId/commitment-contracts/:contractId/claims`
-- `POST` `/bizes/:bizId/commitment-contracts/:contractId/claims`
-- `PATCH` `/bizes/:bizId/commitment-contracts/:contractId/claims/:claimId`
-- `GET` `/bizes/:bizId/commitment-contracts/:contractId/claims/:claimId/events`
-- `POST` `/bizes/:bizId/commitment-contracts/:contractId/claims/:claimId/events`
+- `GET` `/api/v1/bizes/:bizId/commitment-contracts`
+- `POST` `/api/v1/bizes/:bizId/commitment-contracts`
+- `GET` `/api/v1/bizes/:bizId/commitment-contracts/:contractId/obligations`
+- `POST` `/api/v1/bizes/:bizId/commitment-contracts/:contractId/obligations`
+- `PATCH` `/api/v1/bizes/:bizId/commitment-contracts/:contractId/obligations/:obligationId`
+- `GET` `/api/v1/bizes/:bizId/commitment-contracts/:contractId/milestones`
+- `POST` `/api/v1/bizes/:bizId/commitment-contracts/:contractId/milestones`
+- `PATCH` `/api/v1/bizes/:bizId/commitment-contracts/:contractId/milestones/:milestoneId`
+- `GET` `/api/v1/bizes/:bizId/commitment-contracts/:contractId/milestones/:milestoneId/obligations`
+- `POST` `/api/v1/bizes/:bizId/commitment-contracts/:contractId/milestones/:milestoneId/obligations`
+- `GET` `/api/v1/bizes/:bizId/secured-balance-accounts`
+- `POST` `/api/v1/bizes/:bizId/secured-balance-accounts`
+- `GET` `/api/v1/bizes/:bizId/secured-balance-accounts/:accountId/ledger-entries`
+- `POST` `/api/v1/bizes/:bizId/secured-balance-accounts/:accountId/ledger-entries`
+- `GET` `/api/v1/bizes/:bizId/secured-balance-ledger-entries/:entryId/allocations`
+- `POST` `/api/v1/bizes/:bizId/secured-balance-ledger-entries/:entryId/allocations`
+- `GET` `/api/v1/bizes/:bizId/commitment-contracts/:contractId/claims`
+- `POST` `/api/v1/bizes/:bizId/commitment-contracts/:contractId/claims`
+- `PATCH` `/api/v1/bizes/:bizId/commitment-contracts/:contractId/claims/:claimId`
+- `GET` `/api/v1/bizes/:bizId/commitment-contracts/:contractId/claims/:claimId/events`
+- `POST` `/api/v1/bizes/:bizId/commitment-contracts/:contractId/claims/:claimId/events`
 
 ## Tables
 

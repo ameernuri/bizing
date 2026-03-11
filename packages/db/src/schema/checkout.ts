@@ -326,6 +326,18 @@ export const checkoutSessionItems = pgTable(
     /** Optional requested end for time-based sellables. */
     requestedEndAt: timestamp("requested_end_at", { withTimezone: true }),
 
+    /**
+     * Source classification for this checkout line.
+     * Examples: core, manual, extension, system.
+     */
+    sourceKind: varchar("source_kind", { length: 40 }).default("core").notNull(),
+
+    /** Optional source reference (e.g., automation hook binding id). */
+    sourceRefId: varchar("source_ref_id", { length: 140 }),
+
+    /** Optional stable source line key used for idempotent upserts. */
+    sourceKey: varchar("source_key", { length: 180 }),
+
     /** Extension payload. */
     metadata: jsonb("metadata").default({}),
 
@@ -348,6 +360,18 @@ export const checkoutSessionItems = pgTable(
       table.bizId,
       table.sellableId,
     ),
+
+    /** Source-based trace path for extension-generated lines. */
+    checkoutSessionItemsBizSessionSourceIdx: index(
+      "checkout_session_items_biz_session_source_idx",
+    ).on(table.bizId, table.checkoutSessionId, table.sourceKind, table.sourceRefId, table.sourceKey),
+
+    /** Idempotent upsert key for generated lines. */
+    checkoutSessionItemsBizSessionSourceKeyUnique: uniqueIndex(
+      "checkout_session_items_biz_session_source_key_unique",
+    )
+      .on(table.bizId, table.checkoutSessionId, table.sourceKind, table.sourceRefId, table.sourceKey)
+      .where(sql`"source_ref_id" IS NOT NULL AND "source_key" IS NOT NULL`),
 
     /** Prevent duplicate sellable rows in one session for simpler merge logic. */
     checkoutSessionItemsSessionSellableUnique: uniqueIndex(
@@ -438,6 +462,18 @@ export const checkoutSessionItems = pgTable(
         AND "sellable_id" IS NULL
         AND "custom_subject_type" IS NULL
         AND "custom_subject_id" IS NULL
+      )
+      `,
+    ),
+
+    /** Source shape and taxonomy contract. */
+    checkoutSessionItemsSourceShapeCheck: check(
+      "checkout_session_items_source_shape_check",
+      sql`
+      "source_kind" IN ('core', 'manual', 'extension', 'system')
+      AND (
+        ("source_ref_id" IS NULL AND "source_key" IS NULL)
+        OR ("source_ref_id" IS NOT NULL AND "source_key" IS NOT NULL)
       )
       `,
     ),

@@ -882,6 +882,592 @@ export const lifecycleEventDeliveries = pgTable(
 );
 
 /**
+ * lifecycle_hook_contracts
+ *
+ * ELI5:
+ * A lifecycle contract is the first-class definition of a hook point.
+ *
+ * Why this exists:
+ * - avoids stringly-typed ad hoc hook-point usage,
+ * - gives one place for phase/target/runtime semantics,
+ * - lets plugin and user workflows bind to stable contracts.
+ */
+export const lifecycleHookContracts = pgTable(
+  "lifecycle_hook_contracts",
+  {
+    id: idWithTag("lifecycle_hook_contract"),
+
+    bizId: idRef("biz_id")
+      .references(() => bizes.id)
+      .notNull(),
+
+    /** Stable machine key (example: checkout.pricing.before_commit). */
+    key: varchar("key", { length: 180 }).notNull(),
+
+    /** Human-readable label for admin/workflow UIs. */
+    name: varchar("name", { length: 220 }).notNull(),
+
+    /** Contract lifecycle status. */
+    status: lifecycleStatusEnum("status").default("active").notNull(),
+
+    /** Before/after phase relative to the owning lifecycle operation. */
+    phase: lifecycleEventPhaseEnum("phase").default("after").notNull(),
+
+    /**
+     * Trigger model for this contract.
+     * action/event/manual/schedule/workflow/system.
+     */
+    triggerMode: varchar("trigger_mode", { length: 40 }).default("manual").notNull(),
+
+    /** Target object class this contract is defined for. */
+    targetType: varchar("target_type", { length: 120 }).notNull(),
+
+    /** readonly: observe-only. effects: may emit and apply side effects. */
+    mutability: varchar("mutability", { length: 20 }).default("effects").notNull(),
+
+    /** Active schema version pointer used by runtime execution. */
+    currentVersion: integer("current_version").default(1).notNull(),
+
+    description: varchar("description", { length: 2000 }),
+
+    metadata: jsonb("metadata").default({}),
+
+    ...withAuditRefs(() => users.id),
+  },
+  (table) => ({
+    lifecycleHookContractsBizIdIdUnique: uniqueIndex(
+      "lifecycle_hook_contracts_biz_id_id_unique",
+    ).on(table.bizId, table.id),
+
+    lifecycleHookContractsBizKeyUnique: uniqueIndex(
+      "lifecycle_hook_contracts_biz_key_unique",
+    ).on(table.bizId, table.key),
+
+    lifecycleHookContractsBizStatusPhaseTargetIdx: index(
+      "lifecycle_hook_contracts_biz_status_phase_target_idx",
+    ).on(table.bizId, table.status, table.phase, table.targetType),
+
+    lifecycleHookContractsTriggerModeCheck: check(
+      "lifecycle_hook_contracts_trigger_mode_check",
+      sql`"trigger_mode" IN ('action', 'event', 'manual', 'schedule', 'workflow', 'system')`,
+    ),
+
+    lifecycleHookContractsMutabilityCheck: check(
+      "lifecycle_hook_contracts_mutability_check",
+      sql`"mutability" IN ('readonly', 'effects')`,
+    ),
+
+    lifecycleHookContractsCurrentVersionCheck: check(
+      "lifecycle_hook_contracts_current_version_check",
+      sql`"current_version" >= 1`,
+    ),
+  }),
+);
+
+/**
+ * lifecycle_hook_contract_versions
+ *
+ * ELI5:
+ * Versioned schemas/contracts for each lifecycle hook contract.
+ */
+export const lifecycleHookContractVersions = pgTable(
+  "lifecycle_hook_contract_versions",
+  {
+    id: idWithTag("lifecycle_hook_contract_version"),
+
+    bizId: idRef("biz_id")
+      .references(() => bizes.id)
+      .notNull(),
+
+    lifecycleHookContractId: idRef("lifecycle_hook_contract_id")
+      .references(() => lifecycleHookContracts.id)
+      .notNull(),
+
+    version: integer("version").notNull(),
+
+    status: lifecycleStatusEnum("status").default("active").notNull(),
+
+    inputSchema: jsonb("input_schema").default({}).notNull(),
+    contextSchema: jsonb("context_schema").default({}).notNull(),
+    effectSchema: jsonb("effect_schema").default({}).notNull(),
+    metadata: jsonb("metadata").default({}),
+
+    ...withAuditRefs(() => users.id),
+  },
+  (table) => ({
+    lifecycleHookContractVersionsBizIdIdUnique: uniqueIndex(
+      "lifecycle_hook_contract_versions_biz_id_id_unique",
+    ).on(table.bizId, table.id),
+
+    lifecycleHookContractVersionsBizContractVersionUnique: uniqueIndex(
+      "lifecycle_hook_contract_versions_biz_contract_version_unique",
+    ).on(table.bizId, table.lifecycleHookContractId, table.version),
+
+    lifecycleHookContractVersionsBizContractStatusVersionIdx: index(
+      "lifecycle_hook_contract_versions_biz_contract_status_version_idx",
+    ).on(table.bizId, table.lifecycleHookContractId, table.status, table.version),
+
+    lifecycleHookContractVersionsBizContractFk: foreignKey({
+      columns: [table.bizId, table.lifecycleHookContractId],
+      foreignColumns: [lifecycleHookContracts.bizId, lifecycleHookContracts.id],
+      name: "lifecycle_hook_contract_versions_biz_contract_fk",
+    }),
+
+    lifecycleHookContractVersionsVersionCheck: check(
+      "lifecycle_hook_contract_versions_version_check",
+      sql`"version" >= 1`,
+    ),
+  }),
+);
+
+/**
+ * lifecycle_hook_invocations
+ *
+ * ELI5:
+ * One row tracks one full lifecycle hook invocation against one target.
+ * Binding-level rows live in `automation_hook_runs`.
+ */
+export const lifecycleHookInvocations = pgTable(
+  "lifecycle_hook_invocations",
+  {
+    id: idWithTag("lifecycle_hook_invocation"),
+
+    bizId: idRef("biz_id")
+      .references(() => bizes.id)
+      .notNull(),
+
+    lifecycleHookContractId: idRef("lifecycle_hook_contract_id")
+      .references(() => lifecycleHookContracts.id)
+      .notNull(),
+
+    contractKey: varchar("contract_key", { length: 180 }).notNull(),
+    contractVersion: integer("contract_version").notNull(),
+
+    triggerSource: varchar("trigger_source", { length: 40 }).default("api").notNull(),
+    triggerRefId: varchar("trigger_ref_id", { length: 160 }),
+
+    targetType: varchar("target_type", { length: 120 }).notNull(),
+    targetRefId: varchar("target_ref_id", { length: 160 }).notNull(),
+
+    status: varchar("status", { length: 20 }).default("running").notNull(),
+    startedAt: timestamp("started_at", { withTimezone: true }).defaultNow().notNull(),
+    completedAt: timestamp("completed_at", { withTimezone: true }),
+    durationMs: integer("duration_ms"),
+
+    inputPayload: jsonb("input_payload").default({}).notNull(),
+    contextPayload: jsonb("context_payload").default({}).notNull(),
+    outputPayload: jsonb("output_payload").default({}),
+
+    errorCode: varchar("error_code", { length: 120 }),
+    errorMessage: varchar("error_message", { length: 2000 }),
+
+    idempotencyKey: varchar("idempotency_key", { length: 200 }),
+    metadata: jsonb("metadata").default({}),
+
+    ...withAuditRefs(() => users.id),
+  },
+  (table) => ({
+    lifecycleHookInvocationsBizIdIdUnique: uniqueIndex(
+      "lifecycle_hook_invocations_biz_id_id_unique",
+    ).on(table.bizId, table.id),
+
+    lifecycleHookInvocationsBizContractTargetStartedIdx: index(
+      "lifecycle_hook_invocations_biz_contract_target_started_idx",
+    ).on(
+      table.bizId,
+      table.lifecycleHookContractId,
+      table.targetType,
+      table.targetRefId,
+      table.startedAt,
+    ),
+
+    lifecycleHookInvocationsBizIdempotencyUnique: uniqueIndex(
+      "lifecycle_hook_invocations_biz_idempotency_unique",
+    )
+      .on(table.bizId, table.idempotencyKey)
+      .where(sql`"idempotency_key" IS NOT NULL`),
+
+    lifecycleHookInvocationsBizContractFk: foreignKey({
+      columns: [table.bizId, table.lifecycleHookContractId],
+      foreignColumns: [lifecycleHookContracts.bizId, lifecycleHookContracts.id],
+      name: "lifecycle_hook_invocations_biz_contract_fk",
+    }),
+
+    lifecycleHookInvocationsTriggerSourceCheck: check(
+      "lifecycle_hook_invocations_trigger_source_check",
+      sql`"trigger_source" IN ('api', 'action', 'event', 'workflow', 'schedule', 'system')`,
+    ),
+
+    lifecycleHookInvocationsStatusCheck: check(
+      "lifecycle_hook_invocations_status_check",
+      sql`"status" IN ('running', 'succeeded', 'failed', 'skipped')`,
+    ),
+
+    lifecycleHookInvocationsDurationBoundsCheck: check(
+      "lifecycle_hook_invocations_duration_bounds_check",
+      sql`"duration_ms" IS NULL OR "duration_ms" >= 0`,
+    ),
+
+    lifecycleHookInvocationsTimelineCheck: check(
+      "lifecycle_hook_invocations_timeline_check",
+      sql`"completed_at" IS NULL OR "completed_at" >= "started_at"`,
+    ),
+  }),
+);
+
+/**
+ * automation_hook_bindings
+ *
+ * ELI5:
+ * One row says "run this automation hook at this hook point."
+ *
+ * Why this exists:
+ * - lifecycle_event_subscriptions are async event delivery contracts,
+ * - checkout/booking mutation hooks need deterministic sync ordering + policy.
+ */
+export const automationHookBindings = pgTable(
+  "automation_hook_bindings",
+  {
+    /** Stable primary key for one hook binding. */
+    id: idWithTag("auto_hook"),
+
+    /** Tenant boundary. */
+    bizId: idRef("biz_id")
+      .references(() => bizes.id)
+      .notNull(),
+
+    /** Optional extension owner for this binding. */
+    bizExtensionInstallId: idRef("biz_extension_install_id").references(
+      () => bizExtensionInstalls.id,
+    ),
+
+    /** Human-readable binding name. */
+    name: varchar("name", { length: 200 }).notNull(),
+
+    /** Binding lifecycle status. */
+    status: lifecycleStatusEnum("status").default("active").notNull(),
+
+    /** Canonical lifecycle hook contract this binding attaches to. */
+    lifecycleHookContractId: idRef("lifecycle_hook_contract_id")
+      .references(() => lifecycleHookContracts.id)
+      .notNull(),
+
+    /** Contract version expectation for this binding. */
+    lifecycleHookContractVersion: integer("lifecycle_hook_contract_version")
+      .default(1)
+      .notNull(),
+
+    /** Hook point key (e.g., checkout.pricing.before_commit). */
+    hookPoint: varchar("hook_point", { length: 160 }).notNull(),
+
+    /** Deterministic execution order (lower runs first). */
+    priority: integer("priority").default(100).notNull(),
+
+    /** Internal handler vs webhook runtime path. */
+    deliveryMode: extensionHookDeliveryModeEnum("delivery_mode").notNull(),
+
+    /** Internal handler key when delivery_mode=internal_handler. */
+    internalHandlerKey: varchar("internal_handler_key", { length: 200 }),
+
+    /** Webhook URL when delivery_mode=webhook. */
+    webhookUrl: varchar("webhook_url", { length: 1000 }),
+
+    /** Optional secret ref for signed webhook payloads. */
+    signingSecretRef: varchar("signing_secret_ref", { length: 255 }),
+
+    /** Max runtime budget for this binding execution. */
+    timeoutMs: integer("timeout_ms").default(5000).notNull(),
+
+    /**
+     * Failure mode:
+     * - fail_open: keep main flow running if hook fails.
+     * - fail_closed: abort main flow if hook fails.
+     */
+    failureMode: varchar("failure_mode", { length: 20 })
+      .default("fail_open")
+      .notNull(),
+
+    /** Optional default workflow key for escalations raised by this hook. */
+    workflowKey: varchar("workflow_key", { length: 140 }),
+
+    /** Optional hook-specific config payload. */
+    configuration: jsonb("configuration").default({}).notNull(),
+
+    /** Optional structured filter payload. */
+    filter: jsonb("filter").default({}).notNull(),
+
+    /** Extension payload for forward compatibility. */
+    metadata: jsonb("metadata").default({}),
+
+    /** Full audit metadata. */
+    ...withAuditRefs(() => users.id),
+  },
+  (table) => ({
+    automationHookBindingsBizIdIdUnique: uniqueIndex(
+      "automation_hook_bindings_biz_id_id_unique",
+    ).on(table.bizId, table.id),
+
+    automationHookBindingsBizHookPointNameUnique: uniqueIndex(
+      "automation_hook_bindings_biz_hook_point_name_unique",
+    ).on(table.bizId, table.hookPoint, table.name),
+
+    automationHookBindingsBizStatusPointPriorityIdx: index(
+      "automation_hook_bindings_biz_status_point_priority_idx",
+    ).on(table.bizId, table.status, table.hookPoint, table.priority, table.id),
+
+    automationHookBindingsBizContractPriorityIdx: index(
+      "automation_hook_bindings_biz_contract_priority_idx",
+    ).on(table.bizId, table.lifecycleHookContractId, table.status, table.priority, table.id),
+
+    automationHookBindingsBizInstallFk: foreignKey({
+      columns: [table.bizId, table.bizExtensionInstallId],
+      foreignColumns: [bizExtensionInstalls.bizId, bizExtensionInstalls.id],
+      name: "automation_hook_bindings_biz_install_fk",
+    }),
+
+    automationHookBindingsBizContractFk: foreignKey({
+      columns: [table.bizId, table.lifecycleHookContractId],
+      foreignColumns: [lifecycleHookContracts.bizId, lifecycleHookContracts.id],
+      name: "automation_hook_bindings_biz_contract_fk",
+    }),
+
+    automationHookBindingsTimeoutBoundsCheck: check(
+      "automation_hook_bindings_timeout_bounds_check",
+      sql`"timeout_ms" >= 100 AND "timeout_ms" <= 300000`,
+    ),
+
+    automationHookBindingsPriorityBoundsCheck: check(
+      "automation_hook_bindings_priority_bounds_check",
+      sql`"priority" >= 0 AND "priority" <= 100000`,
+    ),
+
+    automationHookBindingsContractVersionCheck: check(
+      "automation_hook_bindings_contract_version_check",
+      sql`"lifecycle_hook_contract_version" >= 1`,
+    ),
+
+    automationHookBindingsFailureModeCheck: check(
+      "automation_hook_bindings_failure_mode_check",
+      sql`"failure_mode" IN ('fail_open', 'fail_closed')`,
+    ),
+
+    automationHookBindingsDeliveryShapeCheck: check(
+      "automation_hook_bindings_delivery_shape_check",
+      sql`
+      (
+        "delivery_mode" = 'internal_handler'
+        AND "internal_handler_key" IS NOT NULL
+        AND "webhook_url" IS NULL
+        AND "signing_secret_ref" IS NULL
+      ) OR (
+        "delivery_mode" = 'webhook'
+        AND "internal_handler_key" IS NULL
+        AND "webhook_url" IS NOT NULL
+      )
+      `,
+    ),
+  }),
+);
+
+/**
+ * automation_hook_runs
+ *
+ * ELI5:
+ * One row tracks one concrete execution of one automation hook binding.
+ *
+ * Why this exists:
+ * - deterministic debugging ("what fee line came from what hook run?"),
+ * - idempotent replay and failure analytics for sync hook points.
+ */
+export const automationHookRuns = pgTable(
+  "automation_hook_runs",
+  {
+    /** Stable primary key for one run. */
+    id: idWithTag("auto_hook_run"),
+
+    /** Tenant boundary. */
+    bizId: idRef("biz_id")
+      .references(() => bizes.id)
+      .notNull(),
+
+    /** Binding that executed. */
+    automationHookBindingId: idRef("automation_hook_binding_id")
+      .references(() => automationHookBindings.id)
+      .notNull(),
+
+    /** Parent lifecycle invocation owning this binding execution. */
+    lifecycleHookInvocationId: idRef("lifecycle_hook_invocation_id")
+      .references(() => lifecycleHookInvocations.id)
+      .notNull(),
+
+    /** Hook point key resolved for this run. */
+    hookPoint: varchar("hook_point", { length: 160 }).notNull(),
+
+    /** Target domain object type (checkout_session, booking_order, etc.). */
+    targetType: varchar("target_type", { length: 100 }).notNull(),
+
+    /** Target domain object id. */
+    targetRefId: varchar("target_ref_id", { length: 140 }).notNull(),
+
+    /** Run lifecycle state. */
+    status: varchar("status", { length: 20 }).default("running").notNull(),
+
+    /** Start timestamp. */
+    startedAt: timestamp("started_at", { withTimezone: true }).defaultNow().notNull(),
+
+    /** Completion timestamp. */
+    completedAt: timestamp("completed_at", { withTimezone: true }),
+
+    /** Optional runtime duration in milliseconds. */
+    durationMs: integer("duration_ms"),
+
+    /** Input payload snapshot for replay/debugging. */
+    inputPayload: jsonb("input_payload").default({}).notNull(),
+
+    /** Output payload snapshot for replay/debugging. */
+    outputPayload: jsonb("output_payload").default({}),
+
+    /** Optional normalized failure code. */
+    errorCode: varchar("error_code", { length: 120 }),
+
+    /** Optional failure summary. */
+    errorMessage: varchar("error_message", { length: 2000 }),
+
+    /** Optional idempotency key for de-duplication. */
+    idempotencyKey: varchar("idempotency_key", { length: 200 }),
+
+    /** Extension payload. */
+    metadata: jsonb("metadata").default({}),
+
+    /** Full audit metadata. */
+    ...withAuditRefs(() => users.id),
+  },
+  (table) => ({
+    automationHookRunsBizIdIdUnique: uniqueIndex(
+      "automation_hook_runs_biz_id_id_unique",
+    ).on(table.bizId, table.id),
+
+    automationHookRunsBizPointTargetStartedIdx: index(
+      "automation_hook_runs_biz_point_target_started_idx",
+    ).on(table.bizId, table.hookPoint, table.targetType, table.targetRefId, table.startedAt),
+
+    automationHookRunsBizBindingStartedIdx: index(
+      "automation_hook_runs_biz_binding_started_idx",
+    ).on(table.bizId, table.automationHookBindingId, table.startedAt),
+
+    automationHookRunsBizInvocationStartedIdx: index(
+      "automation_hook_runs_biz_invocation_started_idx",
+    ).on(table.bizId, table.lifecycleHookInvocationId, table.startedAt),
+
+    automationHookRunsBizIdempotencyUnique: uniqueIndex(
+      "automation_hook_runs_biz_idempotency_unique",
+    )
+      .on(table.bizId, table.idempotencyKey)
+      .where(sql`"idempotency_key" IS NOT NULL`),
+
+    automationHookRunsBizBindingFk: foreignKey({
+      columns: [table.bizId, table.automationHookBindingId],
+      foreignColumns: [automationHookBindings.bizId, automationHookBindings.id],
+      name: "automation_hook_runs_biz_binding_fk",
+    }),
+
+    automationHookRunsBizInvocationFk: foreignKey({
+      columns: [table.bizId, table.lifecycleHookInvocationId],
+      foreignColumns: [lifecycleHookInvocations.bizId, lifecycleHookInvocations.id],
+      name: "automation_hook_runs_biz_invocation_fk",
+    }),
+
+    automationHookRunsStatusCheck: check(
+      "automation_hook_runs_status_check",
+      sql`"status" IN ('running', 'succeeded', 'failed', 'skipped')`,
+    ),
+
+    automationHookRunsDurationBoundsCheck: check(
+      "automation_hook_runs_duration_bounds_check",
+      sql`"duration_ms" IS NULL OR "duration_ms" >= 0`,
+    ),
+
+    automationHookRunsTimelineCheck: check(
+      "automation_hook_runs_timeline_check",
+      sql`"completed_at" IS NULL OR "completed_at" >= "started_at"`,
+    ),
+  }),
+);
+
+/**
+ * lifecycle_hook_effect_events
+ *
+ * ELI5:
+ * Normalized side-effect ledger for one lifecycle hook invocation.
+ */
+export const lifecycleHookEffectEvents = pgTable(
+  "lifecycle_hook_effect_events",
+  {
+    id: idWithTag("lifecycle_hook_effect"),
+
+    bizId: idRef("biz_id")
+      .references(() => bizes.id)
+      .notNull(),
+
+    lifecycleHookInvocationId: idRef("lifecycle_hook_invocation_id")
+      .references(() => lifecycleHookInvocations.id)
+      .notNull(),
+
+    automationHookRunId: idRef("automation_hook_run_id").references(
+      () => automationHookRuns.id,
+    ),
+
+    effectType: varchar("effect_type", { length: 120 }).notNull(),
+    status: varchar("status", { length: 20 }).default("applied").notNull(),
+
+    payload: jsonb("payload").default({}).notNull(),
+    outputPayload: jsonb("output_payload").default({}),
+
+    appliedAt: timestamp("applied_at", { withTimezone: true }).defaultNow().notNull(),
+    errorCode: varchar("error_code", { length: 120 }),
+    errorMessage: varchar("error_message", { length: 2000 }),
+
+    metadata: jsonb("metadata").default({}),
+
+    ...withAuditRefs(() => users.id),
+  },
+  (table) => ({
+    lifecycleHookEffectEventsBizIdIdUnique: uniqueIndex(
+      "lifecycle_hook_effect_events_biz_id_id_unique",
+    ).on(table.bizId, table.id),
+
+    lifecycleHookEffectEventsBizInvocationAppliedIdx: index(
+      "lifecycle_hook_effect_events_biz_invocation_applied_idx",
+    ).on(table.bizId, table.lifecycleHookInvocationId, table.appliedAt),
+
+    lifecycleHookEffectEventsBizRunAppliedIdx: index(
+      "lifecycle_hook_effect_events_biz_run_applied_idx",
+    ).on(table.bizId, table.automationHookRunId, table.appliedAt),
+
+    lifecycleHookEffectEventsBizTypeStatusIdx: index(
+      "lifecycle_hook_effect_events_biz_type_status_idx",
+    ).on(table.bizId, table.effectType, table.status),
+
+    lifecycleHookEffectEventsBizInvocationFk: foreignKey({
+      columns: [table.bizId, table.lifecycleHookInvocationId],
+      foreignColumns: [lifecycleHookInvocations.bizId, lifecycleHookInvocations.id],
+      name: "lifecycle_hook_effect_events_biz_invocation_fk",
+    }),
+
+    lifecycleHookEffectEventsBizRunFk: foreignKey({
+      columns: [table.bizId, table.automationHookRunId],
+      foreignColumns: [automationHookRuns.bizId, automationHookRuns.id],
+      name: "lifecycle_hook_effect_events_biz_run_fk",
+    }),
+
+    lifecycleHookEffectEventsStatusCheck: check(
+      "lifecycle_hook_effect_events_status_check",
+      sql`"status" IN ('planned', 'applied', 'failed', 'skipped')`,
+    ),
+  }),
+);
+
+/**
  * idempotency_keys
  *
  * ELI5:
@@ -2051,6 +2637,28 @@ export type NewLifecycleEventSubscription =
 
 export type LifecycleEventDelivery = typeof lifecycleEventDeliveries.$inferSelect;
 export type NewLifecycleEventDelivery = typeof lifecycleEventDeliveries.$inferInsert;
+
+export type LifecycleHookContract = typeof lifecycleHookContracts.$inferSelect;
+export type NewLifecycleHookContract = typeof lifecycleHookContracts.$inferInsert;
+
+export type LifecycleHookContractVersion =
+  typeof lifecycleHookContractVersions.$inferSelect;
+export type NewLifecycleHookContractVersion =
+  typeof lifecycleHookContractVersions.$inferInsert;
+
+export type LifecycleHookInvocation = typeof lifecycleHookInvocations.$inferSelect;
+export type NewLifecycleHookInvocation = typeof lifecycleHookInvocations.$inferInsert;
+
+export type AutomationHookBinding = typeof automationHookBindings.$inferSelect;
+export type NewAutomationHookBinding = typeof automationHookBindings.$inferInsert;
+
+export type AutomationHookRun = typeof automationHookRuns.$inferSelect;
+export type NewAutomationHookRun = typeof automationHookRuns.$inferInsert;
+
+export type LifecycleHookEffectEvent =
+  typeof lifecycleHookEffectEvents.$inferSelect;
+export type NewLifecycleHookEffectEvent =
+  typeof lifecycleHookEffectEvents.$inferInsert;
 
 export type IdempotencyKey = typeof idempotencyKeys.$inferSelect;
 export type NewIdempotencyKey = typeof idempotencyKeys.$inferInsert;

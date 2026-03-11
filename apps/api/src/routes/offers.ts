@@ -4,7 +4,7 @@
 
 import { Hono } from 'hono'
 import crypto from 'node:crypto'
-import { and, asc, desc, eq, ilike, sql } from 'drizzle-orm'
+import { and, asc, desc, eq, ilike, inArray, sql } from 'drizzle-orm'
 import { z } from 'zod'
 import dbPackage from '@bizing/db'
 import {
@@ -20,13 +20,22 @@ import {
   persistCanonicalAction,
 } from '../services/action-runtime.js'
 import { executeCrudRouteAction } from '../services/action-route-bridge.js'
+import { resolveOfferBookableSlots } from '../services/availability-resolver.js'
+import { requirePublicBizAccess } from './_public-biz-access.js'
 import { fail, ok, parsePositiveInt } from './_api.js'
 
-const { db, bizes, offers, offerVersions, offerVersionAdmissionModes, bookingOrders } = dbPackage
+const { db, offers, offerVersions, offerVersionAdmissionModes, bookingOrders, serviceGroups } = dbPackage
+
+const PUBLIC_VISIBILITY_BLOCKING_BOOKING_STATUSES = [
+  'confirmed',
+  'checked_in',
+  'in_progress',
+] as const
 
 const listOffersQuerySchema = z.object({
   page: z.string().optional(),
   perPage: z.string().optional(),
+  serviceGroupId: z.string().optional(),
   status: z.enum(['draft', 'active', 'inactive', 'archived']).optional(),
   executionMode: z
     .enum(['slot', 'queue', 'request', 'auction', 'async', 'route_trip', 'open_access', 'itinerary'])
@@ -48,6 +57,11 @@ const publicOfferAvailabilityQuerySchema = z.object({
   from: z.string().datetime().optional(),
   limit: z.string().optional(),
   viewerTier: z.string().min(1).max(80).optional(),
+  locationId: z.string().optional(),
+  serviceId: z.string().optional(),
+  serviceProductId: z.string().optional(),
+  providerUserId: z.string().optional(),
+  resourceId: z.string().optional(),
 })
 
 const publicWalkUpQuerySchema = z.object({
@@ -56,6 +70,7 @@ const publicWalkUpQuerySchema = z.object({
 })
 
 const createOfferBodySchema = z.object({
+  serviceGroupId: z.string().min(1),
   name: z.string().min(1).max(255),
   slug: z.string().min(1).max(140).regex(/^[a-z0-9-]+$/),
   description: z.string().max(4000).optional(),
@@ -381,6 +396,9 @@ async function updateOfferCrudRow(
  */
 offerRoutes.get('/public/bizes/:bizId/offers', async (c) => {
   const bizId = c.req.param('bizId')
+  const bizAccess = await requirePublicBizAccess(c, bizId)
+  if (bizAccess instanceof Response) return bizAccess
+
   const parsed = listPublicOffersQuerySchema.safeParse(c.req.query())
   if (!parsed.success) {
     return fail(c, 'VALIDATION_ERROR', 'Invalid query parameters.', 400, parsed.error.flatten())
@@ -424,6 +442,9 @@ offerRoutes.get('/public/bizes/:bizId/offers', async (c) => {
  */
 offerRoutes.get('/public/bizes/:bizId/offers/:offerId/availability', async (c) => {
   const { bizId, offerId } = c.req.param()
+  const bizAccess = await requirePublicBizAccess(c, bizId)
+  if (bizAccess instanceof Response) return bizAccess
+
   const parsed = publicOfferAvailabilityQuerySchema.safeParse(c.req.query())
   if (!parsed.success) {
     return fail(c, 'VALIDATION_ERROR', 'Invalid query parameters.', 400, parsed.error.flatten())
@@ -457,114 +478,86 @@ offerRoutes.get('/public/bizes/:bizId/offers/:offerId/availability', async (c) =
     return fail(c, 'NOT_BOOKABLE', 'No published offer version available.', 409)
   }
 
-  const biz = await db.query.bizes.findFirst({ where: eq(bizes.id, bizId) })
-  if (!biz) return fail(c, 'NOT_FOUND', 'Biz not found.', 404)
-
-  const metadata = asRecord(biz.metadata)
-  const availability = asRecord(metadata.availability)
-  const weekly = parseWeeklyWindows(availability.weekly)
-  const leadTimeHours = clampInt(availability.leadTimeHours, 0, 0, 168)
-  const maxAdvanceDays = clampInt(availability.maxAdvanceDays, 30, 1, 120)
+  const biz = bizAccess.biz
 
   const viewerTier = (parsed.data.viewerTier ?? 'default').toLowerCase()
   const visibilityPolicy = resolveSlotVisibilityPolicy(offerVersion.policyModel, viewerTier)
   const policyVisibleLimit = visibilityPolicy.visibleSlotCount
   const requestedLimit = Math.max(parsePositiveInt(parsed.data.limit, policyVisibleLimit), 1)
   const effectiveVisibleLimit = Math.min(requestedLimit, policyVisibleLimit)
-  const effectiveAdvanceDays = Math.min(visibilityPolicy.advanceDays, maxAdvanceDays)
 
   const now = new Date()
   const fromAt = parsed.data.from ? new Date(parsed.data.from) : now
-  const leadTimeStartAt = addMinutes(fromAt, leadTimeHours * 60)
-  const searchEndAt = addUtcDays(fromAt, effectiveAdvanceDays)
-
-  const allBookings = await db.query.bookingOrders.findMany({
-    where: and(
-      eq(bookingOrders.bizId, bizId),
-      eq(bookingOrders.offerId, offerId),
-      eq(bookingOrders.offerVersionId, offerVersion.id),
-    ),
-  })
-  const blockedStatuses = new Set(['confirmed', 'checked_in', 'in_progress'])
-  const blockedWindows = allBookings
-    .filter((row) => blockedStatuses.has(row.status))
-    .filter((row) => row.confirmedStartAt && row.confirmedEndAt)
-    .map((row) => ({
-      startAt: (row.confirmedStartAt as Date).getTime(),
-      endAt: (row.confirmedEndAt as Date).getTime(),
-    }))
-
-  /**
-   * Manual blocked windows come from biz availability metadata.
-   *
-   * ELI5:
-   * Business can say "even if the normal weekly schedule is open, hide this
-   * exact window from bookable availability". That covers emergency holds,
-   * lunch closures, maintenance, and similar exceptions without changing the
-   * weekly template.
-   */
-  const blockedWindowRows = Array.isArray(availability.blockedWindows)
-    ? availability.blockedWindows
-    : []
-  for (const row of blockedWindowRows) {
-    const asRecordRow = asRecord(row)
-    const startAt = asRecordRow.startAt
-    const endAt = asRecordRow.endAt
-    if (typeof startAt !== 'string' || typeof endAt !== 'string') continue
-    const startMs = new Date(startAt).getTime()
-    const endMs = new Date(endAt).getTime()
-    if (!Number.isFinite(startMs) || !Number.isFinite(endMs) || endMs <= startMs) continue
-    blockedWindows.push({ startAt: startMs, endAt: endMs })
-  }
-
   const durationMin = Math.max(Number(offerVersion.defaultDurationMin ?? 60), 1)
   const stepMin = Math.max(Number(offerVersion.durationStepMin ?? durationMin), 1)
+
+  const resolvedSlots = await resolveOfferBookableSlots({
+    bizId,
+    offerId,
+    offerVersionId: offerVersion.id,
+    locationId: parsed.data.locationId,
+    serviceId: parsed.data.serviceId,
+    serviceProductId: parsed.data.serviceProductId,
+    providerUserId: parsed.data.providerUserId,
+    resourceId: parsed.data.resourceId,
+    fromAt,
+    toAt: addUtcDays(fromAt, visibilityPolicy.advanceDays),
+    stepMinutes: stepMin,
+    durationMinutes: durationMin,
+    maxSlots: Math.max(effectiveVisibleLimit * 20, 500),
+  })
+
+  const leadTimeHours = resolvedSlots.computedLeadTimeHours
+  const maxAdvanceDays = resolvedSlots.computedMaxAdvanceDays
+  const effectiveAdvanceDays = Math.min(visibilityPolicy.advanceDays, maxAdvanceDays)
+
   const dateAvailabilityPolicy = resolveDateAvailabilityPolicy(offerVersion.policyModel)
-  const fromDay = startOfUtcDay(fromAt)
+  let slots = resolvedSlots.slots.filter((slot) => {
+    const slotStartMs = new Date(slot.startAt).getTime()
+    const slotEndMs = new Date(slot.endAt).getTime()
+    if (
+      dateAvailabilityPolicy.hasAllowedDateRanges &&
+      !dateAvailabilityPolicy.allowedDateRanges.some(
+        (range) => range.startAt.getTime() <= slotStartMs && range.endAt.getTime() >= slotEndMs,
+      )
+    ) {
+      return false
+    }
+    return true
+  })
 
-  const slots: Array<{ startAt: string; endAt: string }> = []
-  for (let dayOffset = 0; dayOffset <= effectiveAdvanceDays; dayOffset += 1) {
-    const dayStart = addUtcDays(fromDay, dayOffset)
-    const dayKey = weekdayUtc(dayStart)
-    const windows = weekly[dayKey]
-    if (!windows.length) continue
+  // Public discovery should roll the visible window forward after a booking
+  // consumes one of the visible slots, even when no explicit provider/resource
+  // scope is attached to the offer.
+  if (!parsed.data.providerUserId && !parsed.data.resourceId && slots.length > 0) {
+    const latestSlotEndAt = new Date(slots[slots.length - 1]?.endAt ?? fromAt.toISOString())
+    const overlappingBookings = await db.query.bookingOrders.findMany({
+      where: and(
+        eq(bookingOrders.bizId, bizId),
+        eq(bookingOrders.offerVersionId, offerVersion.id),
+        inArray(bookingOrders.status, [...PUBLIC_VISIBILITY_BLOCKING_BOOKING_STATUSES]),
+        sql`COALESCE(${bookingOrders.confirmedStartAt}, ${bookingOrders.requestedStartAt}) < ${latestSlotEndAt}`,
+        sql`COALESCE(${bookingOrders.confirmedEndAt}, ${bookingOrders.requestedEndAt}) > ${fromAt}`,
+      ),
+      columns: {
+        confirmedStartAt: true,
+        confirmedEndAt: true,
+        requestedStartAt: true,
+        requestedEndAt: true,
+      },
+    })
 
-    for (const window of windows) {
-      const latestStartMin = window.endMin - durationMin
-      if (latestStartMin < window.startMin) continue
-      for (let minute = window.startMin; minute <= latestStartMin; minute += stepMin) {
-        const slotStart = addMinutes(dayStart, minute)
-        if (slotStart < fromAt || slotStart < leadTimeStartAt) continue
-        if (slotStart > searchEndAt) continue
-
-        const slotEnd = addMinutes(slotStart, durationMin)
-        const slotStartMs = slotStart.getTime()
-        const slotEndMs = slotEnd.getTime()
-        if (
-          dateAvailabilityPolicy.hasAllowedDateRanges &&
-          !dateAvailabilityPolicy.allowedDateRanges.some(
-            /**
-             * A slot should fit entirely inside an allowed date range.
-             *
-             * ELI5:
-             * If the biz says "only this exact window is bookable", we should
-             * not leak a slot that starts before the window or ends after it.
-             */
-            (range) => range.startAt.getTime() <= slotStartMs && range.endAt.getTime() >= slotEndMs,
-          )
-        ) {
-          continue
-        }
-        const hasConflict = blockedWindows.some(
-          (windowRange) => windowRange.startAt < slotEndMs && windowRange.endAt > slotStartMs,
-        )
-        if (hasConflict) continue
-
-        slots.push({
-          startAt: slotStart.toISOString(),
-          endAt: slotEnd.toISOString(),
+    if (overlappingBookings.length > 0) {
+      slots = slots.filter((slot) => {
+        const slotStartMs = new Date(slot.startAt).getTime()
+        const slotEndMs = new Date(slot.endAt).getTime()
+        return !overlappingBookings.some((booking) => {
+          const bookingStartAt = booking.confirmedStartAt ?? booking.requestedStartAt
+          const bookingEndAt = booking.confirmedEndAt ?? booking.requestedEndAt
+          if (!bookingStartAt || !bookingEndAt) return false
+          return bookingStartAt.getTime() < slotEndMs && bookingEndAt.getTime() > slotStartMs
         })
-      }
+      })
     }
   }
 
@@ -631,6 +624,9 @@ offerRoutes.get('/public/bizes/:bizId/offers/:offerId/availability', async (c) =
  */
 offerRoutes.get('/public/bizes/:bizId/offers/:offerId/walk-up', async (c) => {
   const { bizId, offerId } = c.req.param()
+  const bizAccess = await requirePublicBizAccess(c, bizId)
+  if (bizAccess instanceof Response) return bizAccess
+
   const parsed = publicWalkUpQuerySchema.safeParse(c.req.query())
   if (!parsed.success) {
     return fail(c, 'VALIDATION_ERROR', 'Invalid query parameters.', 400, parsed.error.flatten())
@@ -710,6 +706,7 @@ offerRoutes.get(
   const {
     page,
     perPage,
+    serviceGroupId,
     status,
     executionMode,
     isPublished,
@@ -723,6 +720,7 @@ offerRoutes.get(
 
   const where = and(
     eq(offers.bizId, bizId),
+    serviceGroupId ? eq(offers.serviceGroupId, serviceGroupId) : undefined,
     status ? eq(offers.status, status) : undefined,
     executionMode ? eq(offers.executionMode, executionMode) : undefined,
     isPublished ? eq(offers.isPublished, isPublished === 'true') : undefined,
@@ -766,6 +764,14 @@ offerRoutes.post(
     const parsed = createOfferBodySchema.safeParse(body)
     if (!parsed.success) {
       return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
+    }
+
+    const serviceGroup = await db.query.serviceGroups.findFirst({
+      where: and(eq(serviceGroups.bizId, bizId), eq(serviceGroups.id, parsed.data.serviceGroupId)),
+      columns: { id: true },
+    })
+    if (!serviceGroup) {
+      return fail(c, 'BAD_REQUEST', 'serviceGroupId is not in this biz.', 400)
     }
 
     const action = await executeBizAction(c, bizId, 'offer.create', parsed.data)
@@ -859,6 +865,16 @@ offerRoutes.patch(
       where: and(eq(offers.bizId, bizId), eq(offers.id, offerId)),
     })
     if (!existing) return fail(c, 'NOT_FOUND', 'Offer not found.', 404)
+
+    if (parsed.data.serviceGroupId) {
+      const serviceGroup = await db.query.serviceGroups.findFirst({
+        where: and(eq(serviceGroups.bizId, bizId), eq(serviceGroups.id, parsed.data.serviceGroupId)),
+        columns: { id: true },
+      })
+      if (!serviceGroup) {
+        return fail(c, 'BAD_REQUEST', 'serviceGroupId is not in this biz.', 400)
+      }
+    }
 
     const action = await executeBizAction(c, bizId, 'offer.update', {
       offerId,

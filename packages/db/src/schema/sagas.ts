@@ -11,10 +11,12 @@ import {
   sagaArtifactTypeEnum,
   sagaActorMessageChannelEnum,
   sagaActorMessageStatusEnum,
+  sagaDepthEnum,
   sagaDefinitionStatusEnum,
   sagaRunClockModeEnum,
   sagaRunClockStatusEnum,
   sagaRunModeEnum,
+  sagaCoverageReportStatusEnum,
   sagaSchedulerJobStatusEnum,
   sagaSchedulerJobTypeEnum,
   sagaRunStatusEnum,
@@ -62,6 +64,16 @@ export const sagaDefinitions = pgTable(
     status: sagaDefinitionStatusEnum("status").default("active").notNull(),
 
     /**
+     * Intended validation depth profile for this saga definition.
+     *
+     * Why this exists:
+     * - gives operators fast control over test breadth in OODA loops,
+     * - allows runner presets (quick smoke vs broad pre-merge validation),
+     * - keeps depth visible as an explicit contract, not hidden in tags.
+     */
+    depth: sagaDepthEnum("depth").default("medium").notNull(),
+
+    /**
      * Optional source pointers back to research docs for traceability.
      * Example refs: `UC-1`, `Persona-1`.
      */
@@ -99,6 +111,10 @@ export const sagaDefinitions = pgTable(
       table.bizId,
       table.status,
     ),
+    sagaDefinitionsDepthStatusIdx: index("saga_definitions_depth_status_idx").on(
+      table.depth,
+      table.status,
+    ),
   }),
 );
 
@@ -134,6 +150,15 @@ export const sagaRuns = pgTable(
 
     /** Run mode (safe simulation vs live integration run). */
     mode: sagaRunModeEnum("mode").default("dry_run").notNull(),
+
+    /**
+     * Denormalized depth copied from the source definition at run creation.
+     *
+     * ELI5:
+     * If definition depth changes later, this still shows what depth the run
+     * was *actually executed under* at that point in time.
+     */
+    depth: sagaDepthEnum("depth").default("medium").notNull(),
 
     /** Authenticated user that initiated the run. */
     requestedByUserId: idRef("requested_by_user_id")
@@ -177,6 +202,11 @@ export const sagaRuns = pgTable(
   (table) => ({
     /** Fast dashboard filtering by status and recency. */
     sagaRunsStatusCreatedIdx: index("saga_runs_status_created_idx").on(
+      table.status,
+      table.startedAt,
+    ),
+    sagaRunsDepthStatusCreatedIdx: index("saga_runs_depth_status_created_idx").on(
+      table.depth,
       table.status,
       table.startedAt,
     ),
@@ -1279,7 +1309,7 @@ export const sagaCoverageReports = pgTable(
     scopeType: varchar("scope_type", { length: 40 }).default("run").notNull(),
 
     /** Lifecycle state for report publication. */
-    status: varchar("status", { length: 30 }).default("published").notNull(),
+    status: sagaCoverageReportStatusEnum("status").default("published").notNull(),
 
     /** Optional human-readable title. */
     title: varchar("title", { length: 255 }),

@@ -8,12 +8,14 @@ tags:
 
 # Receivables Domain
 
-This file is generated from route/schema source files and exists to keep domain docs synchronized with code reality.
+This file is generated from route/schema source files and the canonical domain manifest to keep docs synchronized with runtime mounts.
 
 ## Source
 
-- Route file: `/Users/ameer/bizing/code/apps/api/src/routes/receivables.ts`
-- Schema file: `/Users/ameer/bizing/code/packages/db/src/schema/receivables.ts`
+- Route file: `apps/api/src/routes/receivables.ts`
+- Schema file: `packages/db/src/schema/receivables.ts`
+- Mount path: `/`
+- Auth class (manifest): `machine_allowed`
 
 ## Route Intent (top JSDoc)
 
@@ -35,23 +37,23 @@ _No top JSDoc comment found._
 
 ## API Surface
 
-- `GET` `/bizes/:bizId/billing-accounts`
-- `POST` `/bizes/:bizId/billing-accounts`
-- `GET` `/bizes/:bizId/purchase-orders`
-- `POST` `/bizes/:bizId/purchase-orders`
-- `GET` `/bizes/:bizId/ar-invoices`
-- `POST` `/bizes/:bizId/ar-invoices`
-- `GET` `/bizes/:bizId/ar-invoices/:invoiceId`
-- `PATCH` `/bizes/:bizId/ar-invoices/:invoiceId`
-- `POST` `/bizes/:bizId/ar-invoices/:invoiceId/events`
-- `GET` `/bizes/:bizId/installment-plans`
-- `POST` `/bizes/:bizId/installment-plans`
-- `GET` `/bizes/:bizId/installment-plans/:planId/items`
-- `POST` `/bizes/:bizId/installment-plans/:planId/items`
-- `GET` `/bizes/:bizId/billing-account-autopay-rules`
-- `POST` `/bizes/:bizId/billing-account-autopay-rules`
-- `GET` `/bizes/:bizId/autocollection-attempts`
-- `POST` `/bizes/:bizId/autocollection-attempts`
+- `GET` `/api/v1/bizes/:bizId/billing-accounts`
+- `POST` `/api/v1/bizes/:bizId/billing-accounts`
+- `GET` `/api/v1/bizes/:bizId/purchase-orders`
+- `POST` `/api/v1/bizes/:bizId/purchase-orders`
+- `GET` `/api/v1/bizes/:bizId/ar-invoices`
+- `POST` `/api/v1/bizes/:bizId/ar-invoices`
+- `GET` `/api/v1/bizes/:bizId/ar-invoices/:invoiceId`
+- `PATCH` `/api/v1/bizes/:bizId/ar-invoices/:invoiceId`
+- `POST` `/api/v1/bizes/:bizId/ar-invoices/:invoiceId/events`
+- `GET` `/api/v1/bizes/:bizId/installment-plans`
+- `POST` `/api/v1/bizes/:bizId/installment-plans`
+- `GET` `/api/v1/bizes/:bizId/installment-plans/:planId/items`
+- `POST` `/api/v1/bizes/:bizId/installment-plans/:planId/items`
+- `GET` `/api/v1/bizes/:bizId/billing-account-autopay-rules`
+- `POST` `/api/v1/bizes/:bizId/billing-account-autopay-rules`
+- `GET` `/api/v1/bizes/:bizId/autocollection-attempts`
+- `POST` `/api/v1/bizes/:bizId/autocollection-attempts`
 
 ## Tables
 

@@ -17,6 +17,7 @@ import { z } from 'zod'
 import dbPackage from '@bizing/db'
 import { requireAclPermission, requireAuth, requireBizAccess } from '../middleware/auth.js'
 import { executeCrudRouteAction } from '../services/action-route-bridge.js'
+import { repriceCheckoutSessionWithAutomation } from '../services/checkout-automation-hooks.js'
 import { fail, ok } from './_api.js'
 
 const {
@@ -212,6 +213,10 @@ const recoveryBodySchema = z.object({
   metadata: z.record(z.unknown()).optional(),
 })
 
+const repriceBodySchema = z.object({
+  idempotencyKey: z.string().max(200).optional().nullable(),
+})
+
 function hashToken(rawToken: string) {
   return crypto.createHash('sha256').update(rawToken).digest('hex')
 }
@@ -294,6 +299,26 @@ checkoutRoutes.post('/bizes/:bizId/checkout-sessions/:checkoutSessionId/items', 
   if (!rowResult.row) return fail(c, 'ACTION_EXECUTION_FAILED', 'Checkout item create returned no row.', 500)
   const row = rowResult.row
   return ok(c, row, 201)
+})
+
+checkoutRoutes.post('/bizes/:bizId/checkout-sessions/:checkoutSessionId/reprice', requireAuth, requireBizAccess('bizId'), requireAclPermission('bizes.update', { bizIdParam: 'bizId' }), async (c) => {
+  const { bizId, checkoutSessionId } = c.req.param()
+  const parsed = repriceBodySchema.safeParse(await c.req.json().catch(() => ({})))
+  if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
+  try {
+    const result = await repriceCheckoutSessionWithAutomation({
+      bizId,
+      checkoutSessionId,
+      idempotencyKey: parsed.data.idempotencyKey ?? null,
+    })
+    return ok(c, result)
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Failed to reprice checkout session.'
+    if (message.toLowerCase().includes('not found')) {
+      return fail(c, 'NOT_FOUND', 'Checkout session not found.', 404)
+    }
+    return fail(c, 'AUTOMATION_HOOK_EXECUTION_FAILED', message, 409)
+  }
 })
 
 checkoutRoutes.post('/bizes/:bizId/checkout-sessions/:checkoutSessionId/events', requireAuth, requireBizAccess('bizId'), requireAclPermission('bizes.update', { bizIdParam: 'bizId' }), async (c) => {

@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
 import type {
+  SagaDepth,
   SagaDefinitionSummary,
   SagaPersonaDefinition,
   SagaRunStatus,
@@ -73,7 +74,7 @@ export function LoadError({ message, onRetry }: { message: string; onRetry?: () 
   return (
     <Card className="border-destructive/40">
       <CardHeader>
-        <CardTitle>Unable to load saga data</CardTitle>
+        <CardTitle>Unable to load data</CardTitle>
         <CardDescription>{message}</CardDescription>
       </CardHeader>
       {onRetry ? (
@@ -143,6 +144,20 @@ export function RunStatusBadge({ status }: { status: SagaRunStatus }) {
             ? 'border-slate-500/40 bg-slate-500/10 text-slate-700 dark:text-slate-300'
             : 'border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300'
   return <Badge variant="outline" className={tone}>{status}</Badge>
+}
+
+export function SagaDepthBadge({ depth }: { depth: SagaDepth }) {
+  const tone =
+    depth === 'shallow'
+      ? 'border-sky-500/40 bg-sky-500/10 text-sky-700 dark:text-sky-300'
+      : depth === 'deep'
+        ? 'border-fuchsia-500/40 bg-fuchsia-500/10 text-fuchsia-700 dark:text-fuchsia-300'
+        : 'border-indigo-500/40 bg-indigo-500/10 text-indigo-700 dark:text-indigo-300'
+  return (
+    <Badge variant="outline" className={tone}>
+      {depth}
+    </Badge>
+  )
 }
 
 export function CoverageVerdictBadge({

@@ -31,6 +31,8 @@ const {
   outboundMessages,
 } = dbPackage
 
+const projectionStatuses = ['draft', 'active', 'inactive', 'archived'] as const
+
 async function createAnalyticsRow<TTableKey extends 'projections' | 'projectionDocuments'>(
   c: Parameters<typeof executeCrudRouteAction>[0]['c'],
   bizId: string,
@@ -63,7 +65,7 @@ function pagination(input: { page?: string; perPage?: string }) {
 const reportQuerySchema = z.object({
   page: z.string().optional(),
   perPage: z.string().optional(),
-  status: z.string().optional(),
+  status: z.enum(projectionStatuses).optional(),
 })
 
 const createReportBodySchema = z.object({

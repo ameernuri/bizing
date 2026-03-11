@@ -25,6 +25,19 @@ export const bizTypeEnum = pgEnum("biz_type", [
 ]);
 
 /**
+ * Business discovery/booking visibility policy.
+ *
+ * - `published`: visible in public directory and bookable by signed-in customers.
+ * - `unpublished`: hidden from discovery/public booking.
+ * - `private`: hidden from public directory; only invited members can access.
+ */
+export const bizVisibilityEnum = pgEnum("biz_visibility", [
+  "published",
+  "unpublished",
+  "private",
+]);
+
+/**
  * Shared soft-lifecycle for configurable/runtime-managed entities.
  *
  * ELI5:
@@ -207,25 +220,6 @@ export const availabilityRuleModeEnum = pgEnum("availability_rule_mode", [
 export const availabilityRuleFrequencyEnum = pgEnum(
   "availability_rule_frequency",
   ["none", "daily", "weekly", "monthly", "yearly", "recurrence_rule"],
-);
-
-/**
- * Outcome directive of a matched availability rule.
- *
- * This name is intentionally explicit: each rule tells the scheduler what
- * should happen when the rule window matches a candidate slot.
- */
-export const availabilityRuleOutcomeEnum = pgEnum("availability_rule_outcome", [
-  "available",
-  "unavailable",
-  "override_hours",
-  "special_pricing",
-]);
-
-/** One-off availability exceptions layered over weekly rules. */
-export const availabilityExceptionTypeEnum = pgEnum(
-  "availability_exception_type",
-  ["closed", "modified_hours", "special_pricing", "holiday"],
 );
 
 // -----------------------------------------------------------------------------
@@ -1214,6 +1208,111 @@ export const workApprovalDecisionEnum = pgEnum("work_approval_decision", [
   "skipped",
 ]);
 
+/**
+ * Unified status for one prioritized work item in the cross-surface inbox.
+ */
+export const workItemStatusEnum = pgEnum("work_item_status", [
+  "open",
+  "in_progress",
+  "blocked",
+  "snoozed",
+  "done",
+  "cancelled",
+]);
+
+/**
+ * Source category for one work-item projection row.
+ *
+ * ELI5:
+ * This is how one canonical work item links back to the domain where it came
+ * from without forcing every source table into one giant schema.
+ */
+export const workItemSourceTypeEnum = pgEnum("work_item_source_type", [
+  "manual",
+  "action_request",
+  "domain_event",
+  "workflow_instance",
+  "workflow_step",
+  "review_item",
+  "operational_demand",
+  "operational_assignment",
+  "crm_task",
+  "support_case",
+  "queue_entry",
+  "dispatch_task",
+  "work_run",
+  "work_entry",
+  "custom_subject",
+]);
+
+/** Operational urgency lane for work-item prioritization. */
+export const workItemUrgencyEnum = pgEnum("work_item_urgency", [
+  "low",
+  "normal",
+  "high",
+  "critical",
+]);
+
+/** Immutable lifecycle event written to `work_item_events`. */
+export const workItemEventTypeEnum = pgEnum("work_item_event_type", [
+  "created",
+  "synced",
+  "status_changed",
+  "priority_changed",
+  "urgency_changed",
+  "assigned",
+  "unassigned",
+  "snoozed",
+  "unsnoozed",
+  "completed",
+  "reopened",
+  "cancelled",
+  "commented",
+  "command_run_started",
+  "command_run_finished",
+]);
+
+/** Link classification for one `work_item_links` row. */
+export const workItemLinkTypeEnum = pgEnum("work_item_link_type", [
+  "subject",
+  "action_request",
+  "domain_event",
+  "workflow_instance",
+  "workflow_step",
+  "review_item",
+  "operational_demand",
+  "operational_assignment",
+  "external_url",
+  "custom",
+]);
+
+/** Command behavior type for global command-surface records. */
+export const workCommandKindEnum = pgEnum("work_command_kind", [
+  "action",
+  "workflow",
+  "navigation",
+  "automation",
+  "custom",
+]);
+
+/** Which target scope a command expects when executed. */
+export const workCommandTargetScopeEnum = pgEnum("work_command_target_scope", [
+  "global",
+  "biz",
+  "subject",
+  "work_item",
+  "selection",
+]);
+
+/** Runtime lifecycle for one command execution run. */
+export const workCommandRunStatusEnum = pgEnum("work_command_run_status", [
+  "pending",
+  "running",
+  "succeeded",
+  "failed",
+  "cancelled",
+]);
+
 
 // ---------------------------------------------------------------------------
 // Canonical booking domain enums (merged)
@@ -1573,6 +1672,29 @@ export const calendarAccessGrantStatusEnum = pgEnum("calendar_access_grant_statu
 ]);
 
 /**
+ * Canonical scheduling/capacity scope discriminator.
+ *
+ * This powers `time_scopes`, which is the normalized scope dictionary used by
+ * cross-domain policy and runtime rows.
+ */
+export const timeScopeTypeEnum = pgEnum("time_scope_type", [
+  "biz",
+  "user",
+  "location",
+  "calendar",
+  "schedule_subject",
+  "resource",
+  "capacity_pool",
+  "service",
+  "service_product",
+  "offer",
+  "offer_version",
+  "product",
+  "sellable",
+  "custom_subject",
+]);
+
+/**
  * Source kinds that can be shared under one user->biz calendar grant.
  *
  * - `external_calendar`: a connected provider feed (Google, Outlook, etc)
@@ -1801,6 +1923,12 @@ export const capacityHoldEffectModeEnum = pgEnum("capacity_hold_effect_mode", [
   "blocking",
   "non_blocking",
   "advisory",
+]);
+
+/** Canonical reservation source class for unified capacity ledgers. */
+export const capacityReservationKindEnum = pgEnum("capacity_reservation_kind", [
+  "booking_claim",
+  "capacity_hold",
 ]);
 
 /**
@@ -3123,6 +3251,34 @@ export const staffingDemandTypeEnum = pgEnum("staffing_demand_type", [
 ]);
 
 /**
+ * Canonical operational coverage lane class.
+ *
+ * This models reusable duty lanes that can be staffed, scheduled, shown on the
+ * calendar, and depended on by availability rules.
+ */
+export const coverageLaneTypeEnum = pgEnum("coverage_lane_type", [
+  "front_desk",
+  "phone_response",
+  "remote_response",
+  "triage",
+  "dispatch",
+  "supervisor",
+  "custom",
+]);
+
+/** Where a lane is primarily served from. */
+export const coverageLanePresenceModeEnum = pgEnum(
+  "coverage_lane_presence_mode",
+  ["onsite", "remote", "hybrid"],
+);
+
+/** How one eligible resource participates in a coverage lane. */
+export const coverageLaneMembershipRoleEnum = pgEnum(
+  "coverage_lane_membership_role",
+  ["primary", "backup", "overflow"],
+);
+
+/**
  * Matching/award strategy for staffing demand fulfillment.
  *
  * - `direct_assign`: manager assigns directly.
@@ -3868,6 +4024,194 @@ export const projectionHealthStatusEnum = pgEnum("projection_health_status", [
   "degraded",
   "failed",
 ]);
+
+/**
+ * Registry lifecycle status for one projection definition row.
+ *
+ * ELI5:
+ * - `draft`: scaffold exists but should not be used by readers yet
+ * - `active`: projection is live and expected to be generated
+ * - `inactive`: intentionally disabled without deleting history
+ * - `archived`: retired from active use, kept for traceability
+ */
+export const projectionStatusEnum = pgEnum("projection_status", [
+  "draft",
+  "active",
+  "inactive",
+  "archived",
+]);
+
+/**
+ * Materialized projection-document lifecycle state.
+ *
+ * ELI5:
+ * - `current`: latest valid rendered document
+ * - `stale`: readable but known out of date
+ * - `superseded`: replaced by a newer version
+ * - `failed`: latest render attempt failed
+ * - `archived`: intentionally retired document snapshot
+ */
+export const projectionDocumentStatusEnum = pgEnum("projection_document_status", [
+  "current",
+  "stale",
+  "superseded",
+  "failed",
+  "archived",
+]);
+
+/**
+ * Canonical request-level lifecycle for one action request.
+ *
+ * Important:
+ * This status tracks the request execution lifecycle, not business object state.
+ */
+export const actionRequestStatusEnum = pgEnum("action_request_status", [
+  "pending",
+  "running",
+  "previewed",
+  "succeeded",
+  "failed",
+  "cancelled",
+]);
+
+/**
+ * Runtime lifecycle for one execution attempt/phase of an action.
+ */
+export const actionExecutionStatusEnum = pgEnum("action_execution_status", [
+  "pending",
+  "running",
+  "previewed",
+  "succeeded",
+  "failed",
+  "cancelled",
+]);
+
+/**
+ * Replay-key lifecycle for action idempotency records.
+ *
+ * Why include request-like states:
+ * Idempotency rows mirror terminal request states so retried calls can answer
+ * "what happened last time?" without re-executing unsafe mutations.
+ */
+export const actionIdempotencyStatusEnum = pgEnum("action_idempotency_status", [
+  "reserved",
+  "pending",
+  "running",
+  "previewed",
+  "succeeded",
+  "failed",
+  "expired",
+  "cancelled",
+]);
+
+/**
+ * Scheduling-subject lifecycle.
+ *
+ * ELI5:
+ * This state controls whether a schedule subject should participate in
+ * availability and capacity evaluation.
+ */
+export const scheduleSubjectStatusEnum = pgEnum("schedule_subject_status", [
+  "draft",
+  "active",
+  "inactive",
+  "suspended",
+  "archived",
+]);
+
+/**
+ * Low-level event-consumer cursor status for projection workers.
+ *
+ * This enum intentionally supports both operational states (`active`, `paused`)
+ * and health states (`healthy`, `lagging`, `degraded`, `failed`) so one row can
+ * express execution intent and observed health while staying queryable.
+ */
+export const eventProjectionCheckpointStatusEnum = pgEnum(
+  "event_projection_checkpoint_status",
+  [
+    "active",
+    "paused",
+    "disabled",
+    "healthy",
+    "lagging",
+    "degraded",
+    "failed",
+    "archived",
+  ],
+);
+
+/**
+ * External client-install lifecycle.
+ *
+ * Mirrors install APIs so status filters remain deterministic.
+ */
+export const clientInstallationStatusEnum = pgEnum("client_installation_status", [
+  "active",
+  "disabled",
+  "suspended",
+  "uninstalled",
+  "archived",
+]);
+
+/**
+ * Credential lifecycle for one external installation.
+ */
+export const clientInstallationCredentialStatusEnum = pgEnum(
+  "client_installation_credential_status",
+  [
+    "active",
+    "disabled",
+    "suspended",
+    "uninstalled",
+    "revoked",
+    "expired",
+    "archived",
+  ],
+);
+
+/**
+ * Cross-channel customer profile identity state.
+ */
+export const customerProfileStatusEnum = pgEnum("customer_profile_status", [
+  "shadow",
+  "claimed",
+  "merged",
+  "archived",
+]);
+
+/**
+ * Identity handle lifecycle (email/phone/external handle rows).
+ */
+export const customerIdentityHandleStatusEnum = pgEnum(
+  "customer_identity_handle_status",
+  ["active", "inactive", "suspended", "archived"],
+);
+
+/**
+ * External-subject lifecycle for one installation-local subject key.
+ */
+export const clientExternalSubjectStatusEnum = pgEnum("client_external_subject_status", [
+  "active",
+  "inactive",
+  "suspended",
+  "archived",
+]);
+
+/**
+ * Verification challenge lifecycle.
+ */
+export const customerVerificationChallengeStatusEnum = pgEnum(
+  "customer_verification_challenge_status",
+  ["pending", "sent", "verified", "failed", "expired", "cancelled"],
+);
+
+/**
+ * Visibility-policy lifecycle for shared customer profile visibility controls.
+ */
+export const customerVisibilityPolicyStatusEnum = pgEnum(
+  "customer_visibility_policy_status",
+  ["active", "inactive", "suspended", "archived"],
+);
 
 // ---------------------------------------------------------------------------
 // Notes / annotations domain
@@ -4754,6 +5098,20 @@ export const sagaDefinitionStatusEnum = pgEnum("saga_definition_status", [
 ]);
 
 /**
+ * Execution depth profile for one saga definition/run.
+ *
+ * ELI5:
+ * - `shallow`: quick confidence check, minimal path coverage, fast feedback.
+ * - `medium`: balanced lifecycle coverage for day-to-day regression checks.
+ * - `deep`: broad cross-domain stress validation used before risky merges.
+ */
+export const sagaDepthEnum = pgEnum("saga_depth", [
+  "shallow",
+  "medium",
+  "deep",
+]);
+
+/**
  * High-level run state for one saga test session.
  */
 export const sagaRunStatusEnum = pgEnum("saga_run_status", [
@@ -4870,3 +5228,260 @@ export const sagaSchedulerJobStatusEnum = pgEnum("saga_scheduler_job_status", [
   "cancelled",
   "expired",
 ]);
+
+/**
+ * Publication lifecycle for DB-native saga coverage report rows.
+ */
+export const sagaCoverageReportStatusEnum = pgEnum("saga_coverage_report_status", [
+  "draft",
+  "published",
+  "archived",
+]);
+
+// ---------------------------------------------------------------------------
+// Inventory procurement / replenishment primitives
+// ---------------------------------------------------------------------------
+
+/** Counterparty class for inventory procurement and replenishment flows. */
+export const supplyPartnerTypeEnum = pgEnum("supply_partner_type", [
+  "manufacturer",
+  "supplier",
+  "distributor",
+  "dropship_partner",
+  "third_party_logistics",
+  "marketplace_seller",
+  "internal",
+]);
+
+/** Replenishment strategy used by one inventory policy. */
+export const replenishmentPolicyModeEnum = pgEnum("replenishment_policy_mode", [
+  "min_max",
+  "days_of_cover",
+  "event_driven",
+  "manual",
+]);
+
+/** Runtime status for one replenishment recommendation run. */
+export const replenishmentRunStatusEnum = pgEnum("replenishment_run_status", [
+  "pending",
+  "running",
+  "completed",
+  "failed",
+  "cancelled",
+]);
+
+/** Decision state for one generated replenishment suggestion. */
+export const replenishmentSuggestionStatusEnum = pgEnum(
+  "replenishment_suggestion_status",
+  ["proposed", "accepted", "rejected", "ordered", "expired", "cancelled"],
+);
+
+/** Lifecycle status for one inventory procurement order. */
+export const procurementOrderStatusEnum = pgEnum("procurement_order_status", [
+  "draft",
+  "submitted",
+  "acknowledged",
+  "partially_received",
+  "received",
+  "cancelled",
+  "closed",
+]);
+
+/** Line-level fulfillment status inside one inventory procurement order. */
+export const procurementOrderLineStatusEnum = pgEnum("procurement_order_line_status", [
+  "open",
+  "partially_received",
+  "received",
+  "cancelled",
+  "closed",
+]);
+
+/** Receiving-batch status for inbound stock processing. */
+export const receiptBatchStatusEnum = pgEnum("receipt_batch_status", [
+  "draft",
+  "received",
+  "processed",
+  "cancelled",
+]);
+
+// ---------------------------------------------------------------------------
+// Value programs (loyalty / points / credits / tiers) primitives
+// ---------------------------------------------------------------------------
+
+/** Business intent class for a value program. */
+export const valueProgramKindEnum = pgEnum("value_program_kind", [
+  "loyalty",
+  "cashback",
+  "referral",
+  "membership_perk",
+  "engagement",
+  "custom",
+]);
+
+/** Owner identity model for program accounts. */
+export const valueProgramAccountModelEnum = pgEnum("value_program_account_model", [
+  "user",
+  "group_account",
+  "subject",
+]);
+
+/** Unit semantics for value balances and ledger movements. */
+export const valueUnitKindEnum = pgEnum("value_unit_kind", [
+  "points",
+  "credits",
+  "stamps",
+  "status_score",
+  "custom",
+]);
+
+/** Lifecycle of one value account. */
+export const valueAccountStatusEnum = pgEnum("value_account_status", [
+  "active",
+  "suspended",
+  "closed",
+]);
+
+/** Immutable movement taxonomy for value ledgers. */
+export const valueLedgerEntryTypeEnum = pgEnum("value_ledger_entry_type", [
+  "earn",
+  "redeem",
+  "expire",
+  "adjustment",
+  "transfer_in",
+  "transfer_out",
+  "tier_upgrade",
+  "tier_downgrade",
+  "reversal",
+]);
+
+/** Transfer request lifecycle between value accounts. */
+export const valueTransferStatusEnum = pgEnum("value_transfer_status", [
+  "requested",
+  "approved",
+  "rejected",
+  "completed",
+  "cancelled",
+  "expired",
+]);
+
+/** Lifecycle of one programmable earn/redeem rule row. */
+export const valueRuleStatusEnum = pgEnum("value_rule_status", [
+  "draft",
+  "active",
+  "inactive",
+  "archived",
+]);
+
+/** Evaluation lifecycle for rule execution evidence rows. */
+export const valueEvaluationStatusEnum = pgEnum("value_evaluation_status", [
+  "pending",
+  "applied",
+  "skipped",
+  "failed",
+  "cancelled",
+]);
+
+// ---------------------------------------------------------------------------
+// Workforce core (HRIS / hiring / performance / benefits) primitives
+// ---------------------------------------------------------------------------
+
+/** Employment relationship class for workforce assignments and positions. */
+export const workforceEmploymentClassEnum = pgEnum("workforce_employment_class", [
+  "employee",
+  "contractor",
+  "temporary",
+  "intern",
+  "vendor_worker",
+]);
+
+/** Time-commitment shape for one workforce position template. */
+export const workforceTimeCommitmentEnum = pgEnum("workforce_time_commitment", [
+  "full_time",
+  "part_time",
+  "shift_based",
+  "project_based",
+  "flexible",
+]);
+
+/** Lifecycle for one active workforce assignment row. */
+export const workforceAssignmentStatusEnum = pgEnum("workforce_assignment_status", [
+  "draft",
+  "active",
+  "on_leave",
+  "suspended",
+  "terminated",
+  "ended",
+]);
+
+/** Hiring requisition lifecycle for position/backfill demand. */
+export const workforceRequisitionStatusEnum = pgEnum("workforce_requisition_status", [
+  "draft",
+  "open",
+  "on_hold",
+  "filled",
+  "cancelled",
+  "closed",
+]);
+
+/** Candidate lifecycle state across hiring workflows. */
+export const workforceCandidateStatusEnum = pgEnum("workforce_candidate_status", [
+  "sourced",
+  "screening",
+  "interviewing",
+  "offer",
+  "hired",
+  "rejected",
+  "withdrawn",
+]);
+
+/** Application lifecycle for one candidate against one requisition. */
+export const workforceApplicationStatusEnum = pgEnum("workforce_application_status", [
+  "applied",
+  "screening",
+  "interview",
+  "offer",
+  "hired",
+  "rejected",
+  "withdrawn",
+  "on_hold",
+]);
+
+/** Candidate-event taxonomy for timeline/audit explainability. */
+export const workforceCandidateEventTypeEnum = pgEnum("workforce_candidate_event_type", [
+  "note",
+  "stage_transition",
+  "interview_scheduled",
+  "interview_completed",
+  "offer_sent",
+  "offer_accepted",
+  "offer_declined",
+  "hired",
+  "rejected",
+  "withdrawn",
+]);
+
+/** Performance-cycle lifecycle state for workforce reviews. */
+export const workforcePerformanceCycleStatusEnum = pgEnum(
+  "workforce_performance_cycle_status",
+  ["draft", "active", "closed", "archived"],
+);
+
+/** Review status for one assignment inside one performance cycle. */
+export const workforcePerformanceReviewStatusEnum = pgEnum(
+  "workforce_performance_review_status",
+  ["draft", "in_progress", "submitted", "completed", "cancelled"],
+);
+
+/** Benefit plan lifecycle. */
+export const workforceBenefitPlanStatusEnum = pgEnum("workforce_benefit_plan_status", [
+  "draft",
+  "active",
+  "inactive",
+  "archived",
+]);
+
+/** Enrollment lifecycle for one assignment's benefit election. */
+export const workforceBenefitEnrollmentStatusEnum = pgEnum(
+  "workforce_benefit_enrollment_status",
+  ["pending", "active", "declined", "cancelled", "ended"],
+);

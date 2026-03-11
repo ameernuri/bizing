@@ -9,9 +9,803 @@ tags:
 
 Concise, high-signal notes for meaningful architecture or behavior changes.
 
+## 2026-03-10
+
+### Source-backed Codex history import for the Bizing workspace
+
+- Added `/Users/ameer/bizing/code/scripts/import-codex-history.mjs`:
+  - reads local Codex thread metadata from `/Users/ameer/.codex/state_5.sqlite`
+  - filters threads for Bizing workspaces under `/Users/ameer/bizing*` and `/Users/ameer/projects/bizing*`
+  - writes the canonical history snapshot to `/Users/ameer/bizing/mind/memory/codex-project-history.md`
+- The initial import captured `10` Bizing-related Codex threads spanning
+  `2026-02-15 23:27:05 UTC` through `2026-03-10 05:18:49 UTC`.
+- Purpose:
+  - preserve actual Codex project history in a repeatable, source-backed form
+  - reduce drift versus older hand-written collaboration summaries
+- Verification:
+  - `node /Users/ameer/bizing/code/scripts/import-codex-history.mjs`
+
+## 2026-03-08
+
+### Standalone Canvascii unified share dialog and canvas link sharing
+
+- Simplified the standalone Canvascii share surface in `/Users/ameer/bizing/canvascii`:
+  - `/Users/ameer/bizing/canvascii/apps/canvascii/src/components/canvascii/canvas-share-dialog.tsx`
+    is now one restrained shadcn dialog with `Canvas` / `Portal` tabs instead of
+    separate create/share/map panels.
+  - removed the old create-portal and portal-map sections from the main share flow.
+  - whole-canvas and portal sharing now both support:
+    - direct email invites
+    - anyone-with-link grants
+    - `view` / `edit` access
+  - portal sharing keeps the `Allow whole canvas view` toggle inside the same
+    unified dialog instead of a separate modal.
+- Added first-class whole-canvas link sharing through the agent/share-policy path:
+  - `/Users/ameer/bizing/canvascii/apps/canvascii/src/lib/canvascii/agent-edit.ts`
+  - `/Users/ameer/bizing/canvascii/apps/canvascii/src/app/api/v1/canvascii/agent/route.ts`
+  - `/Users/ameer/bizing/canvascii/apps/canvascii/src/app/api/v1/canvascii/agent/route.test.ts`
+  - `/Users/ameer/bizing/canvascii/apps/canvascii/src/lib/canvascii/agent-edit.test.ts`
+- Follow-up share UX tightening:
+  - the dialog now uses `Create access link` actions instead of persistent
+    “anyone with the link” cards/toggles on the left
+  - existing grants are now managed from the right side with inline access edits,
+    link copy actions, portal-only whole-canvas-view toggles, and revoke buttons
+  - access pickers now use compact shadcn button groups instead of dropdowns, and
+    the dialog no longer snaps back to the canvas tab when a different portal is selected
+  - per-grant copy/revoke actions now live under an overflow menu, and `Create access link`
+    now always mints a fresh token so owners can create multiple active links for the same scope
+  - `/api/v1/canvascii/agent` now supports `update_grant` and `revoke_grant`
+    actions so the owner UI can edit/revoke grants by grant id
+- Verification:
+  - `pnpm --dir /Users/ameer/bizing/canvascii --filter @canvascii/app test:run -- src/app/api/v1/canvascii/agent/route.test.ts src/lib/canvascii/agent-edit.test.ts`
+  - `pnpm --dir /Users/ameer/bizing/canvascii --filter @canvascii/app build`
+  - `docker compose -f /Users/ameer/bizing/canvascii/docker-compose.yml up -d --build canvascii-app`
+
+## 2026-03-07
+
+### Standalone Canvascii portal share bootstrap stabilization
+
+- Tightened standalone share-link bootstrap in `/Users/ameer/bizing/canvascii`:
+  - `/Users/ameer/bizing/canvascii/apps/canvascii/src/components/AuthProvider.tsx`
+    now probes Better Auth session state via `/api/auth/get-session` before
+    attempting `/api/v1/auth/me`, which removes the redundant auth-context churn
+    on unauthenticated portal links.
+  - `/Users/ameer/bizing/canvascii/apps/canvascii/src/components/canvascii/canvascii-page.tsx`
+    now avoids duplicate deep-link file opens while an open is already in flight
+    and skips no-op URL replacements, which stabilizes portal-share loads that
+    previously felt like they were reloading repeatedly.
+- Local standalone dev trust was widened so live collab debugging also works from
+  `http://127.0.0.1:9102` / `http://localhost:9102`:
+  - `/Users/ameer/bizing/canvascii/apps/canvascii-collab/src/config.ts`
+  - `/Users/ameer/bizing/canvascii/apps/canvascii/src/lib/server/env.ts`
+- Also flattened the remaining editor chrome tooltip wrappers that were still
+  tripping ref/update loops around disabled controls:
+  - `/Users/ameer/bizing/canvascii/apps/canvascii/src/components/asciip-core/components/toolbar/ToolbarOrder.tsx`
+  - `/Users/ameer/bizing/canvascii/apps/canvascii/src/components/asciip-core/components/footer/FooterHistory.tsx`
+  - `/Users/ameer/bizing/canvascii/apps/canvascii/src/components/asciip-core/components/footer/FooterCanvasSize.tsx`
+  - `/Users/ameer/bizing/canvascii/apps/canvascii/src/components/asciip-core/components/toolbar/ToolbarExport.tsx`
+
+### Standalone Canvascii collaboration and sharing pass
+
+- Standalone Canvascii at `/Users/ameer/bizing/canvascii` now has its first shared-canvas collaboration layer.
+- Added share/access contracts and helpers in:
+  - `/Users/ameer/bizing/canvascii/packages/canvascii-core/src/sharing.ts`
+- Added standalone sharing/collab/agent surfaces in:
+  - `/Users/ameer/bizing/canvascii/apps/canvascii/src/app/api/v1/canvascii/share/route.ts`
+  - `/Users/ameer/bizing/canvascii/apps/canvascii/src/app/api/v1/canvascii/collab-access/route.ts`
+  - `/Users/ameer/bizing/canvascii/apps/canvascii/src/app/api/v1/canvascii/agent/route.ts`
+- Added owner-managed whole-canvas and portal sharing UI plus collaborator awareness wiring in:
+  - `/Users/ameer/bizing/canvascii/apps/canvascii/src/components/canvascii/canvas-share-dialog.tsx`
+  - `/Users/ameer/bizing/canvascii/apps/canvascii/src/components/canvascii/collaborative-editor-shell.tsx`
+- Mixed view/edit portal access is now enforced at save/agent time, not only at the pointer layer:
+  - edits outside editable portal coverage return a permission error
+  - edits inside the permitted portal succeed without granting full-canvas edit access
+- Canvascii also started moving off the document-diff path for app-level canvas lifecycle changes:
+  - `createDiagram`, `renameDiagram`, `deleteDiagram`, and `setActiveDiagram` now emit direct `canvas.*` commands from the middleware projection layer
+  - active-canvas `updateDiagramData` now emits direct `object.upsert` / `object.delete` and `canvas.upsert` commands
+  - the remaining transitional gap is that tool interactions still mutate legacy Redux state first and only then project into commands
+
+## 2026-03-06
+
+### Atlas/schema/API sync hardening and manifest ownership cleanup
+
+- Hardened domain ownership contracts:
+  - set canonical schema ownership for previously-null domains in
+    `/Users/ameer/bizing/code/apps/api/src/routes/domain-manifest.json`:
+    - `dispatch -> transportation`
+    - `service-product-requirements -> service_products`
+    - `calendars -> time_availability`
+    - `custom-fields -> extensions`
+    - `sellables -> product_commerce`
+    - `notification-endpoints -> social_graph`
+    - `mcp -> governance`
+- Tightened manifest/runtime typing:
+  - `/Users/ameer/bizing/code/apps/api/src/routes/domain-manifest.ts` now requires non-empty `schemaModule`.
+- Tightened generated-doc behavior:
+  - `/Users/ameer/bizing/code/scripts/generate-domain-docs.mjs` now:
+    - rejects missing `schemaModule`
+    - rejects missing schema module files
+    - ignores non-path `.get("...")` patterns during route extraction to avoid false API endpoints in generated docs.
+- Added cross-mind sync guard:
+  - `/Users/ameer/bizing/code/scripts/check-atlas-sync.mjs`
+  - validates event id uniqueness, events ledger/index parity, and Atlas Recent Turns linkage rules.
+- Updated docs check pipeline:
+  - `/Users/ameer/bizing/code/package.json`
+  - `docs:check` now includes domain doc sync and atlas sync checks.
+- Canonical docs updated to include growth backbone + ownership contract:
+  - `/Users/ameer/bizing/code/docs/API.md`
+  - `/Users/ameer/bizing/code/docs/SCHEMA_BIBLE.md`
+
+### Homepage polish pass (Kimi-authored UI delegation trial)
+
+- Applied a Kimi-generated homepage refinement in:
+  - `/Users/ameer/bizing/code/apps/admin/src/app/page.tsx`
+- Scope:
+  - unauthenticated homepage composition and spacing polish only
+  - preserved fixed hero lines and CTA contract
+  - preserved clean black/white, no-internal-wording posture
+- Validation:
+  - `bun run --cwd /Users/ameer/bizing/code/apps/admin build` passed.
+  - visual capture: `/tmp/ui-refresh-1772816845/home-kimi-pass.png`
+
+### Homepage polish pass (Kimi-authored v2: spacing + products balance)
+
+- Updated homepage copy/layout in:
+  - `/Users/ameer/bizing/code/apps/admin/src/app/page.tsx`
+- Changes:
+  - hero line 3 updated to `automate & streamline.`
+  - increased section spacing to reduce compact visual density.
+  - shifted messaging to include products while staying service-first.
+  - capability summary updated to include products explicitly.
+- Validation:
+  - `bun run --cwd /Users/ameer/bizing/code/apps/admin build` passed.
+  - visual capture: `/tmp/ui-refresh-1772817210/home-kimi-pass-2.png`
+
+### Homepage polish pass (Kimi-authored v3: stacked section flow)
+
+- Updated homepage section composition in:
+  - `/Users/ameer/bizing/code/apps/admin/src/app/page.tsx`
+- Changes:
+  - moved each section intro (`Get running quickly`, `Built to scale with you`, `Scale and automate`) to a stacked top block with cards beneath.
+  - tightened section copy for cleaner, consistent rhythm.
+  - preserved hero, CTA contract, and service-first/product-supported framing.
+- Validation:
+  - `bun run --cwd /Users/ameer/bizing/code/apps/admin build` passed.
+  - visual capture: `/tmp/ui-refresh-1772817498/home-kimi-pass-3.png`
+
+### Homepage premium polish pass (frontend-design skill + Kimi)
+
+- Installed requested design skill:
+  - `https://github.com/anthropics/claude-code/tree/main/plugins/frontend-design/skills/frontend-design`
+- Updated homepage in:
+  - `/Users/ameer/bizing/code/apps/admin/src/app/page.tsx`
+- Changes:
+  - kept fixed hero/CTA contract and stacked section intro flow.
+  - refined composition from draft-like to premium: stronger hierarchy, cleaner spacing cadence, and sharper card treatment.
+  - maintained Bizing monochrome identity while tightening copy for consistency.
+  - preserved service-first framing with explicit product support.
+- Validation:
+  - `bun run --cwd /Users/ameer/bizing/code/apps/admin build` passed.
+  - visual capture: `/tmp/ui-refresh-1772818300/home-kimi-pass-5.png`
+
+### Homepage full redesign pass (non-blog premium composition)
+
+- Updated homepage in:
+  - `/Users/ameer/bizing/code/apps/admin/src/app/page.tsx`
+- Changes:
+  - replaced prior stacked section-card repetition with a new composition:
+    - split hero with right-side operational rail
+    - single 3-stage growth matrix (`Start / Scale / Automate`)
+    - cleaner capability strip at the bottom
+  - preserved fixed hero lines, CTA contract, and Bizing style principles.
+  - preserved service-first framing with explicit product support.
+- Validation:
+  - `bun run --cwd /Users/ameer/bizing/code/apps/admin build` passed.
+  - visual capture: `/tmp/ui-refresh-1772818500/home-redesign-v1.png`
+
+### Homepage redesign pass v2 (hero/copy/flow refinements)
+
+- Updated homepage in:
+  - `/Users/ameer/bizing/code/apps/admin/src/app/page.tsx`
+- Changes:
+  - moved `How It Flows` out of the hero area and into the bottom section.
+  - updated hero copy to:
+    - `start your biz.`
+    - `scale without friction.`
+    - `automate & streamline.`
+  - updated hero support line to: `From your first sale to a multi-team operation, Bizing keeps work, customers, and payments aligned.`
+  - renamed second growth header to `Built to grow with you`.
+  - reworked third growth column to `Automate everything` with subtle workflow/agent-first framing.
+  - reworked the last area into a two-pane bottom section (`How It Flows` + `What You Run Here`).
+- Validation:
+  - `bun run --cwd /Users/ameer/bizing/code/apps/admin build` passed.
+  - visual capture: `/tmp/ui-refresh-1772818800/home-redesign-v2.png`
+
+### Homepage redesign pass v3 (bottom section unified + confident CTA)
+
+- Updated homepage in:
+  - `/Users/ameer/bizing/code/apps/admin/src/app/page.tsx`
+- Changes:
+  - unified prior bottom dual-panels into one coherent `One Operating Surface` section.
+  - merged flow + capability context into a single message block with tighter narrative.
+  - added confident bottom CTA: `Start running on Bizing`.
+  - retained hero/support and growth-matrix copy from v2.
+- Validation:
+  - `bun run --cwd /Users/ameer/bizing/code/apps/admin build` passed.
+  - visual capture: `/tmp/ui-refresh-1772819300/home-redesign-v3.png`
+
+### Homepage redesign pass v4 (bottom message cleanup + stronger CTA)
+
+- Updated homepage in:
+  - `/Users/ameer/bizing/code/apps/admin/src/app/page.tsx`
+- Changes:
+  - simplified bottom section into one coherent narrative block and removed chip-card clutter.
+  - tightened copy to be clearer and more on-message before the final action.
+  - increased bottom CTA visual weight and updated label to `Start Bizing!`.
+- Validation:
+  - `bun run --cwd /Users/ameer/bizing/code/apps/admin build` passed.
+  - visual capture: `/tmp/ui-refresh-1772819700/home-redesign-v4.png`
+
+### Homepage redesign pass v5 (removed bottom capability list)
+
+- Updated homepage in:
+  - `/Users/ameer/bizing/code/apps/admin/src/app/page.tsx`
+- Changes:
+  - removed bottom capability list (`Services/products/...`) entirely.
+  - tightened bottom section copy into one coherent, readable narrative.
+  - retained larger/bolder CTA label `Start Bizing!`.
+- Validation:
+  - `bun run --cwd /Users/ameer/bizing/code/apps/admin build` passed.
+  - visual capture: `/tmp/ui-refresh-1772820100/home-redesign-v5.png`
+
+### Homepage redesign pass v6 (design/copy sweep polish)
+
+- Updated homepage in:
+  - `/Users/ameer/bizing/code/apps/admin/src/app/page.tsx`
+- Changes:
+  - hero updated to `automate & orchestrate.`
+  - growth intro copy reworded for clearer progression.
+  - start/scale/automate columns expanded to 3 concise points each with refreshed copy.
+  - bottom CTA area redesigned with larger button, more space, and a large Bizing icon anchor.
+- Validation:
+  - `bun run --cwd /Users/ameer/bizing/code/apps/admin build` passed.
+  - visual capture: `/tmp/ui-refresh-1772820600/home-redesign-v6.png`
+
+### Homepage redesign pass v7 (top/bottom visual alignment + copy sweep)
+
+- Updated homepage in:
+  - `/Users/ameer/bizing/code/apps/admin/src/app/page.tsx`
+- Changes:
+  - removed top icon and enlarged top text logo.
+  - hero updated to `automate & orchestrate.`
+  - growth intro copy reworded for clarity.
+  - start/scale/automate columns expanded to 3 points each with refreshed copy.
+  - integrated bottom section color with overall page.
+  - enlarged bottom CTA zone and increased right-side icon size with centered vertical alignment.
+- Validation:
+  - `bun run --cwd /Users/ameer/bizing/code/apps/admin build` passed.
+  - visual capture: `/tmp/ui-refresh-1772821000/home-redesign-v7.png`
+
+### Canonical UX direction locked to prevent drift
+
+- Added a new canonical UX doc:
+  - `/Users/ameer/bizing/code/docs/UX_PRINCIPLES.md`
+  - establishes non-negotiable direction for:
+    - visual style (simple, black/white, polished, calm)
+    - copy style (no jargon, no internal wording, no persona leakage)
+    - role boundaries (no admin/dev leakage into customer or biz-owner views)
+- Linked UX principles in docs entrypoint:
+  - `/Users/ameer/bizing/code/docs/INDEX.md`
+- Updated agent operating rules so UI/copy tasks must read and follow UX principles:
+  - `/Users/ameer/bizing/code/AGENTS.md`
+- Updated repository README framing so onboarding language aligns with business-platform posture (not booking-only):
+  - `/Users/ameer/bizing/code/README.md`
+
+### Homepage polish pass (calmer voice, clearer value)
+
+- Refined landing-page copy and hierarchy in:
+  - `/Users/ameer/bizing/code/apps/admin/src/app/page.tsx`
+- Changes:
+  - kept the core headline, tightened subhead copy to be clearer and less promotional.
+  - shifted section titles to sentence case (`Get running quickly`, `Built to scale with you`) to reduce visual shouting.
+  - simplified step copy to plain language and role-relevant outcomes.
+  - retained clean black/white presentation and minimal layout density.
+- Validation:
+  - `bun run --cwd /Users/ameer/bizing/code/apps/admin build` passed.
+
+### Homepage polish pass v2 (copy + layout refinement)
+
+- Further refined homepage in:
+  - `/Users/ameer/bizing/code/apps/admin/src/app/page.tsx`
+- Changes:
+  - introduced a cleaner two-column hero with a quiet right-rail summary (`In one place`).
+  - tightened hero copy to shorter, clearer language.
+  - added a minimal value strip for fast scanning (`Start quickly`, `Stay organized`, `Scale without retooling`).
+  - improved step copy rhythm and reduced visual noise while preserving the black/white polished style.
+- Validation:
+  - `bun run --cwd /Users/ameer/bizing/code/apps/admin build` passed.
+
+### Homepage narrative refinement (solo to complex scaling)
+
+- Updated homepage narrative copy in:
+  - `/Users/ameer/bizing/code/apps/admin/src/app/page.tsx`
+- Focus:
+  - made the hero statement explicitly communicate progression from solo operation to complex team operations.
+  - strengthened scaling language while keeping tone calm, direct, and non-promotional.
+  - kept black/white minimalist presentation and role-clean copy.
+- Validation:
+  - `bun run --cwd /Users/ameer/bizing/code/apps/admin build` passed.
+
+### Homepage copy dedupe pass (focused narrative, no repetition)
+
+- Refined homepage copy to reduce repeated phrasing in:
+  - `/Users/ameer/bizing/code/apps/admin/src/app/page.tsx`
+- Changes:
+  - tightened hero and support lines to one clear progression story.
+  - reframed labels/subcopy to avoid repeating the same terms across sections.
+  - kept calm, black/white, direct style with no internal wording.
+- Validation:
+  - `bun run --cwd /Users/ameer/bizing/code/apps/admin build` passed.
+
+### Homepage narrative flow pass (merged progression + automation section)
+
+- Refined homepage structure and copy in:
+  - `/Users/ameer/bizing/code/apps/admin/src/app/page.tsx`
+- Changes:
+  - merged the quick-value strip directly into `Get running quickly` to remove duplicate messaging.
+  - upgraded `Built to scale with you` into a clearer three-card operational progression layout.
+  - added `Scale and automate` section with practical automation outcomes.
+  - preserved calm black/white visual posture and non-jargon copy.
+- Validation:
+  - `bun run --cwd /Users/ameer/bizing/code/apps/admin build` passed.
+
+### Homepage hero copy update
+
+- Updated hero line in:
+  - `/Users/ameer/bizing/code/apps/admin/src/app/page.tsx`
+- New hero:
+  - `Start simple.`
+  - `Grow your biz without friction.`
+  - `Automate and Scale.`
+
+### Homepage structure polish (matter-of-fact layout)
+
+- Refined homepage copy/layout in:
+  - `/Users/ameer/bizing/code/apps/admin/src/app/page.tsx`
+- Changes:
+  - moved `What you run here` from hero rail to a clean footer row of capabilities.
+  - replaced generic rounded cards with stronger bordered panel rows for a more direct business tone.
+  - promoted `Launch quickly · Add depth when needed · Keep everything connected.` into the `Get running quickly` header area.
+  - normalized hero capitalization (`Automate and scale.`).
+  - updated CTA pattern to: `Get Started ->` and `or sign in here.`.
+- Validation:
+  - `bun run --cwd /Users/ameer/bizing/code/apps/admin build` passed.
+
+### Homepage hero/section emphasis pass
+
+- Updated homepage in:
+  - `/Users/ameer/bizing/code/apps/admin/src/app/page.tsx`
+- Changes:
+  - hero copy updated to:
+    - `start simple.`
+    - `scale without friction.`
+    - `automate with ease.`
+  - CTA updated to icon-arrow style (`Get Started` + `ArrowRight`) and `or sign in here.` text.
+  - increased section-title prominence (`Get running quickly`, `Built to scale with you`, `Scale and automate`) for clearer visual hierarchy.
+- Validation:
+  - `bun run --cwd /Users/ameer/bizing/code/apps/admin build` passed.
+
+## 2026-03-04
+
+### Canonical operating-core expansion: inventory, value programs, workforce
+
+- Added inventory procurement/replenishment canonical module:
+  - `/Users/ameer/bizing/code/packages/db/src/schema/inventory_procurement.ts`
+  - tables:
+    - `supply_partners`
+    - `supply_partner_catalog_items`
+    - `inventory_replenishment_policies`
+    - `inventory_replenishment_runs`
+    - `inventory_replenishment_suggestions`
+    - `inventory_procurement_orders`
+    - `inventory_procurement_order_lines`
+    - `inventory_receipt_batches`
+    - `inventory_receipt_items`
+    - `inventory_lot_units`
+- Added value/loyalty canonical module:
+  - `/Users/ameer/bizing/code/packages/db/src/schema/value_programs.ts`
+  - tables:
+    - `value_programs`
+    - `value_program_tiers`
+    - `value_program_accounts`
+    - `value_transfers`
+    - `value_ledger_entries`
+    - `value_rules`
+    - `value_rule_evaluations`
+- Added workforce core canonical module:
+  - `/Users/ameer/bizing/code/packages/db/src/schema/workforce_core.ts`
+  - tables:
+    - `workforce_departments`
+    - `workforce_positions`
+    - `workforce_assignments`
+    - `workforce_requisitions`
+    - `workforce_candidates`
+    - `workforce_applications`
+    - `workforce_candidate_events`
+    - `workforce_performance_cycles`
+    - `workforce_performance_reviews`
+    - `workforce_benefit_plans`
+    - `workforce_benefit_enrollments`
+- Added supporting enums to `/Users/ameer/bizing/code/packages/db/src/schema/enums.ts`
+  for procurement/replenishment, value-ledger flows, and workforce lifecycle state.
+- Registered new modules in canonical exports and migration inputs:
+  - `/Users/ameer/bizing/code/packages/db/src/schema/canonical.ts`
+  - `/Users/ameer/bizing/code/packages/db/src/index.ts`
+  - `/Users/ameer/bizing/code/packages/db/drizzle.config.ts`
+- Updated schema docs:
+  - `/Users/ameer/bizing/code/packages/db/src/schema/SCHEMA.md`
+  - `/Users/ameer/bizing/code/docs/SCHEMA_BIBLE.md`
+  - `/Users/ameer/bizing/code/packages/db/SCHEMA_BIBLE.md`
+
+Validation:
+- `bun run --cwd /Users/ameer/bizing/code/packages/db build` passed.
+
+### Shared knowledge plane foundation (Codex + OpenClaw sync)
+
+- Added new canonical schema module:
+  - `/Users/ameer/bizing/code/packages/db/src/schema/knowledge.ts`
+- Added shared-memory tables:
+  - `knowledge_sources`
+  - `knowledge_documents`
+  - `knowledge_chunks`
+  - `knowledge_embeddings`
+  - `knowledge_edges`
+  - `knowledge_agent_runs`
+  - `knowledge_retrieval_traces`
+  - `knowledge_events`
+  - `knowledge_checkpoints`
+- Registered the module in DB exports + Drizzle config:
+  - `/Users/ameer/bizing/code/packages/db/src/schema/canonical.ts`
+  - `/Users/ameer/bizing/code/packages/db/src/index.ts`
+  - `/Users/ameer/bizing/code/packages/db/drizzle.config.ts`
+
+### Knowledge API + ingest/query/checkpoint routes
+
+- Added and mounted canonical route module:
+  - `/Users/ameer/bizing/code/apps/api/src/routes/knowledge.ts`
+  - mounted in `/Users/ameer/bizing/code/apps/api/src/routes/core-api.ts`
+- New endpoints include:
+  - source/document/chunk CRUD-adjacent flows
+  - file ingest from source root (`/knowledge/sources/:sourceId/ingest-files`)
+  - semantic/keyword/hybrid query with retrieval traces
+  - event feed reads
+  - checkpoint upsert/list
+  - sync drift summary (`/knowledge/sync-status`)
+- Added embedding/chunking runtime service:
+  - `/Users/ameer/bizing/code/apps/api/src/services/knowledge-embeddings.ts`
+  - provider support:
+    - OpenAI embeddings
+    - Ollama embeddings
+
+### Agents tool exposure for shared memory operations
+
+- Added first-class agent tools for knowledge-plane operations:
+  - stats/sources/documents/query/checkpoints/sync-status/ingest-files
+  - file:
+    - `/Users/ameer/bizing/code/apps/api/src/code-mode/tools.ts`
+
+Validation:
+- `bun run --cwd /Users/ameer/bizing/code/packages/db build` passed.
+- `bun run --cwd /Users/ameer/bizing/code/apps/api typecheck` passed.
+- `bun run --cwd /Users/ameer/bizing/code/apps/api build` passed.
+- `bun run docs:generate:domains` passed.
+
+### Deterministic knowledge bootstrap + OODash sync view
+
+- Added idempotent DB guard script:
+  - `/Users/ameer/bizing/code/packages/db/scripts/bootstrap-knowledge.ts`
+  - creates missing `knowledge_*` enums/tables/indexes/constraints without relying
+    on interactive Drizzle rename prompts.
+- Wired script into package bootstrap chain:
+  - `/Users/ameer/bizing/code/packages/db/package.json`
+  - `db:push` and `db:migrate` now run `bootstrap-knowledge.ts`.
+- Extended bootstrap verification to include knowledge tables:
+  - `/Users/ameer/bizing/code/packages/db/scripts/verify-bootstrap.ts`
+- OODash integration:
+  - new route/page `GET /ooda/knowledge`
+  - files:
+    - `/Users/ameer/bizing/code/apps/admin/src/app/ooda/knowledge/page.tsx`
+    - `/Users/ameer/bizing/code/apps/admin/src/components/sagas/explorer/knowledge-page.tsx`
+    - `/Users/ameer/bizing/code/apps/admin/src/lib/ooda-api.ts`
+    - `/Users/ameer/bizing/code/apps/admin/src/components/sagas/explorer/sagas-shell.tsx`
+    - `/Users/ameer/bizing/code/apps/admin/src/components/sagas/explorer/dashboard-page.tsx`
+  - dashboard now includes a compact knowledge-sync summary card and drilldown link.
+
+Validation:
+- `cd /Users/ameer/bizing/code/packages/db && bun scripts/bootstrap-knowledge.ts` passed.
+- `cd /Users/ameer/bizing/code/packages/db && bun scripts/verify-bootstrap.ts` passed.
+- `bun run --cwd /Users/ameer/bizing/code/apps/admin build` passed.
+- `bun run --cwd /Users/ameer/bizing/code/apps/api typecheck` passed.
+
+## 2026-03-03
+
+### Auth cookie namespace isolation for localhost multi-app sessions
+
+- Updated Better Auth config to use a Bizing-specific cookie namespace:
+  - `advanced.cookiePrefix = process.env.BETTER_AUTH_COOKIE_PREFIX || "bizing-auth"`
+  - file:
+    - `/Users/ameer/bizing/code/apps/api/src/auth.ts`
+- Why:
+  - browser cookies are scoped by domain/path, not by port
+  - default Better Auth cookie names can collide between local apps
+    (for example `localhost:3000` and `localhost:9000`)
+  - collision can sign users out unexpectedly across apps.
+- Expected behavior now:
+  - Bizing auth cookies no longer overwrite default-cookie Better Auth sessions
+    from other local apps unless explicitly configured to the same prefix.
+
+### OODA blocker triage + reorient API contract hardened
+
+- Added deterministic blocker/reorient signals to OODA overview:
+  - `GET /api/v1/ooda/overview` now includes:
+    - `attention.blockers`
+    - `attention.reorient`
+- Added loop-scoped blocker triage route:
+  - `GET /api/v1/ooda/loops/:loopId/blockers`
+  - aggregates unresolved blockers from:
+    - failed/blocked saga run steps linked to the loop
+    - unresolved loop entries
+    - failed loop actions
+  - returns top failure clusters with concrete reorient recommendations.
+- Added replayability support in admin run/loop surfaces:
+  - run steps and loop blockers can replay their last traced API call when trace
+    evidence exists.
+- Fixed route typing issues caused by non-typed audit helper columns:
+  - switched `saga_runs` / `saga_run_steps` audit filtering/sorting in
+    `/api/v1/ooda/*` blocker queries to explicit SQL column references
+    (`updated_at`, `deleted_at`) and safe timestamp normalization.
+
+Validation:
+- `bun run --cwd apps/api typecheck` passed.
+- `bun run --cwd apps/admin build` passed.
+
+### Time-scope drift cleanup + saga runner cookie compatibility
+
+- Fixed local runtime schema drift that was generating false blocker clusters in OODash:
+  - applied canonical bootstrap to ensure:
+    - `capacity_hold_policies.time_scope_id`
+    - `capacity_holds.time_scope_id`
+    - `capacity_hold_demand_alerts.time_scope_id`
+  - command:
+    - `bun scripts/bootstrap-time-scopes.ts` (in `packages/db`)
+- Confirmed fix by rerunning previously failing saga keys:
+  - `uc-204-the-solo-entrepreneur-sarah` passed
+  - `uc-170-the-solo-entrepreneur-sarah` passed
+- Archived stale failed runs that were still contributing historical blocker rows,
+  then revalidated OODash overview:
+  - `time_scope_id`-related blockers dropped to `0`.
+- Fixed saga rerun auth-session parser regression:
+  - `apps/api/src/scripts/rerun-sagas.ts` now accepts namespaced Better Auth
+    session cookies (`bizing-auth.session_token`) plus legacy default
+    (`better-auth.session_token`) when extracting the auth cookie from
+    `Set-Cookie`.
+
+### Saga depth lanes (shallow / medium / deep) became first-class
+
+- Added canonical saga depth enum + columns:
+  - `saga_depth`
+  - `saga_definitions.depth`
+  - `saga_runs.depth`
+  - files:
+    - `/Users/ameer/bizing/code/packages/db/src/schema/enums.ts`
+    - `/Users/ameer/bizing/code/packages/db/src/schema/sagas.ts`
+- Added bootstrap guard script for depth lane schema drift:
+  - `/Users/ameer/bizing/code/packages/db/scripts/bootstrap-saga-depth.ts`
+  - wired into `db:push` and `db:migrate` in:
+    - `/Users/ameer/bizing/code/packages/db/package.json`
+  - `verify-bootstrap` now checks required depth columns:
+    - `/Users/ameer/bizing/code/packages/db/scripts/verify-bootstrap.ts`
+- Added saga depth contract at API/spec/runtime:
+  - `saga.v1` spec now carries `depth`
+  - sync/upsert/create-run now persist and denormalize depth
+  - list endpoints support `depth` filtering:
+    - `GET /api/v1/ooda/sagas/specs?depth=...`
+    - `GET /api/v1/ooda/sagas/runs?depth=...`
+  - admin-only depth reclassification endpoint:
+    - `POST /api/v1/ooda/sagas/specs/depth/reclassify`
+  - files:
+    - `/Users/ameer/bizing/code/apps/api/src/sagas/spec-schema.ts`
+    - `/Users/ameer/bizing/code/apps/api/src/sagas/depth.ts`
+    - `/Users/ameer/bizing/code/apps/api/src/services/sagas.ts`
+    - `/Users/ameer/bizing/code/apps/api/src/routes/sagas.ts`
+    - `/Users/ameer/bizing/code/apps/api/src/scripts/rerun-sagas.ts`
+- Added lane-aware runner commands and seed utility:
+  - `sagas:rerun:shallow`
+  - `sagas:rerun:medium`
+  - `sagas:rerun:deep`
+  - `sagas:depth:seed`
+  - `seed-saga-depth-packs.ts` classifies all specs and creates lane packs.
+- Added OODash UI support:
+  - depth badge + depth filters on definitions and runs pages
+  - files:
+    - `/Users/ameer/bizing/code/apps/admin/src/components/sagas/explorer/common.tsx`
+    - `/Users/ameer/bizing/code/apps/admin/src/components/sagas/explorer/definitions-page.tsx`
+    - `/Users/ameer/bizing/code/apps/admin/src/components/sagas/explorer/runs-page.tsx`
+    - `/Users/ameer/bizing/code/apps/admin/src/lib/sagas-api.ts`
+
+Validation:
+- `bun run --cwd apps/api typecheck` passed.
+- `bun run --cwd apps/admin build` passed.
+- `SAGA_DEPTH=shallow SAGA_FAST_MODE=1 bun run --cwd apps/api sagas:rerun` passed (`7/7`).
+- `SAGA_DEPTH=medium SAGA_LIMIT=20 SAGA_FAST_MODE=1 bun run --cwd apps/api sagas:rerun` passed (`20/20`).
+- `SAGA_DEPTH=deep SAGA_LIMIT=10 SAGA_FAST_MODE=1 bun run --cwd apps/api sagas:rerun` passed (`10/10`).
+
+### Commercial execution read model (booking line lifecycle unification)
+
+- Added canonical booking line execution endpoint:
+  - `GET /api/v1/bizes/:bizId/booking-orders/:bookingOrderId/line-execution`
+  - implementation:
+    - `/Users/ameer/bizing/code/apps/api/src/routes/bookings.ts`
+- Endpoint now computes deterministic line lifecycle state by combining:
+  - immutable payment transaction line allocations (`payment_transaction_line_allocations` + `payment_transactions`)
+  - linked fulfillment unit status (`fulfillment_units`)
+- Added optional timeline projection on the same endpoint:
+  - `includeTimeline=true` returns ordered line-level events (line creation anchor, payment allocations, fulfillment unit snapshots).
+- This removes duplicated client-side status heuristics and gives one canonical API payload for commercial execution debugging.
+
+Validation:
+- `bun run --cwd apps/api typecheck` passed.
+- `SAGA_FAST_MODE=1 SAGA_LIMIT=10 SAGA_STRICT_EXIT=1 bun run --cwd apps/api sagas:rerun` passed (`10/10`).
+
+### Calendar/Time backbone hardening (scope normalization + projection-first timeline)
+
+- Added canonical scope dictionary table:
+  - `/Users/ameer/bizing/code/packages/db/src/schema/time_scopes.ts`
+  - `time_scopes` introduces normalized `scope_ref_key` identities so
+    scheduling/capacity modules can converge on one reusable scope pointer.
+- Added `time_scope_id` bridge columns and tenant-safe FKs to key hold-domain
+  tables in `/Users/ameer/bizing/code/packages/db/src/schema/time_availability.ts`:
+  - `capacity_hold_policies`
+  - `capacity_hold_demand_alerts`
+  - `capacity_holds`
+- Exposed new/related canonical tables via `@bizing/db` package barrel:
+  - `timeScopes`
+  - `availabilityGates`
+  - `capacityHoldPolicies`
+  - `capacityHoldDemandAlerts`
+  - `capacityHoldEvents`
+  - `calendarRevisions`
+  - `calendarTimelineEvents`
+  - `calendarOwnerTimelineEvents`
+  - `availabilityResolutionRuns`
+- Calendar timeline API route is now projection-first:
+  - endpoint: `GET /api/v1/bizes/:bizId/calendars/:calendarId/timeline`
+  - reads normalized timeline projections first, returns `timelineEvents` and
+    `readModel=projection_first` when available
+  - keeps deterministic raw fallback/fan-out path for parity/debug and supports
+    `includeRaw=true`
+  - implementation: `/Users/ameer/bizing/code/apps/api/src/routes/calendars.ts`
+- Removed dead/unused scheduling enums from
+  `/Users/ameer/bizing/code/packages/db/src/schema/enums.ts`:
+  - `availabilityRuleOutcomeEnum`
+  - `availabilityExceptionTypeEnum`
+
+Validation:
+- `bun run --filter @bizing/api typecheck` passed.
+- `bun run --filter @bizing/api build` passed.
+- `bun run --cwd /Users/ameer/bizing/code/packages/db build` passed.
+- `bun run --cwd /Users/ameer/bizing/code/packages/db db:guard` passed with
+  existing warning baseline (0 errors).
+
+### Capacity-hold scope contract hard-cut (timeScopeId required + server-derived target key)
+
+- Hardened generic CRUD action runtime so `capacityHoldPolicies`,
+  `capacityHoldDemandAlerts`, and `capacityHolds` now enforce normalized scope:
+  - `timeScopeId` is mandatory on create and required on update when missing on
+    legacy rows
+  - target shape is derived from `time_scopes` (including `targetType` and
+    typed target FK columns)
+  - `targetRefKey` is always derived from `time_scopes.scope_ref_key`
+  - conflicting caller-provided target fields now fail fast with validation
+    errors
+  - implementation:
+    - `/Users/ameer/bizing/code/apps/api/src/services/action-runtime.ts`
+- Hardened calendar hold create route contract:
+  - `POST /api/v1/bizes/:bizId/calendars/:calendarId/capacity-holds` now
+    requires `timeScopeId`
+  - route validates scope exists/active and calendar-scope alignment
+  - route no longer accepts caller `targetRefKey`; subject linkage now uses
+    scope-derived key
+  - implementation:
+    - `/Users/ameer/bizing/code/apps/api/src/routes/calendars.ts`
+- Updated saga runner fixtures to create/use canonical `time_scopes` before
+  creating capacity holds:
+  - `/Users/ameer/bizing/code/apps/api/src/scripts/rerun-sagas.ts`
+
+Validation:
+- `bun run --filter @bizing/api typecheck` passed.
+- `bun run --filter @bizing/api build` passed.
+- `bun run --filter @bizing/admin build` passed.
+- `SAGA_LIMIT=30 bun run --filter @bizing/api sagas:rerun:fast` passed (`30/30`).
+- `SAGA_OFFSET=150 SAGA_LIMIT=30 bun run --filter @bizing/api sagas:rerun:fast`
+  passed (`30/30`).
+
 ## 2026-02-28
 
 ## 2026-03-02
+
+### Customer-facing Experience UI (simple-first, opt-in complexity)
+
+- Added a new customer simulation route in admin app:
+  - `/experience`
+- Built a simple-first booking UX focused on:
+  - actor impersonation (owner/member/customer),
+  - smart default workspace seeding,
+  - offer discovery + slot loading,
+  - booking creation,
+  - payment execution (advanced and Stripe intent path),
+  - outbound message visibility.
+- Added subtle slash-command discovery panel (`/` or `Cmd/Ctrl+K`) to reveal
+  advanced controls only when needed:
+  - actor lab, entity explorer, availability controls, API trace, raw JSON.
+- Added rendered calendar timeline component for at-a-glance visibility of:
+  - availability rules,
+  - holds,
+  - bookings,
+  with lens modes and summary counters.
+- Added availability-rule management panel with real API CRUD wiring.
+- Extended studio API client with missing helpers:
+  - availability rules CRUD/list,
+  - capacity holds list,
+  - Stripe public booking payment-intent creation.
+- Added home-page navigation card to the new experience route.
+
+Files:
+- `/Users/ameer/bizing/code/apps/admin/src/app/experience/page.tsx`
+- `/Users/ameer/bizing/code/apps/admin/src/components/customer-ui/experience-page.tsx`
+- `/Users/ameer/bizing/code/apps/admin/src/components/customer-ui/feature-discovery-command.tsx`
+- `/Users/ameer/bizing/code/apps/admin/src/components/customer-ui/calendar-timeline-view.tsx`
+- `/Users/ameer/bizing/code/apps/admin/src/components/customer-ui/availability-rule-manager.tsx`
+- `/Users/ameer/bizing/code/apps/admin/src/components/customer-ui/types.ts`
+- `/Users/ameer/bizing/code/apps/admin/src/lib/studio-api.ts`
+- `/Users/ameer/bizing/code/apps/admin/src/app/page.tsx`
+- `/Users/ameer/bizing/code/docs/API.md`
+
+Validation:
+- `bun run --cwd /Users/ameer/bizing/code/apps/admin build` passed.
+
+### New real customer-facing app route (`/customer`) while preserving `/experience`
+
+- Kept existing `/experience` page unchanged.
+- Added a separate real customer-facing route:
+  - `/customer`
+- New route is product-style by default:
+  - discover published offers
+  - view slot availability calendar
+  - create booking
+  - pay (advanced flow or Stripe intent)
+  - review bookings and messages
+- Admin impersonation remains available, but hidden behind discovery controls
+  so the default view stays customer-first.
+- Added optional business availability controls (hidden by default) for
+  owner/admin testing with granular availability-rule management.
+- Home now links to both:
+  - `/customer` (real customer app)
+  - `/experience` (existing lab page)
+- Extended studio API wrappers for customer-flow parity:
+  - public booking/payment wrappers now allow session-only auth (actor token optional)
+  - public offer availability supports `offerVersionId`
+  - added `getPublicOfferWalkUp` helper
+
+Files:
+- `/Users/ameer/bizing/code/apps/admin/src/app/customer/page.tsx`
+- `/Users/ameer/bizing/code/apps/admin/src/components/customer-ui/customer-app-page.tsx`
+- `/Users/ameer/bizing/code/apps/admin/src/lib/studio-api.ts`
+- `/Users/ameer/bizing/code/apps/admin/src/app/page.tsx`
+- `/Users/ameer/bizing/code/docs/API.md`
+
+Validation:
+- `bun run --cwd /Users/ameer/bizing/code/apps/admin build` passed.
 
 ### OODash API explorer health endpoint 404 fix
 
@@ -1410,3 +2204,509 @@ Validation:
   - fixed coverage inspect CTA to `/ooda/coverage` (instead of unrelated route)
 - Validation:
   - `bun run --cwd /Users/ameer/bizing/code/apps/admin build` passed
+
+## Stripe provider integration baseline (2026-03-02)
+
+- Added real Stripe provider service helpers:
+  - `/Users/ameer/bizing/code/apps/api/src/services/stripe-payments.ts`
+  - centralizes Stripe client loading, mode detection, status mapping, and
+    provider reference extraction.
+- Added real Stripe payment intent route for public booking checkout:
+  - `POST /api/v1/public/bizes/:bizId/booking-orders/:bookingOrderId/payments/stripe/payment-intents`
+  - persists canonical payment rows (`payment_intents`, `payment_intent_events`,
+    `payment_intent_tenders`, allocations, and transactions) while returning
+    Stripe `clientSecret` for UI checkout flows.
+- Added Stripe webhook ingestion + reconciliation route:
+  - `POST /api/v1/public/payments/stripe/webhook`
+  - verifies signature when `STRIPE_WEBHOOK_SECRET` is configured,
+    dedupes by Stripe event id, stores raw payload in `stripe_webhook_events`,
+    then reconciles local `payment_intents` and `payment_transactions`.
+- Updated default processor-account bootstrap behavior in payments route:
+  - processor config now marks `provider_stripe` when Stripe key is configured,
+    instead of forcing simulated mode.
+- Exposed Stripe mirror tables through `@bizing/db` package object so API routes
+  can persist/read canonical Stripe integration rows:
+  - `/Users/ameer/bizing/code/packages/db/src/index.ts`
+- Updated canonical API docs:
+  - `/Users/ameer/bizing/code/docs/API.md`
+  - added Stripe integration contract, route list, and environment notes.
+- Validation:
+  - `bun run --cwd /Users/ameer/bizing/code/apps/api typecheck` passed
+  - `bun run --cwd /Users/ameer/bizing/code/apps/api build` passed
+  - `bun run --cwd /Users/ameer/bizing/code/apps/admin build` passed
+
+## Customer dashboard redesign (2026-03-02)
+
+- Rebuilt `/customer` into a real business-platform dashboard shell with a
+  simpler default UX.
+- New default structure:
+  - familiar left nav (dashboard, calendar, appointments, orders, payments, customers, services, agents, locations, settings)
+  - top search + business switcher + booking CTA
+  - dashboard-first operational cards and team roster cards
+- Reduced default complexity:
+  - removed debug-heavy default panels from the customer surface
+  - kept advanced availability controls behind explicit calendar action (`Manage availability`)
+- Preserved existing `/experience` route as the separate lab surface.
+- Validation:
+  - `bun run --cwd /Users/ameer/bizing/code/apps/admin build` passed.
+- `/customer` UI cleanup: removed the bottom helper/status strip to keep the page visually quieter.
+
+## Schema/API cohesion hardening (2026-03-02)
+
+- Normalized core status columns to enum-backed lifecycle models across:
+  - action backbone (`action_requests`, `action_idempotency_keys`, `action_executions`)
+  - projections (`projections`, `projection_documents`)
+  - scheduling/event cursor (`schedule_subjects`, `event_projection_consumers`)
+  - external installation/customer identity (`client_installations`, `client_installation_credentials`, `customer_profiles`, `customer_identity_handles`, `client_external_subjects`, `customer_verification_challenges`, `customer_visibility_policies`)
+  - saga coverage (`saga_coverage_reports`)
+- Added new canonical enum vocabularies in:
+  - `/Users/ameer/bizing/code/packages/db/src/schema/enums.ts`
+- Hardened API query validators to match enum lifecycle contracts:
+  - `/Users/ameer/bizing/code/apps/api/src/routes/actions.ts`
+  - `/Users/ameer/bizing/code/apps/api/src/routes/analytics.ts`
+  - `/Users/ameer/bizing/code/apps/api/src/routes/customer-ops.ts`
+  - `/Users/ameer/bizing/code/apps/api/src/routes/extensions.ts`
+- Added tenant-safe composite FK constraints in the normalized domains:
+  - `/Users/ameer/bizing/code/packages/db/src/schema/domain_events.ts`
+  - `/Users/ameer/bizing/code/packages/db/src/schema/external_installations.ts`
+- Domain docs regenerated/check-clean:
+  - `bun run docs:generate:domains`
+  - `bun run docs:check:domains`
+- Validation outcomes:
+  - `bun run --cwd /Users/ameer/bizing/code/packages/db db:guard` => `0` errors (`102` warnings remain)
+  - `bun run --cwd /Users/ameer/bizing/code/apps/api typecheck` => pass
+  - `bun run --cwd /Users/ameer/bizing/code/apps/api sagas:coverage:db` => `301/301` use cases (`#full=175`, `#strong=126`, `#gap=0`)
+  - `SAGA_FAST_MODE=1 bun run --cwd /Users/ameer/bizing/code/apps/api sagas:collect` => `320/320` passed
+
+## Time-scope drift repair + full saga green (2026-03-03)
+
+- Fixed canonical schema-source drift:
+  - `/Users/ameer/bizing/code/packages/db/drizzle.config.ts` now includes
+    `./src/schema/time_scopes.ts`.
+- Added idempotent DB bootstrap guard:
+  - `/Users/ameer/bizing/code/packages/db/scripts/bootstrap-time-scopes.ts`
+  - wired into:
+    - `/Users/ameer/bizing/code/packages/db/package.json` (`db:migrate`, `db:push`)
+- Guard ensures missing primitives on older local DBs:
+  - enum: `time_scope_type`
+  - table: `time_scopes`
+  - hold-domain bridge columns:
+    - `capacity_hold_policies.time_scope_id`
+    - `capacity_holds.time_scope_id`
+    - `capacity_hold_demand_alerts.time_scope_id`
+  - tenant-safe FKs and indexes for those columns.
+- Bootstrap verification expanded:
+  - `/Users/ameer/bizing/code/packages/db/scripts/verify-bootstrap.ts` now
+    requires `time_scopes`.
+- Added new UC slice in docs + sagas:
+  - `UC-314..UC-316` (commercial line execution truth).
+- Validation outcomes:
+  - full strict saga rerun: `350/350 passed`
+  - schema baseline + unified matrix rebuilt to `316` UCs:
+    - `#full=185`, `#strong=131`, `#partial=0`, `#gap=0`
+  - DB coverage markdown regenerated:
+    - `/Users/ameer/bizing/mind/workspaces/schema coverage report (db).md`
+
+## Proactive hole-pack sagas + idempotent loop-link retry behavior (2026-03-03)
+
+- Added proactive hole-coverage saga generator:
+  - `/Users/ameer/bizing/code/apps/api/src/scripts/generate-hole-sagas.ts`
+  - new command: `bun run --cwd apps/api sagas:generate:holes`
+- Generator creates exactly `99` saga specs:
+  - `33` shallow
+  - `33` medium
+  - `33` deep
+- Added depth-stable resolution guard:
+  - `/Users/ameer/bizing/code/apps/api/src/sagas/depth.ts`
+  - explicit `depth-*` tags now preserve declared depth instead of inference drift.
+- Hardened OODA loop-link creation for retry/idempotency:
+  - `/Users/ameer/bizing/code/apps/api/src/routes/ooda.ts`
+  - `POST /api/v1/ooda/loops/:loopId/links` now returns existing row (`200`)
+    when the unique logical link already exists.
+  - duplicate-key races now re-read and return canonical existing row.
+- Updated hole-pack runner assertions:
+  - `/Users/ameer/bizing/code/apps/api/src/scripts/rerun-sagas.ts`
+  - idempotent link step accepts `200/201/409`
+  - intentional validation-failure step uses raw envelope parsing so expected
+    `400/422` responses are treated as pass evidence.
+- Validation:
+  - `bun run --cwd /Users/ameer/bizing/code/apps/api sagas:generate:holes -- --sync=true --overwrite=true`
+  - targeted fast reruns across shallow/medium/deep hole specs passed.
+
+## Saga storage hard-cut to DB-native (2026-03-03)
+
+- Removed saga runtime dependency on filesystem specs/runs/artifacts.
+- Canonical behavior changes:
+  - `generateSagaSpecsFromDocs` now upserts directly to DB definitions/revisions.
+  - `syncSagaDefinitions` now returns/re-indexes DB definitions (no disk import).
+  - saga artifact writes now store payload in `saga_run_artifacts.body_text` with
+    a virtual `db://...` storage path.
+  - artifact reads now resolve from DB payload only (no file fallback).
+- Updated API route usage to DB sync:
+  - `/Users/ameer/bizing/code/apps/api/src/routes/sagas.ts`
+  - `/api/v1/ooda/sagas/specs/sync` is now DB-native.
+- Updated scripts to DB-native flow:
+  - `/Users/ameer/bizing/code/apps/api/src/scripts/generate-sagas.ts`
+  - `/Users/ameer/bizing/code/apps/api/src/scripts/generate-hole-sagas.ts`
+  - `/Users/ameer/bizing/code/apps/api/src/scripts/seed-saga-depth-packs.ts`
+- Validation:
+  - `bun run --cwd /Users/ameer/bizing/code/apps/api typecheck`
+  - `bun run --cwd /Users/ameer/bizing/code/apps/api sagas:generate -- --limit=1 --sync=true`
+  - `bun run --cwd /Users/ameer/bizing/code/apps/api sagas:generate:holes -- --sync=true --overwrite=true`
+  - `SAGA_KEY=hole-01-auth-machine-tokens-shallow SAGA_FAST_MODE=1 bun run --cwd /Users/ameer/bizing/code/apps/api sagas:rerun`
+
+## Customer UI default simplicity pass (2026-03-03)
+
+- Updated `/customer` default sidebar/navigation for first-time users:
+  - signed-in user name (user calendar)
+  - appointments
+  - customers
+  - services
+  - products
+  - settings
+- Tightened starter bootstrap behavior in the customer UI:
+  - auto-seed starter biz when user has zero bizes
+  - auto-recover selection if previously selected biz no longer exists
+  - guard biz data loads until selected biz is confirmed in visible biz list
+- Starter seed now binds the default calendar directly to the signed-in user:
+  - `ownerType=user`, `ownerUserId=<signed in user id>`
+  - resource binding still exists for operational scheduling
+- Added operator/story aid for dashboard evolution stages:
+  - `/Users/ameer/bizing/mind/workspace/customer-dashboard-stages-ascii.md`
+- Fixed React hot-reload dependency warning in customer biz-data effect:
+  - stabilized `useEffect` dependency shape back to a single key (`selectedBizId`)
+  - removed transient dev overlay: "final argument passed to useEffect changed size between renders"
+
+## Customer calendar overlay + customer-only surface (2026-03-03)
+
+- Reworked `/customer` calendar panel to a true availability overlay:
+  - 7-day by hour grid with composited state cells (`available`, `busy`, `blocked`, `unavailable`, `tentative`)
+  - projection-first timeline support using `timelineEvents` (`state` + `sourceType`)
+  - fallback merge from rules/holds/bookings when projection rows are not present
+- Simplified `/customer` to customer-facing controls only:
+  - removed business switcher, notification button, booking status mutation controls,
+    and availability-rule CRUD controls from `/customer`
+  - retained booking creation + simple read views for appointments/customers/services/products/settings
+- Preserved admin/operator controls in `/experience` and adapted its `CalendarTimelineView`
+  usage for compatibility.
+
+## Customer calendar noise reduction (2026-03-03)
+
+- Simplified the top section of the `/customer` calendar:
+  - removed the 4-card rules/holds/bookings/bindings metrics block
+  - replaced with one compact summary strip
+  - collapsed state legend into a short inline text hint
+- Reduced timeline event card noise:
+  - removed per-event source badges from day buckets
+  - kept time + title so users can scan quickly
+- Kept overlay grid behavior unchanged (availability still composited visually).
+- Removed customer header identity block from main view:
+  - no saga/biz test-name text in the main content header
+  - header now keeps only the primary customer action (`Booking`)
+
+## Customer calendar hard-minimal mode (2026-03-03)
+
+- Main calendar view on `/customer` now removes all top chrome:
+  - no section heading
+  - no subtitle
+  - no calendar selector
+  - no refresh button
+- `CalendarTimelineView` now supports `minimal` mode:
+  - renders only the visual availability overlay grid
+  - suppresses summary strip, day event feed, and window/projection text
+- Customer page uses `minimal` mode for the `my_calendar` section.
+- Final cleanup for `my_calendar` main view:
+  - removes top header action bar in this section
+  - removes error/success banners in this section
+  - removes padding/chrome so the main panel is calendar-only
+
+- Customer calendar cells now hide `unknown` state labels and render unknown slots as blank/transparent (no repeated `unknown` text noise).
+
+- Restored customer calendar tab/view after accidental removal. Calendar remains minimal and keeps unknown-slot text hidden.
+
+- Customer dashboard calendar tab content is now intentionally empty by request. Removed calendar state/fetch/render from `customer-app-page.tsx` while keeping the tab entry visible.
+
+- Branding update: replaced admin public logo assets with user-provided `/Users/ameer/Documents/bizing.text.svg` and `/Users/ameer/Documents/bizing.icon.svg` (canonical files now at `apps/admin/public/images/bizing.logo.horizontal.combo.svg` and `apps/admin/public/images/bizing.logo.icon.svg`).
+- Customer sidebar now renders the horizontal logo image instead of text label.
+
+## Customer calendar restored with real availability model (2026-03-03)
+
+- Restored the `/customer` `my_calendar` tab with a real, switchable calendar view:
+  - month view and week view
+  - previous/today/next navigation
+  - compact calendar selector + refresh action
+- Reconnected customer UI to canonical calendar APIs:
+  - loads calendars from `GET /api/v1/bizes/:bizId/calendars`
+  - loads projection-first timeline from `GET /api/v1/bizes/:bizId/calendars/:calendarId/timeline`
+- Calendar renderer uses one normalized event model:
+  - prefers `timelineEvents` projection rows
+  - falls back to merged `bookings` + `holds` + `rules`
+  - paints day cells by dominant availability state and renders semantic event cards
+- Kept compatibility with existing operator experience usage by preserving optional `lens` props on `CalendarTimelineView`.
+- Validation:
+  - `bun run --cwd apps/admin build` passed.
+
+## Customer sidebar branding polish (2026-03-04)
+
+- Updated `/customer` sidebar brand row:
+  - shows both icon mark and horizontal wordmark together
+  - increases logo scale from `h-6` to `h-7` for better readability
+- Implementation:
+  - `apps/admin/src/components/customer-ui/customer-app-page.tsx`
+- Validation:
+  - `bun run --cwd apps/admin build` passed.
+
+## Customer calendar header control removal (2026-03-04)
+
+- Removed calendar selector and refresh button from `/customer` `my_calendar` section.
+- `my_calendar` now shows only the timeline surface (no top form controls), keeping the customer view cleaner.
+- Implementation:
+  - `apps/admin/src/components/customer-ui/customer-app-page.tsx`
+- Validation:
+  - `bun run --cwd apps/admin build` passed.
+
+## Customer sidebar logo micro-alignment (2026-03-04)
+
+- Added a small top margin to the horizontal wordmark in `/customer` sidebar branding row for better visual alignment with the icon mark.
+- Implementation:
+  - `apps/admin/src/components/customer-ui/customer-app-page.tsx`
+- Validation:
+  - `bun run --cwd apps/admin build` passed.
+
+## OODash knowledge sync write actions (2026-03-04)
+
+- Extended OODash knowledge client with write methods:
+  - `createKnowledgeSource`
+  - `updateKnowledgeSource`
+  - `ingestKnowledgeSourceFiles`
+- Upgraded `/ooda/knowledge` from a read-only status page to an operator action surface:
+  - create source dialog
+  - edit source dialog
+  - per-source `Ingest now` dialog with ingest options
+  - inline success/error notices and per-source ingest summaries
+- Implementation:
+  - `/Users/ameer/projects/bizing/apps/admin/src/lib/ooda-api.ts`
+  - `/Users/ameer/projects/bizing/apps/admin/src/components/sagas/explorer/knowledge-page.tsx`
+  - `/Users/ameer/projects/bizing/docs/API.md`
+- Validation:
+  - `bun run --cwd apps/admin build` passed.
+  - `bun run --cwd apps/api typecheck` passed.
+
+## Knowledge audit-column drift fix (2026-03-04)
+
+- Fixed runtime error: `column "created_by" does not exist` on knowledge routes.
+- Root cause:
+  - `knowledge_*` tables were originally bootstrapped without actor audit columns.
+  - canonical schema and route queries now include `created_by/updated_by/deleted_by`.
+- Changes:
+  - updated `packages/db/scripts/bootstrap-knowledge.ts` to:
+    - include actor columns on table creation
+    - repair existing tables by adding missing actor columns
+    - add missing user FK constraints for actor columns
+  - updated `packages/db/scripts/verify-bootstrap.ts` to assert
+    `created_by` exists on all core `knowledge_*` tables.
+- Validation:
+  - `bun scripts/bootstrap-knowledge.ts` passed.
+  - `bun scripts/verify-bootstrap.ts` passed.
+  - `GET /api/v1/knowledge/sync-status` now returns `200` instead of `500`.
+  - `GET /api/v1/knowledge/sources` now returns `200` instead of `500`.
+
+## Knowledge + booking execution hardening (2026-03-04)
+
+- Knowledge soft-delete correctness and retrieval consistency:
+  - `/api/v1/knowledge/*` list/read/query surfaces now consistently exclude
+    soft-deleted rows via explicit `deleted_at IS NULL` guards.
+  - retrieval excludes superseded/archived documents and keeps graph-mode
+    scoring metadata (`graphEdgeCount`) in trace/query payloads.
+- Knowledge scope uniqueness and bootstrap repair:
+  - canonical schema now enforces scoped source/checkpoint uniqueness with
+    partial indexes:
+    - `knowledge_sources_global_source_key_unique`
+    - `knowledge_sources_biz_source_key_unique`
+    - `knowledge_checkpoints_global_agent_key_unique`
+    - `knowledge_checkpoints_biz_agent_key_unique`
+  - `packages/db/scripts/bootstrap-knowledge.ts` now drops legacy global indexes
+    and creates the scoped partial-index set deterministically.
+  - `packages/db/scripts/verify-bootstrap.ts` now verifies those partial-index
+    invariants.
+- Booking line execution attribution precision:
+  - added canonical line-link helper (`apps/api/src/routes/bookings-line-execution.ts`)
+    that prefers direct `booking_order_line_id` linkage and only falls back to
+    `offer_component_id` when component->line mapping is unambiguous.
+  - `GET /api/v1/bizes/:bizId/booking-orders/:bookingOrderId/line-execution`
+    now returns linkage diagnostics:
+    - `directLineLinkedUnitCount`
+    - `fallbackComponentLinkedUnitCount`
+    - `ambiguousFallbackUnitCount`
+- Fulfillment write/read contract alignment:
+  - `fulfillment_units` now includes optional `booking_order_line_id` with
+    tenant-safe composite FK/index support.
+  - `POST /api/v1/bizes/:bizId/fulfillment-units` accepts and validates
+    `bookingOrderLineId` against the provided order.
+- Instruments guardrail:
+  - `GET /api/v1/bizes/:bizId/instrument-runs` now clamps `limit` to `<= 200`.
+- Tests added:
+  - `apps/api/src/routes/__tests__/bookings.line-linkage.test.ts`
+    covers direct-link precedence, unique fallback mapping, and ambiguous
+    fallback handling.
+
+Validation:
+- `bun run --cwd /Users/ameer/bizing/code/packages/db build`
+- `bun run --cwd /Users/ameer/bizing/code/apps/api typecheck`
+- `bun run --cwd /Users/ameer/bizing/code/apps/api test -- --run src/routes/__tests__/bookings.line-linkage.test.ts`
+- `cd /Users/ameer/bizing/code/packages/db && bun scripts/bootstrap-knowledge.ts`
+- `cd /Users/ameer/bizing/code/packages/db && bun scripts/verify-bootstrap.ts`
+
+## 2026-03-06 — Homepage Fixed Header + Scroll-Gated Sign in
+
+Frontend (`apps/admin`):
+- Homepage top header is now fixed for public (logged-out) users.
+- Header `Sign in` CTA is hidden initially and revealed only after scrolling below the hero `Get Started` button.
+- Added smooth visibility transition so the header remains calm at load and progressively reveals account access while scrolling.
+
+Validation:
+- `bun run --cwd /Users/ameer/bizing/code/apps/admin build`
+
+## 2026-03-06 — Homepage Copy Consistency Sweep
+
+Frontend (`apps/admin`):
+- Hero copy updated to:
+  - `launch your biz.`
+  - `grow without friction.`
+  - `automate like a pro.`
+- Hero support text updated to: `From your first sale to multi-team scale, Bizing keeps work, customers, and payments connected and flowing.`
+- Removed top divider line above hero.
+- Removed fixed-header Sign in icon.
+- Updated growth section wording and removed duplicated heading usage:
+  - section: `Built to grow with you`
+  - scale card: `Scale with consistency`
+- Updated automation line copy to `Human approvals keep you in control`.
+
+Validation:
+- `bun run --cwd /Users/ameer/bizing/code/apps/admin build`
+
+## 2026-03-06 — Auth Surface Naming + First/Last Name Signup
+
+Frontend (`apps/admin`):
+- Auth route renamed to `/sign-in`.
+- `/login` kept as compatibility redirect.
+- Updated user-facing copy/buttons to use `Sign in` wording.
+- Signup form now captures:
+  - `First name`
+  - `Last name`
+  instead of a single full-name input.
+- Signup payload now sends `firstName`, `lastName`, and combined `name`.
+
+API (`apps/api`):
+- Better Auth config now defines user `additionalFields`:
+  - `firstName`
+  - `lastName`
+  mapped to existing `users.firstName` / `users.lastName` columns.
+
+Validation:
+- `bun run --cwd /Users/ameer/bizing/code/apps/api typecheck`
+- `bun run --cwd /Users/ameer/bizing/code/apps/admin build`
+- Live check:
+  - `POST http://localhost:9000/api/auth/sign-up/email`
+  - verified response user payload includes `firstName` + `lastName`
+
+## 2026-03-08
+
+- Canvascii path UX polish in the standalone workspace:
+  - line/path labels now render after edit mode exits because the live canvas renderer overlays line label text instead of relying only on export/hit-test helpers
+  - line/path border binding now shows explicit snap feedback with a highlighted bindable target outline and anchor-cell marker
+  - `MULTI_SEGMENT_LINE` now uses a click-first interaction path so bend placement is based on the actual click cell instead of stale delayed hover state
+  - resizing a bound endpoint away from a bindable box border now clears that endpoint binding
+  - line-label edit mode no longer draws the live rendered label underneath the textarea, fixing glitchy overlapping text while typing
+  - dragging a bound line/path now keeps bound endpoints visually attached instead of silently dropping bindings
+  - one-sided paths now translate with their bound box instead of stretching against the free end
+  - open paths can bind both ends to different boxes, and binding the open end now auto-finishes the path
+  - line labels now preserve typed spaces
+  - open-path bend points can be selected and deleted
+  - deleting a bend point now removes only that corner by rerouting through the alternate elbow instead of collapsing too much of the path
+- Validation:
+  - `pnpm --filter @canvascii/app test:run -- src/components/asciip-core/store/editorInteractionActions.test.ts`
+  - `pnpm --filter @canvascii/app build`
+  - Docker rebuild of `canvascii-app`
+  - headless Playwright screenshots verifying bind hover, bend preview, and post-edit line-label rendering on `http://127.0.0.1:9101`
+# 2026-03-07
+
+- Canvascii now has a clean local collaboration stack direction:
+  - `apps/canvascii-collab` for Hocuspocus/Yjs
+  - `packages/canvascii-core` for shared contracts
+  - local Docker stack for Postgres + MinIO + collab service
+  - Better Auth remains the browser/session authority through `apps/api`
+
+# 2026-03-08
+
+- Monorepo Canvascii app now has a local shadcn + Tailwind 4 UI foundation.
+  - `/Users/ameer/bizing/code/apps/canvascii` now contains its own shadcn registry install under `src/components/ui`, including the official `button-group` component.
+  - Tailwind CSS was upgraded to v4 in the app using CSS-first globals plus `@tailwindcss/postcss`.
+  - the sign-in screen now uses the local shadcn `ButtonGroup` for the sign-in / create-account mode switch instead of relying only on inherited admin UI primitives.
+  - verification: `pnpm --dir /Users/ameer/bizing/code/apps/canvascii build`
+- Canvascii-facing UI surfaces now use shadcn primitives more consistently across the shared app boundary.
+  - `/Users/ameer/bizing/code/apps/canvascii/src/app/sign-in/page.tsx` now uses shadcn `Input`, `Label`, `Button`, and `ButtonGroup` instead of raw form controls.
+  - `/Users/ameer/bizing/code/apps/admin/src/components/sagas/explorer/asciip-page.tsx` now uses shadcn `Button` for file rows and a shadcn `ButtonGroup` for the primary toolbar action cluster.
+  - `/Users/ameer/bizing/code/apps/admin/src/components/asciip-core/components/toolbar/ToolbarDiagrams.tsx` now uses shadcn buttons for inline rename/delete actions.
+  - `/Users/ameer/bizing/code/apps/admin/src/components/asciip-core/components/canvas/TextShapeInput.tsx` now uses the shared shadcn `Textarea`.
+  - verification: `pnpm --dir /Users/ameer/bizing/code/apps/canvascii build` and `pnpm --dir /Users/ameer/bizing/code/apps/admin build`
+
+- Standalone Canvascii editor now supports border-bound connectors plus inline line labels.
+  - `LINE` and `MULTI_SEGMENT_LINE` shapes can bind endpoints to rectangle/text borders and stay connected when targets move.
+  - lines and paths now support double-click label editing with one-dimensional align/padding controls.
+  - multi-segment paths now close into loops when the final segment reconnects to the starting point.
+  - empty rectangle interiors are now selectable so move flows work from the box body, not only the border.
+  - owners can now drag an empty select rectangle and create a portal directly from an in-canvas floating CTA.
+  - editor composition was refactored so canvas pointer state lives in `useCanvasInteractionController`, overlays live in `CanvasOverlayLayer`, and share/portal mutations live in `use-canvas-share-actions`.
+  - verification: `pnpm --filter @canvascii/app test:run -- src/components/asciip-core/store/editorInteractionActions.test.ts` and `pnpm --filter @canvascii/app build`
+
+- Standalone Canvascii tightened the editor interaction layer:
+  - main editor surfaces now consume a shared `useEditorInteractions()` hook instead of importing raw interaction actions directly
+  - rectangle text alignment controls were merged into a compact hover/click expander with all 9 alignment positions
+  - commit-like editor interaction intents now emit command projections from the interaction middleware layer, reducing reliance on the fallback legacy `diagramActions` projection path
+  - fixed two browser regressions from that pass:
+    - client command projection no longer imports `node:crypto`
+    - rectangle text floating controls no longer violate React hook ordering when tool visibility changes
+  - deterministic editor commit actions now use a first real command-first path:
+    - middleware previews the legacy reducer in memory
+    - projects commands from the before/after diagram data
+    - hydrates app/diagram state from the canonical document result
+    - bypasses the old debounced app-state mirror for that subset
+  - pointer-driven commit edges (`pointerUp`, `pointerClick`, `pointerDoubleClick`) now use that command-first hydration path too
+  - verification: `pnpm --filter @canvascii/app build` and `pnpm --filter @canvascii/app test:run -- src/components/asciip-core/store/editorInteractionActions.test.ts src/lib/canvascii/command-projection.test.ts src/lib/server/canvas-library-store.test.ts`
+- Standalone Canvascii now reroutes two-sided box-bound paths when one bound box moves.
+  - `lineFeatures.ts` now computes an orthogonal outside-the-box route for open `MULTI_SEGMENT_LINE` shapes with both endpoints bound to boxes.
+  - moving one of the bound boxes keeps the connector attached on both ends by bending instead of leaving a detached stub.
+  - verification: `pnpm --filter @canvascii/app test:run -- src/components/asciip-core/store/editorInteractionActions.test.ts` and `pnpm --filter @canvascii/app build`
+- Standalone Canvascii path endpoints now resolve to the nearest facing box side at runtime.
+  - connector creation and rebinding no longer stay stuck to the exact border side or corner originally clicked.
+  - `withResolvedLineBindings(...)` now immediately runs new connectors through `applyShapeBindings(...)`, so the nearest-side correction happens on creation as well as later box moves.
+  - verification: `pnpm --filter @canvascii/app test:run -- src/components/asciip-core/store/editorInteractionActions.test.ts` and `pnpm --filter @canvascii/app build`
+- Standalone Canvascii connectors now support endpoint locking and easier endpoint-to-box drops.
+  - dropping a line/path endpoint inside a box now binds it to that box instead of requiring an exact border-cell release.
+  - hovered bound endpoints now expose a lock toggle; unlocked endpoints keep auto-resolving to the shortest-facing route, while locked endpoints preserve their explicit connection side.
+  - verification: `pnpm --filter @canvascii/app test:run -- src/components/asciip-core/store/editorInteractionActions.test.ts` and `pnpm --filter @canvascii/app build`
+- Standalone Canvascii point-text click-to-type is fixed.
+  - `diagramSlice.ts` now creates a real `TEXT` shape from the single-click `onCellClick` path for point text creation and immediately enters `TEXT_EDIT`.
+  - `editorInteractionActions.test.ts` now covers `TEXT` tool -> single click -> `TEXT_EDIT`.
+  - verification: `pnpm --filter @canvascii/app test:run -- src/components/asciip-core/store/editorInteractionActions.test.ts` and `pnpm --filter @canvascii/app build`
+- Standalone Canvascii portal creation and editing now use a real editor tool instead of a selection CTA.
+  - the floating `Create portal` button after empty select-drag is removed.
+  - owners now create portals from a dedicated `PORTAL` tool / `O` shortcut, with live drag preview.
+  - portal overlays are selectable, movable, resizable, and deletable in-canvas while still persisting through share-policy mutations.
+  - `/api/v1/canvascii/agent` now supports `update_portal` and `delete_portal` alongside `add_portal`.
+  - verification: `pnpm --filter @canvascii/app build`, `docker compose up -d --build canvascii-app`, and Playwright browser verification for create -> move -> resize -> delete portal on `http://127.0.0.1:9101`
+- Standalone Canvascii portal sharing is now a first-class owner flow.
+  - selected portals now expose an inline share action in the overlay chrome.
+  - portal sharing now opens a shadcn dialog with `Add people` and `Share with link` sections, per-share `view` / `edit`, and an `Allow whole canvas view` toggle.
+  - `/api/v1/canvascii/agent` now supports `share_portal_link` in addition to email-based portal sharing.
+  - `/api/v1/canvascii/file` and `/api/v1/canvascii/collab-access` now accept portal-share links through `x-canvascii-share-token` or `?share=<token>`.
+  - fixed a route-classification bug so `share_portal_link` persists through the share-policy path instead of falling through the editor-mutation path.
+  - verification: `pnpm --filter @canvascii/app test:run -- src/app/api/v1/canvascii/agent/route.test.ts`, `pnpm --filter @canvascii/app build`, Docker rebuild of `canvascii-app`, Playwright-authenticated portal-link grant creation, and anonymous `curl` verification of both file access and collab-access resolution with a live share token.
+- Standalone Canvascii portal receivers and portal moves are more stable now.
+  - receiver-side collaboration cursors are now clipped to the receiver's elevated portal scope instead of appearing anywhere on the whole canvas when context view is enabled.
+  - editable portals keep their accent color, while visible-but-not-editable portals now render in neutral gray.
+  - owner portal moves now translate fully enclosed shapes with the portal on move-only updates.
+  - `/api/v1/canvascii/agent` now accepts an optional `editorState` snapshot for owner portal updates so shape translation and share-policy persistence happen in a single save.
+  - deep-linked opens now also remember a failed target and stop retrying the same missing/inaccessible canvas on every re-render.
+  - verification: `pnpm --dir /Users/ameer/bizing/canvascii --filter @canvascii/app test:run -- src/lib/canvascii/agent-edit.test.ts src/components/canvascii/collaborative-editor-shell.test.ts src/app/api/v1/canvascii/agent/route.test.ts src/components/asciip-core/store/editorInteractionActions.test.ts` and `pnpm --dir /Users/ameer/bizing/canvascii --filter @canvascii/app build`

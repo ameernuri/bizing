@@ -222,6 +222,7 @@ export function OpsStudioPage() {
     type: 'appointment',
   })
   const [createOfferForm, setCreateOfferForm] = useState({
+    serviceGroupId: '',
     name: '',
     slug: '',
     executionMode: 'slot',
@@ -969,10 +970,13 @@ export function OpsStudioPage() {
 
   async function handleCreateOffer() {
     if (!selectedBizId || !hasActiveActorToken) return
+    const serviceGroupId = createOfferForm.serviceGroupId || text(serviceGroups[0]?.id)
+    if (!serviceGroupId) return
     await safeRun('Create offer', async () => {
       const created = (await studioApi.createOffer(
         selectedBizId,
         {
+          serviceGroupId,
           name: createOfferForm.name,
           slug: createOfferForm.slug || slugify(createOfferForm.name),
           executionMode: createOfferForm.executionMode,
@@ -1716,24 +1720,10 @@ export function OpsStudioPage() {
       registerSandboxEntity('service_groups', text(serviceGroup.id))
       log('Service group created', text(serviceGroup.id))
 
-      const service = (await studioApi.createService(
-        bizId,
-        {
-          serviceGroupId: text(serviceGroup.id),
-          name: `Consultation ${stamp}`,
-          slug: `consultation-${stamp}`,
-          type: 'appointment',
-          visibility: 'public',
-          status: 'active',
-        },
-        ownerToken.accessToken,
-      )) as JsonMap
-      registerSandboxEntity('services', text(service.id))
-      log('Service created')
-
       const offer = (await studioApi.createOffer(
         bizId,
         {
+          serviceGroupId: text(serviceGroup.id),
           name: `Primary Offer ${stamp}`,
           slug: `primary-offer-${stamp}`,
           executionMode: 'slot',
@@ -2446,7 +2436,7 @@ export function OpsStudioPage() {
               </CardHeader>
               <CardContent className="grid gap-3 md:grid-cols-4">
                 <div className="space-y-1">
-                  <FieldTitle label="Email" help="Login identifier for this simulated actor." />
+                  <FieldTitle label="Email" help="Sign-in identifier for this simulated actor." />
                   <Input
                     placeholder="sarah@example.test"
                     value={createActorForm.email}
@@ -2747,6 +2737,16 @@ export function OpsStudioPage() {
               </CardContent>
 
               <CardContent className="grid gap-3 md:grid-cols-4">
+                <Select value={createOfferForm.serviceGroupId} onValueChange={(value) => setCreateOfferForm((v) => ({ ...v, serviceGroupId: value }))}>
+                  <SelectTrigger><SelectValue placeholder="Service group" /></SelectTrigger>
+                  <SelectContent>
+                    {serviceGroups.map((group) => (
+                      <SelectItem key={text(group.id)} value={text(group.id)}>
+                        {text(group.name, text(group.id))}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <Input
                   placeholder="Offer name"
                   value={createOfferForm.name}

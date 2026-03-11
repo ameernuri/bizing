@@ -3,21 +3,23 @@
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { Plus } from 'lucide-react'
-import { sagaApi, type SagaDefinitionSummary, type SagaRunSummary } from '@/lib/sagas-api'
+import { sagaApi, type SagaDefinitionSummary, type SagaDepth, type SagaRunSummary } from '@/lib/sagas-api'
 import { oodaApi } from '@/lib/ooda-api'
 import { fetchLatestUcCoverageSnapshot, type UcCoverageEntry } from '@/lib/uc-coverage'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
-import { CoverageVerdictBadge, EntitySummaryCard, getLatestRun, LifecycleBadge, LoadError, LoadingGrid, PageIntro, RunStatusBadge, SearchToolbar, summarizeRuns } from './common'
+import { CoverageVerdictBadge, EntitySummaryCard, getLatestRun, LifecycleBadge, LoadError, LoadingGrid, PageIntro, RunStatusBadge, SagaDepthBadge, SearchToolbar, summarizeRuns } from './common'
 
 export function SagaDefinitionsPage() {
   const [definitions, setDefinitions] = useState<SagaDefinitionSummary[]>([])
   const [runs, setRuns] = useState<SagaRunSummary[]>([])
   const [coverageByUc, setCoverageByUc] = useState<Map<string, UcCoverageEntry>>(new Map())
   const [query, setQuery] = useState('')
+  const [depthFilter, setDepthFilter] = useState<'all' | SagaDepth>('all')
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [createOpen, setCreateOpen] = useState(false)
@@ -53,11 +55,13 @@ export function SagaDefinitionsPage() {
 
   const filtered = useMemo(() => {
     const needle = query.trim().toLowerCase()
-    if (!needle) return definitions
-    return definitions.filter((item) =>
+    const byDepth =
+      depthFilter === 'all' ? definitions : definitions.filter((item) => item.depth === depthFilter)
+    if (!needle) return byDepth
+    return byDepth.filter((item) =>
       [item.sagaKey, item.title, item.description ?? '', item.sourceUseCaseRef ?? '', item.sourcePersonaRef ?? ''].some((value) => value.toLowerCase().includes(needle)),
     )
-  }, [definitions, query])
+  }, [definitions, depthFilter, query])
 
   async function createDefinition() {
     if (!form.sagaKey.trim() || !form.title.trim() || !form.description.trim()) return
@@ -92,7 +96,27 @@ export function SagaDefinitionsPage() {
           </Button>
         }
       />
-      <SearchToolbar value={query} onChange={setQuery} placeholder="Search definitions by key, title, description, use case, or persona" meta={`${filtered.length} of ${definitions.length} definitions`} />
+      <SearchToolbar
+        value={query}
+        onChange={setQuery}
+        placeholder="Search definitions by key, title, description, use case, or persona"
+        meta={
+          <div className="flex items-center gap-3">
+            <Select value={depthFilter} onValueChange={(value) => setDepthFilter(value as 'all' | SagaDepth)}>
+              <SelectTrigger className="h-8 w-[160px]">
+                <SelectValue placeholder="All depths" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All depths</SelectItem>
+                <SelectItem value="shallow">Shallow</SelectItem>
+                <SelectItem value="medium">Medium</SelectItem>
+                <SelectItem value="deep">Deep</SelectItem>
+              </SelectContent>
+            </Select>
+            <span>{filtered.length} of {definitions.length} definitions</span>
+          </div>
+        }
+      />
       <div className="flex-1 p-6">
         {error ? <LoadError message={error} onRetry={() => void load()} /> : null}
         {isLoading ? (
@@ -112,7 +136,12 @@ export function SagaDefinitionsPage() {
                   href={`/ooda/definitions/${encodeURIComponent(definition.sagaKey)}`}
                   title={`${definition.sagaKey} · ${definition.title}`}
                   description={definition.description}
-                  status={latestRun ? <RunStatusBadge status={latestRun.status} /> : <LifecycleBadge status={definition.status} />}
+                  status={
+                    <div className="flex items-center gap-2">
+                      <SagaDepthBadge depth={definition.depth} />
+                      {latestRun ? <RunStatusBadge status={latestRun.status} /> : <LifecycleBadge status={definition.status} />}
+                    </div>
+                  }
                   footer={
                     <div className="space-y-1">
                       <p>{summary.passed}/{summary.total} runs passed</p>

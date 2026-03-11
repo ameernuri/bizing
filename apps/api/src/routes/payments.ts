@@ -24,6 +24,14 @@ import {
   requireBizAccess,
 } from '../middleware/auth.js'
 import { executeCrudRouteAction } from '../services/action-route-bridge.js'
+import {
+  canUseStripeAutoTestCard,
+  extractStripeChargeRef,
+  getStripeClient,
+  mapStripeIntentStatusToBizing,
+  requireStripeClient,
+} from '../services/stripe-payments.js'
+import { requirePublicBizAccess } from './_public-biz-access.js'
 import { fail, ok, parsePositiveInt } from './_api.js'
 
 const {
@@ -38,6 +46,7 @@ const {
   paymentIntentLineAllocations,
   paymentTransactions,
   paymentTransactionLineAllocations,
+  stripeWebhookEvents,
 } = dbPackage
 
 const paymentMethodTypeValues = [
@@ -90,6 +99,31 @@ const refundPaymentBodySchema = z.object({
   amountMinor: z.number().int().positive(),
   reason: z.string().max(240).optional(),
   fallbackMode: z.string().max(120).optional(),
+  metadata: z.record(z.unknown()).optional(),
+})
+
+const stripeIntentBodySchema = z.object({
+  /**
+   * Optional explicit total.
+   * If omitted, booking total (plus optional tip) is used.
+   */
+  amountMinor: z.number().int().positive().optional(),
+  currency: z.string().regex(/^[A-Z]{3}$/).optional(),
+  tipMinor: z.number().int().min(0).default(0),
+  /**
+   * Optional Stripe payment method (`pm_...`) for immediate confirmation.
+   */
+  paymentMethodRef: z.string().min(1).max(200).optional(),
+  /**
+   * If true, API asks Stripe to confirm immediately.
+   * In local test mode, this can auto-fallback to Stripe test PM when no
+   * paymentMethodRef is supplied.
+   */
+  confirmNow: z.boolean().default(true),
+  /**
+   * Optional idempotency key to safely retry the same intent request.
+   */
+  idempotencyKey: z.string().min(1).max(200).optional(),
   metadata: z.record(z.unknown()).optional(),
 })
 
@@ -166,6 +200,7 @@ async function getOrCreateDefaultProcessorAccount(
   c: Parameters<typeof executeCrudRouteAction>[0]['c'],
   bizId: string,
 ): Promise<{ id: string }> {
+  const stripeConfigured = Boolean(getStripeClient())
   const existing = await db.query.paymentProcessorAccounts.findFirst({
     where: and(
       eq(paymentProcessorAccounts.bizId, bizId),
@@ -194,8 +229,15 @@ async function getOrCreateDefaultProcessorAccount(
       supportsSplitTender: true,
       supportsDisputes: true,
       supportsRefunds: true,
-      configuration: { mode: 'simulated', merchantOfRecord: 'bizing_platform' },
-      capabilities: { simulated: true, stripeCompatible: true },
+      configuration: {
+        mode: stripeConfigured ? 'provider_stripe' : 'simulated',
+        merchantOfRecord: 'bizing_platform',
+      },
+      capabilities: {
+        simulated: !stripeConfigured,
+        stripeConfigured,
+        stripeCompatible: true,
+      },
       metadata: { source: 'payments-route', defaultProvider: 'stripe' },
     },
     subjectType: 'payment_processor_account',
@@ -326,13 +368,733 @@ function buildAllocationPlan(input: {
   return plan
 }
 
+function mapBizingStatusToIntentEventType(
+  status: 'requires_payment_method' | 'requires_confirmation' | 'requires_capture' | 'processing' | 'succeeded' | 'failed' | 'cancelled',
+): 'created' | 'status_changed' | 'captured' | 'failed' | 'cancelled' | 'authorized' {
+  if (status === 'succeeded') return 'captured'
+  if (status === 'failed') return 'failed'
+  if (status === 'cancelled') return 'cancelled'
+  if (status === 'requires_capture') return 'authorized'
+  if (status === 'requires_payment_method') return 'created'
+  return 'status_changed'
+}
+
 function autoProviderForMethod(methodType: (typeof paymentMethodTypeValues)[number]) {
   if (methodType === 'cash') return 'manual'
   if (methodType === 'gift_card') return 'gift_ledger'
   return 'simulated_gateway'
 }
 
+/**
+ * Creates one real Stripe payment intent and mirrors it into canonical Bizing payment tables.
+ *
+ * Scope guardrails:
+ * - this route focuses on one Stripe-backed card tender for now,
+ * - split tender across multiple processor-backed card legs can be added later,
+ *   but this baseline gives a real provider integration today without breaking
+ *   existing simulated multi-tender flows.
+ */
+async function createStripePaymentIntentForBooking(input: {
+  c: Parameters<typeof executeCrudRouteAction>[0]['c']
+  bizId: string
+  bookingOrderId: string
+  customerUserId: string
+  amountMinor: number
+  currency: string
+  paymentMethodRef?: string
+  confirmNow: boolean
+  metadata?: Record<string, unknown>
+  source: 'public_checkout' | 'operator_checkout'
+  idempotencyKey?: string
+}) {
+  const stripe = requireStripeClient()
+  const processor = await getOrCreateDefaultProcessorAccount(input.c, input.bizId)
+  const shouldAutoConfirmWithTestCard =
+    input.confirmNow && !input.paymentMethodRef && canUseStripeAutoTestCard()
+  const confirmationMethodRef =
+    input.paymentMethodRef ?? (shouldAutoConfirmWithTestCard ? 'pm_card_visa' : undefined)
+
+  const createParams: Parameters<typeof stripe.paymentIntents.create>[0] = {
+    amount: input.amountMinor,
+    currency: input.currency.toLowerCase(),
+    metadata: {
+      bizId: input.bizId,
+      bookingOrderId: input.bookingOrderId,
+      customerUserId: input.customerUserId,
+      ...(input.metadata ?? {}),
+    },
+    automatic_payment_methods: input.paymentMethodRef ? undefined : { enabled: true },
+  }
+
+  if (confirmationMethodRef) {
+    createParams.confirm = true
+    createParams.payment_method = confirmationMethodRef
+  }
+
+  const stripeIntent = await stripe.paymentIntents.create(createParams, {
+    idempotencyKey:
+      input.idempotencyKey ??
+      `bizing:${input.bizId}:${input.bookingOrderId}:${input.amountMinor}:${input.currency}`,
+  })
+
+  const mappedStatus = mapStripeIntentStatusToBizing(stripeIntent.status)
+  const chargeRef = extractStripeChargeRef(stripeIntent)
+  const amountCapturedMinor =
+    mappedStatus === 'succeeded' ? Number(stripeIntent.amount_received ?? input.amountMinor) : 0
+
+  const intentRow = await createPaymentRow(
+    input.c,
+    input.bizId,
+    'paymentIntents',
+    {
+      bizId: input.bizId,
+      bookingOrderId: input.bookingOrderId,
+      paymentProcessorAccountId: processor.id,
+      status: mappedStatus,
+      currency: input.currency,
+      amountTargetMinor: input.amountMinor,
+      amountCapturedMinor,
+      amountRefundedMinor: 0,
+      requiresCapture: stripeIntent.capture_method === 'manual',
+      providerIntentRef: stripeIntent.id,
+      source: input.source,
+      authorizedAt: mappedStatus === 'requires_capture' ? new Date() : null,
+      capturedAt: mappedStatus === 'succeeded' ? new Date() : null,
+      failedAt: mappedStatus === 'failed' ? new Date() : null,
+      amountSnapshot: {
+        provider: 'stripe',
+        stripeStatus: stripeIntent.status,
+        amountReceivedMinor: stripeIntent.amount_received ?? 0,
+      },
+      metadata: {
+        ...(input.metadata ?? {}),
+        stripeClientSecretPresent: Boolean(stripeIntent.client_secret),
+      },
+    },
+    { subjectType: 'payment_intent', displayName: 'Stripe Payment Intent' },
+  )
+  if (intentRow instanceof Response) return intentRow
+
+  const methodRef =
+    (typeof stripeIntent.payment_method === 'string' && stripeIntent.payment_method.length > 0
+      ? stripeIntent.payment_method
+      : input.paymentMethodRef) ?? `stripe-pm-${Date.now()}-${crypto.randomUUID()}`
+
+  const existingPaymentMethod = await db.query.paymentMethods.findFirst({
+    where: and(
+      eq(paymentMethods.bizId, input.bizId),
+      eq(paymentMethods.provider, 'stripe'),
+      eq(paymentMethods.providerMethodRef, methodRef),
+    ),
+  })
+
+  const paymentMethodRow =
+    existingPaymentMethod ??
+    (await createPaymentRow(
+      input.c,
+      input.bizId,
+      'paymentMethods',
+      {
+        bizId: input.bizId,
+        ownerUserId: input.customerUserId,
+        paymentProcessorAccountId: processor.id,
+        type: 'card',
+        provider: 'stripe',
+        providerMethodRef: methodRef,
+        label: 'Stripe Card',
+        isDefault: false,
+        isActive: true,
+        metadata: {
+          source: 'stripe_payment_intent',
+        },
+      },
+      { subjectType: 'payment_method', displayName: 'Stripe Payment Method' },
+    ))
+  if (paymentMethodRow instanceof Response) return paymentMethodRow
+
+  const tenderRow = await createPaymentRow(
+    input.c,
+    input.bizId,
+    'paymentIntentTenders',
+    {
+      bizId: input.bizId,
+      paymentIntentId: (intentRow as Record<string, unknown>).id as string,
+      paymentMethodId: (paymentMethodRow as Record<string, unknown>).id as string,
+      methodType: 'card',
+      allocatedMinor: input.amountMinor,
+      capturedMinor: amountCapturedMinor,
+      refundedMinor: 0,
+      sortOrder: 1,
+      metadata: {
+        provider: 'stripe',
+      },
+    },
+    { subjectType: 'payment_intent_tender', displayName: 'Stripe Tender' },
+  )
+  if (tenderRow instanceof Response) return tenderRow
+
+  const eventRows: Array<Record<string, unknown>> = [
+    {
+      bizId: input.bizId,
+      paymentIntentId: (intentRow as Record<string, unknown>).id as string,
+      eventType: 'created',
+      actorUserId: input.customerUserId,
+      details: {
+        source: input.source,
+        stripeEvent: 'payment_intent.created',
+      },
+    },
+  ]
+
+  if (mappedStatus !== 'requires_payment_method') {
+    eventRows.push({
+      bizId: input.bizId,
+      paymentIntentId: (intentRow as Record<string, unknown>).id as string,
+      eventType: mapBizingStatusToIntentEventType(mappedStatus),
+      previousStatus: 'requires_payment_method',
+      nextStatus: mappedStatus,
+      previousAmountCapturedMinor: 0,
+      nextAmountCapturedMinor: amountCapturedMinor,
+      actorUserId: input.customerUserId,
+      details: {
+        source: input.source,
+        stripeStatus: stripeIntent.status,
+      },
+    })
+  }
+
+  for (const eventRow of eventRows) {
+    const createdEvent = await createPaymentRow(
+      input.c,
+      input.bizId,
+      'paymentIntentEvents',
+      eventRow,
+      {
+        subjectType: 'payment_intent_event',
+        displayName: `Payment Intent Event ${String(eventRow.eventType)}`,
+      },
+    )
+    if (createdEvent instanceof Response) return createdEvent
+  }
+
+  let transactionId: string | null = null
+  if (mappedStatus === 'succeeded' || mappedStatus === 'processing' || mappedStatus === 'failed') {
+    const transaction = await createPaymentRow(
+      input.c,
+      input.bizId,
+      'paymentTransactions',
+      {
+        bizId: input.bizId,
+        paymentIntentId: (intentRow as Record<string, unknown>).id as string,
+        bookingOrderId: input.bookingOrderId,
+        paymentIntentTenderId: (tenderRow as Record<string, unknown>).id as string,
+        paymentMethodId: (paymentMethodRow as Record<string, unknown>).id as string,
+        paymentProcessorAccountId: processor.id,
+        type: 'charge',
+        status: mappedStatus === 'succeeded' ? 'succeeded' : mappedStatus === 'processing' ? 'processing' : 'failed',
+        amountMinor: input.amountMinor,
+        currency: input.currency,
+        occurredAt: new Date(),
+        providerTransactionRef: chargeRef,
+        providerPayload: {
+          provider: 'stripe',
+          stripeIntentId: stripeIntent.id,
+          stripeStatus: stripeIntent.status,
+        },
+        metadata: {
+          source: input.source,
+        },
+      },
+      { subjectType: 'payment_transaction', displayName: 'Stripe Charge Transaction' },
+    )
+    if (transaction instanceof Response) return transaction
+    transactionId = String((transaction as Record<string, unknown>).id)
+  }
+
+  return {
+    intentRow: intentRow as Record<string, unknown>,
+    paymentMethodRow: paymentMethodRow as Record<string, unknown>,
+    tenderRow: tenderRow as Record<string, unknown>,
+    transactionId,
+    stripeIntent,
+    mappedStatus,
+    amountCapturedMinor,
+    chargeRef,
+  }
+}
+
 export const paymentRoutes = new Hono()
+
+/**
+ * Create one real Stripe-backed payment intent for a booking order.
+ *
+ * Why this route exists:
+ * - gives a deterministic provider-backed payment path (not simulated),
+ * - returns Stripe client secret for real checkout clients,
+ * - mirrors provider state into canonical Bizing payment tables immediately.
+ */
+paymentRoutes.post(
+  '/public/bizes/:bizId/booking-orders/:bookingOrderId/payments/stripe/payment-intents',
+  requireAuth,
+  async (c) => {
+    const user = getCurrentUser(c)
+    if (!user) return fail(c, 'UNAUTHORIZED', 'Authentication required.', 401)
+    if (!getStripeClient()) {
+      return fail(c, 'STRIPE_NOT_CONFIGURED', 'Stripe integration is not configured.', 503)
+    }
+
+    const bizId = c.req.param('bizId')
+    const bizAccess = await requirePublicBizAccess(c, bizId)
+    if (bizAccess instanceof Response) return bizAccess
+
+    const bookingOrderId = c.req.param('bookingOrderId')
+    const body = await c.req.json().catch(() => null)
+    const parsed = stripeIntentBodySchema.safeParse(body)
+    if (!parsed.success) {
+      return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
+    }
+
+    const booking = await db.query.bookingOrders.findFirst({
+      where: and(eq(bookingOrders.bizId, bizId), eq(bookingOrders.id, bookingOrderId)),
+    })
+    if (!booking) return fail(c, 'NOT_FOUND', 'Booking order not found.', 404)
+    if (booking.customerUserId !== user.id) {
+      return fail(c, 'FORBIDDEN', 'You can only pay for your own booking orders.', 403)
+    }
+
+    const tipMinor = parsed.data.tipMinor ?? 0
+    const currency = parsed.data.currency ?? booking.currency
+    const expectedTotalMinor = booking.totalMinor + tipMinor
+    const amountMinor = parsed.data.amountMinor ?? expectedTotalMinor
+    if (amountMinor !== expectedTotalMinor) {
+      return fail(
+        c,
+        'AMOUNT_MISMATCH',
+        `Stripe payment amount (${amountMinor}) must equal expected booking amount (${expectedTotalMinor}).`,
+        409,
+      )
+    }
+
+    let stripeResult:
+      | Awaited<ReturnType<typeof createStripePaymentIntentForBooking>>
+      | Response
+    try {
+      stripeResult = await createStripePaymentIntentForBooking({
+        c,
+        bizId,
+        bookingOrderId,
+        customerUserId: user.id,
+        amountMinor,
+        currency,
+        paymentMethodRef: parsed.data.paymentMethodRef,
+        confirmNow: parsed.data.confirmNow,
+        metadata: parsed.data.metadata ?? {},
+        source: 'public_checkout',
+        idempotencyKey: parsed.data.idempotencyKey,
+      })
+    } catch (error) {
+      return fail(c, 'STRIPE_CREATE_INTENT_FAILED', 'Failed to create Stripe payment intent.', 502, {
+        message: error instanceof Error ? error.message : 'Unknown Stripe error.',
+      })
+    }
+    if (stripeResult instanceof Response) return stripeResult
+
+    const existingLines = await ensureBaseBookingLine({
+      c,
+      bizId,
+      bookingOrderId,
+      subtotalMinor: booking.subtotalMinor,
+      totalMinor: booking.totalMinor,
+      currency: booking.currency,
+    })
+    const allLines = [...existingLines]
+    if (tipMinor > 0) {
+      const tipLine = await createPaymentRow(
+        c,
+        bizId,
+        'bookingOrderLines',
+        {
+          bizId,
+          bookingOrderId,
+          lineType: 'tip',
+          label: 'Tip',
+          quantity: 1,
+          unitAmountMinor: tipMinor,
+          lineTotalMinor: tipMinor,
+          pricingDetail: { source: 'stripe_payment_tip' },
+        },
+        { subjectType: 'booking_order_line', displayName: 'Stripe Booking Tip Line' },
+      )
+      if (tipLine instanceof Response) return tipLine
+      allLines.push(tipLine as (typeof allLines)[number])
+    }
+
+    const allocationPlan = buildAllocationPlan({
+      tenders: [{ allocatedMinor: amountMinor }],
+      lines: allLines.map((line) => ({ id: line.id, lineTotalMinor: line.lineTotalMinor })),
+    })
+
+    const lineAllocationRows: Array<Record<string, unknown>> = []
+    for (const [idx, plan] of allocationPlan.entries()) {
+      const allocation = await createPaymentRow(
+        c,
+        bizId,
+        'paymentIntentLineAllocations',
+        {
+          bizId,
+          paymentIntentId: String(stripeResult.intentRow.id),
+          paymentIntentTenderId: String(stripeResult.tenderRow.id),
+          bookingOrderId,
+          bookingOrderLineId: plan.bookingOrderLineId,
+          allocatedMinor: plan.allocatedMinor,
+          capturedMinor:
+            stripeResult.mappedStatus === 'succeeded' ? plan.allocatedMinor : 0,
+          refundedMinor: 0,
+          sortOrder: idx + 1,
+          metadata: { source: 'stripe_payment_intent' },
+        },
+        { subjectType: 'payment_intent_line_allocation', displayName: 'Stripe Intent Allocation' },
+      )
+      if (allocation instanceof Response) return allocation
+      lineAllocationRows.push(allocation as Record<string, unknown>)
+    }
+
+    if (stripeResult.transactionId) {
+      for (const allocation of lineAllocationRows) {
+        const txAlloc = await createPaymentRow(
+          c,
+          bizId,
+          'paymentTransactionLineAllocations',
+          {
+            bizId,
+            paymentTransactionId: stripeResult.transactionId,
+            paymentIntentId: String(stripeResult.intentRow.id),
+            paymentIntentTenderId: String(stripeResult.tenderRow.id),
+            bookingOrderId,
+            bookingOrderLineId: String(allocation.bookingOrderLineId),
+            paymentIntentLineAllocationId: String(allocation.id),
+            amountMinor: Number(allocation.allocatedMinor),
+            occurredAt: new Date(),
+            metadata: { source: 'stripe_payment_intent' },
+          },
+          { subjectType: 'payment_transaction_line_allocation', displayName: 'Stripe Transaction Allocation' },
+        )
+        if (txAlloc instanceof Response) return txAlloc
+      }
+    }
+
+    const nextBookingStatus =
+      stripeResult.mappedStatus === 'succeeded'
+        ? 'confirmed'
+        : booking.status === 'draft' || booking.status === 'quoted'
+          ? 'awaiting_payment'
+          : booking.status
+    const bookingStatusUpdate = await updatePaymentRow(
+      c,
+      bizId,
+      'bookingOrders',
+      bookingOrderId,
+      { status: nextBookingStatus },
+      { subjectType: 'booking_order', displayName: 'Stripe Booking Status Update' },
+    )
+    if (bookingStatusUpdate instanceof Response) return bookingStatusUpdate
+
+    if (stripeResult.mappedStatus === 'failed') {
+      return fail(c, 'PAYMENT_DECLINED', 'Stripe payment intent failed.', 402, {
+        paymentIntentId: stripeResult.intentRow.id,
+        providerIntentRef: stripeResult.stripeIntent.id,
+        stripeStatus: stripeResult.stripeIntent.status,
+      })
+    }
+
+    return ok(
+      c,
+      {
+        paymentIntentId: stripeResult.intentRow.id,
+        bookingOrderId,
+        status: stripeResult.intentRow.status,
+        provider: 'stripe',
+        providerIntentRef: stripeResult.stripeIntent.id,
+        clientSecret: stripeResult.stripeIntent.client_secret,
+        requiresAction:
+          stripeResult.mappedStatus === 'requires_confirmation' ||
+          stripeResult.mappedStatus === 'requires_payment_method',
+      },
+      201,
+    )
+  },
+)
+
+/**
+ * Stripe webhook ingress (public endpoint, signature-verified when secret is configured).
+ *
+ * ELI5:
+ * - Stripe calls this endpoint after payment intent state changes.
+ * - We store the raw event, dedupe by Stripe event id, then reconcile canonical
+ *   payment_intents/payment_transactions rows so operators can trust local state.
+ */
+paymentRoutes.post('/public/payments/stripe/webhook', async (c) => {
+  if (!getStripeClient()) {
+    return fail(c, 'STRIPE_NOT_CONFIGURED', 'Stripe integration is not configured.', 503)
+  }
+
+  const stripe = requireStripeClient()
+  const signatureHeader = c.req.header('stripe-signature') ?? ''
+  const rawBody = await c.req.raw.text()
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET
+
+  let stripeEvent: Record<string, unknown>
+  let signatureVerified = false
+  try {
+    if (webhookSecret) {
+      const verified = stripe.webhooks.constructEvent(rawBody, signatureHeader, webhookSecret)
+      stripeEvent = verified as unknown as Record<string, unknown>
+      signatureVerified = true
+    } else {
+      stripeEvent = JSON.parse(rawBody) as Record<string, unknown>
+      signatureVerified = false
+    }
+  } catch (error) {
+    return fail(c, 'STRIPE_WEBHOOK_INVALID', 'Failed to verify Stripe webhook signature.', 400, {
+      message: error instanceof Error ? error.message : 'Unknown signature verification error.',
+    })
+  }
+
+  const stripeEventId = String(stripeEvent.id ?? '')
+  const eventType = String(stripeEvent.type ?? 'unknown')
+  const eventData = (stripeEvent.data ?? {}) as Record<string, unknown>
+  const eventObject = (eventData.object ?? {}) as Record<string, unknown>
+  const livemode = Boolean(stripeEvent.livemode)
+  const eventCreatedAt = Number(stripeEvent.created)
+  const metadata = ((eventObject.metadata ?? {}) as Record<string, unknown>) ?? {}
+  const metadataBizId =
+    typeof metadata.bizId === 'string' && metadata.bizId.length > 0 ? metadata.bizId : null
+  const eventStripeAccountId =
+    typeof stripeEvent.account === 'string' && stripeEvent.account.length > 0
+      ? String(stripeEvent.account)
+      : null
+
+  if (!stripeEventId) {
+    return fail(c, 'STRIPE_WEBHOOK_INVALID', 'Webhook payload missing Stripe event id.', 400)
+  }
+
+  const insertedWebhook = await db
+    .insert(stripeWebhookEvents)
+    .values({
+      bizId: null,
+      stripeEventId,
+      stripeAccountId: eventStripeAccountId,
+      eventType,
+      apiVersion:
+        typeof stripeEvent.api_version === 'string' ? stripeEvent.api_version : null,
+      livemode,
+      eventCreatedAt:
+        Number.isFinite(eventCreatedAt) && eventCreatedAt > 0
+          ? new Date(eventCreatedAt * 1000)
+          : null,
+      payload: stripeEvent,
+      signatureVerified,
+      processingStatus: 'pending',
+      attempts: 1,
+      processedAt: null,
+      processingError: null,
+    })
+    .onConflictDoNothing({ target: stripeWebhookEvents.stripeEventId })
+    .returning({ id: stripeWebhookEvents.id })
+
+  if (insertedWebhook.length === 0) {
+    return ok(c, { duplicate: true, stripeEventId, eventType })
+  }
+
+  const webhookId = insertedWebhook[0]!.id
+
+  try {
+    const providerIntentRef =
+      eventType.startsWith('payment_intent.')
+        ? typeof eventObject.id === 'string'
+          ? eventObject.id
+          : null
+        : typeof eventObject.payment_intent === 'string'
+          ? eventObject.payment_intent
+          : null
+
+    if (!providerIntentRef) {
+      await db
+        .update(stripeWebhookEvents)
+        .set({
+          processingStatus: 'ignored',
+          processedAt: new Date(),
+        })
+        .where(eq(stripeWebhookEvents.id, webhookId))
+      return ok(c, { accepted: true, stripeEventId, eventType, ignored: true })
+    }
+
+    const intent = await db.query.paymentIntents.findFirst({
+      where: and(
+        eq(paymentIntents.providerIntentRef, providerIntentRef),
+        metadataBizId ? eq(paymentIntents.bizId, metadataBizId) : undefined,
+      ),
+    })
+    if (!intent) {
+      await db
+        .update(stripeWebhookEvents)
+        .set({
+          processingStatus: 'ignored',
+          processedAt: new Date(),
+          processingError: `No local payment_intent found for provider ref ${providerIntentRef}.`,
+        })
+        .where(eq(stripeWebhookEvents.id, webhookId))
+      return ok(c, {
+        accepted: true,
+        stripeEventId,
+        eventType,
+        ignored: true,
+        reason: 'local_intent_not_found',
+      })
+    }
+
+    const stripeStatus = String(eventObject.status ?? '')
+    const mappedStatus = mapStripeIntentStatusToBizing(
+      (stripeStatus || 'requires_payment_method') as Parameters<
+        typeof mapStripeIntentStatusToBizing
+      >[0],
+    )
+    const amountReceivedMinor = Number(eventObject.amount_received ?? 0)
+    const amountIntentMinor = Number(eventObject.amount ?? intent.amountTargetMinor)
+    const currency = String(eventObject.currency ?? intent.currency).toUpperCase()
+    const previousStatus = intent.status
+
+    await db
+      .update(paymentIntents)
+      .set({
+        status: mappedStatus,
+        amountCapturedMinor:
+          mappedStatus === 'succeeded'
+            ? Math.max(intent.amountCapturedMinor, amountReceivedMinor)
+            : intent.amountCapturedMinor,
+        amountTargetMinor: intent.amountTargetMinor > 0 ? intent.amountTargetMinor : amountIntentMinor,
+        capturedAt: mappedStatus === 'succeeded' ? new Date() : intent.capturedAt,
+        failedAt:
+          mappedStatus === 'failed' || mappedStatus === 'cancelled' ? new Date() : intent.failedAt,
+      })
+      .where(eq(paymentIntents.id, intent.id))
+
+    await db.insert(paymentIntentEvents).values({
+      bizId: intent.bizId,
+      paymentIntentId: intent.id,
+      eventType: mapBizingStatusToIntentEventType(mappedStatus),
+      previousStatus,
+      nextStatus: mappedStatus,
+      previousAmountCapturedMinor: intent.amountCapturedMinor,
+      nextAmountCapturedMinor:
+        mappedStatus === 'succeeded'
+          ? Math.max(intent.amountCapturedMinor, amountReceivedMinor)
+          : intent.amountCapturedMinor,
+      actorRef: 'stripe:webhook',
+      details: {
+        stripeEventId,
+        stripeEventType: eventType,
+        stripeStatus,
+      },
+    })
+
+    const chargeRef =
+      typeof eventObject.latest_charge === 'string'
+        ? eventObject.latest_charge
+        : null
+    if (
+      chargeRef &&
+      (mappedStatus === 'succeeded' || mappedStatus === 'processing' || mappedStatus === 'failed')
+    ) {
+      const existingTransaction = await db.query.paymentTransactions.findFirst({
+        where: and(
+          eq(paymentTransactions.bizId, intent.bizId),
+          eq(paymentTransactions.paymentIntentId, intent.id),
+          eq(paymentTransactions.type, 'charge'),
+          eq(paymentTransactions.providerTransactionRef, chargeRef),
+        ),
+      })
+      if (!existingTransaction) {
+        const firstTender = await db.query.paymentIntentTenders.findFirst({
+          where: and(
+            eq(paymentIntentTenders.bizId, intent.bizId),
+            eq(paymentIntentTenders.paymentIntentId, intent.id),
+          ),
+          orderBy: [asc(paymentIntentTenders.sortOrder)],
+        })
+
+        await db.insert(paymentTransactions).values({
+          bizId: intent.bizId,
+          paymentIntentId: intent.id,
+          bookingOrderId: intent.bookingOrderId,
+          crossBizOrderId: intent.crossBizOrderId,
+          paymentIntentTenderId: firstTender?.id ?? null,
+          paymentMethodId: firstTender?.paymentMethodId ?? null,
+          paymentProcessorAccountId: intent.paymentProcessorAccountId,
+          type: 'charge',
+          status: mappedStatus === 'succeeded' ? 'succeeded' : mappedStatus === 'processing' ? 'processing' : 'failed',
+          amountMinor: amountReceivedMinor > 0 ? amountReceivedMinor : amountIntentMinor,
+          currency,
+          providerTransactionRef: chargeRef,
+          occurredAt: new Date(),
+          providerPayload: {
+            stripeEventId,
+            stripeEventType: eventType,
+            stripeStatus,
+          },
+          metadata: {
+            source: 'stripe_webhook',
+          },
+        })
+      }
+    }
+
+    if (mappedStatus === 'succeeded' && intent.bookingOrderId) {
+      await db
+        .update(bookingOrders)
+        .set({ status: 'confirmed' })
+        .where(
+          and(
+            eq(bookingOrders.bizId, intent.bizId),
+            eq(bookingOrders.id, intent.bookingOrderId),
+            inArray(bookingOrders.status, ['draft', 'quoted', 'awaiting_payment']),
+          ),
+        )
+    }
+
+    await db
+      .update(stripeWebhookEvents)
+      .set({
+        bizId: intent.bizId,
+        processingStatus: 'processed',
+        processedAt: new Date(),
+        processingError: null,
+      })
+      .where(eq(stripeWebhookEvents.id, webhookId))
+
+    return ok(c, {
+      accepted: true,
+      stripeEventId,
+      eventType,
+      paymentIntentId: intent.id,
+      mappedStatus,
+    })
+  } catch (error) {
+    await db
+      .update(stripeWebhookEvents)
+      .set({
+        processingStatus: 'failed',
+        processedAt: new Date(),
+        processingError: error instanceof Error ? error.message : 'Unknown webhook processing error.',
+      })
+      .where(eq(stripeWebhookEvents.id, webhookId))
+    return fail(c, 'STRIPE_WEBHOOK_PROCESSING_FAILED', 'Failed to process Stripe webhook.', 500, {
+      stripeEventId,
+      eventType,
+      message: error instanceof Error ? error.message : 'Unknown error.',
+    })
+  }
+})
 
 /**
  * Customer payment endpoint for advanced (split tender) checkout.
@@ -349,6 +1111,9 @@ paymentRoutes.post(
     if (!user) return fail(c, 'UNAUTHORIZED', 'Authentication required.', 401)
 
     const bizId = c.req.param('bizId')
+    const bizAccess = await requirePublicBizAccess(c, bizId)
+    if (bizAccess instanceof Response) return bizAccess
+
     const bookingOrderId = c.req.param('bookingOrderId')
     const body = await c.req.json().catch(() => null)
     const parsed = advancedPaymentBodySchema.safeParse(body)

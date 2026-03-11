@@ -63,6 +63,13 @@ tables". It is being treated as an operating system for selling and managing:
   - reusable scheduling identity for anything that participates in time/capacity
   - `calendar_bindings` is now explicitly beginning to pivot toward this layer
     through `schedule_subject_id`
+- `time_scopes.ts`
+  - normalized scope dictionary for scheduling/capacity/policy rows
+  - gives one canonical scope key (`scope_ref_key`) across modules
+  - reduces polymorphic nullable-column fan-out in downstream runtime tables
+  - API/runtime writes for `capacity_holds`, `capacity_hold_policies`, and
+    `capacity_hold_demand_alerts` now require `time_scope_id` and derive
+    `target_ref_key` from this table to prevent scope drift
 - `projections.ts`
   - formal rebuildable read models
   - structured debug snapshots for "what did the system see?" analysis
@@ -220,9 +227,99 @@ The canonical action/event/projection/debug spine is now expected in most runtim
   - `outbound_messages`
   - `outbound_message_events`
   - `calendar_sync_connections`
+  - `calendar_timeline_events`
+  - `calendar_owner_timeline_events`
+  - `availability_resolution_runs`
+  - `time_scopes`
   - `staffing_demands`
   - `staffing_responses`
   - `staffing_assignments`
+- Inventory procurement + replenishment execution:
+  - `supply_partners`
+  - `supply_partner_catalog_items`
+  - `inventory_replenishment_policies`
+  - `inventory_replenishment_runs`
+  - `inventory_replenishment_suggestions`
+  - `inventory_procurement_orders`
+  - `inventory_procurement_order_lines`
+  - `inventory_receipt_batches`
+  - `inventory_receipt_items`
+  - `inventory_lot_units`
+- Value/loyalty accounting:
+  - `value_programs`
+  - `value_program_tiers`
+  - `value_program_accounts`
+  - `value_ledger_entries`
+  - `value_transfers`
+  - `value_rules`
+  - `value_rule_evaluations`
+- Workforce core (HRIS + hiring + performance + benefits):
+  - `workforce_departments`
+  - `workforce_positions`
+  - `workforce_assignments`
+  - `workforce_requisitions`
+  - `workforce_candidates`
+  - `workforce_applications`
+  - `workforce_candidate_events`
+  - `workforce_performance_cycles`
+  - `workforce_performance_reviews`
+  - `workforce_benefit_plans`
+  - `workforce_benefit_enrollments`
+
+## Shared Knowledge Plane (Codex + OpenClaw)
+
+This schema slice is the canonical shared-memory backbone for agent sync.
+
+ELI5:
+- we now store machine memory as real rows, not hidden process state.
+- the same memory system can be read by Codex, OpenClaw, and future in-product
+  Bizing agents.
+- every retrieval and checkpoint move is auditable.
+
+Canonical tables:
+- Source registry and ingest roots:
+  - `knowledge_sources`
+- Versioned documents:
+  - `knowledge_documents`
+- Retrieval chunks:
+  - `knowledge_chunks`
+- Embedding vectors and model metadata:
+  - `knowledge_embeddings`
+- Graph links between documents:
+  - `knowledge_edges`
+- Agent run ledger:
+  - `knowledge_agent_runs`
+- Retrieval audit traces:
+  - `knowledge_retrieval_traces`
+- Append-only operational event rail:
+  - `knowledge_events`
+- Agent checkpoint cursors:
+  - `knowledge_checkpoints`
+
+Key uniqueness contracts:
+- `knowledge_sources`:
+  - global uniqueness: `source_key` where `biz_id IS NULL`
+  - tenant uniqueness: `(biz_id, source_key)` where `biz_id IS NOT NULL`
+- `knowledge_checkpoints`:
+  - global uniqueness: `(agent_kind, agent_name, checkpoint_key)` where `biz_id IS NULL`
+  - tenant uniqueness: `(biz_id, agent_kind, agent_name, checkpoint_key)` where `biz_id IS NOT NULL`
+
+Why this matters:
+- `knowledge_events` + `knowledge_checkpoints` let us answer:
+  - are codex and openclaw at the same cursor?
+  - are they reading the same commit/document snapshot?
+- `knowledge_retrieval_traces` lets us answer:
+  - what query was asked?
+  - what chunks were returned?
+  - what scores were used?
+- `knowledge_agent_runs` lets us persist run goals/decisions/unresolved items
+  for deterministic handoff between runtimes.
+
+Design note:
+- vectors are currently stored as JSON numeric arrays in
+  `knowledge_embeddings.embedding` for portability in v0.
+- this keeps provider choice flexible (OpenAI or Ollama today) and can be
+  migrated later to pgvector without changing the higher-level memory contract.
 
 ## Clean Bootstrap Fixes (Canonical)
 
@@ -262,11 +359,62 @@ That means:
 
 This keeps the schema robust and explainable without turning every lookup table into ceremony.
 
+## Growth Backbone (Localization + Experimentation + Activation)
+
+Growth is now a canonical schema module, not a cross-domain side effect.
+
+Module:
+- `packages/db/src/schema/growth.ts`
+
+Canonical tables:
+- `growth_localization_resources`
+- `growth_localization_values`
+- `growth_experiments`
+- `growth_experiment_variants`
+- `growth_experiment_assignments`
+- `growth_experiment_measurements`
+- `growth_marketing_activations`
+- `growth_marketing_activation_runs`
+- `growth_marketing_activation_run_items`
+
+Design role:
+- localization keeps tenant-owned copy/resources and deterministic locale resolution.
+- experimentation keeps assignment/measurement rails auditable and replay-safe.
+- marketing activation keeps channel-push lifecycle runs/items explicit instead of hidden in integrations.
+
+Backbone integration:
+- growth writes can emit canonical action/event/projection links.
+- growth assignment and activation records are workflow/plugin-friendly for lifecycle hook and automation dispatch.
+
+## Domain Ownership Contract
+
+The route-domain manifest now requires explicit schema ownership for every
+domain entry (`schemaModule` is mandatory).
+
+Why:
+- generated domain docs are only trustworthy when route -> schema ownership is explicit.
+- null ownership allows API surfaces to drift into undocumented/ambiguous schema territory.
+
+Current guardrail:
+- `scripts/generate-domain-docs.mjs` fails if any manifest entry is missing `schemaModule`.
+
 ## Bootstrap Integrity
 
 The current v0 local bootstrap path is:
 - `bun run --cwd /Users/ameer/bizing/code/packages/db db:push`
 - `bun run --cwd /Users/ameer/bizing/code/packages/db db:seed`
+
+Bootstrap guard scripts in canonical order:
+- `bootstrap-time-scopes.ts`
+- `bootstrap-saga-depth.ts`
+- `bootstrap-knowledge.ts`
+- `repair-canonical-indexes.ts`
+- `verify-bootstrap.ts`
+
+Why `bootstrap-knowledge.ts` exists:
+- shared-memory tables are now core runtime infrastructure for Codex/OpenClaw sync
+- drifted local DBs can stall interactive Drizzle flows
+- the script applies only the `knowledge_*` module invariants deterministically.
 
 Why this matters:
 - the canonical schema uses partial unique indexes for "only one active/default row under these conditions" rules.
@@ -274,6 +422,23 @@ Why this matters:
 - that produced false saga failures in setup flows even when the route payload asked for `isDefault: false`.
 
 To keep fresh databases truthful, `packages/db/scripts/repair-canonical-indexes.ts` now replays the canonical partial index definitions from the baseline SQL after schema application.
+
+Time-scope bootstrap guard (2026-03-03):
+- `packages/db/scripts/bootstrap-time-scopes.ts` now runs in `db:migrate` / `db:push`.
+- it idempotently ensures:
+  - enum: `time_scope_type`
+  - table: `time_scopes`
+  - hold-domain bridge columns:
+    - `capacity_hold_policies.time_scope_id`
+    - `capacity_holds.time_scope_id`
+    - `capacity_hold_demand_alerts.time_scope_id`
+  - tenant-safe FKs and indexes for those new scope pointers.
+
+Why this is required:
+- older local DB states predated canonical time-scope modeling, so saga/API
+  writes failed even when schema files were correct.
+- this guard keeps bootstrap deterministic while baseline migration generation
+  catches up.
 
 Current known v0 rule:
 - for fresh local environments, treat `db:migrate` and `db:push` as the same bootstrap contract: apply schema with Drizzle push, then repair canonical partial indexes.
@@ -295,3 +460,47 @@ Why this matters:
 - delay behavior is observable and debuggable in DB
 - test runs can simulate time passage without wall-clock sleeps
 - OODash and agents can inspect "what was waiting, why, and when it resolved"
+
+## Saga Depth Lane Backbone (v1)
+
+Saga library rows and run rows now carry an explicit depth lane:
+
+- enum: `saga_depth` (`shallow`, `medium`, `deep`)
+- `saga_definitions.depth`
+- `saga_runs.depth`
+
+Why this matters:
+- the runner can execute lane-specific suites deterministically (`SAGA_DEPTH`)
+- OODash can filter health by depth lane instead of inferring from tags
+- pre-merge deep checks and fast shallow checks use the same canonical model
+- historical runs preserve which lane they were executed under even if a
+  definition is later reclassified
+
+## Status Model Hardening (2026-03-02)
+
+Core lifecycle status columns in the action/projection/external-installation/saga coverage backbone are now enum-backed instead of primitive text.
+
+Tables normalized in this pass:
+- `action_requests`
+- `action_idempotency_keys`
+- `action_executions`
+- `projections`
+- `projection_documents`
+- `schedule_subjects`
+- `event_projection_consumers`
+- `client_installations`
+- `client_installation_credentials`
+- `customer_profiles`
+- `customer_identity_handles`
+- `client_external_subjects`
+- `customer_verification_challenges`
+- `customer_visibility_policies`
+- `saga_coverage_reports`
+
+Why this is canonical:
+- prevents status vocabulary drift between schema and API contracts
+- turns invalid status writes into deterministic validation failures
+- keeps lifecycle semantics explicit for coverage, audit, and OODash reporting
+
+Guardrail result after this change:
+- `db:guard` moved from `15` hard errors to `0` hard errors (warnings remain for broader tenant-safe composite FK cleanup work).

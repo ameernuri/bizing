@@ -32,7 +32,15 @@ export * from './schema/action_backbone'
 export * from './schema/domain_events'
 export * from './schema/external_installations'
 export * from './schema/schedule_subjects'
+export * from './schema/coverage_lanes'
+export * from './schema/time_scopes'
+export * from './schema/booking_capacity_claims'
+export * from './schema/capacity_reservations'
 export * from './schema/projections'
+export * from './schema/knowledge'
+export * from './schema/inventory_procurement'
+export * from './schema/value_programs'
+export * from './schema/workforce_core'
 export * from './schema/instruments'
 export * from './schema/communications'
 export * from './schema/credential_exchange'
@@ -40,9 +48,11 @@ export * from './schema/enterprise'
 export * from './schema/gifts'
 export * from './schema/crm'
 export * from './schema/customer_ops'
+export * from './schema/work_items'
 export * from './schema/receivables'
 export * from './schema/gift_delivery'
 export * from './schema/marketing_performance'
+export * from './schema/growth'
 export * from './schema/supply_batches'
 export * from './schema/ooda'
 /**
@@ -82,7 +92,12 @@ import * as actionBackboneSchema from './schema/action_backbone'
 import * as domainEventsSchema from './schema/domain_events'
 import * as externalInstallationsSchema from './schema/external_installations'
 import * as scheduleSubjectsSchema from './schema/schedule_subjects'
+import * as coverageLanesSchema from './schema/coverage_lanes'
+import * as timeScopesSchema from './schema/time_scopes'
+import * as bookingCapacityClaimsSchema from './schema/booking_capacity_claims'
+import * as capacityReservationsSchema from './schema/capacity_reservations'
 import * as projectionsSchema from './schema/projections'
+import * as knowledgeSchema from './schema/knowledge'
 import * as instrumentsSchema from './schema/instruments'
 import * as communicationsSchema from './schema/communications'
 import * as credentialExchangeSchema from './schema/credential_exchange'
@@ -93,6 +108,7 @@ import * as customerOpsSchema from './schema/customer_ops'
 import * as receivablesSchema from './schema/receivables'
 import * as giftDeliverySchema from './schema/gift_delivery'
 import * as marketingPerformanceSchema from './schema/marketing_performance'
+import * as growthSchema from './schema/growth'
 import * as supplyBatchesSchema from './schema/supply_batches'
 import * as oodaSchema from './schema/ooda'
 import * as canonicalSchemaModules from './schema/canonical'
@@ -127,7 +143,12 @@ const schemaCore = {
   ...domainEventsSchema,
   ...externalInstallationsSchema,
   ...scheduleSubjectsSchema,
+  ...coverageLanesSchema,
+  ...timeScopesSchema,
+  ...bookingCapacityClaimsSchema,
+  ...capacityReservationsSchema,
   ...projectionsSchema,
+  ...knowledgeSchema,
   ...instrumentsSchema,
   ...communicationsSchema,
   ...credentialExchangeSchema,
@@ -138,6 +159,7 @@ const schemaCore = {
   ...receivablesSchema,
   ...giftDeliverySchema,
   ...marketingPerformanceSchema,
+  ...growthSchema,
   ...supplyBatchesSchema,
   ...oodaSchema,
 }
@@ -199,9 +221,21 @@ const dbPackage = {
   calendarBindings: canonicalSchemaModules.calendarBindings,
   calendarOverlays: canonicalSchemaModules.calendarOverlays,
   availabilityRules: canonicalSchemaModules.availabilityRules,
+  availabilityRuleExclusionDates: canonicalSchemaModules.availabilityRuleExclusionDates,
+  availabilityGates: canonicalSchemaModules.availabilityGates,
   availabilityDependencyRules: canonicalSchemaModules.availabilityDependencyRules,
   availabilityDependencyRuleTargets: canonicalSchemaModules.availabilityDependencyRuleTargets,
+  timeScopes: canonicalSchemaModules.timeScopes,
+  bookingCapacityClaims: canonicalSchemaModules.bookingCapacityClaims,
+  capacityReservations: canonicalSchemaModules.capacityReservations,
+  capacityHoldPolicies: canonicalSchemaModules.capacityHoldPolicies,
+  capacityHoldDemandAlerts: canonicalSchemaModules.capacityHoldDemandAlerts,
   capacityHolds: canonicalSchemaModules.capacityHolds,
+  capacityHoldEvents: canonicalSchemaModules.capacityHoldEvents,
+  calendarRevisions: canonicalSchemaModules.calendarRevisions,
+  calendarTimelineEvents: canonicalSchemaModules.calendarTimelineEvents,
+  calendarOwnerTimelineEvents: canonicalSchemaModules.calendarOwnerTimelineEvents,
+  availabilityResolutionRuns: canonicalSchemaModules.availabilityResolutionRuns,
   resources: resourcesSchema.resources,
   resourceCapabilityTemplates: canonicalSchemaModules.resourceCapabilityTemplates,
   resourceCapabilityAssignments: canonicalSchemaModules.resourceCapabilityAssignments,
@@ -210,6 +244,9 @@ const dbPackage = {
   offers: canonicalSchemaModules.offers,
   offerVersions: canonicalSchemaModules.offerVersions,
   offerVersionAdmissionModes: canonicalSchemaModules.offerVersionAdmissionModes,
+  offerComponents: canonicalSchemaModules.offerComponents,
+  offerComponentSelectors: canonicalSchemaModules.offerComponentSelectors,
+  offerComponentSeatTypes: canonicalSchemaModules.offerComponentSeatTypes,
   paymentProcessorAccounts: canonicalSchemaModules.paymentProcessorAccounts,
   paymentMethods: canonicalSchemaModules.paymentMethods,
   paymentIntents: canonicalSchemaModules.paymentIntents,
@@ -218,6 +255,15 @@ const dbPackage = {
   paymentIntentLineAllocations: canonicalSchemaModules.paymentIntentLineAllocations,
   paymentTransactions: canonicalSchemaModules.paymentTransactions,
   paymentTransactionLineAllocations: canonicalSchemaModules.paymentTransactionLineAllocations,
+  stripeAccounts: stripeSchema.stripeAccounts,
+  stripeCustomers: stripeSchema.stripeCustomers,
+  stripePaymentMethods: stripeSchema.stripePaymentMethods,
+  stripeSetupIntents: stripeSchema.stripeSetupIntents,
+  stripeCheckoutSessions: stripeSchema.stripeCheckoutSessions,
+  stripeInvoices: stripeSchema.stripeInvoices,
+  stripeWebhookEvents: stripeSchema.stripeWebhookEvents,
+  stripePayouts: stripeSchema.stripePayouts,
+  stripeTransfers: stripeSchema.stripeTransfers,
   checkoutSessions: canonicalSchemaModules.checkoutSessions,
   checkoutSessionItems: canonicalSchemaModules.checkoutSessionItems,
   checkoutSessionEvents: canonicalSchemaModules.checkoutSessionEvents,
@@ -348,6 +394,7 @@ const dbPackage = {
   oodaLoopLinks: oodaSchema.oodaLoopLinks,
   oodaLoopEntries: oodaSchema.oodaLoopEntries,
   oodaLoopActions: oodaSchema.oodaLoopActions,
+  oodaAsciipDocuments: oodaSchema.oodaAsciipDocuments,
   policyTemplates: canonicalSchemaModules.policyTemplates,
   policyRules: canonicalSchemaModules.policyRules,
   policyBindings: canonicalSchemaModules.policyBindings,
@@ -364,10 +411,19 @@ const dbPackage = {
   actionFailures: canonicalSchemaModules.actionFailures,
   reviewQueues: canonicalSchemaModules.reviewQueues,
   reviewQueueItems: canonicalSchemaModules.reviewQueueItems,
+  workflowDefinitions: canonicalSchemaModules.workflowDefinitions,
+  workflowDefinitionVersions: canonicalSchemaModules.workflowDefinitionVersions,
+  workflowDefinitionTriggers: canonicalSchemaModules.workflowDefinitionTriggers,
+  workflowTriggerInvocations: canonicalSchemaModules.workflowTriggerInvocations,
   workflowInstances: canonicalSchemaModules.workflowInstances,
   workflowSteps: canonicalSchemaModules.workflowSteps,
   workflowDecisions: canonicalSchemaModules.workflowDecisions,
   asyncDeliverables: canonicalSchemaModules.asyncDeliverables,
+  workItems: canonicalSchemaModules.workItems,
+  workItemEvents: canonicalSchemaModules.workItemEvents,
+  workItemLinks: canonicalSchemaModules.workItemLinks,
+  workCommands: canonicalSchemaModules.workCommands,
+  workCommandRuns: canonicalSchemaModules.workCommandRuns,
   domainEvents: canonicalSchemaModules.domainEvents,
   eventProjectionCheckpoints: canonicalSchemaModules.eventProjectionCheckpoints,
   businessAssociateAgreements: canonicalSchemaModules.businessAssociateAgreements,
@@ -378,8 +434,14 @@ const dbPackage = {
   phiDisclosureEvents: canonicalSchemaModules.phiDisclosureEvents,
   securityIncidents: canonicalSchemaModules.securityIncidents,
   breachNotifications: canonicalSchemaModules.breachNotifications,
+  lifecycleHookContracts: extensionsSchema.lifecycleHookContracts,
+  lifecycleHookContractVersions: extensionsSchema.lifecycleHookContractVersions,
+  lifecycleHookInvocations: extensionsSchema.lifecycleHookInvocations,
+  lifecycleHookEffectEvents: extensionsSchema.lifecycleHookEffectEvents,
   lifecycleEventSubscriptions: extensionsSchema.lifecycleEventSubscriptions,
   lifecycleEventDeliveries: extensionsSchema.lifecycleEventDeliveries,
+  automationHookBindings: extensionsSchema.automationHookBindings,
+  automationHookRuns: extensionsSchema.automationHookRuns,
   clientInstallations: canonicalSchemaModules.clientInstallations,
   clientInstallationCredentials: canonicalSchemaModules.clientInstallationCredentials,
   customerProfiles: canonicalSchemaModules.customerProfiles,
@@ -409,6 +471,43 @@ const dbPackage = {
   projections: canonicalSchemaModules.projections,
   projectionDocuments: canonicalSchemaModules.projectionDocuments,
   debugSnapshots: canonicalSchemaModules.debugSnapshots,
+  knowledgeSources: canonicalSchemaModules.knowledgeSources,
+  knowledgeDocuments: canonicalSchemaModules.knowledgeDocuments,
+  knowledgeChunks: canonicalSchemaModules.knowledgeChunks,
+  knowledgeEmbeddings: canonicalSchemaModules.knowledgeEmbeddings,
+  knowledgeEdges: canonicalSchemaModules.knowledgeEdges,
+  knowledgeAgentRuns: canonicalSchemaModules.knowledgeAgentRuns,
+  knowledgeRetrievalTraces: canonicalSchemaModules.knowledgeRetrievalTraces,
+  knowledgeEvents: canonicalSchemaModules.knowledgeEvents,
+  knowledgeCheckpoints: canonicalSchemaModules.knowledgeCheckpoints,
+  supplyPartners: canonicalSchemaModules.supplyPartners,
+  supplyPartnerCatalogItems: canonicalSchemaModules.supplyPartnerCatalogItems,
+  inventoryReplenishmentPolicies: canonicalSchemaModules.inventoryReplenishmentPolicies,
+  inventoryReplenishmentRuns: canonicalSchemaModules.inventoryReplenishmentRuns,
+  inventoryReplenishmentSuggestions: canonicalSchemaModules.inventoryReplenishmentSuggestions,
+  inventoryProcurementOrders: canonicalSchemaModules.inventoryProcurementOrders,
+  inventoryProcurementOrderLines: canonicalSchemaModules.inventoryProcurementOrderLines,
+  inventoryReceiptBatches: canonicalSchemaModules.inventoryReceiptBatches,
+  inventoryReceiptItems: canonicalSchemaModules.inventoryReceiptItems,
+  inventoryLotUnits: canonicalSchemaModules.inventoryLotUnits,
+  valuePrograms: canonicalSchemaModules.valuePrograms,
+  valueProgramTiers: canonicalSchemaModules.valueProgramTiers,
+  valueProgramAccounts: canonicalSchemaModules.valueProgramAccounts,
+  valueTransfers: canonicalSchemaModules.valueTransfers,
+  valueLedgerEntries: canonicalSchemaModules.valueLedgerEntries,
+  valueRules: canonicalSchemaModules.valueRules,
+  valueRuleEvaluations: canonicalSchemaModules.valueRuleEvaluations,
+  workforceDepartments: canonicalSchemaModules.workforceDepartments,
+  workforcePositions: canonicalSchemaModules.workforcePositions,
+  workforceAssignments: canonicalSchemaModules.workforceAssignments,
+  workforceRequisitions: canonicalSchemaModules.workforceRequisitions,
+  workforceCandidates: canonicalSchemaModules.workforceCandidates,
+  workforceApplications: canonicalSchemaModules.workforceApplications,
+  workforceCandidateEvents: canonicalSchemaModules.workforceCandidateEvents,
+  workforcePerformanceCycles: canonicalSchemaModules.workforcePerformanceCycles,
+  workforcePerformanceReviews: canonicalSchemaModules.workforcePerformanceReviews,
+  workforceBenefitPlans: canonicalSchemaModules.workforceBenefitPlans,
+  workforceBenefitEnrollments: canonicalSchemaModules.workforceBenefitEnrollments,
   programs: canonicalSchemaModules.programs,
   programCohorts: canonicalSchemaModules.programCohorts,
   programCohortSessions: canonicalSchemaModules.programCohortSessions,
@@ -427,6 +526,10 @@ const dbPackage = {
   leaveRequests: canonicalSchemaModules.leaveRequests,
   leaveEvents: canonicalSchemaModules.leaveEvents,
   staffingDemands: canonicalSchemaModules.staffingDemands,
+  coverageLanes: canonicalSchemaModules.coverageLanes,
+  coverageLaneMemberships: canonicalSchemaModules.coverageLaneMemberships,
+  coverageLaneShiftTemplates: canonicalSchemaModules.coverageLaneShiftTemplates,
+  coverageLaneAlerts: canonicalSchemaModules.coverageLaneAlerts,
   staffingDemandRequirements: canonicalSchemaModules.staffingDemandRequirements,
   staffingDemandSelectors: canonicalSchemaModules.staffingDemandSelectors,
   staffingResponses: canonicalSchemaModules.staffingResponses,
@@ -517,6 +620,15 @@ const dbPackage = {
   marketingAudienceSyncRuns: marketingPerformanceSchema.marketingAudienceSyncRuns,
   adSpendDailyFacts: marketingPerformanceSchema.adSpendDailyFacts,
   offlineConversionPushes: marketingPerformanceSchema.offlineConversionPushes,
+  growthLocalizationResources: growthSchema.growthLocalizationResources,
+  growthLocalizationValues: growthSchema.growthLocalizationValues,
+  growthExperiments: growthSchema.growthExperiments,
+  growthExperimentVariants: growthSchema.growthExperimentVariants,
+  growthExperimentAssignments: growthSchema.growthExperimentAssignments,
+  growthExperimentMeasurements: growthSchema.growthExperimentMeasurements,
+  growthMarketingActivations: growthSchema.growthMarketingActivations,
+  growthMarketingActivationRuns: growthSchema.growthMarketingActivationRuns,
+  growthMarketingActivationRunItems: growthSchema.growthMarketingActivationRunItems,
   productionBatches: supplyBatchesSchema.productionBatches,
   productionBatchReservations: supplyBatchesSchema.productionBatchReservations,
   seatMaps: canonicalSchemaModules.seatMaps,

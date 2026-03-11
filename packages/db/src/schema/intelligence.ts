@@ -20,6 +20,7 @@ import { resources } from "./resources";
 import { services } from "./services";
 import { users } from "./users";
 import { fulfillmentAssignments, fulfillmentUnits } from "./fulfillment";
+import { coverageLanes } from "./coverage_lanes";
 import {
   fairnessWindowUnitEnum,
   offerComponentTargetTypeEnum,
@@ -816,6 +817,9 @@ export const staffingDemands = pgTable(
     /** Optional requester actor. */
     requestedByUserId: idRef("requested_by_user_id").references(() => users.id),
 
+    /** Optional operational duty lane this demand is trying to cover. */
+    coverageLaneId: idRef("coverage_lane_id").references(() => coverageLanes.id),
+
     /**
      * Optional generic source pointer.
      * Use this for plugin/internal modules that post staffing demand from a
@@ -934,6 +938,11 @@ export const staffingDemands = pgTable(
       columns: [table.bizId, table.assignedResourceId],
       foreignColumns: [resources.bizId, resources.id],
       name: "staffing_demands_biz_assigned_resource_fk",
+    }),
+    staffingDemandsBizCoverageLaneFk: foreignKey({
+      columns: [table.bizId, table.coverageLaneId],
+      foreignColumns: [coverageLanes.bizId, coverageLanes.id],
+      name: "staffing_demands_biz_coverage_lane_fk",
     }),
 
     /** Count, window, and rate sanity checks. */
@@ -1479,6 +1488,9 @@ export const staffingAssignments = pgTable(
       .references(() => resources.id)
       .notNull(),
 
+    /** Optional duty lane being covered by this assignment. */
+    coverageLaneId: idRef("coverage_lane_id").references(() => coverageLanes.id),
+
     /** Optional originating candidate response. */
     staffingResponseId: idRef("staffing_response_id").references(
       () => staffingResponses.id,
@@ -1578,6 +1590,11 @@ export const staffingAssignments = pgTable(
       columns: [table.bizId, table.resourceId],
       foreignColumns: [resources.bizId, resources.id],
       name: "staffing_assignments_biz_resource_fk",
+    }),
+    staffingAssignmentsBizCoverageLaneFk: foreignKey({
+      columns: [table.bizId, table.coverageLaneId],
+      foreignColumns: [coverageLanes.bizId, coverageLanes.id],
+      name: "staffing_assignments_biz_coverage_lane_fk",
     }),
 
     /** Tenant-safe FK to optional response. */

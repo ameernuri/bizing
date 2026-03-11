@@ -2,18 +2,18 @@
 
 import Link from 'next/link'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { ArrowRight, BookOpenCheck, FileSearch, FlaskConical, PlayCircle, TrendingUp, AlertCircle, Activity, Target, Settings2 } from 'lucide-react'
+import { ArrowRight, BookOpenCheck, FileSearch, FlaskConical, PlayCircle, TrendingUp, AlertCircle, Activity, Target, Settings2, BrainCircuit } from 'lucide-react'
 import { PlatformHealthCards } from '@/components/sagas/platform-health-cards'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Badge } from '@/components/ui/badge'
 import { sagaApi, type SagaLibraryOverview, type SagaRunSummary, type SchemaCoverageReport } from '@/lib/sagas-api'
-import { oodaApi, type OodaOverview } from '@/lib/ooda-api'
+import { oodaApi, type KnowledgeStats, type KnowledgeSyncStatus, type OodaOverview } from '@/lib/ooda-api'
 import { parseUcCoverageEntry } from '@/lib/uc-coverage'
 import { useSagaRealtime } from '@/lib/use-saga-realtime'
 import { cn } from '@/lib/utils'
-import { ExplorerLinkCards, LoadError, PageIntro, RunProgressBackdrop, RunStatusBadge, SmallRunList, summarizeRuns } from './common'
+import { ExplorerLinkCards, LoadError, PageIntro, SmallRunList, summarizeRuns } from './common'
 
 function asRecord(value: unknown): Record<string, unknown> | null {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null
@@ -48,6 +48,8 @@ export function SagaDashboardPage() {
   const [runs, setRuns] = useState<SagaRunSummary[]>([])
   const [coverageReports, setCoverageReports] = useState<SchemaCoverageReport[]>([])
   const [coverageHotspots, setCoverageHotspots] = useState<Array<{ ucKey: string; title: string; verdict: string }>>([])
+  const [knowledgeStats, setKnowledgeStats] = useState<KnowledgeStats | null>(null)
+  const [knowledgeSync, setKnowledgeSync] = useState<KnowledgeSyncStatus | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const realtimeRefreshRef = useRef<number | null>(null)
@@ -62,15 +64,19 @@ export function SagaDashboardPage() {
       setError(null)
     }
     try {
-      const [overview, ooda, reports] = await Promise.all([
+      const [overview, ooda, reports, kStats, kSync] = await Promise.all([
         sagaApi.fetchLibraryOverview(),
         oodaApi.fetchOverview(),
         sagaApi.fetchUcCoverageReports(5),
+        oodaApi.fetchKnowledgeStats().catch(() => null),
+        oodaApi.fetchKnowledgeSyncStatus().catch(() => null),
       ])
       setLibraryOverview(overview)
       setOodaOverview(ooda)
       setRuns(ooda.recentRuns)
       setCoverageReports(reports)
+      setKnowledgeStats(kStats)
+      setKnowledgeSync(kSync)
       if (reports[0]) {
         const detail = await sagaApi.fetchUcCoverageReportDetail(reports[0].id)
         const hotspots = detail.items
@@ -130,10 +136,13 @@ export function SagaDashboardPage() {
       gap: typeof overall?.gap === 'number' ? overall.gap : 0,
     }
   }, [latestCoverage])
-  const attentionRuns = useMemo(
-    () => recentRuns.filter((run) => run.status !== 'passed').slice(0, 6),
-    [recentRuns],
-  )
+  const attentionBlockers = oodaOverview?.attention?.blockers ?? []
+  const reorientHints = oodaOverview?.attention?.reorient ?? []
+  const knowledgeGroupSummary = useMemo(() => {
+    const groups = knowledgeSync?.syncGroups ?? []
+    const healthy = groups.filter((group) => group.allSameCommitSha && group.allSameEventCursor).length
+    return { total: groups.length, healthy, drifting: Math.max(0, groups.length - healthy) }
+  }, [knowledgeSync])
 
   return (
     <div className="flex flex-1 flex-col">
@@ -229,6 +238,51 @@ export function SagaDashboardPage() {
                 runs: oodaOverview?.library.runs ?? libraryOverview?.counts.sagaRuns ?? 0,
               }}
             />
+
+            <Card className="overflow-hidden border-border/50 shadow-sm">
+              <CardHeader className="border-b border-border/30 bg-muted/30 px-6 py-5">
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-cyan-500/10">
+                      <BrainCircuit className="h-5 w-5 text-cyan-600" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-base font-semibold">Knowledge Sync</CardTitle>
+                      <CardDescription className="text-sm">
+                        Shared memory health between Codex and OpenClaw runtimes.
+                      </CardDescription>
+                    </div>
+                  </div>
+                  <Button variant="outline" size="sm" className="gap-2 rounded-lg" asChild>
+                    <Link href="/ooda/knowledge">
+                      Open
+                      <ArrowRight className="h-4 w-4" />
+                    </Link>
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="grid gap-4 p-6 md:grid-cols-4">
+                <div>
+                  <p className="text-xs uppercase tracking-wider text-muted-foreground">Sources</p>
+                  <p className="text-2xl font-semibold">{knowledgeStats?.sources ?? 0}</p>
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-wider text-muted-foreground">Documents</p>
+                  <p className="text-2xl font-semibold">{knowledgeStats?.documents ?? 0}</p>
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-wider text-muted-foreground">Chunks / Embeddings</p>
+                  <p className="text-2xl font-semibold">
+                    {(knowledgeStats?.chunks ?? 0).toLocaleString()} / {(knowledgeStats?.embeddings ?? 0).toLocaleString()}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-wider text-muted-foreground">Sync Groups</p>
+                  <p className="text-2xl font-semibold">{knowledgeGroupSummary.healthy}/{knowledgeGroupSummary.total}</p>
+                  <p className="text-xs text-muted-foreground">{knowledgeGroupSummary.drifting} drifting</p>
+                </div>
+              </CardContent>
+            </Card>
 
             <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">              
               <Card className="overflow-hidden border-border/50 shadow-sm">
@@ -347,15 +401,15 @@ export function SagaDashboardPage() {
                       <AlertCircle className="h-5 w-5 text-amber-600" />
                     </div>
                     <div>
-                      <CardTitle className="text-base font-semibold">Attention Queue</CardTitle>
+                      <CardTitle className="text-base font-semibold">Top Blockers</CardTitle>
                       <CardDescription className="text-sm">
-                        Recent runs that need investigation
+                        Failures first: what broke most recently and what needs action now.
                       </CardDescription>
                     </div>
                   </div>
                 </CardHeader>
                 <CardContent className="p-0">
-                  {attentionRuns.length === 0 ? (
+                  {attentionBlockers.length === 0 ? (
                     <div className="flex flex-col items-center justify-center px-6 py-12 text-center">
                       <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500/10">
                         <Activity className="h-6 w-6 text-emerald-600" />
@@ -364,25 +418,64 @@ export function SagaDashboardPage() {
                     </div>
                   ) : (
                     <div className="divide-y divide-border/30">
-                      {attentionRuns.map((run) => (
-                        <Link href={`/ooda/runs/${run.id}`} key={run.id} className="group relative block overflow-hidden p-4 transition-colors hover:bg-muted/30">
-                          <RunProgressBackdrop run={run} />
+                      {attentionBlockers.slice(0, 8).map((blocker) => (
+                        <div key={blocker.id} className="group relative block overflow-hidden p-4 transition-colors hover:bg-muted/30">
                           <div className="relative flex items-center justify-between gap-4">
                             <div className="min-w-0 space-y-1">
-                              <p className="truncate font-medium text-foreground group-hover:text-primary">{run.sagaKey}</p>
+                              <p className="truncate font-medium text-foreground group-hover:text-primary">{blocker.title}</p>
                               <p className="text-xs text-muted-foreground">
-                                {run.passedSteps}/{run.totalSteps} passed • updated {new Date(run.updatedAt ?? run.createdAt ?? Date.now()).toLocaleString()}
+                                {blocker.summary}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {blocker.failureSignature ?? 'UNKNOWN'} • {blocker.updatedAt ? new Date(blocker.updatedAt).toLocaleString() : 'no timestamp'}
                               </p>
                             </div>
-                            <RunStatusBadge status={run.status} />
+                            <div className="flex items-center gap-2">
+                              <Badge variant="outline">{blocker.severity}</Badge>
+                              {blocker.sagaRunId ? (
+                                <Button size="sm" variant="outline" asChild>
+                                  <Link href={`/ooda/runs/${blocker.sagaRunId}`}>Open run</Link>
+                                </Button>
+                              ) : null}
+                            </div>
                           </div>
-                        </Link>
+                        </div>
                       ))}
                     </div>
                   )}
                 </CardContent>
               </Card>
             </div>
+
+            {reorientHints.length > 0 ? (
+              <Card className="overflow-hidden border-border/50 shadow-sm">
+                <CardHeader className="border-b border-border/30 bg-muted/30 px-6 py-5">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/10">
+                      <Target className="h-5 w-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-base font-semibold">Reorient</CardTitle>
+                      <CardDescription className="text-sm">
+                        Top failure clusters and the next pragmatic move.
+                      </CardDescription>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-3 p-6">
+                  {reorientHints.map((hint) => (
+                    <div key={hint.signature} className="rounded-lg border p-4">
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="font-medium">{hint.signature}</p>
+                        <Badge variant="outline">{hint.count}</Badge>
+                      </div>
+                      <p className="mt-2 text-sm text-muted-foreground">{hint.exampleTitle}</p>
+                      <p className="mt-1 text-sm">{hint.recommendation}</p>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            ) : null}
 
             <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">              
               <Card className="overflow-hidden border-border/50 shadow-sm">

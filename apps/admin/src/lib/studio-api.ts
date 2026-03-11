@@ -1,14 +1,4 @@
-import { apiUrl } from '@/lib/api'
-
-type ApiEnvelope<T> = {
-  success: boolean
-  data: T
-  meta?: Record<string, unknown>
-  error?: {
-    code?: string
-    message?: string
-  }
-}
+import { EnvelopedApiError, requestEnvelopedApiResponse } from '@/lib/enveloped-api'
 
 export type StudioApiTrace = {
   at: string
@@ -53,6 +43,58 @@ export type StudioActorToken = {
   }
 }
 
+export type PersonaInboxSummary = {
+  personaKey: string
+  displayName: string
+  messageCount: number
+  deliveredCount: number
+  failedCount: number
+  lastSentAt: string | null
+  channels: string[]
+}
+
+export type PersonaInboxMessageEvent = {
+  id: string
+  eventType: string
+  occurredAt: string
+  payload: Record<string, unknown>
+  metadata: Record<string, unknown>
+}
+
+export type PersonaInboxMessage = {
+  id: string
+  channel: 'email' | 'sms' | 'push' | 'whatsapp' | 'postal' | 'voice' | 'webhook'
+  purpose: 'transactional' | 'marketing' | 'operational' | 'legal'
+  status:
+    | 'queued'
+    | 'processing'
+    | 'sent'
+    | 'delivered'
+    | 'failed'
+    | 'bounced'
+    | 'opened'
+    | 'clicked'
+    | 'replied'
+    | 'cancelled'
+    | 'suppressed'
+  recipientRef: string
+  providerKey?: string | null
+  providerMessageRef?: string | null
+  payload: Record<string, unknown>
+  metadata: Record<string, unknown>
+  scheduledFor: string
+  sentAt?: string | null
+  deliveredAt?: string | null
+  failedAt?: string | null
+  events: PersonaInboxMessageEvent[]
+}
+
+export type OwnerWelcomeEmailDispatch = {
+  alreadySent: boolean
+  message: Record<string, unknown>
+  events: Record<string, unknown>[]
+}
+
 export type StudioRequestOptions = {
   actorToken?: string | null
   method?: 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE'
@@ -63,46 +105,48 @@ async function request<T>(path: string, options?: StudioRequestOptions): Promise
   const method = options?.method ?? 'GET'
   const startedAt = Date.now()
   const requestBody = options?.body
-  const response = await fetch(apiUrl(path), {
-    method,
-    credentials: 'include',
-    headers: {
-      accept: 'application/json',
-      ...(options?.body ? { 'content-type': 'application/json' } : {}),
-      ...(options?.actorToken ? { authorization: `Bearer ${options.actorToken}` } : {}),
-    },
-    body: options?.body ? JSON.stringify(options.body) : undefined,
-    cache: 'no-store',
-  })
-
-  const payload = (await response.json().catch(() => null)) as ApiEnvelope<T> | null
-  const durationMs = Date.now() - startedAt
-  if (!response.ok || !payload?.success) {
-    const message = payload?.error?.message ?? `Request failed (${response.status})`
+  try {
+    const result = await requestEnvelopedApiResponse<T>(path, {
+      method,
+      headers: {
+        accept: 'application/json',
+        ...(options?.body ? { 'content-type': 'application/json' } : {}),
+        ...(options?.actorToken ? { authorization: `Bearer ${options.actorToken}` } : {}),
+      },
+      body: options?.body ? JSON.stringify(options.body) : undefined,
+      cache: 'no-store',
+    })
+    const durationMs = Date.now() - startedAt
     traceListener?.({
       at: new Date().toISOString(),
       method,
       path,
       durationMs,
-      status: response.status,
+      status: result.status,
+      ok: true,
+      requestBody,
+      responseBody: result.payload,
+    })
+    return result.data
+  } catch (error) {
+    const durationMs = Date.now() - startedAt
+    const status = error instanceof EnvelopedApiError ? error.status : 500
+    const payload = error instanceof EnvelopedApiError ? error.payload : null
+    const message = error instanceof Error ? error.message : 'Request failed'
+    traceListener?.({
+      at: new Date().toISOString(),
+      method,
+      path,
+      durationMs,
+      status,
       ok: false,
       requestBody,
       responseBody: payload,
       errorMessage: message,
     })
+    if (error instanceof Error) throw error
     throw new Error(message)
   }
-  traceListener?.({
-    at: new Date().toISOString(),
-    method,
-    path,
-    durationMs,
-    status: response.status,
-    ok: true,
-    requestBody,
-    responseBody: payload,
-  })
-  return payload.data
 }
 
 export const studioApi = {
@@ -162,12 +206,39 @@ export const studioApi = {
       type?: 'individual' | 'small_business' | 'enterprise'
       timezone?: string
       currency?: string
+      visibility?: 'published' | 'unpublished' | 'private'
     },
     actorToken?: string | null,
   ) => request<Record<string, unknown>>('/api/v1/bizes', { method: 'POST', body, actorToken }),
+  listPublicBizes: (params?: { limit?: number; search?: string }) => {
+    const search = new URLSearchParams()
+    if (params?.limit) search.set('limit', String(params.limit))
+    if (params?.search) search.set('search', params.search)
+    return request<unknown[]>(`/api/v1/bizes/public${search.size ? `?${search.toString()}` : ''}`)
+  },
+  patchBiz: (bizId: string, body: Record<string, unknown>, actorToken?: string | null) =>
+    request<unknown>(`/api/v1/bizes/${bizId}`, { method: 'PATCH', body, actorToken }),
+  sendOwnerWelcomeEmail: (bizId: string, actorToken?: string | null) =>
+    request<OwnerWelcomeEmailDispatch>(`/api/v1/bizes/${bizId}/onboarding/welcome-email`, {
+      method: 'POST',
+      actorToken,
+    }),
+  listBizMembers: (bizId: string, actorToken?: string | null) =>
+    request<unknown[]>(`/api/v1/bizes/${bizId}/members`, { actorToken }),
+  createBizMember: (
+    bizId: string,
+    body: {
+      userId?: string
+      email?: string
+      role?: 'owner' | 'admin' | 'manager' | 'staff' | 'host' | 'customer'
+    },
+    actorToken?: string | null,
+  ) => request<unknown>(`/api/v1/bizes/${bizId}/members`, { method: 'POST', body, actorToken }),
 
   listLocations: (bizId: string, actorToken?: string | null) =>
     request<unknown[]>(`/api/v1/bizes/${bizId}/locations?perPage=200`, { actorToken }),
+  listPublicLocations: (bizId: string) =>
+    request<unknown[]>(`/api/v1/public/bizes/${bizId}/locations`),
   createLocation: (bizId: string, body: Record<string, unknown>, actorToken?: string | null) =>
     request<unknown>(`/api/v1/bizes/${bizId}/locations`, { method: 'POST', body, actorToken }),
 
@@ -175,6 +246,87 @@ export const studioApi = {
     request<unknown[]>(`/api/v1/bizes/${bizId}/resources?perPage=200`, { actorToken }),
   createResource: (bizId: string, body: Record<string, unknown>, actorToken?: string | null) =>
     request<unknown>(`/api/v1/bizes/${bizId}/resources`, { method: 'POST', body, actorToken }),
+  listCoverageLanes: (bizId: string, actorToken?: string | null) =>
+    request<unknown[]>(`/api/v1/bizes/${bizId}/coverage-lanes`, { actorToken }),
+  createCoverageLane: (bizId: string, body: Record<string, unknown>, actorToken?: string | null) =>
+    request<unknown>(`/api/v1/bizes/${bizId}/coverage-lanes`, { method: 'POST', body, actorToken }),
+  patchCoverageLane: (bizId: string, laneId: string, body: Record<string, unknown>, actorToken?: string | null) =>
+    request<unknown>(`/api/v1/bizes/${bizId}/coverage-lanes/${laneId}`, { method: 'PATCH', body, actorToken }),
+  listCoverageLaneAlerts: (
+    bizId: string,
+    params?: { laneId?: string; status?: 'active' | 'acknowledged' | 'resolved' },
+    actorToken?: string | null,
+  ) => {
+    const search = new URLSearchParams()
+    if (params?.laneId) search.set('laneId', params.laneId)
+    if (params?.status) search.set('status', params.status)
+    return request<unknown[]>(`/api/v1/bizes/${bizId}/coverage-lane-alerts${search.size ? `?${search.toString()}` : ''}`, {
+      actorToken,
+    })
+  },
+  evaluateCoverageLaneAlerts: (bizId: string, params?: { locationId?: string }, actorToken?: string | null) => {
+    const search = new URLSearchParams()
+    if (params?.locationId) search.set('locationId', params.locationId)
+    return request<unknown>(`/api/v1/bizes/${bizId}/coverage-lanes/evaluate-alerts${search.size ? `?${search.toString()}` : ''}`, {
+      method: 'POST',
+      body: {},
+      actorToken,
+    })
+  },
+  listCoverageLaneMemberships: (bizId: string, laneId: string, actorToken?: string | null) =>
+    request<unknown[]>(`/api/v1/bizes/${bizId}/coverage-lanes/${laneId}/memberships`, { actorToken }),
+  createCoverageLaneMembership: (
+    bizId: string,
+    laneId: string,
+    body: Record<string, unknown>,
+    actorToken?: string | null,
+  ) => request<unknown>(`/api/v1/bizes/${bizId}/coverage-lanes/${laneId}/memberships`, { method: 'POST', body, actorToken }),
+  patchCoverageLaneMembership: (
+    bizId: string,
+    membershipId: string,
+    body: Record<string, unknown>,
+    actorToken?: string | null,
+  ) => request<unknown>(`/api/v1/bizes/${bizId}/coverage-lane-memberships/${membershipId}`, { method: 'PATCH', body, actorToken }),
+  createCoverageLaneOnCallShift: (
+    bizId: string,
+    laneId: string,
+    body: Record<string, unknown>,
+    actorToken?: string | null,
+  ) => request<unknown>(`/api/v1/bizes/${bizId}/coverage-lanes/${laneId}/on-call-shifts`, { method: 'POST', body, actorToken }),
+  listCoverageLaneShiftTemplates: (bizId: string, laneId: string, actorToken?: string | null) =>
+    request<unknown[]>(`/api/v1/bizes/${bizId}/coverage-lanes/${laneId}/shift-templates`, { actorToken }),
+  createCoverageLaneShiftTemplate: (
+    bizId: string,
+    laneId: string,
+    body: Record<string, unknown>,
+    actorToken?: string | null,
+  ) => request<unknown>(`/api/v1/bizes/${bizId}/coverage-lanes/${laneId}/shift-templates`, { method: 'POST', body, actorToken }),
+  patchCoverageLaneShiftTemplate: (
+    bizId: string,
+    templateId: string,
+    body: Record<string, unknown>,
+    actorToken?: string | null,
+  ) => request<unknown>(`/api/v1/bizes/${bizId}/coverage-shift-templates/${templateId}`, { method: 'PATCH', body, actorToken }),
+  publishCoverageLaneShiftTemplate: (
+    bizId: string,
+    templateId: string,
+    body?: { through?: string },
+    actorToken?: string | null,
+  ) => request<unknown>(`/api/v1/bizes/${bizId}/coverage-shift-templates/${templateId}/publish`, { method: 'POST', body: body ?? {}, actorToken }),
+  listCoverageLaneCoverage: (
+    bizId: string,
+    laneId: string,
+    params?: { from?: string; to?: string },
+    actorToken?: string | null,
+  ) => {
+    const search = new URLSearchParams()
+    if (params?.from) search.set('from', params.from)
+    if (params?.to) search.set('to', params.to)
+    return request<unknown>(
+      `/api/v1/bizes/${bizId}/coverage-lanes/${laneId}/coverage${search.size ? `?${search.toString()}` : ''}`,
+      { actorToken },
+    )
+  },
 
   listCalendars: (bizId: string, actorToken?: string | null) =>
     request<unknown[]>(`/api/v1/bizes/${bizId}/calendars?perPage=200`, { actorToken }),
@@ -201,15 +353,58 @@ export const studioApi = {
       { actorToken },
     )
   },
+  listAvailabilityRules: (bizId: string, calendarId: string, actorToken?: string | null) =>
+    request<unknown[]>(`/api/v1/bizes/${bizId}/calendars/${calendarId}/availability-rules?perPage=200`, { actorToken }),
+  createAvailabilityRule: (
+    bizId: string,
+    calendarId: string,
+    body: Record<string, unknown>,
+    actorToken?: string | null,
+  ) =>
+    request<unknown>(`/api/v1/bizes/${bizId}/calendars/${calendarId}/availability-rules`, {
+      method: 'POST',
+      body,
+      actorToken,
+    }),
+  patchAvailabilityRule: (
+    bizId: string,
+    calendarId: string,
+    ruleId: string,
+    body: Record<string, unknown>,
+    actorToken?: string | null,
+  ) =>
+    request<unknown>(`/api/v1/bizes/${bizId}/calendars/${calendarId}/availability-rules/${ruleId}`, {
+      method: 'PATCH',
+      body,
+      actorToken,
+    }),
+  deactivateAvailabilityRule: (bizId: string, calendarId: string, ruleId: string, actorToken?: string | null) =>
+    request<unknown>(`/api/v1/bizes/${bizId}/calendars/${calendarId}/availability-rules/${ruleId}`, {
+      method: 'DELETE',
+      actorToken,
+    }),
+  listCalendarCapacityHolds: (bizId: string, calendarId: string, actorToken?: string | null) =>
+    request<unknown[]>(`/api/v1/bizes/${bizId}/calendars/${calendarId}/capacity-holds`, { actorToken }),
 
   listServiceGroups: (bizId: string, actorToken?: string | null) =>
     request<unknown[]>(`/api/v1/bizes/${bizId}/service-groups?perPage=200`, { actorToken }),
   createServiceGroup: (bizId: string, body: Record<string, unknown>, actorToken?: string | null) =>
     request<unknown>(`/api/v1/bizes/${bizId}/service-groups`, { method: 'POST', body, actorToken }),
   listServices: (bizId: string, actorToken?: string | null) =>
-    request<unknown[]>(`/api/v1/bizes/${bizId}/services?perPage=200`, { actorToken }),
+    request<unknown[]>(`/api/v1/bizes/${bizId}/service-groups?perPage=200`, { actorToken }),
   createService: (bizId: string, body: Record<string, unknown>, actorToken?: string | null) =>
-    request<unknown>(`/api/v1/bizes/${bizId}/services`, { method: 'POST', body, actorToken }),
+    request<unknown>(`/api/v1/bizes/${bizId}/service-groups`, {
+      method: 'POST',
+      body: {
+        name: String(body.name ?? 'Catalog'),
+        slug: String(body.slug ?? 'catalog'),
+        description: body.description,
+        status: body.status,
+        statusConfigValueId: body.statusConfigValueId,
+        metadata: body.metadata,
+      },
+      actorToken,
+    }),
 
   listOffers: (bizId: string, actorToken?: string | null) =>
     request<unknown[]>(`/api/v1/bizes/${bizId}/offers?perPage=200`, { actorToken }),
@@ -238,8 +433,27 @@ export const studioApi = {
       actorToken,
     }),
   listPublicOffers: (bizId: string) => request<unknown[]>(`/api/v1/public/bizes/${bizId}/offers`),
-  getPublicOfferAvailability: (bizId: string, offerId: string, limit = 20) =>
-    request<unknown>(`/api/v1/public/bizes/${bizId}/offers/${offerId}/availability?limit=${limit}`),
+  getPublicOfferAvailability: (
+    bizId: string,
+    offerId: string,
+    limit = 20,
+    options?: { offerVersionId?: string; viewerTier?: string; locationId?: string },
+  ) => {
+    const search = new URLSearchParams()
+    search.set('limit', String(limit))
+    if (options?.offerVersionId) search.set('offerVersionId', options.offerVersionId)
+    if (options?.viewerTier) search.set('viewerTier', options.viewerTier)
+    if (options?.locationId) search.set('locationId', options.locationId)
+    return request<unknown>(`/api/v1/public/bizes/${bizId}/offers/${offerId}/availability?${search.toString()}`)
+  },
+  getPublicOfferWalkUp: (bizId: string, offerId: string, options?: { offerVersionId?: string; locationId?: string }) => {
+    const search = new URLSearchParams()
+    if (options?.offerVersionId) search.set('offerVersionId', options.offerVersionId)
+    if (options?.locationId) search.set('locationId', options.locationId)
+    return request<unknown>(
+      `/api/v1/public/bizes/${bizId}/offers/${offerId}/walk-up${search.size ? `?${search.toString()}` : ''}`,
+    )
+  },
 
   listProducts: (bizId: string, actorToken?: string | null) =>
     request<unknown[]>(`/api/v1/bizes/${bizId}/products`, { actorToken }),
@@ -251,13 +465,28 @@ export const studioApi = {
   createServiceProduct: (bizId: string, body: Record<string, unknown>, actorToken?: string | null) =>
     request<unknown>(`/api/v1/bizes/${bizId}/service-products`, { method: 'POST', body, actorToken }),
 
-  listPublicBookings: (bizId: string, actorToken: string) =>
+  listPublicBookings: (bizId: string, actorToken?: string | null) =>
     request<unknown[]>(`/api/v1/public/bizes/${bizId}/booking-orders?perPage=100`, { actorToken }),
-  createPublicBooking: (bizId: string, body: Record<string, unknown>, actorToken: string) =>
+  createPublicBooking: (bizId: string, body: Record<string, unknown>, actorToken?: string | null) =>
     request<unknown>(`/api/v1/public/bizes/${bizId}/booking-orders`, { method: 'POST', body, actorToken }),
-  payPublicBookingAdvanced: (bizId: string, bookingOrderId: string, body: Record<string, unknown>, actorToken: string) =>
+  payPublicBookingAdvanced: (
+    bizId: string,
+    bookingOrderId: string,
+    body: Record<string, unknown>,
+    actorToken?: string | null,
+  ) =>
     request<unknown>(
       `/api/v1/public/bizes/${bizId}/booking-orders/${bookingOrderId}/payments/advanced`,
+      { method: 'POST', body, actorToken },
+    ),
+  createPublicStripePaymentIntent: (
+    bizId: string,
+    bookingOrderId: string,
+    body: Record<string, unknown>,
+    actorToken?: string | null,
+  ) =>
+    request<unknown>(
+      `/api/v1/public/bizes/${bizId}/booking-orders/${bookingOrderId}/payments/stripe/payment-intents`,
       { method: 'POST', body, actorToken },
     ),
 
@@ -265,6 +494,22 @@ export const studioApi = {
     request<unknown[]>(`/api/v1/bizes/${bizId}/payment-intents?perPage=100`, { actorToken }),
   getPaymentIntentDetail: (bizId: string, paymentIntentId: string, actorToken?: string | null) =>
     request<unknown>(`/api/v1/bizes/${bizId}/payment-intents/${paymentIntentId}`, { actorToken }),
+
+  listBookingOrders: (bizId: string, actorToken?: string | null) =>
+    request<unknown[]>(`/api/v1/bizes/${bizId}/booking-orders?perPage=200`, { actorToken }),
+  createBookingOrder: (bizId: string, body: Record<string, unknown>, actorToken?: string | null) =>
+    request<unknown>(`/api/v1/bizes/${bizId}/booking-orders`, { method: 'POST', body, actorToken }),
+  patchBookingOrderStatus: (
+    bizId: string,
+    bookingOrderId: string,
+    body: { status: string },
+    actorToken?: string | null,
+  ) =>
+    request<unknown>(`/api/v1/bizes/${bizId}/booking-orders/${bookingOrderId}/status`, {
+      method: 'PATCH',
+      body,
+      actorToken,
+    }),
 
   listOutboundMessages: (bizId: string, query?: { recipientUserId?: string; bookingOrderId?: string }, actorToken?: string | null) => {
     const search = new URLSearchParams()
@@ -274,6 +519,154 @@ export const studioApi = {
     return request<unknown[]>(`/api/v1/bizes/${bizId}/outbound-messages?${search.toString()}`, {
       actorToken,
     })
+  },
+  createOutboundMessage: (
+    bizId: string,
+    body: {
+      channel: 'sms' | 'email' | 'push' | 'whatsapp' | 'postal' | 'voice' | 'webhook'
+      purpose: 'transactional' | 'marketing' | 'operational' | 'legal'
+      recipientRef: string
+      recipientUserId?: string
+      recipientGroupAccountId?: string
+      status?: 'queued' | 'processing' | 'sent' | 'delivered' | 'failed' | 'bounced' | 'opened' | 'clicked' | 'replied' | 'cancelled' | 'suppressed'
+      providerKey?: string
+      payload?: Record<string, unknown>
+      metadata?: Record<string, unknown>
+    },
+    actorToken?: string | null,
+  ) =>
+    request<unknown>(`/api/v1/bizes/${bizId}/outbound-messages`, {
+      method: 'POST',
+      body,
+      actorToken,
+    }),
+
+  listPersonaInboxes: (bizId: string, query?: { search?: string; limit?: number }) => {
+    const search = new URLSearchParams()
+    if (query?.search) search.set('search', query.search)
+    if (query?.limit) search.set('limit', String(query.limit))
+    return request<PersonaInboxSummary[]>(
+      `/api/v1/internal/bizes/${bizId}/persona-inboxes${search.size ? `?${search.toString()}` : ''}`,
+    )
+  },
+  listPersonaInboxMessages: (
+    bizId: string,
+    personaKey: string,
+    query?: { channel?: 'email' | 'sms' | 'push'; status?: 'queued' | 'sent' | 'delivered' | 'failed'; limit?: number },
+  ) => {
+    const search = new URLSearchParams()
+    if (query?.channel) search.set('channel', query.channel)
+    if (query?.status) search.set('status', query.status)
+    if (query?.limit) search.set('limit', String(query.limit))
+    return request<PersonaInboxMessage[]>(
+      `/api/v1/internal/bizes/${bizId}/persona-inboxes/${encodeURIComponent(personaKey)}/messages${search.size ? `?${search.toString()}` : ''}`,
+    )
+  },
+  sendPersonaInboxSimulation: (
+    bizId: string,
+    personaKey: string,
+    body: {
+      channel: 'email' | 'sms' | 'push'
+      purpose?: 'transactional' | 'marketing' | 'operational' | 'legal'
+      status?: 'queued' | 'sent' | 'delivered' | 'failed'
+      recipientRef?: string
+      subject?: string
+      title?: string
+      body?: string
+      metadata?: Record<string, unknown>
+    },
+  ) =>
+    request<{ message: PersonaInboxMessage; events: PersonaInboxMessageEvent[] }>(
+      `/api/v1/internal/bizes/${bizId}/persona-inboxes/${encodeURIComponent(personaKey)}/messages/simulate`,
+      {
+        method: 'POST',
+        body,
+      },
+    ),
+  createOutboundMessageEvent: (
+    bizId: string,
+    messageId: string,
+    body: {
+      eventType: 'queued' | 'sent' | 'delivered' | 'failed' | 'bounced' | 'opened' | 'clicked' | 'replied' | 'complained' | 'unsubscribed' | 'other'
+      nextStatus?: 'queued' | 'processing' | 'sent' | 'delivered' | 'failed' | 'bounced' | 'opened' | 'clicked' | 'replied' | 'cancelled' | 'suppressed'
+      providerEventRef?: string
+      payload?: Record<string, unknown>
+      metadata?: Record<string, unknown>
+      errorCode?: string
+      errorMessage?: string
+    },
+    actorToken?: string | null,
+  ) =>
+    request<unknown>(`/api/v1/bizes/${bizId}/outbound-messages/${messageId}/events`, {
+      method: 'POST',
+      body,
+      actorToken,
+    }),
+
+  listAnalyticsReports: (bizId: string, actorToken?: string | null) =>
+    request<unknown[]>(`/api/v1/bizes/${bizId}/analytics/reports?perPage=100`, { actorToken }),
+  createAnalyticsReport: (
+    bizId: string,
+    body: {
+      projectionKey: string
+      name: string
+      description?: string
+      spec?: Record<string, unknown>
+      freshnessPolicy?: Record<string, unknown>
+      metadata?: Record<string, unknown>
+    },
+    actorToken?: string | null,
+  ) =>
+    request<unknown>(`/api/v1/bizes/${bizId}/analytics/reports`, {
+      method: 'POST',
+      body,
+      actorToken,
+    }),
+  renderAnalyticsReport: (
+    bizId: string,
+    projectionId: string,
+    body?: {
+      documentKey?: string
+      subjectType?: string
+      subjectId?: string
+      specOverrides?: Record<string, unknown>
+      metadata?: Record<string, unknown>
+    },
+    actorToken?: string | null,
+  ) =>
+    request<unknown>(`/api/v1/bizes/${bizId}/analytics/reports/${projectionId}/render`, {
+      method: 'POST',
+      body: body ?? {},
+      actorToken,
+    }),
+  exportAnalyticsReport: (
+    bizId: string,
+    body: {
+      projectionId: string
+      format: 'csv' | 'pdf'
+      reason?: string
+      metadata?: Record<string, unknown>
+    },
+    actorToken?: string | null,
+  ) =>
+    request<unknown>(`/api/v1/bizes/${bizId}/analytics/exports`, {
+      method: 'POST',
+      body,
+      actorToken,
+    }),
+  getCoverageLaneReportSummary: (
+    bizId: string,
+    params?: { from?: string; to?: string; locationId?: string },
+    actorToken?: string | null,
+  ) => {
+    const search = new URLSearchParams()
+    if (params?.from) search.set('from', params.from)
+    if (params?.to) search.set('to', params.to)
+    if (params?.locationId) search.set('locationId', params.locationId)
+    return request<unknown>(
+      `/api/v1/bizes/${bizId}/reporting/coverage-lanes/summary${search.size ? `?${search.toString()}` : ''}`,
+      { actorToken },
+    )
   },
 
   listQueues: (bizId: string, actorToken?: string | null) =>

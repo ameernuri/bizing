@@ -41,7 +41,7 @@ function cleanMetadata(value: Record<string, unknown> | undefined) {
 
 const campaignStatusSchema = z.enum(['draft', 'active', 'paused', 'expired', 'archived'])
 const discountTypeSchema = z.enum(['percentage', 'fixed_amount', 'free_item', 'free_service'])
-const discountScopeSchema = z.enum(['order', 'line_item', 'sellable', 'service_product', 'offer_version'])
+const discountScopeSchema = z.enum(['order', 'line_item', 'sellable', 'offer_version'])
 const stackingModeSchema = z.enum(['exclusive', 'stackable', 'capped_stack'])
 const redemptionStatusSchema = z.enum(['reserved', 'applied', 'voided', 'reversed'])
 

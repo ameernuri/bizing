@@ -8,12 +8,14 @@ tags:
 
 # Workflows Domain
 
-This file is generated from route/schema source files and exists to keep domain docs synchronized with code reality.
+This file is generated from route/schema source files and the canonical domain manifest to keep docs synchronized with runtime mounts.
 
 ## Source
 
-- Route file: `/Users/ameer/bizing/code/apps/api/src/routes/workflows.ts`
-- Schema file: `/Users/ameer/bizing/code/packages/db/src/schema/workflows.ts`
+- Route file: `apps/api/src/routes/workflows.ts`
+- Schema file: `packages/db/src/schema/workflows.ts`
+- Mount path: `/`
+- Auth class (manifest): `machine_allowed`
 
 ## Route Intent (top JSDoc)
 
@@ -39,23 +41,35 @@ _No top JSDoc comment found._
 
 ## API Surface
 
-- `POST` `/bizes/:bizId/review-queues`
-- `GET` `/bizes/:bizId/review-queues`
-- `GET` `/bizes/:bizId/review-queue-items`
-- `POST` `/bizes/:bizId/review-queue-items`
-- `GET` `/bizes/:bizId/review-queue-items/:reviewQueueItemId`
-- `GET` `/bizes/:bizId/workflows`
-- `GET` `/bizes/:bizId/workflows/:workflowInstanceId`
-- `GET` `/bizes/:bizId/workflows/:workflowInstanceId/steps`
-- `GET` `/bizes/:bizId/workflows/:workflowInstanceId/decisions`
-- `GET` `/bizes/:bizId/async-deliverables`
-- `GET` `/bizes/:bizId/async-deliverables/:asyncDeliverableId`
+- `GET` `/api/v1/bizes/:bizId/workflow-definitions`
+- `POST` `/api/v1/bizes/:bizId/workflow-definitions`
+- `GET` `/api/v1/bizes/:bizId/workflow-definitions/:workflowDefinitionId/versions`
+- `POST` `/api/v1/bizes/:bizId/workflow-definitions/:workflowDefinitionId/versions`
+- `GET` `/api/v1/bizes/:bizId/workflow-definition-triggers`
+- `POST` `/api/v1/bizes/:bizId/workflow-definition-triggers`
+- `GET` `/api/v1/bizes/:bizId/workflow-trigger-invocations`
+- `POST` `/api/v1/bizes/:bizId/workflow-triggers/dispatch`
+- `POST` `/api/v1/bizes/:bizId/review-queues`
+- `GET` `/api/v1/bizes/:bizId/review-queues`
+- `GET` `/api/v1/bizes/:bizId/review-queue-items`
+- `POST` `/api/v1/bizes/:bizId/review-queue-items`
+- `GET` `/api/v1/bizes/:bizId/review-queue-items/:reviewQueueItemId`
+- `GET` `/api/v1/bizes/:bizId/workflows`
+- `GET` `/api/v1/bizes/:bizId/workflows/:workflowInstanceId`
+- `GET` `/api/v1/bizes/:bizId/workflows/:workflowInstanceId/steps`
+- `GET` `/api/v1/bizes/:bizId/workflows/:workflowInstanceId/decisions`
+- `GET` `/api/v1/bizes/:bizId/async-deliverables`
+- `GET` `/api/v1/bizes/:bizId/async-deliverables/:asyncDeliverableId`
 
 ## Tables
 
+- `workflow_definitions`
+- `workflow_definition_versions`
+- `workflow_definition_triggers`
 - `review_queues`
 - `review_queue_items`
 - `workflow_instances`
+- `workflow_trigger_invocations`
 - `workflow_steps`
 - `workflow_decisions`
 - `async_deliverables`

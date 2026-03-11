@@ -11,6 +11,7 @@ import { idRef, idWithTag, withAuditRefs } from "./_common";
 import { bizes } from "./bizes";
 import { users } from "./users";
 import { subjects } from "./subjects";
+import { scheduleSubjectStatusEnum } from "./enums";
 
 /**
  * schedule_subjects
@@ -62,7 +63,7 @@ export const scheduleSubjects = pgTable(
     scheduleClass: varchar("schedule_class", { length: 60 }).notNull(),
 
     displayName: varchar("display_name", { length: 240 }),
-    status: varchar("status", { length: 32 }).default("active").notNull(),
+    status: scheduleSubjectStatusEnum("status").default("active").notNull(),
 
     /**
      * Default scheduling behavior for overlap/capacity decisions.

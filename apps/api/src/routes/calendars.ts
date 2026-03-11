@@ -29,6 +29,8 @@ const {
   calendars,
   calendarBindings,
   capacityHolds,
+  calendarTimelineEvents,
+  calendarOwnerTimelineEvents,
   availabilityRules,
   availabilityDependencyRules,
   availabilityDependencyRuleTargets,
@@ -39,7 +41,9 @@ const {
   offers,
   offerVersions,
   locations,
+  scheduleSubjects,
   subjects,
+  timeScopes,
 } = dbPackage;
 
 const listCalendarsQuerySchema = z.object({
@@ -113,12 +117,16 @@ const createBindingBodySchema = z.object({
   ownerRefType: z.string().max(80).optional(),
   ownerRefId: z.string().optional(),
   isPrimary: z.boolean().default(true),
+  priority: z.number().int().min(0).default(100),
+  isRequired: z.boolean().default(false),
   isActive: z.boolean().default(true),
   metadata: z.record(z.unknown()).optional(),
 });
 
 const updateBindingBodySchema = z.object({
   isPrimary: z.boolean().optional(),
+  priority: z.number().int().min(0).optional(),
+  isRequired: z.boolean().optional(),
   isActive: z.boolean().optional(),
   metadata: z.record(z.unknown()).optional(),
 });
@@ -140,6 +148,7 @@ const calendarTimelineQuerySchema = z.object({
   includeRules: z.enum(["true", "false"]).optional(),
   includeBookings: z.enum(["true", "false"]).optional(),
   includeHolds: z.enum(["true", "false"]).optional(),
+  includeRaw: z.enum(["true", "false"]).optional(),
 });
 
 const listCapacityHoldsQuerySchema = z.object({
@@ -150,13 +159,8 @@ const listCapacityHoldsQuerySchema = z.object({
 });
 
 const createCapacityHoldBodySchema = z.object({
-  targetType: z.enum(["calendar", "capacity_pool", "resource", "offer_version", "custom_subject"]),
-  capacityPoolId: z.string().optional().nullable(),
-  resourceId: z.string().optional().nullable(),
-  offerVersionId: z.string().optional().nullable(),
-  targetRefType: z.string().max(80).optional().nullable(),
-  targetRefId: z.string().optional().nullable(),
-  targetRefKey: z.string().min(1).max(320),
+  /** Canonical normalized scope pointer. Required for new writes. */
+  timeScopeId: z.string().min(1),
   effectMode: z.enum(["blocking", "non_blocking", "advisory"]).default("blocking"),
   quantity: z.number().int().positive().default(1),
   demandWeight: z.number().int().positive().default(1),
@@ -351,33 +355,95 @@ function deriveOwnerRefKey(
   }
 }
 
+function parseScopeRefKey(scopeRefKey: string) {
+  if (scopeRefKey === "biz") return { prefix: "biz", id: null as string | null };
+  const parts = scopeRefKey.split(":");
+  const prefix = parts[0] ?? "";
+  const id = parts.slice(1).join(":") || null;
+  return { prefix, id };
+}
+
+function holdTargetTypeFromScopeType(
+  scopeType: string,
+): "calendar" | "capacity_pool" | "resource" | "offer_version" | "custom_subject" | null {
+  switch (scopeType) {
+    case "calendar":
+    case "capacity_pool":
+    case "resource":
+    case "offer_version":
+    case "custom_subject":
+      return scopeType;
+    default:
+      return null;
+  }
+}
+
+type BindingScheduleSubjectDescriptor = {
+  subjectType: string;
+  subjectId: string;
+  scheduleClass: string;
+  displayName?: string | null;
+  category?: string | null;
+  metadata?: Record<string, unknown>;
+};
+
 async function validateBindingOwnerInBiz(
   bizId: string,
   payload: z.infer<typeof createBindingBodySchema>,
 ) {
-  if (payload.ownerType === "biz") return { ok: true as const };
+  if (payload.ownerType === "biz") return { ok: true as const, scheduleSubject: null };
 
   if (payload.ownerType === "user") {
     if (!payload.ownerUserId) return { ok: false as const, message: "ownerUserId is required for ownerType=user." };
-    return { ok: true as const };
+    return { ok: true as const, scheduleSubject: null };
   }
 
   if (payload.ownerType === "resource") {
     if (!payload.resourceId) return { ok: false as const, message: "resourceId is required for ownerType=resource." };
     const row = await db.query.resources.findFirst({
       where: and(eq(resources.bizId, bizId), eq(resources.id, payload.resourceId)),
-      columns: { id: true },
+      columns: { id: true, name: true, type: true },
     });
-    return row ? { ok: true as const } : { ok: false as const, message: "resourceId is not in this biz." };
+    return row
+      ? {
+          ok: true as const,
+          scheduleSubject: {
+            subjectType: "resource",
+            subjectId: row.id,
+            scheduleClass: "resource",
+            displayName: row.name,
+            category: row.type,
+            metadata: {
+              ownerType: "resource",
+              resourceType: row.type,
+            },
+          } satisfies BindingScheduleSubjectDescriptor,
+        }
+      : { ok: false as const, message: "resourceId is not in this biz." };
   }
 
   if (payload.ownerType === "service") {
     if (!payload.serviceId) return { ok: false as const, message: "serviceId is required for ownerType=service." };
     const row = await db.query.services.findFirst({
       where: and(eq(services.bizId, bizId), eq(services.id, payload.serviceId)),
-      columns: { id: true },
+      columns: { id: true, name: true, type: true },
     });
-    return row ? { ok: true as const } : { ok: false as const, message: "serviceId is not in this biz." };
+    return row
+      ? {
+          ok: true as const,
+          scheduleSubject: {
+            subjectType: "service",
+            subjectId: row.id,
+            scheduleClass: "service",
+            displayName: row.name,
+            category: row.type,
+            metadata: {
+              ownerType: "service",
+              serviceType: row.type,
+            },
+          } satisfies BindingScheduleSubjectDescriptor,
+        }
+      : { ok: false as const, message: "serviceId is not in this biz." };
   }
 
   if (payload.ownerType === "service_product") {
@@ -386,18 +452,47 @@ async function validateBindingOwnerInBiz(
     }
     const row = await db.query.serviceProducts.findFirst({
       where: and(eq(serviceProducts.bizId, bizId), eq(serviceProducts.id, payload.serviceProductId)),
-      columns: { id: true },
+      columns: { id: true, name: true },
     });
-    return row ? { ok: true as const } : { ok: false as const, message: "serviceProductId is not in this biz." };
+    return row
+      ? {
+          ok: true as const,
+          scheduleSubject: {
+            subjectType: "service_product",
+            subjectId: row.id,
+            scheduleClass: "service_product",
+            displayName: row.name,
+            category: "service_product",
+            metadata: {
+              ownerType: "service_product",
+            },
+          } satisfies BindingScheduleSubjectDescriptor,
+        }
+      : { ok: false as const, message: "serviceProductId is not in this biz." };
   }
 
   if (payload.ownerType === "offer") {
     if (!payload.offerId) return { ok: false as const, message: "offerId is required for ownerType=offer." };
     const row = await db.query.offers.findFirst({
       where: and(eq(offers.bizId, bizId), eq(offers.id, payload.offerId)),
-      columns: { id: true },
+      columns: { id: true, name: true, executionMode: true },
     });
-    return row ? { ok: true as const } : { ok: false as const, message: "offerId is not in this biz." };
+    return row
+      ? {
+          ok: true as const,
+          scheduleSubject: {
+            subjectType: "offer",
+            subjectId: row.id,
+            scheduleClass: "offer",
+            displayName: row.name,
+            category: row.executionMode,
+            metadata: {
+              ownerType: "offer",
+              executionMode: row.executionMode,
+            },
+          } satisfies BindingScheduleSubjectDescriptor,
+        }
+      : { ok: false as const, message: "offerId is not in this biz." };
   }
 
   if (payload.ownerType === "offer_version") {
@@ -406,18 +501,54 @@ async function validateBindingOwnerInBiz(
     }
     const row = await db.query.offerVersions.findFirst({
       where: and(eq(offerVersions.bizId, bizId), eq(offerVersions.id, payload.offerVersionId)),
-      columns: { id: true },
+      columns: { id: true, version: true, offerId: true, status: true },
     });
-    return row ? { ok: true as const } : { ok: false as const, message: "offerVersionId is not in this biz." };
+    if (!row) return { ok: false as const, message: "offerVersionId is not in this biz." };
+    const offer = await db.query.offers.findFirst({
+      where: and(eq(offers.bizId, bizId), eq(offers.id, row.offerId)),
+      columns: { id: true, name: true, executionMode: true },
+    });
+    return {
+      ok: true as const,
+      scheduleSubject: {
+        subjectType: "offer_version",
+        subjectId: row.id,
+        scheduleClass: "offer_version",
+        displayName: offer ? `${offer.name} v${row.version}` : `Offer version ${row.version}`,
+        category: offer?.executionMode ?? row.status,
+        metadata: {
+          ownerType: "offer_version",
+          offerId: row.offerId,
+          version: row.version,
+          versionStatus: row.status,
+          executionMode: offer?.executionMode ?? null,
+        },
+      } satisfies BindingScheduleSubjectDescriptor,
+    };
   }
 
   if (payload.ownerType === "location") {
     if (!payload.locationId) return { ok: false as const, message: "locationId is required for ownerType=location." };
     const row = await db.query.locations.findFirst({
       where: and(eq(locations.bizId, bizId), eq(locations.id, payload.locationId)),
-      columns: { id: true },
+      columns: { id: true, name: true, type: true },
     });
-    return row ? { ok: true as const } : { ok: false as const, message: "locationId is not in this biz." };
+    return row
+      ? {
+          ok: true as const,
+          scheduleSubject: {
+            subjectType: "location",
+            subjectId: row.id,
+            scheduleClass: "location",
+            displayName: row.name,
+            category: row.type,
+            metadata: {
+              ownerType: "location",
+              locationType: row.type,
+            },
+          } satisfies BindingScheduleSubjectDescriptor,
+        }
+      : { ok: false as const, message: "locationId is not in this biz." };
   }
 
   if (payload.ownerType === "custom_subject") {
@@ -430,12 +561,93 @@ async function validateBindingOwnerInBiz(
         eq(subjects.subjectType, payload.ownerRefType),
         eq(subjects.subjectId, payload.ownerRefId),
       ),
-      columns: { id: true },
+      columns: { id: true, subjectType: true, subjectId: true, displayName: true, category: true },
     });
-    return row ? { ok: true as const } : { ok: false as const, message: "custom subject does not exist in this biz." };
+    return row
+      ? {
+          ok: true as const,
+          scheduleSubject: {
+            subjectType: row.subjectType,
+            subjectId: row.subjectId,
+            scheduleClass: row.category ?? row.subjectType,
+            displayName: row.displayName,
+            category: row.category ?? row.subjectType,
+            metadata: {
+              ownerType: "custom_subject",
+            },
+          } satisfies BindingScheduleSubjectDescriptor,
+        }
+      : { ok: false as const, message: "custom subject does not exist in this biz." };
   }
 
   return { ok: false as const, message: "Invalid ownerType." };
+}
+
+async function ensureBindingScheduleSubject(
+  bizId: string,
+  scheduleSubject: BindingScheduleSubjectDescriptor | null,
+) {
+  if (!scheduleSubject) return null;
+
+  await db
+    .insert(subjects)
+    .values({
+      bizId,
+      subjectType: scheduleSubject.subjectType,
+      subjectId: scheduleSubject.subjectId,
+      displayName: scheduleSubject.displayName ?? null,
+      category: scheduleSubject.category ?? scheduleSubject.scheduleClass,
+      status: "active",
+      isLinkable: true,
+      metadata: {
+        source: "routes.calendars.schedule-subject",
+        ...(scheduleSubject.metadata ?? {}),
+      },
+    })
+    .onConflictDoNothing({
+      target: [subjects.bizId, subjects.subjectType, subjects.subjectId],
+    });
+
+  const [created] = await db
+    .insert(scheduleSubjects)
+    .values({
+      bizId,
+      subjectType: scheduleSubject.subjectType,
+      subjectId: scheduleSubject.subjectId,
+      scheduleClass: scheduleSubject.scheduleClass,
+      displayName: scheduleSubject.displayName ?? null,
+      status: "active",
+      schedulingMode: "exclusive",
+      defaultCapacity: 1,
+      defaultLeadTimeMin: 0,
+      defaultBufferBeforeMin: 0,
+      defaultBufferAfterMin: 0,
+      shouldProjectTimeline: true,
+      policy: {},
+      metadata: {
+        source: "routes.calendars.schedule-subject",
+        ...(scheduleSubject.metadata ?? {}),
+      },
+    })
+    .onConflictDoNothing({
+      target: [scheduleSubjects.bizId, scheduleSubjects.subjectType, scheduleSubjects.subjectId],
+    })
+    .returning({ id: scheduleSubjects.id });
+
+  if (created?.id) return created.id;
+
+  const existing = await db.query.scheduleSubjects.findFirst({
+    where: and(
+      eq(scheduleSubjects.bizId, bizId),
+      eq(scheduleSubjects.subjectType, scheduleSubject.subjectType),
+      eq(scheduleSubjects.subjectId, scheduleSubject.subjectId),
+    ),
+    columns: { id: true },
+  });
+  if (!existing?.id) {
+    throw new Error("Failed to ensure schedule subject for calendar binding.");
+  }
+  return existing.id;
 }
 
 export const calendarRoutes = new Hono();
@@ -611,6 +823,7 @@ calendarRoutes.get(
     const includeRules = parsed.data.includeRules !== "false";
     const includeBookings = parsed.data.includeBookings !== "false";
     const includeHolds = parsed.data.includeHolds !== "false";
+    const includeRaw = parsed.data.includeRaw === "true";
 
     /**
      * ELI5:
@@ -652,30 +865,69 @@ calendarRoutes.get(
       if (binding.ownerRefKey) bindingSets.ownerRefKeys.add(binding.ownerRefKey);
     }
 
-    const [ruleRows, holdRows, bookingRows] = await Promise.all([
-      includeRules
-        ? db.query.availabilityRules.findMany({
-            where: and(eq(availabilityRules.bizId, bizId), eq(availabilityRules.calendarId, calendarId)),
-            orderBy: [asc(availabilityRules.priority), asc(availabilityRules.id)],
-          })
-        : Promise.resolve([]),
-      includeHolds
-        ? db.query.capacityHolds.findMany({
+    /**
+     * Projection-first timeline read model.
+     *
+     * ELI5:
+     * We ask the normalized timeline projections first because they are the
+     * canonical "calendar story" surface. Raw table fan-out is optional
+     * (`includeRaw=true`) for deep debugging and parity checks.
+     */
+    const ownerRefKeys = Array.from(bindingSets.ownerRefKeys);
+    const [ownerTimelineRows, calendarTimelineRows] = await Promise.all([
+      ownerRefKeys.length > 0
+        ? db.query.calendarOwnerTimelineEvents.findMany({
             where: and(
-              eq(capacityHolds.bizId, bizId),
-              eq(capacityHolds.calendarId, calendarId),
-              includeInactive ? undefined : eq(capacityHolds.status, "active"),
+              eq(calendarOwnerTimelineEvents.bizId, bizId),
+              eq(calendarOwnerTimelineEvents.calendarId, calendarId),
+              inArray(calendarOwnerTimelineEvents.ownerRefKey, ownerRefKeys),
+              includeInactive ? undefined : eq(calendarOwnerTimelineEvents.isActive, true),
+              sql`${calendarOwnerTimelineEvents.startAt} <= ${endAt}`,
+              sql`${calendarOwnerTimelineEvents.endAt} >= ${startAt}`,
             ),
-            orderBy: [asc(capacityHolds.startsAt), asc(capacityHolds.id)],
+            orderBy: [asc(calendarOwnerTimelineEvents.startAt), asc(calendarOwnerTimelineEvents.id)],
           })
         : Promise.resolve([]),
-      includeBookings
-        ? db.query.bookingOrders.findMany({
-            where: eq(bookingOrders.bizId, bizId),
-            orderBy: [asc(bookingOrders.confirmedStartAt), asc(bookingOrders.requestedStartAt), asc(bookingOrders.id)],
-          })
-        : Promise.resolve([]),
+      db.query.calendarTimelineEvents.findMany({
+        where: and(
+          eq(calendarTimelineEvents.bizId, bizId),
+          eq(calendarTimelineEvents.calendarId, calendarId),
+          includeInactive ? undefined : eq(calendarTimelineEvents.isActive, true),
+          sql`${calendarTimelineEvents.startAt} <= ${endAt}`,
+          sql`${calendarTimelineEvents.endAt} >= ${startAt}`,
+        ),
+        orderBy: [asc(calendarTimelineEvents.startAt), asc(calendarTimelineEvents.id)],
+      }),
     ]);
+
+    const hasProjection = ownerTimelineRows.length > 0 || calendarTimelineRows.length > 0;
+
+    const [ruleRows, holdRows, bookingRows] = includeRaw || !hasProjection
+      ? await Promise.all([
+          includeRules
+            ? db.query.availabilityRules.findMany({
+                where: and(eq(availabilityRules.bizId, bizId), eq(availabilityRules.calendarId, calendarId)),
+                orderBy: [asc(availabilityRules.priority), asc(availabilityRules.id)],
+              })
+            : Promise.resolve([]),
+          includeHolds
+            ? db.query.capacityHolds.findMany({
+                where: and(
+                  eq(capacityHolds.bizId, bizId),
+                  eq(capacityHolds.calendarId, calendarId),
+                  includeInactive ? undefined : eq(capacityHolds.status, "active"),
+                ),
+                orderBy: [asc(capacityHolds.startsAt), asc(capacityHolds.id)],
+              })
+            : Promise.resolve([]),
+          includeBookings
+            ? db.query.bookingOrders.findMany({
+                where: eq(bookingOrders.bizId, bizId),
+                orderBy: [asc(bookingOrders.confirmedStartAt), asc(bookingOrders.requestedStartAt), asc(bookingOrders.id)],
+              })
+            : Promise.resolve([]),
+        ])
+      : [[], [], []];
 
     const rules = ruleRows.filter((rule) => {
       if (includeInactive) return true;
@@ -717,6 +969,20 @@ calendarRoutes.get(
       );
     });
 
+    const projectionTimeline =
+      ownerTimelineRows.length > 0
+        ? ownerTimelineRows
+        : calendarTimelineRows;
+    const projectionRules = includeRules
+      ? projectionTimeline.filter((row) => row.sourceType === "availability_rule")
+      : [];
+    const projectionHolds = includeHolds
+      ? projectionTimeline.filter((row) => row.sourceType === "capacity_hold")
+      : [];
+    const projectionBookings = includeBookings
+      ? projectionTimeline.filter((row) => row.sourceType === "fulfillment")
+      : [];
+
     return ok(c, {
       calendar,
       window: {
@@ -724,14 +990,17 @@ calendarRoutes.get(
         endAt: endAt.toISOString(),
       },
       bindings,
-      rules,
-      holds,
-      bookings,
+      rules: hasProjection && !includeRaw ? projectionRules : rules,
+      holds: hasProjection && !includeRaw ? projectionHolds : holds,
+      bookings: hasProjection && !includeRaw ? projectionBookings : bookings,
+      timelineEvents: projectionTimeline,
+      readModel: hasProjection && !includeRaw ? "projection_first" : "raw_fanout",
       summary: {
         bindingCount: bindings.length,
-        ruleCount: rules.length,
-        holdCount: holds.length,
-        bookingCount: bookings.length,
+        ruleCount: hasProjection && !includeRaw ? projectionRules.length : rules.length,
+        holdCount: hasProjection && !includeRaw ? projectionHolds.length : holds.length,
+        bookingCount: hasProjection && !includeRaw ? projectionBookings.length : bookings.length,
+        timelineEventCount: projectionTimeline.length,
       },
     });
   },
@@ -806,6 +1075,7 @@ calendarRoutes.post(
 
     const ownerValidation = await validateBindingOwnerInBiz(bizId, parsed.data);
     if (!ownerValidation.ok) return fail(c, "BAD_REQUEST", ownerValidation.message, 400);
+    const scheduleSubjectId = await ensureBindingScheduleSubject(bizId, ownerValidation.scheduleSubject);
 
     const ownerRefKey = deriveOwnerRefKey(parsed.data.ownerType, parsed.data);
     if (!ownerRefKey) return fail(c, "BAD_REQUEST", "Owner payload does not match ownerType.", 400);
@@ -813,6 +1083,7 @@ calendarRoutes.post(
     const created = (await createCalendarRow(c, bizId, "calendarBindings", {
       bizId,
       calendarId: parsed.data.calendarId,
+      scheduleSubjectId,
       ownerType: parsed.data.ownerType,
       resourceId: parsed.data.resourceId,
       serviceId: parsed.data.serviceId,
@@ -825,6 +1096,8 @@ calendarRoutes.post(
       ownerRefId: parsed.data.ownerRefId,
       ownerRefKey,
       isPrimary: parsed.data.isPrimary,
+      priority: parsed.data.priority,
+      isRequired: parsed.data.isRequired,
       isActive: parsed.data.isActive,
       metadata: parsed.data.metadata ?? {},
     }, {
@@ -854,11 +1127,57 @@ calendarRoutes.patch(
 
     const existing = await db.query.calendarBindings.findFirst({
       where: and(eq(calendarBindings.bizId, bizId), eq(calendarBindings.id, bindingId)),
-      columns: { id: true },
+      columns: {
+        id: true,
+        ownerType: true,
+        resourceId: true,
+        serviceId: true,
+        serviceProductId: true,
+        offerId: true,
+        offerVersionId: true,
+        locationId: true,
+        ownerUserId: true,
+        ownerRefType: true,
+        ownerRefId: true,
+        scheduleSubjectId: true,
+      },
     });
     if (!existing) return fail(c, "NOT_FOUND", "Calendar binding not found.", 404);
 
+    let scheduleSubjectPatch: { scheduleSubjectId?: string | null } = {};
+    if (!existing.scheduleSubjectId && existing.ownerType !== "biz" && existing.ownerType !== "user") {
+      const ownerValidation = await validateBindingOwnerInBiz(bizId, {
+        calendarId: "",
+        ownerType: existing.ownerType,
+        resourceId: existing.resourceId ?? undefined,
+        serviceId: existing.serviceId ?? undefined,
+        serviceProductId: existing.serviceProductId ?? undefined,
+        offerId: existing.offerId ?? undefined,
+        offerVersionId: existing.offerVersionId ?? undefined,
+        locationId: existing.locationId ?? undefined,
+        ownerUserId: existing.ownerUserId ?? undefined,
+        ownerRefType: existing.ownerRefType ?? undefined,
+        ownerRefId: existing.ownerRefId ?? undefined,
+        isPrimary: true,
+        priority: 100,
+        isRequired: false,
+        isActive: true,
+        metadata: {},
+      });
+      if (!ownerValidation.ok) {
+        return fail(c, "INTERNAL_ERROR", "Existing binding owner could not be revalidated for schedule-subject healing.", 500, {
+          bindingId,
+          ownerType: existing.ownerType,
+          message: ownerValidation.message,
+        });
+      }
+      scheduleSubjectPatch = {
+        scheduleSubjectId: await ensureBindingScheduleSubject(bizId, ownerValidation.scheduleSubject),
+      };
+    }
+
     const updated = (await updateCalendarRow(c, bizId, "calendarBindings", bindingId, {
+      ...scheduleSubjectPatch,
       ...parsed.data,
     }, {
       subjectType: "calendar_binding",
@@ -1032,7 +1351,7 @@ calendarRoutes.patch(
       updatePayload.endAt = parsed.data.endAt ? new Date(parsed.data.endAt) : null
     }
 
-    const updated = (await updateCalendarRow(c, bizId, "availabilityRules", ruleId, updatePayload as never, {
+    const updated = (await updateCalendarRow(c, bizId, "availabilityRules", ruleId, updatePayload, {
       subjectType: "availability_rule",
       subjectId: ruleId,
       displayName: "Update availability rule",
@@ -1114,16 +1433,41 @@ calendarRoutes.post(
     const parsed = createCapacityHoldBodySchema.safeParse(await c.req.json().catch(() => null));
     if (!parsed.success) return fail(c, "VALIDATION_ERROR", "Invalid request body.", 400, parsed.error.flatten());
 
+    const timeScope = await db.query.timeScopes.findFirst({
+      where: and(eq(timeScopes.bizId, bizId), eq(timeScopes.id, parsed.data.timeScopeId)),
+      columns: { id: true, scopeType: true, scopeRefKey: true, isActive: true },
+    });
+    if (!timeScope) return fail(c, "VALIDATION_ERROR", "timeScopeId does not exist in this biz.", 400);
+    if (!timeScope.isActive) return fail(c, "VALIDATION_ERROR", "timeScopeId is inactive.", 400);
+    const expectedTargetType = holdTargetTypeFromScopeType(timeScope.scopeType);
+    if (!expectedTargetType) {
+      return fail(
+        c,
+        "VALIDATION_ERROR",
+        `timeScope scopeType '${timeScope.scopeType}' cannot be used for capacity holds.`,
+        400,
+      );
+    }
+    if (expectedTargetType === "calendar") {
+      const parsedScope = parseScopeRefKey(timeScope.scopeRefKey);
+      if (parsedScope.prefix !== "calendar" || !parsedScope.id) {
+        return fail(c, "VALIDATION_ERROR", "Calendar time scope has invalid scopeRefKey format.", 400);
+      }
+      if (parsedScope.id !== calendarId) {
+        return fail(
+          c,
+          "VALIDATION_ERROR",
+          "calendarId in route must match calendar encoded by timeScopeId.",
+          400,
+          { calendarId, scopeCalendarId: parsedScope.id },
+        );
+      }
+    }
+
     const created = (await createCalendarRow(c, bizId, "capacityHolds", {
       bizId,
       calendarId,
-      targetType: parsed.data.targetType,
-      capacityPoolId: parsed.data.capacityPoolId ?? null,
-      resourceId: parsed.data.resourceId ?? null,
-      offerVersionId: parsed.data.offerVersionId ?? null,
-      targetRefType: parsed.data.targetRefType ?? null,
-      targetRefId: parsed.data.targetRefId ?? null,
-      targetRefKey: parsed.data.targetRefKey,
+      timeScopeId: parsed.data.timeScopeId,
       effectMode: parsed.data.effectMode,
       status: "active",
       quantity: parsed.data.quantity,
@@ -1148,7 +1492,7 @@ calendarRoutes.post(
       metadata: parsed.data.metadata ?? {},
     }, {
       subjectType: "capacity_hold",
-      subjectId: parsed.data.targetRefKey,
+      subjectId: timeScope.scopeRefKey,
       displayName: `Capacity hold ${parsed.data.effectMode}`,
       metadata: { source: "routes.calendars.createCapacityHold" },
     })) as Record<string, unknown> | Response;

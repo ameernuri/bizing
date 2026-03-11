@@ -2,7 +2,7 @@ import { sql } from "drizzle-orm";
 import { check, index, uniqueIndex } from "drizzle-orm/pg-core";
 import { jsonb, pgTable, varchar } from "drizzle-orm/pg-core";
 import { id, withAudit } from "./_common";
-import { lifecycleStatusEnum, bizTypeEnum } from "./enums";
+import { lifecycleStatusEnum, bizTypeEnum, bizVisibilityEnum } from "./enums";
 
 /**
  * bizes
@@ -35,6 +35,9 @@ export const bizes = pgTable(
     /** Lifecycle switch for tenant availability and admin controls. */
     status: lifecycleStatusEnum("status").default("active").notNull(),
 
+    /** Discovery and invite policy for customer-facing surfaces. */
+    visibility: bizVisibilityEnum("visibility").default("published").notNull(),
+
     /** Extensible org metadata consumed by Better Auth organization plugin. */
     metadata: jsonb("metadata").default({}).notNull(),
 
@@ -48,6 +51,7 @@ export const bizes = pgTable(
   (table) => ({
     bizesSlugUnique: uniqueIndex("bizes_slug_unique").on(table.slug),
     bizesStatusIdx: index("bizes_status_idx").on(table.status),
+    bizesVisibilityIdx: index("bizes_visibility_idx").on(table.visibility),
     /** Enforce ISO-4217-like uppercase format (e.g., USD, EUR). */
     bizesCurrencyFormatCheck: check(
       "bizes_currency_format_check",

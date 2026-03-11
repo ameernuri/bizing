@@ -8,12 +8,14 @@ tags:
 
 # Sla Domain
 
-This file is generated from route/schema source files and exists to keep domain docs synchronized with code reality.
+This file is generated from route/schema source files and the canonical domain manifest to keep docs synchronized with runtime mounts.
 
 ## Source
 
-- Route file: `/Users/ameer/bizing/code/apps/api/src/routes/sla.ts`
-- Schema file: `/Users/ameer/bizing/code/packages/db/src/schema/sla.ts`
+- Route file: `apps/api/src/routes/sla.ts`
+- Schema file: `packages/db/src/schema/sla.ts`
+- Mount path: `/`
+- Auth class (manifest): `machine_allowed`
 
 ## Route Intent (top JSDoc)
 
@@ -34,13 +36,13 @@ _No top JSDoc comment found._
 
 ## API Surface
 
-- `GET` `/bizes/:bizId/sla-policies`
-- `POST` `/bizes/:bizId/sla-policies`
-- `GET` `/bizes/:bizId/sla-breach-events`
-- `POST` `/bizes/:bizId/sla-breach-events`
-- `PATCH` `/bizes/:bizId/sla-breach-events/:breachId`
-- `POST` `/bizes/:bizId/sla-breach-events/:breachId/compensations`
-- `GET` `/bizes/:bizId/sla-overview`
+- `GET` `/api/v1/bizes/:bizId/sla-policies`
+- `POST` `/api/v1/bizes/:bizId/sla-policies`
+- `GET` `/api/v1/bizes/:bizId/sla-breach-events`
+- `POST` `/api/v1/bizes/:bizId/sla-breach-events`
+- `PATCH` `/api/v1/bizes/:bizId/sla-breach-events/:breachId`
+- `POST` `/api/v1/bizes/:bizId/sla-breach-events/:breachId/compensations`
+- `GET` `/api/v1/bizes/:bizId/sla-overview`
 
 ## Tables
 

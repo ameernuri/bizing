@@ -1,6 +1,7 @@
 'use client'
 
 import { apiUrl } from '@/lib/api'
+import { unwrapEnvelopedData } from '@/lib/enveloped-api'
 
 /**
  * Minimal Better Auth client wrapper for the admin app.
@@ -15,6 +16,8 @@ export type AuthUser = {
   id: string
   email?: string | null
   name?: string | null
+  firstName?: string | null
+  lastName?: string | null
   role?: string | null
 }
 
@@ -37,6 +40,8 @@ export type SignUpInput = {
   email: string
   password: string
   name?: string
+  firstName?: string
+  lastName?: string
 }
 
 export type BizMembershipRole = 'owner' | 'admin' | 'manager' | 'staff' | 'host' | 'customer'
@@ -128,17 +133,8 @@ function delay(ms: number): Promise<void> {
   })
 }
 
-type ApiEnvelope<T> = {
-  success: boolean
-  data: T
-}
-
 async function requestApi<T>(path: string, init?: RequestInit): Promise<T> {
-  const payload = (await requestJson(path, init)) as ApiEnvelope<T>
-  if (!payload || payload.success !== true) {
-    throw new Error('API response was not successful.')
-  }
-  return payload.data
+  return unwrapEnvelopedData<T>(await requestJson(path, init))
 }
 
 export const authClient = {

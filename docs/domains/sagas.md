@@ -8,12 +8,14 @@ tags:
 
 # Sagas Domain
 
-This file is generated from route/schema source files and exists to keep domain docs synchronized with code reality.
+This file is generated from route/schema source files and the canonical domain manifest to keep docs synchronized with runtime mounts.
 
 ## Source
 
-- Route file: `/Users/ameer/bizing/code/apps/api/src/routes/sagas.ts`
-- Schema file: `/Users/ameer/bizing/code/packages/db/src/schema/sagas.ts`
+- Route file: `apps/api/src/routes/sagas.ts`
+- Schema file: `packages/db/src/schema/sagas.ts`
+- Mount path: `/`
+- Auth class (manifest): `machine_allowed`
 
 ## Route Intent (top JSDoc)
 
@@ -25,69 +27,70 @@ _No top JSDoc comment found._
 
 ## API Surface
 
-- `GET` `/ooda/sagas/docs`
-- `GET` `/ooda/sagas/llm/health`
-- `POST` `/ooda/sagas/library/sync-docs`
-- `POST` `/ooda/sagas/library/reset-reseed`
-- `POST` `/ooda/sagas/schema-coverage/import`
-- `POST` `/ooda/sagas/schema-coverage/reports`
-- `POST` `/ooda/sagas/uc-coverage/rebuild`
-- `GET` `/ooda/sagas/library/overview`
-- `GET` `/ooda/sagas/use-cases`
-- `POST` `/ooda/sagas/use-cases`
-- `GET` `/ooda/sagas/use-cases/:ucKey`
-- `PATCH` `/ooda/sagas/use-cases/:ucKey`
-- `POST` `/ooda/sagas/use-cases/:ucKey/versions`
-- `DELETE` `/ooda/sagas/use-cases/:ucKey`
-- `GET` `/ooda/sagas/personas`
-- `POST` `/ooda/sagas/personas`
-- `GET` `/ooda/sagas/personas/:personaKey`
-- `PATCH` `/ooda/sagas/personas/:personaKey`
-- `POST` `/ooda/sagas/personas/:personaKey/versions`
-- `DELETE` `/ooda/sagas/personas/:personaKey`
-- `GET` `/ooda/sagas/library/related`
-- `GET` `/ooda/sagas/definitions/:sagaKey/links`
-- `GET` `/ooda/sagas/run-assessments/reports`
-- `GET` `/ooda/sagas/run-assessments/reports/:reportId`
-- `GET` `/ooda/sagas/schema-coverage/reports`
-- `GET` `/ooda/sagas/schema-coverage/reports/:reportId`
-- `GET` `/ooda/sagas/uc-coverage/reports`
-- `GET` `/ooda/sagas/uc-coverage/reports/:reportId`
-- `GET` `/ooda/sagas/coverage/reports`
-- `GET` `/ooda/sagas/coverage/reports/:reportId`
-- `GET` `/ooda/sagas/specs`
-- `POST` `/ooda/sagas/specs`
-- `POST` `/ooda/sagas/specs/generate`
-- `POST` `/ooda/sagas/specs/sync`
-- `PUT` `/ooda/sagas/specs/:sagaKey`
-- `POST` `/ooda/sagas/specs/:sagaKey/revisions`
-- `GET` `/ooda/sagas/specs/:sagaKey/revisions`
-- `DELETE` `/ooda/sagas/specs/:sagaKey`
-- `GET` `/ooda/sagas/specs/:sagaKey`
-- `POST` `/ooda/sagas/runs`
-- `GET` `/ooda/sagas/runs`
-- `GET` `/ooda/sagas/runs/:runId`
-- `POST` `/ooda/sagas/runs/:runId/refresh`
-- `POST` `/ooda/sagas/runs/:runId/execute`
-- `GET` `/ooda/sagas/runs/:runId/clock`
-- `POST` `/ooda/sagas/runs/:runId/clock/advance`
-- `GET` `/ooda/sagas/runs/:runId/scheduler/jobs`
-- `POST` `/ooda/sagas/runs/:runId/scheduler/jobs`
-- `PATCH` `/ooda/sagas/runs/:runId/scheduler/jobs/:jobId`
-- `GET` `/ooda/sagas/runs/:runId/actors`
-- `GET` `/ooda/sagas/runs/:runId/messages`
-- `POST` `/ooda/sagas/runs/:runId/messages`
-- `GET` `/ooda/sagas/runs/:runId/coverage`
-- `POST` `/ooda/sagas/runs/:runId/archive`
-- `POST` `/ooda/sagas/runs/archive`
-- `POST` `/ooda/sagas/runs/:runId/steps/:stepKey/result`
-- `POST` `/ooda/sagas/runs/:runId/steps/:stepKey/exploratory-evaluate`
-- `POST` `/ooda/sagas/runs/:runId/snapshots`
-- `POST` `/ooda/sagas/runs/:runId/report`
-- `POST` `/ooda/sagas/runs/:runId/traces`
-- `GET` `/ooda/sagas/runs/:runId/artifacts/:artifactId/content`
-- `GET` `/ooda/sagas/runs/:runId/test-mode`
-- `GET` `/ooda/sagas/test-mode/next`
+- `GET` `/api/v1/ooda/sagas/docs`
+- `GET` `/api/v1/ooda/sagas/llm/health`
+- `POST` `/api/v1/ooda/sagas/library/sync-docs`
+- `POST` `/api/v1/ooda/sagas/library/reset-reseed`
+- `POST` `/api/v1/ooda/sagas/schema-coverage/import`
+- `POST` `/api/v1/ooda/sagas/schema-coverage/reports`
+- `POST` `/api/v1/ooda/sagas/uc-coverage/rebuild`
+- `GET` `/api/v1/ooda/sagas/library/overview`
+- `GET` `/api/v1/ooda/sagas/use-cases`
+- `POST` `/api/v1/ooda/sagas/use-cases`
+- `GET` `/api/v1/ooda/sagas/use-cases/:ucKey`
+- `PATCH` `/api/v1/ooda/sagas/use-cases/:ucKey`
+- `POST` `/api/v1/ooda/sagas/use-cases/:ucKey/versions`
+- `DELETE` `/api/v1/ooda/sagas/use-cases/:ucKey`
+- `GET` `/api/v1/ooda/sagas/personas`
+- `POST` `/api/v1/ooda/sagas/personas`
+- `GET` `/api/v1/ooda/sagas/personas/:personaKey`
+- `PATCH` `/api/v1/ooda/sagas/personas/:personaKey`
+- `POST` `/api/v1/ooda/sagas/personas/:personaKey/versions`
+- `DELETE` `/api/v1/ooda/sagas/personas/:personaKey`
+- `GET` `/api/v1/ooda/sagas/library/related`
+- `GET` `/api/v1/ooda/sagas/definitions/:sagaKey/links`
+- `GET` `/api/v1/ooda/sagas/run-assessments/reports`
+- `GET` `/api/v1/ooda/sagas/run-assessments/reports/:reportId`
+- `GET` `/api/v1/ooda/sagas/schema-coverage/reports`
+- `GET` `/api/v1/ooda/sagas/schema-coverage/reports/:reportId`
+- `GET` `/api/v1/ooda/sagas/uc-coverage/reports`
+- `GET` `/api/v1/ooda/sagas/uc-coverage/reports/:reportId`
+- `GET` `/api/v1/ooda/sagas/coverage/reports`
+- `GET` `/api/v1/ooda/sagas/coverage/reports/:reportId`
+- `GET` `/api/v1/ooda/sagas/specs`
+- `POST` `/api/v1/ooda/sagas/specs`
+- `POST` `/api/v1/ooda/sagas/specs/generate`
+- `POST` `/api/v1/ooda/sagas/specs/depth/reclassify`
+- `POST` `/api/v1/ooda/sagas/specs/sync`
+- `PUT` `/api/v1/ooda/sagas/specs/:sagaKey`
+- `POST` `/api/v1/ooda/sagas/specs/:sagaKey/revisions`
+- `GET` `/api/v1/ooda/sagas/specs/:sagaKey/revisions`
+- `DELETE` `/api/v1/ooda/sagas/specs/:sagaKey`
+- `GET` `/api/v1/ooda/sagas/specs/:sagaKey`
+- `POST` `/api/v1/ooda/sagas/runs`
+- `GET` `/api/v1/ooda/sagas/runs`
+- `GET` `/api/v1/ooda/sagas/runs/:runId`
+- `POST` `/api/v1/ooda/sagas/runs/:runId/refresh`
+- `POST` `/api/v1/ooda/sagas/runs/:runId/execute`
+- `GET` `/api/v1/ooda/sagas/runs/:runId/clock`
+- `POST` `/api/v1/ooda/sagas/runs/:runId/clock/advance`
+- `GET` `/api/v1/ooda/sagas/runs/:runId/scheduler/jobs`
+- `POST` `/api/v1/ooda/sagas/runs/:runId/scheduler/jobs`
+- `PATCH` `/api/v1/ooda/sagas/runs/:runId/scheduler/jobs/:jobId`
+- `GET` `/api/v1/ooda/sagas/runs/:runId/actors`
+- `GET` `/api/v1/ooda/sagas/runs/:runId/messages`
+- `POST` `/api/v1/ooda/sagas/runs/:runId/messages`
+- `GET` `/api/v1/ooda/sagas/runs/:runId/coverage`
+- `POST` `/api/v1/ooda/sagas/runs/:runId/archive`
+- `POST` `/api/v1/ooda/sagas/runs/archive`
+- `POST` `/api/v1/ooda/sagas/runs/:runId/steps/:stepKey/result`
+- `POST` `/api/v1/ooda/sagas/runs/:runId/steps/:stepKey/exploratory-evaluate`
+- `POST` `/api/v1/ooda/sagas/runs/:runId/snapshots`
+- `POST` `/api/v1/ooda/sagas/runs/:runId/report`
+- `POST` `/api/v1/ooda/sagas/runs/:runId/traces`
+- `GET` `/api/v1/ooda/sagas/runs/:runId/artifacts/:artifactId/content`
+- `GET` `/api/v1/ooda/sagas/runs/:runId/test-mode`
+- `GET` `/api/v1/ooda/sagas/test-mode/next`
 
 ## Tables
 

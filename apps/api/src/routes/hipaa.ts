@@ -36,6 +36,26 @@ const {
 } = dbPackage
 
 const lifecycleStatusSchema = z.enum(['draft', 'active', 'inactive', 'suspended', 'archived'])
+const customFieldTargetTypeSchema = z.enum([
+  'biz',
+  'location',
+  'user',
+  'group_account',
+  'resource',
+  'service',
+  'service_product',
+  'offer',
+  'offer_version',
+  'product',
+  'sellable',
+  'booking_order',
+  'booking_order_line',
+  'fulfillment_unit',
+  'payment_intent',
+  'queue_entry',
+  'trip',
+  'custom',
+])
 
 const phiPolicyBodySchema = z.object({
   name: z.string().min(1).max(220),
@@ -65,7 +85,7 @@ const phiPolicyBodySchema = z.object({
 const phiAccessEventBodySchema = z.object({
   phiAccessPolicyId: z.string().optional(),
   hipaaAuthorizationId: z.string().optional(),
-  targetType: z.string().min(1).max(120),
+  targetType: customFieldTargetTypeSchema,
   targetRefId: z.string().min(1).max(140),
   subjectUserId: z.string().optional(),
   subjectGroupAccountId: z.string().optional(),
@@ -311,7 +331,7 @@ hipaaRoutes.post('/bizes/:bizId/hipaa/access-events', requireAuth, requireBizAcc
       phiAccessPolicyId: parsed.data.phiAccessPolicyId ?? null,
       hipaaAuthorizationId: parsed.data.hipaaAuthorizationId ?? null,
       actorUserId: currentUser?.id ?? null,
-      targetType: parsed.data.targetType as never,
+      targetType: parsed.data.targetType,
       targetRefId: parsed.data.targetRefId,
       subjectUserId: parsed.data.subjectUserId ?? null,
       subjectGroupAccountId: parsed.data.subjectGroupAccountId ?? null,

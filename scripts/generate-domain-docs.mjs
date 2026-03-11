@@ -6,12 +6,9 @@ const ROOT = path.resolve(import.meta.dirname, "..");
 const ROUTES_DIR = path.join(ROOT, "apps", "api", "src", "routes");
 const SCHEMA_DIR = path.join(ROOT, "packages", "db", "src", "schema");
 const OUT_DIR = path.join(ROOT, "docs", "domains");
+const MANIFEST_PATH = path.join(ROOT, "apps", "api", "src", "routes", "domain-manifest.json");
 
 const CHECK_MODE = process.argv.includes("--check");
-
-function toDomainKey(fileName) {
-  return fileName.replace(/\.ts$/, "").replace(/^_/, "");
-}
 
 function toTitle(domainKey) {
   return domainKey
@@ -19,6 +16,10 @@ function toTitle(domainKey) {
     .filter(Boolean)
     .map((part) => part[0].toUpperCase() + part.slice(1))
     .join(" ");
+}
+
+function toRepoPath(absolutePath) {
+  return path.relative(ROOT, absolutePath).split(path.sep).join("/");
 }
 
 function extractTopBlockComment(content) {
@@ -36,9 +37,11 @@ function extractRoutes(content) {
     /\.\s*(get|post|put|patch|delete)\s*\(\s*["'`]([^"'`]+)["'`]/gim;
   const routes = [];
   for (const match of content.matchAll(routeRegex)) {
+    const pathValue = String(match[2] || "");
+    if (!pathValue.startsWith("/")) continue;
     routes.push({
       method: String(match[1] || "").toUpperCase(),
-      path: String(match[2] || ""),
+      path: pathValue,
     });
   }
   return routes;
@@ -53,10 +56,31 @@ function extractTables(content) {
   return tables;
 }
 
-function buildDoc(domainKey, routeDoc, schemaDoc) {
+function normalizeApiPath(rawPath) {
+  const base = rawPath.startsWith("/") ? rawPath : `/${rawPath}`;
+  if (base.startsWith("/api/")) return base;
+  return `/api/v1${base}`;
+}
+
+function joinMountedPath(prefix, routePath) {
+  const normalizedPrefix = prefix === "/" ? "" : prefix.replace(/\/+$/, "");
+  const normalizedRoute = routePath.startsWith("/") ? routePath : `/${routePath}`;
+  if (normalizedRoute === "/") return normalizedPrefix || "/";
+  const combined = `${normalizedPrefix}${normalizedRoute}`;
+  return combined || "/";
+}
+
+function buildDoc(input) {
+  const {
+    domainKey,
+    mountPath,
+    routePath,
+    schemaPath,
+    authClass,
+    routeDoc,
+    schemaDoc,
+  } = input;
   const title = toTitle(domainKey);
-  const routePath = `/Users/ameer/bizing/code/apps/api/src/routes/${domainKey}.ts`;
-  const schemaPath = `/Users/ameer/bizing/code/packages/db/src/schema/${domainKey}.ts`;
 
   const lines = [];
   lines.push("---");
@@ -70,14 +94,16 @@ function buildDoc(domainKey, routeDoc, schemaDoc) {
   lines.push(`# ${title} Domain`);
   lines.push("");
   lines.push(
-    "This file is generated from route/schema source files and exists to keep domain docs synchronized with code reality.",
+    "This file is generated from route/schema source files and the canonical domain manifest to keep docs synchronized with runtime mounts.",
   );
   lines.push("");
 
   lines.push("## Source");
   lines.push("");
   lines.push(`- Route file: \`${routePath}\``);
-  lines.push(`- Schema file: \`${schemaPath}\``);
+  lines.push(`- Schema file: ${schemaPath ? `\`${schemaPath}\`` : "_No canonical schema module mapped._"}`);
+  lines.push(`- Mount path: \`${mountPath}\``);
+  lines.push(`- Auth class (manifest): \`${authClass}\``);
   lines.push("");
 
   lines.push("## Route Intent (top JSDoc)");
@@ -94,7 +120,10 @@ function buildDoc(domainKey, routeDoc, schemaDoc) {
   lines.push("");
   if (routeDoc?.routes?.length) {
     for (const route of routeDoc.routes) {
-      lines.push(`- \`${route.method}\` \`${route.path}\``);
+      const mountedPath = route.path.startsWith("/api/")
+        ? route.path
+        : normalizeApiPath(joinMountedPath(mountPath, route.path));
+      lines.push(`- \`${route.method}\` \`${mountedPath}\``);
     }
   } else {
     lines.push("_No route declarations found._");
@@ -108,7 +137,7 @@ function buildDoc(domainKey, routeDoc, schemaDoc) {
       lines.push(`- \`${table}\``);
     }
   } else {
-    lines.push("_No table declarations found in schema file._");
+    lines.push("_No table declarations found in mapped schema module._");
   }
   lines.push("");
 
@@ -132,36 +161,115 @@ async function exists(filePath) {
   }
 }
 
+async function loadManifest() {
+  const raw = await fs.readFile(MANIFEST_PATH, "utf8");
+  const parsed = JSON.parse(raw);
+  if (!parsed || typeof parsed !== "object" || !Array.isArray(parsed.entries)) {
+    throw new Error("Invalid domain manifest format.");
+  }
+  return parsed;
+}
+
+function validateManifestEntries(entries) {
+  const keyToDocs = new Map();
+  const routeToKey = new Map();
+  const docsToKey = new Map();
+
+  for (const entry of entries) {
+    if (!entry || typeof entry !== "object") {
+      throw new Error("Manifest entry must be an object.");
+    }
+    const key = String(entry.key || "").trim();
+    const routeFile = String(entry.routeFile || "").trim();
+    const docsFile = String(entry.docsFile || "").trim();
+    const mountPath = String(entry.mountPath || "").trim();
+    const authClass = String(entry.authClass || "").trim();
+    const schemaModule = String(entry.schemaModule || "").trim();
+
+    if (!key) throw new Error("Manifest entry has empty key.");
+    if (!routeFile) throw new Error(`Manifest entry ${key} is missing routeFile.`);
+    if (!docsFile) throw new Error(`Manifest entry ${key} is missing docsFile.`);
+    if (!schemaModule) {
+      throw new Error(`Manifest entry ${key} is missing schemaModule.`);
+    }
+    if (!mountPath.startsWith("/")) {
+      throw new Error(`Manifest entry ${key} has invalid mountPath '${mountPath}'.`);
+    }
+    if (!["public", "session_only", "machine_allowed", "internal_only"].includes(authClass)) {
+      throw new Error(`Manifest entry ${key} has invalid authClass '${authClass}'.`);
+    }
+
+    if (keyToDocs.has(key)) {
+      throw new Error(`Duplicate manifest key '${key}' for docs '${docsFile}'.`);
+    }
+    if (routeToKey.has(routeFile)) {
+      throw new Error(`Route file '${routeFile}' is assigned to multiple keys (${routeToKey.get(routeFile)}, ${key}).`);
+    }
+    if (docsToKey.has(docsFile)) {
+      throw new Error(`Docs file '${docsFile}' is assigned to multiple keys (${docsToKey.get(docsFile)}, ${key}).`);
+    }
+    keyToDocs.set(key, docsFile);
+    routeToKey.set(routeFile, key);
+    docsToKey.set(docsFile, key);
+  }
+}
+
 async function main() {
-  const routeFiles = (await fs.readdir(ROUTES_DIR)).filter((name) => name.endsWith(".ts"));
+  const manifest = await loadManifest();
+  validateManifestEntries(manifest.entries);
   await fs.mkdir(OUT_DIR, { recursive: true });
 
   let changed = 0;
   const processed = [];
 
-  for (const routeFile of routeFiles) {
-    const domainKey = toDomainKey(routeFile);
-    if (domainKey.startsWith("_")) continue;
+  for (const entry of manifest.entries) {
+    if (!entry || typeof entry !== "object") continue;
+
+    const domainKey = String(entry.key || "").trim();
+    const routeFile = String(entry.routeFile || "").trim();
+    const mountPath = String(entry.mountPath || "/").trim() || "/";
+    const docsFile = String(entry.docsFile || "").trim();
+    const schemaModule = String(entry.schemaModule || "").trim();
+    const authClass = String(entry.authClass || "machine_allowed");
+
+    if (!domainKey || !routeFile || !docsFile) continue;
+    if (!schemaModule) {
+      throw new Error(`Manifest schema module is required (key=${domainKey})`);
+    }
+
     const routePath = path.join(ROUTES_DIR, routeFile);
-    const schemaPath = path.join(SCHEMA_DIR, `${domainKey}.ts`);
-    if (!(await exists(schemaPath))) continue;
+    if (!(await exists(routePath))) {
+      throw new Error(`Manifest route file is missing: ${routeFile}`);
+    }
+
+    const schemaPath = path.join(SCHEMA_DIR, `${schemaModule}.ts`);
+    const schemaExists = await exists(schemaPath);
+    if (!schemaExists) {
+      throw new Error(`Manifest schema module is missing: ${schemaModule}.ts (key=${domainKey})`);
+    }
 
     const routeContent = await fs.readFile(routePath, "utf8");
-    const schemaContent = await fs.readFile(schemaPath, "utf8");
+    const schemaContent = schemaExists ? await fs.readFile(schemaPath, "utf8") : "";
 
-    const output = buildDoc(
+    const output = buildDoc({
       domainKey,
-      {
+      mountPath,
+      routePath: toRepoPath(routePath),
+      schemaPath: toRepoPath(schemaPath),
+      authClass,
+      routeDoc: {
         comment: extractTopBlockComment(routeContent),
         routes: extractRoutes(routeContent),
       },
-      {
+      schemaDoc: {
         comment: extractTopBlockComment(schemaContent),
         tables: extractTables(schemaContent),
       },
-    );
+    });
 
-    const outPath = path.join(OUT_DIR, `${domainKey}.md`);
+    const outPath = path.join(ROOT, docsFile);
+    await fs.mkdir(path.dirname(outPath), { recursive: true });
+
     const current = (await exists(outPath)) ? await fs.readFile(outPath, "utf8") : null;
     if (current !== output) {
       changed += 1;
@@ -196,6 +304,7 @@ async function main() {
           generated: processed.length,
           changed,
           outDir: OUT_DIR,
+          manifest: MANIFEST_PATH,
         },
         null,
         2,
@@ -211,4 +320,3 @@ main().catch((error) => {
   console.error(error);
   process.exit(1);
 });
-

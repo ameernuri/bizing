@@ -8,12 +8,14 @@ tags:
 
 # Seating Domain
 
-This file is generated from route/schema source files and exists to keep domain docs synchronized with code reality.
+This file is generated from route/schema source files and the canonical domain manifest to keep docs synchronized with runtime mounts.
 
 ## Source
 
-- Route file: `/Users/ameer/bizing/code/apps/api/src/routes/seating.ts`
-- Schema file: `/Users/ameer/bizing/code/packages/db/src/schema/seating.ts`
+- Route file: `apps/api/src/routes/seating.ts`
+- Schema file: `packages/db/src/schema/seating.ts`
+- Mount path: `/`
+- Auth class (manifest): `machine_allowed`
 
 ## Route Intent (top JSDoc)
 
@@ -39,17 +41,17 @@ _No top JSDoc comment found._
 
 ## API Surface
 
-- `GET` `/bizes/:bizId/seat-maps`
-- `POST` `/bizes/:bizId/seat-maps`
-- `GET` `/bizes/:bizId/seat-maps/:seatMapId`
-- `GET` `/bizes/:bizId/seat-maps/:seatMapId/seats`
-- `POST` `/bizes/:bizId/seat-maps/:seatMapId/seats`
-- `GET` `/bizes/:bizId/seat-maps/:seatMapId/holds`
-- `POST` `/bizes/:bizId/seat-maps/:seatMapId/holds`
-- `PATCH` `/bizes/:bizId/seat-holds/:seatHoldId`
-- `POST` `/bizes/:bizId/seat-maps/:seatMapId/holds/expire`
-- `GET` `/bizes/:bizId/seat-maps/:seatMapId/reservations`
-- `POST` `/bizes/:bizId/seat-maps/:seatMapId/reservations`
+- `GET` `/api/v1/bizes/:bizId/seat-maps`
+- `POST` `/api/v1/bizes/:bizId/seat-maps`
+- `GET` `/api/v1/bizes/:bizId/seat-maps/:seatMapId`
+- `GET` `/api/v1/bizes/:bizId/seat-maps/:seatMapId/seats`
+- `POST` `/api/v1/bizes/:bizId/seat-maps/:seatMapId/seats`
+- `GET` `/api/v1/bizes/:bizId/seat-maps/:seatMapId/holds`
+- `POST` `/api/v1/bizes/:bizId/seat-maps/:seatMapId/holds`
+- `PATCH` `/api/v1/bizes/:bizId/seat-holds/:seatHoldId`
+- `POST` `/api/v1/bizes/:bizId/seat-maps/:seatMapId/holds/expire`
+- `GET` `/api/v1/bizes/:bizId/seat-maps/:seatMapId/reservations`
+- `POST` `/api/v1/bizes/:bizId/seat-maps/:seatMapId/reservations`
 
 ## Tables
 

@@ -37,6 +37,7 @@ import {
   offerVersions,
   offers,
 } from "./offers";
+import { serviceProducts } from "./service_products";
 import { actionRequests } from "./action_backbone";
 import { domainEvents } from "./domain_events";
 import { debugSnapshots } from "./projections";
@@ -467,6 +468,45 @@ export const bookingOrders = pgTable(
       () => groupAccounts.id,
     ),
 
+    /**
+     * Optional primary location for this booking.
+     *
+     * Why first-class:
+     * - avoids parsing `metadata.locationId` for common read paths,
+     * - enables proper indexing for list/filter/analytics endpoints.
+     */
+    locationId: idRef("location_id").references(() => locations.id),
+
+    /**
+     * Optional service product anchor used in downstream analytics.
+     * This mirrors metadata hints but keeps the dimension queryable/indexable.
+     */
+    serviceProductId: idRef("service_product_id").references(
+      () => serviceProducts.id,
+    ),
+
+    /**
+     * Optional provider (host) selected for the booking.
+     * Used for provider performance and staffing read models.
+     */
+    providerUserId: idRef("provider_user_id").references(() => users.id),
+
+    /**
+     * Optional acquisition source (e.g., google_ads, referral, organic).
+     */
+    acquisitionSource: varchar("acquisition_source", { length: 120 }),
+
+    /**
+     * Optional attendance outcome kept on booking root for analytics rollups.
+     * Example values: attended, cancelled, no_show.
+     */
+    attendanceOutcome: varchar("attendance_outcome", { length: 40 }),
+
+    /**
+     * Optional lead-time hint in minutes (request-to-service start).
+     */
+    leadTimeMinutes: integer("lead_time_minutes"),
+
     /** Commercial lifecycle status. */
     status: bookingOrderStatusEnum("status").default("draft").notNull(),
     /**
@@ -555,6 +595,22 @@ export const bookingOrders = pgTable(
       table.customerUserId,
       table.confirmedStartAt,
     ),
+    bookingOrdersBizLocationIdx: index("booking_orders_biz_location_idx").on(
+      table.bizId,
+      table.locationId,
+      table.confirmedStartAt,
+    ),
+    bookingOrdersBizServiceProductIdx: index(
+      "booking_orders_biz_service_product_idx",
+    ).on(table.bizId, table.serviceProductId, table.confirmedStartAt),
+    bookingOrdersBizProviderIdx: index("booking_orders_biz_provider_idx").on(
+      table.bizId,
+      table.providerUserId,
+      table.confirmedStartAt,
+    ),
+    bookingOrdersBizAcquisitionSourceIdx: index(
+      "booking_orders_biz_acquisition_source_idx",
+    ).on(table.bizId, table.acquisitionSource, table.confirmedStartAt),
 
     /** Trace path from action backbone into booking contracts. */
     bookingOrdersActionRequestIdx: index("booking_orders_action_request_idx").on(
@@ -580,7 +636,16 @@ export const bookingOrders = pgTable(
       foreignColumns: [bizConfigValues.bizId, bizConfigValues.id],
       name: "booking_orders_biz_status_config_fk",
     }),
-
+    bookingOrdersBizLocationFk: foreignKey({
+      columns: [table.bizId, table.locationId],
+      foreignColumns: [locations.bizId, locations.id],
+      name: "booking_orders_biz_location_fk",
+    }),
+    bookingOrdersBizServiceProductFk: foreignKey({
+      columns: [table.bizId, table.serviceProductId],
+      foreignColumns: [serviceProducts.bizId, serviceProducts.id],
+      name: "booking_orders_biz_service_product_fk",
+    }),
     /** Time windows must be ordered if set. */
     bookingOrdersRequestedWindowCheck: check(
       "booking_orders_requested_window_check",
@@ -626,6 +691,10 @@ export const bookingOrders = pgTable(
     bookingOrdersCurrencyFormatCheck: check(
       "booking_orders_currency_format_check",
       sql`"currency" ~ '^[A-Z]{3}$'`,
+    ),
+    bookingOrdersLeadTimeMinutesNonNegativeCheck: check(
+      "booking_orders_lead_time_minutes_non_negative_check",
+      sql`"lead_time_minutes" IS NULL OR "lead_time_minutes" >= 0`,
     ),
   }),
 );
@@ -677,6 +746,18 @@ export const bookingOrderLines = pgTable(
     /** Extended line total in minor units. */
     lineTotalMinor: integer("line_total_minor").notNull(),
 
+    /**
+     * Source classification for this line.
+     * Examples: core catalog pricing, manual adjustment, extension mutation.
+     */
+    sourceKind: varchar("source_kind", { length: 40 }).default("core").notNull(),
+
+    /** Optional source reference (e.g., automation hook binding id). */
+    sourceRefId: varchar("source_ref_id", { length: 140 }),
+
+    /** Optional stable source key used for idempotent source line upserts. */
+    sourceKey: varchar("source_key", { length: 180 }),
+
     /** Extra structured pricing context for explainability. */
     pricingDetail: jsonb("pricing_detail").default({}),
 
@@ -706,6 +787,18 @@ export const bookingOrderLines = pgTable(
       table.bizId,
       table.bookingOrderId,
     ),
+
+    /** Source tracing path for extension/system-generated line items. */
+    bookingOrderLinesBizOrderSourceIdx: index(
+      "booking_order_lines_biz_order_source_idx",
+    ).on(table.bizId, table.bookingOrderId, table.sourceKind, table.sourceRefId, table.sourceKey),
+
+    /** Idempotent upsert key for generated lines. */
+    bookingOrderLinesBizOrderSourceKeyUnique: uniqueIndex(
+      "booking_order_lines_biz_order_source_key_unique",
+    )
+      .on(table.bizId, table.bookingOrderId, table.sourceKind, table.sourceRefId, table.sourceKey)
+      .where(sql`"source_ref_id" IS NOT NULL AND "source_key" IS NOT NULL`),
 
     /** Tenant-safe FK to order. */
     bookingOrderLinesBizOrderFk: foreignKey({
@@ -760,6 +853,18 @@ export const bookingOrderLines = pgTable(
       )
       `,
     ),
+
+    /** Source shape and taxonomy contract. */
+    bookingOrderLinesSourceShapeCheck: check(
+      "booking_order_lines_source_shape_check",
+      sql`
+      "source_kind" IN ('core', 'manual', 'extension', 'system')
+      AND (
+        ("source_ref_id" IS NULL AND "source_key" IS NULL)
+        OR ("source_ref_id" IS NOT NULL AND "source_key" IS NOT NULL)
+      )
+      `,
+    ),
   }),
 );
 
@@ -792,6 +897,17 @@ export const fulfillmentUnits = pgTable(
     bookingOrderId: idRef("booking_order_id")
       .references(() => bookingOrders.id)
       .notNull(),
+
+    /**
+     * Optional direct line linkage.
+     *
+     * Why this exists:
+     * one booking can contain multiple lines for the same offer component.
+     * A direct line pointer avoids ambiguous component-based attribution.
+     */
+    bookingOrderLineId: idRef("booking_order_line_id").references(
+      () => bookingOrderLines.id,
+    ),
 
     /** Optional source component from offer version graph. */
     offerComponentId: idRef("offer_component_id").references(() => offerComponents.id),
@@ -863,6 +979,13 @@ export const fulfillmentUnits = pgTable(
       table.plannedStartAt,
     ),
 
+    /** Fast path for line-scoped fulfillment reads. */
+    fulfillmentUnitsBizOrderLineIdx: index("fulfillment_units_biz_order_line_idx").on(
+      table.bizId,
+      table.bookingOrderId,
+      table.bookingOrderLineId,
+    ),
+
     /** Common dispatch view path by status/time. */
     fulfillmentUnitsBizStatusIdx: index("fulfillment_units_biz_status_idx").on(
       table.bizId,
@@ -878,6 +1001,13 @@ export const fulfillmentUnits = pgTable(
       columns: [table.bizId, table.bookingOrderId],
       foreignColumns: [bookingOrders.bizId, bookingOrders.id],
       name: "fulfillment_units_biz_order_fk",
+    }),
+
+    /** Tenant-safe FK to optional booking line linkage. */
+    fulfillmentUnitsBizOrderLineFk: foreignKey({
+      columns: [table.bizId, table.bookingOrderId, table.bookingOrderLineId],
+      foreignColumns: [bookingOrderLines.bizId, bookingOrderLines.bookingOrderId, bookingOrderLines.id],
+      name: "fulfillment_units_biz_order_line_fk",
     }),
 
     /** Tenant-safe FK to optional offer component. */

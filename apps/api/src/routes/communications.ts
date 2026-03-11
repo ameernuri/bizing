@@ -63,8 +63,29 @@ const paginationQuerySchema = z.object({
   perPage: z.string().optional(),
 })
 
+const customFieldTargetTypeSchema = z.enum([
+  'biz',
+  'location',
+  'user',
+  'group_account',
+  'resource',
+  'service',
+  'service_product',
+  'offer',
+  'offer_version',
+  'product',
+  'sellable',
+  'booking_order',
+  'booking_order_line',
+  'fulfillment_unit',
+  'payment_intent',
+  'queue_entry',
+  'trip',
+  'custom',
+])
+
 const listConsentQuerySchema = paginationQuerySchema.extend({
-  subjectType: z.string().optional(),
+  subjectType: customFieldTargetTypeSchema.optional(),
   subjectRefId: z.string().optional(),
   subjectUserId: z.string().optional(),
   channel: z.enum(['sms', 'email', 'push', 'whatsapp', 'postal', 'voice', 'webhook']).optional(),
@@ -73,26 +94,7 @@ const listConsentQuerySchema = paginationQuerySchema.extend({
 })
 
 const createConsentBodySchema = z.object({
-  subjectType: z.enum([
-    'biz',
-    'location',
-    'user',
-    'group_account',
-    'resource',
-    'service',
-    'service_product',
-    'offer',
-    'offer_version',
-    'product',
-    'sellable',
-    'booking_order',
-    'booking_order_line',
-    'fulfillment_unit',
-    'payment_intent',
-    'queue_entry',
-    'trip',
-    'custom',
-  ]),
+  subjectType: customFieldTargetTypeSchema,
   subjectRefId: z.string().min(1).max(140),
   subjectUserId: z.string().optional(),
   subjectGroupAccountId: z.string().optional(),
@@ -122,26 +124,7 @@ const createQuietPolicyBodySchema = z.object({
   timezone: z.string().min(1).max(50).default('UTC'),
   quietStartLocal: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)(:[0-5]\d)?$/),
   quietEndLocal: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)(:[0-5]\d)?$/),
-  targetType: z.enum([
-    'biz',
-    'location',
-    'user',
-    'group_account',
-    'resource',
-    'service',
-    'service_product',
-    'offer',
-    'offer_version',
-    'product',
-    'sellable',
-    'booking_order',
-    'booking_order_line',
-    'fulfillment_unit',
-    'payment_intent',
-    'queue_entry',
-    'trip',
-    'custom',
-  ]).optional().nullable(),
+  targetType: customFieldTargetTypeSchema.optional().nullable(),
   targetRefId: z.string().max(140).optional().nullable(),
   targetUserId: z.string().optional().nullable(),
   targetGroupAccountId: z.string().optional().nullable(),
@@ -171,10 +154,7 @@ const patchMessageTemplateBodySchema = createMessageTemplateBodySchema.partial()
 const createMessageTemplateBindingBodySchema = z.object({
   messageTemplateId: z.string().min(1),
   eventPattern: z.string().min(1).max(200),
-  targetType: z
-    .enum(['biz', 'location', 'user', 'group_account', 'resource', 'service', 'service_product', 'offer', 'offer_version', 'product', 'sellable', 'booking_order', 'booking_order_line', 'fulfillment_unit', 'payment_intent', 'queue_entry', 'trip', 'custom'])
-    .optional()
-    .nullable(),
+  targetType: customFieldTargetTypeSchema.optional().nullable(),
   priority: z.number().int().min(0).default(100),
   isActive: z.boolean().default(true),
   conditionExpr: z.record(z.unknown()).optional(),
@@ -210,7 +190,7 @@ const createMarketingCampaignStepBodySchema = z.object({
 })
 const createMarketingCampaignEnrollmentBodySchema = z.object({
   marketingCampaignId: z.string().min(1),
-  subjectType: z.enum(['biz', 'location', 'user', 'group_account', 'resource', 'service', 'service_product', 'offer', 'offer_version', 'product', 'sellable', 'booking_order', 'booking_order_line', 'fulfillment_unit', 'payment_intent', 'queue_entry', 'trip', 'custom']),
+  subjectType: customFieldTargetTypeSchema,
   subjectRefId: z.string().min(1).max(140),
   subjectUserId: z.string().optional().nullable(),
   subjectGroupAccountId: z.string().optional().nullable(),
@@ -517,7 +497,7 @@ communicationRoutes.get(
     const pageInfo = pagination(parsed.data)
     const where = and(
       eq(communicationConsents.bizId, bizId),
-      parsed.data.subjectType ? eq(communicationConsents.subjectType, parsed.data.subjectType as never) : undefined,
+      parsed.data.subjectType ? eq(communicationConsents.subjectType, parsed.data.subjectType) : undefined,
       parsed.data.subjectRefId ? eq(communicationConsents.subjectRefId, parsed.data.subjectRefId) : undefined,
       parsed.data.subjectUserId ? eq(communicationConsents.subjectUserId, parsed.data.subjectUserId) : undefined,
       parsed.data.channel ? eq(communicationConsents.channel, parsed.data.channel) : undefined,
@@ -563,7 +543,7 @@ communicationRoutes.post(
     const existing = await db.query.communicationConsents.findFirst({
       where: and(
         eq(communicationConsents.bizId, bizId),
-        eq(communicationConsents.subjectType, parsed.data.subjectType as never),
+        eq(communicationConsents.subjectType, parsed.data.subjectType),
         eq(communicationConsents.subjectRefId, parsed.data.subjectRefId),
         eq(communicationConsents.channel, parsed.data.channel),
         eq(communicationConsents.purpose, parsed.data.purpose),
@@ -571,7 +551,7 @@ communicationRoutes.post(
     })
 
     const payload = {
-      subjectType: parsed.data.subjectType as never,
+      subjectType: parsed.data.subjectType,
       subjectRefId: parsed.data.subjectRefId,
       subjectUserId: parsed.data.subjectUserId,
       subjectGroupAccountId: parsed.data.subjectGroupAccountId,
@@ -643,7 +623,7 @@ communicationRoutes.patch(
       id: consentId,
       notFoundMessage: 'Communication consent not found.',
       patch: {
-        subjectType: parsed.data.subjectType as never | undefined,
+        subjectType: parsed.data.subjectType,
         subjectRefId: parsed.data.subjectRefId,
         subjectUserId: parsed.data.subjectUserId,
         subjectGroupAccountId: parsed.data.subjectGroupAccountId,

@@ -8,12 +8,14 @@ tags:
 
 # Promotions Domain
 
-This file is generated from route/schema source files and exists to keep domain docs synchronized with code reality.
+This file is generated from route/schema source files and the canonical domain manifest to keep docs synchronized with runtime mounts.
 
 ## Source
 
-- Route file: `/Users/ameer/bizing/code/apps/api/src/routes/promotions.ts`
-- Schema file: `/Users/ameer/bizing/code/packages/db/src/schema/promotions.ts`
+- Route file: `apps/api/src/routes/promotions.ts`
+- Schema file: `packages/db/src/schema/promotions.ts`
+- Mount path: `/`
+- Auth class (manifest): `machine_allowed`
 
 ## Route Intent (top JSDoc)
 
@@ -35,16 +37,16 @@ _No top JSDoc comment found._
 
 ## API Surface
 
-- `GET` `/bizes/:bizId/discount-campaigns`
-- `POST` `/bizes/:bizId/discount-campaigns`
-- `PATCH` `/bizes/:bizId/discount-campaigns/:campaignId`
-- `GET` `/bizes/:bizId/discount-codes`
-- `POST` `/bizes/:bizId/discount-codes`
-- `POST` `/bizes/:bizId/discount-campaigns/:campaignId/generate-codes`
-- `PATCH` `/bizes/:bizId/discount-codes/:codeId`
-- `GET` `/bizes/:bizId/discount-redemptions`
-- `POST` `/bizes/:bizId/discount-redemptions`
-- `GET` `/bizes/:bizId/discount-campaigns/:campaignId/performance`
+- `GET` `/api/v1/bizes/:bizId/discount-campaigns`
+- `POST` `/api/v1/bizes/:bizId/discount-campaigns`
+- `PATCH` `/api/v1/bizes/:bizId/discount-campaigns/:campaignId`
+- `GET` `/api/v1/bizes/:bizId/discount-codes`
+- `POST` `/api/v1/bizes/:bizId/discount-codes`
+- `POST` `/api/v1/bizes/:bizId/discount-campaigns/:campaignId/generate-codes`
+- `PATCH` `/api/v1/bizes/:bizId/discount-codes/:codeId`
+- `GET` `/api/v1/bizes/:bizId/discount-redemptions`
+- `POST` `/api/v1/bizes/:bizId/discount-redemptions`
+- `GET` `/api/v1/bizes/:bizId/discount-campaigns/:campaignId/performance`
 
 ## Tables
 

@@ -228,7 +228,16 @@ const projectionCheckpointBodySchema = z.object({
   projectionKey: z.string().min(1).max(160),
   consumerRef: z.string().min(1).max(160),
   lastDomainEventId: z.string().optional().nullable(),
-  status: z.string().min(1).max(32).default('active'),
+  status: z.enum([
+    'active',
+    'paused',
+    'disabled',
+    'healthy',
+    'lagging',
+    'degraded',
+    'failed',
+    'archived',
+  ]).default('active'),
   lagHint: z.number().int().min(0).default(0),
   metadata: z.record(z.unknown()).optional(),
 })

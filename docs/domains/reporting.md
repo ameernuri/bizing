@@ -8,12 +8,14 @@ tags:
 
 # Reporting Domain
 
-This file is generated from route/schema source files and exists to keep domain docs synchronized with code reality.
+This file is generated from route/schema source files and the canonical domain manifest to keep docs synchronized with runtime mounts.
 
 ## Source
 
-- Route file: `/Users/ameer/bizing/code/apps/api/src/routes/reporting.ts`
-- Schema file: `/Users/ameer/bizing/code/packages/db/src/schema/reporting.ts`
+- Route file: `apps/api/src/routes/reporting.ts`
+- Schema file: `packages/db/src/schema/reporting.ts`
+- Mount path: `/`
+- Auth class (manifest): `machine_allowed`
 
 ## Route Intent (top JSDoc)
 
@@ -38,9 +40,10 @@ _No top JSDoc comment found._
 
 ## API Surface
 
-- `GET` `/bizes/:bizId/projection-checkpoints`
-- `POST` `/bizes/:bizId/projection-checkpoints`
-- `POST` `/bizes/:bizId/projection-checkpoints/:checkpointId/replay`
+- `GET` `/api/v1/bizes/:bizId/projection-checkpoints`
+- `POST` `/api/v1/bizes/:bizId/projection-checkpoints`
+- `GET` `/api/v1/bizes/:bizId/reporting/coverage-lanes/summary`
+- `POST` `/api/v1/bizes/:bizId/projection-checkpoints/:checkpointId/replay`
 
 ## Tables
 

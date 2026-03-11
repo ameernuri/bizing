@@ -8,12 +8,14 @@ tags:
 
 # Resources Domain
 
-This file is generated from route/schema source files and exists to keep domain docs synchronized with code reality.
+This file is generated from route/schema source files and the canonical domain manifest to keep docs synchronized with runtime mounts.
 
 ## Source
 
-- Route file: `/Users/ameer/bizing/code/apps/api/src/routes/resources.ts`
-- Schema file: `/Users/ameer/bizing/code/packages/db/src/schema/resources.ts`
+- Route file: `apps/api/src/routes/resources.ts`
+- Schema file: `packages/db/src/schema/resources.ts`
+- Mount path: `/`
+- Auth class (manifest): `machine_allowed`
 
 ## Route Intent (top JSDoc)
 
@@ -27,12 +29,11 @@ _No top JSDoc comment found._
 
 ## API Surface
 
-- `GET` `requestId`
-- `GET` `/bizes/:bizId/resources`
-- `POST` `/bizes/:bizId/resources`
-- `GET` `/bizes/:bizId/resources/:resourceId`
-- `PATCH` `/bizes/:bizId/resources/:resourceId`
-- `DELETE` `/bizes/:bizId/resources/:resourceId`
+- `GET` `/api/v1/bizes/:bizId/resources`
+- `POST` `/api/v1/bizes/:bizId/resources`
+- `GET` `/api/v1/bizes/:bizId/resources/:resourceId`
+- `PATCH` `/api/v1/bizes/:bizId/resources/:resourceId`
+- `DELETE` `/api/v1/bizes/:bizId/resources/:resourceId`
 
 ## Tables
 

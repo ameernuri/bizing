@@ -2,6 +2,7 @@ import { promises as fs } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { apiTools, type ApiToolDefinition } from '../code-mode/tools.js'
+import { domainManifestByRouteFile } from '../routes/domain-manifest.js'
 
 export type ExplorerHttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
 
@@ -43,7 +44,6 @@ type OpenApiDocument = {
 const SOURCE_DIR = path.resolve(fileURLToPath(new URL('..', import.meta.url)))
 const ROUTES_DIR = path.resolve(SOURCE_DIR, 'routes')
 const SERVER_FILE = path.resolve(SOURCE_DIR, 'server.ts')
-const CORE_API_FILE = path.resolve(ROUTES_DIR, 'core-api.ts')
 const ROUTE_REGEX =
   /^\s*[A-Za-z_$][A-Za-z0-9_$]*\s*\.\s*(get|post|put|patch|delete)\s*\(\s*["'`]([^"'`]+)["'`]/gim
 
@@ -147,7 +147,7 @@ function mapToolNamesByEndpoint(tools: ApiToolDefinition[]) {
 }
 
 async function readRouteEndpoints(): Promise<ApiExplorerEndpoint[]> {
-  const mountPrefixes = await readCoreRouteMountPrefixes()
+  const mountPrefixes = readCoreRouteMountPrefixes()
   const files = (await fs.readdir(ROUTES_DIR)).filter((file) => file.endsWith('.ts'))
   const endpoints: ApiExplorerEndpoint[] = []
   for (const fileName of files) {
@@ -174,26 +174,11 @@ async function readRouteEndpoints(): Promise<ApiExplorerEndpoint[]> {
   return endpoints
 }
 
-async function readCoreRouteMountPrefixes() {
-  const content = await fs.readFile(CORE_API_FILE, 'utf8')
-  const importRegex = /import\s+\{\s*([A-Za-z0-9_]+)\s*\}\s+from\s+'\.\/([A-Za-z0-9_-]+)\.js'/g
-  const routeRegex = /coreApiRoutes\.route\(\s*['"`]([^'"`]+)['"`]\s*,\s*([A-Za-z0-9_]+)\s*\)/g
-
-  const importVarToFile = new Map<string, string>()
-  for (const match of content.matchAll(importRegex)) {
-    const variableName = String(match[1] || '').trim()
-    const fileStem = String(match[2] || '').trim()
-    if (!variableName || !fileStem) continue
-    importVarToFile.set(variableName, `${fileStem}.ts`)
-  }
-
+function readCoreRouteMountPrefixes() {
+  const byRouteFile = domainManifestByRouteFile()
   const fileToPrefix = new Map<string, string>()
-  for (const match of content.matchAll(routeRegex)) {
-    const mountPrefix = String(match[1] || '/').trim() || '/'
-    const variableName = String(match[2] || '').trim()
-    const fileName = importVarToFile.get(variableName)
-    if (!fileName) continue
-    fileToPrefix.set(fileName, mountPrefix)
+  for (const [routeFile, entry] of byRouteFile.entries()) {
+    fileToPrefix.set(routeFile, entry.mountPath)
   }
   return fileToPrefix
 }

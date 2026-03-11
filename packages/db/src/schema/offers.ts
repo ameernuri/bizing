@@ -16,6 +16,7 @@ import { domainEvents } from "./domain_events";
 import { locations } from "./locations";
 import { debugSnapshots, projectionDocuments } from "./projections";
 import { resources } from "./resources";
+import { serviceGroups } from "./services";
 import { subjects } from "./subjects";
 import { users } from "./users";
 import { bizConfigValues } from "./biz_configs";
@@ -58,6 +59,11 @@ export const offers = pgTable(
     /** Tenant boundary; every offer belongs to exactly one biz. */
     bizId: idRef("biz_id")
       .references(() => bizes.id)
+      .notNull(),
+
+    /** Mandatory catalog grouping for owner navigation and reporting. */
+    serviceGroupId: idRef("service_group_id")
+      .references(() => serviceGroups.id)
       .notNull(),
 
     /** Human-facing name shown in admin and customer catalog views. */
@@ -155,6 +161,10 @@ export const offers = pgTable(
       table.bizId,
       table.status,
     ),
+    offersBizServiceGroupIdx: index("offers_biz_service_group_idx").on(
+      table.bizId,
+      table.serviceGroupId,
+    ),
     offersBizStatusConfigIdx: index("offers_biz_status_config_idx").on(
       table.bizId,
       table.statusConfigValueId,
@@ -181,6 +191,12 @@ export const offers = pgTable(
       columns: [table.bizId, table.executionModeConfigValueId],
       foreignColumns: [bizConfigValues.bizId, bizConfigValues.id],
       name: "offers_biz_execution_mode_config_fk",
+    }),
+    /** Tenant-safe FK to mandatory catalog group. */
+    offersBizServiceGroupFk: foreignKey({
+      columns: [table.bizId, table.serviceGroupId],
+      foreignColumns: [serviceGroups.bizId, serviceGroups.id],
+      name: "offers_biz_service_group_fk",
     }),
   }),
 );

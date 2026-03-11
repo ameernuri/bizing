@@ -8,12 +8,14 @@ tags:
 
 # Products Domain
 
-This file is generated from route/schema source files and exists to keep domain docs synchronized with code reality.
+This file is generated from route/schema source files and the canonical domain manifest to keep docs synchronized with runtime mounts.
 
 ## Source
 
-- Route file: `/Users/ameer/bizing/code/apps/api/src/routes/products.ts`
-- Schema file: `/Users/ameer/bizing/code/packages/db/src/schema/products.ts`
+- Route file: `apps/api/src/routes/products.ts`
+- Schema file: `packages/db/src/schema/products.ts`
+- Mount path: `/`
+- Auth class (manifest): `machine_allowed`
 
 ## Route Intent (top JSDoc)
 
@@ -36,13 +38,13 @@ _No top JSDoc comment found._
 
 ## API Surface
 
-- `GET` `/bizes/:bizId/products`
-- `POST` `/bizes/:bizId/products`
-- `PATCH` `/bizes/:bizId/products/:productId`
-- `GET` `/bizes/:bizId/product-bundles`
-- `POST` `/bizes/:bizId/product-bundles`
-- `GET` `/bizes/:bizId/product-bundles/:bundleId/components`
-- `POST` `/bizes/:bizId/product-bundles/:bundleId/components`
+- `GET` `/api/v1/bizes/:bizId/products`
+- `POST` `/api/v1/bizes/:bizId/products`
+- `PATCH` `/api/v1/bizes/:bizId/products/:productId`
+- `GET` `/api/v1/bizes/:bizId/product-bundles`
+- `POST` `/api/v1/bizes/:bizId/product-bundles`
+- `GET` `/api/v1/bizes/:bizId/product-bundles/:bundleId/components`
+- `POST` `/api/v1/bizes/:bizId/product-bundles/:bundleId/components`
 
 ## Tables
 

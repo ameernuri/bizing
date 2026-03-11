@@ -8,12 +8,14 @@ tags:
 
 # Education Domain
 
-This file is generated from route/schema source files and exists to keep domain docs synchronized with code reality.
+This file is generated from route/schema source files and the canonical domain manifest to keep docs synchronized with runtime mounts.
 
 ## Source
 
-- Route file: `/Users/ameer/bizing/code/apps/api/src/routes/education.ts`
-- Schema file: `/Users/ameer/bizing/code/packages/db/src/schema/education.ts`
+- Route file: `apps/api/src/routes/education.ts`
+- Schema file: `packages/db/src/schema/education.ts`
+- Mount path: `/`
+- Auth class (manifest): `machine_allowed`
 
 ## Route Intent (top JSDoc)
 
@@ -36,22 +38,22 @@ _No top JSDoc comment found._
 
 ## API Surface
 
-- `GET` `/bizes/:bizId/programs`
-- `POST` `/bizes/:bizId/programs`
-- `GET` `/bizes/:bizId/program-cohorts`
-- `POST` `/bizes/:bizId/program-cohorts`
-- `POST` `/bizes/:bizId/program-sessions`
-- `GET` `/bizes/:bizId/program-sessions`
-- `PATCH` `/bizes/:bizId/program-sessions/:sessionId`
-- `POST` `/bizes/:bizId/cohort-enrollments`
-- `GET` `/bizes/:bizId/cohort-enrollments`
-- `POST` `/bizes/:bizId/session-attendance-records`
-- `GET` `/bizes/:bizId/session-attendance-records`
-- `GET` `/bizes/:bizId/cohort-enrollments/:enrollmentId/agenda`
-- `GET` `/bizes/:bizId/program-cohorts/:cohortId/conflicts`
-- `POST` `/bizes/:bizId/certification-templates`
-- `POST` `/bizes/:bizId/certification-awards`
-- `GET` `/bizes/:bizId/certification-awards`
+- `GET` `/api/v1/bizes/:bizId/programs`
+- `POST` `/api/v1/bizes/:bizId/programs`
+- `GET` `/api/v1/bizes/:bizId/program-cohorts`
+- `POST` `/api/v1/bizes/:bizId/program-cohorts`
+- `POST` `/api/v1/bizes/:bizId/program-sessions`
+- `GET` `/api/v1/bizes/:bizId/program-sessions`
+- `PATCH` `/api/v1/bizes/:bizId/program-sessions/:sessionId`
+- `POST` `/api/v1/bizes/:bizId/cohort-enrollments`
+- `GET` `/api/v1/bizes/:bizId/cohort-enrollments`
+- `POST` `/api/v1/bizes/:bizId/session-attendance-records`
+- `GET` `/api/v1/bizes/:bizId/session-attendance-records`
+- `GET` `/api/v1/bizes/:bizId/cohort-enrollments/:enrollmentId/agenda`
+- `GET` `/api/v1/bizes/:bizId/program-cohorts/:cohortId/conflicts`
+- `POST` `/api/v1/bizes/:bizId/certification-templates`
+- `POST` `/api/v1/bizes/:bizId/certification-awards`
+- `GET` `/api/v1/bizes/:bizId/certification-awards`
 
 ## Tables
 

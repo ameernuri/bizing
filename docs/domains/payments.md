@@ -8,12 +8,14 @@ tags:
 
 # Payments Domain
 
-This file is generated from route/schema source files and exists to keep domain docs synchronized with code reality.
+This file is generated from route/schema source files and the canonical domain manifest to keep docs synchronized with runtime mounts.
 
 ## Source
 
-- Route file: `/Users/ameer/bizing/code/apps/api/src/routes/payments.ts`
-- Schema file: `/Users/ameer/bizing/code/packages/db/src/schema/payments.ts`
+- Route file: `apps/api/src/routes/payments.ts`
+- Schema file: `packages/db/src/schema/payments.ts`
+- Mount path: `/`
+- Auth class (manifest): `machine_allowed`
 
 ## Route Intent (top JSDoc)
 
@@ -36,11 +38,12 @@ _No top JSDoc comment found._
 
 ## API Surface
 
-- `POST` `/public/bizes/:bizId/booking-orders/:bookingOrderId/payments/advanced`
-- `GET` `${tenderId}:${plan.bookingOrderLineId}`
-- `POST` `/bizes/:bizId/payment-intents/:paymentIntentId/refunds`
-- `GET` `/bizes/:bizId/payment-intents`
-- `GET` `/bizes/:bizId/payment-intents/:paymentIntentId`
+- `POST` `/api/v1/public/bizes/:bizId/booking-orders/:bookingOrderId/payments/stripe/payment-intents`
+- `POST` `/api/v1/public/payments/stripe/webhook`
+- `POST` `/api/v1/public/bizes/:bizId/booking-orders/:bookingOrderId/payments/advanced`
+- `POST` `/api/v1/bizes/:bizId/payment-intents/:paymentIntentId/refunds`
+- `GET` `/api/v1/bizes/:bizId/payment-intents`
+- `GET` `/api/v1/bizes/:bizId/payment-intents/:paymentIntentId`
 
 ## Tables
 

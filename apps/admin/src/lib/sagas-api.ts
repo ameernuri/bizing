@@ -1,13 +1,10 @@
-import { apiUrl } from '@/lib/api'
+import { requestEnvelopedApi, type ApiEnvelope } from '@/lib/enveloped-api'
 
 export type SagaRunStatus = 'pending' | 'running' | 'passed' | 'failed' | 'cancelled'
 export type SagaLifecycleStatus = 'draft' | 'active' | 'archived'
+export type SagaDepth = 'shallow' | 'medium' | 'deep'
 
-export type ApiEnvelope<T> = {
-  success: boolean
-  data: T
-  meta?: Record<string, unknown>
-}
+export type { ApiEnvelope }
 
 export type SagaArtifactContent = {
   artifact: SagaArtifact
@@ -94,6 +91,7 @@ export type SagaDefinitionSummary = {
   title: string
   description?: string | null
   status: SagaLifecycleStatus
+  depth: SagaDepth
   bizId?: string | null
   specFilePath?: string | null
   specVersion: string
@@ -106,6 +104,7 @@ export type SagaDefinitionSpec = {
   sagaKey: string
   title: string
   description?: string | null
+  depth?: SagaDepth
   objectives?: string[]
   actors?: Array<{
     actorKey: string
@@ -181,6 +180,7 @@ export type SagaRunSummary = {
   sagaKey: string
   status: SagaRunStatus
   mode: 'dry_run' | 'live'
+  depth: SagaDepth
   totalSteps: number
   passedSteps: number
   failedSteps: number
@@ -293,26 +293,7 @@ export type SchemaCoverageReport = {
   reportData?: Record<string, unknown> | null
 }
 
-async function fetchApi<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(apiUrl(path), {
-    ...init,
-    credentials: 'include',
-    headers: {
-      'content-type': 'application/json',
-      ...(init?.headers ?? {}),
-    },
-    cache: 'no-store',
-  })
-
-  const payload = (await response.json().catch(() => null)) as ApiEnvelope<T> | null
-  if (!response.ok || !payload?.success) {
-    const message =
-      (payload as { error?: { message?: string } } | null)?.error?.message ||
-      `Request failed (${response.status})`
-    throw new Error(message)
-  }
-  return payload.data
-}
+const fetchApi = requestEnvelopedApi
 
 export const sagaApi = {
   fetchLibraryOverview: () => fetchApi<SagaLibraryOverview>('/api/v1/ooda/sagas/library/overview'),
@@ -398,7 +379,12 @@ export const sagaApi = {
     fetchApi<{ deleted: true }>(`/api/v1/ooda/sagas/personas/${encodeURIComponent(personaKey)}`, {
       method: 'DELETE',
     }),
-  fetchDefinitions: () => fetchApi<SagaDefinitionSummary[]>('/api/v1/ooda/sagas/specs?limit=5000'),
+  fetchDefinitions: (params?: { depth?: SagaDepth }) => {
+    const search = new URLSearchParams()
+    search.set('limit', '5000')
+    if (params?.depth) search.set('depth', params.depth)
+    return fetchApi<SagaDefinitionSummary[]>(`/api/v1/ooda/sagas/specs?${search.toString()}`)
+  },
   fetchDefinitionDetail: (sagaKey: string) =>
     fetchApi<SagaDefinitionDetail>(`/api/v1/ooda/sagas/specs/${encodeURIComponent(sagaKey)}`),
   fetchDefinitionRevisions: (sagaKey: string) =>
@@ -447,9 +433,10 @@ export const sagaApi = {
     fetchApi<{ archived: true }>(`/api/v1/ooda/sagas/specs/${encodeURIComponent(sagaKey)}`, {
       method: 'DELETE',
     }),
-  fetchRuns: (params?: { sagaKey?: string; limit?: number; includeArchived?: boolean; mineOnly?: boolean }) => {
+  fetchRuns: (params?: { sagaKey?: string; depth?: SagaDepth; limit?: number; includeArchived?: boolean; mineOnly?: boolean }) => {
     const search = new URLSearchParams()
     if (params?.sagaKey) search.set('sagaKey', params.sagaKey)
+    if (params?.depth) search.set('depth', params.depth)
     if (params?.limit) search.set('limit', String(params.limit))
     if (params?.includeArchived) search.set('includeArchived', 'true')
     if (params?.mineOnly === false) search.set('mineOnly', 'false')

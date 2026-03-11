@@ -8,12 +8,14 @@ tags:
 
 # Communications Domain
 
-This file is generated from route/schema source files and exists to keep domain docs synchronized with code reality.
+This file is generated from route/schema source files and the canonical domain manifest to keep docs synchronized with runtime mounts.
 
 ## Source
 
-- Route file: `/Users/ameer/bizing/code/apps/api/src/routes/communications.ts`
-- Schema file: `/Users/ameer/bizing/code/packages/db/src/schema/communications.ts`
+- Route file: `apps/api/src/routes/communications.ts`
+- Schema file: `packages/db/src/schema/communications.ts`
+- Mount path: `/`
+- Auth class (manifest): `machine_allowed`
 
 ## Route Intent (top JSDoc)
 
@@ -34,28 +36,28 @@ _No top JSDoc comment found._
 
 ## API Surface
 
-- `GET` `/bizes/:bizId/outbound-messages`
-- `POST` `/bizes/:bizId/outbound-messages`
-- `GET` `/bizes/:bizId/outbound-messages/:messageId`
-- `POST` `/bizes/:bizId/outbound-messages/:messageId/events`
-- `GET` `/bizes/:bizId/communication-consents`
-- `POST` `/bizes/:bizId/communication-consents`
-- `PATCH` `/bizes/:bizId/communication-consents/:consentId`
-- `GET` `/bizes/:bizId/quiet-hour-policies`
-- `POST` `/bizes/:bizId/quiet-hour-policies`
-- `PATCH` `/bizes/:bizId/quiet-hour-policies/:policyId`
-- `GET` `/bizes/:bizId/message-templates`
-- `POST` `/bizes/:bizId/message-templates`
-- `PATCH` `/bizes/:bizId/message-templates/:templateId`
-- `GET` `/bizes/:bizId/message-template-bindings`
-- `POST` `/bizes/:bizId/message-template-bindings`
-- `GET` `/bizes/:bizId/marketing-campaigns`
-- `POST` `/bizes/:bizId/marketing-campaigns`
-- `PATCH` `/bizes/:bizId/marketing-campaigns/:campaignId`
-- `GET` `/bizes/:bizId/marketing-campaign-steps`
-- `POST` `/bizes/:bizId/marketing-campaign-steps`
-- `GET` `/bizes/:bizId/marketing-campaign-enrollments`
-- `POST` `/bizes/:bizId/marketing-campaign-enrollments`
+- `GET` `/api/v1/bizes/:bizId/outbound-messages`
+- `POST` `/api/v1/bizes/:bizId/outbound-messages`
+- `GET` `/api/v1/bizes/:bizId/outbound-messages/:messageId`
+- `POST` `/api/v1/bizes/:bizId/outbound-messages/:messageId/events`
+- `GET` `/api/v1/bizes/:bizId/communication-consents`
+- `POST` `/api/v1/bizes/:bizId/communication-consents`
+- `PATCH` `/api/v1/bizes/:bizId/communication-consents/:consentId`
+- `GET` `/api/v1/bizes/:bizId/quiet-hour-policies`
+- `POST` `/api/v1/bizes/:bizId/quiet-hour-policies`
+- `PATCH` `/api/v1/bizes/:bizId/quiet-hour-policies/:policyId`
+- `GET` `/api/v1/bizes/:bizId/message-templates`
+- `POST` `/api/v1/bizes/:bizId/message-templates`
+- `PATCH` `/api/v1/bizes/:bizId/message-templates/:templateId`
+- `GET` `/api/v1/bizes/:bizId/message-template-bindings`
+- `POST` `/api/v1/bizes/:bizId/message-template-bindings`
+- `GET` `/api/v1/bizes/:bizId/marketing-campaigns`
+- `POST` `/api/v1/bizes/:bizId/marketing-campaigns`
+- `PATCH` `/api/v1/bizes/:bizId/marketing-campaigns/:campaignId`
+- `GET` `/api/v1/bizes/:bizId/marketing-campaign-steps`
+- `POST` `/api/v1/bizes/:bizId/marketing-campaign-steps`
+- `GET` `/api/v1/bizes/:bizId/marketing-campaign-enrollments`
+- `POST` `/api/v1/bizes/:bizId/marketing-campaign-enrollments`
 
 ## Tables
 

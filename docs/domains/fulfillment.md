@@ -8,12 +8,14 @@ tags:
 
 # Fulfillment Domain
 
-This file is generated from route/schema source files and exists to keep domain docs synchronized with code reality.
+This file is generated from route/schema source files and the canonical domain manifest to keep docs synchronized with runtime mounts.
 
 ## Source
 
-- Route file: `/Users/ameer/bizing/code/apps/api/src/routes/fulfillment.ts`
-- Schema file: `/Users/ameer/bizing/code/packages/db/src/schema/fulfillment.ts`
+- Route file: `apps/api/src/routes/fulfillment.ts`
+- Schema file: `packages/db/src/schema/fulfillment.ts`
+- Mount path: `/`
+- Auth class (manifest): `machine_allowed`
 
 ## Route Intent (top JSDoc)
 
@@ -32,11 +34,11 @@ _No top JSDoc comment found._
 
 ## API Surface
 
-- `POST` `/bizes/:bizId/fulfillment-units`
-- `GET` `/bizes/:bizId/fulfillment-units/:fulfillmentUnitId/assignments`
-- `POST` `/bizes/:bizId/fulfillment-units/:fulfillmentUnitId/assignments`
-- `PATCH` `/bizes/:bizId/fulfillment-assignments/:fulfillmentAssignmentId`
-- `POST` `/bizes/:bizId/fulfillment/slot-feasibility`
+- `POST` `/api/v1/bizes/:bizId/fulfillment-units`
+- `GET` `/api/v1/bizes/:bizId/fulfillment-units/:fulfillmentUnitId/assignments`
+- `POST` `/api/v1/bizes/:bizId/fulfillment-units/:fulfillmentUnitId/assignments`
+- `PATCH` `/api/v1/bizes/:bizId/fulfillment-assignments/:fulfillmentAssignmentId`
+- `POST` `/api/v1/bizes/:bizId/fulfillment/slot-feasibility`
 
 ## Tables
 

@@ -22,6 +22,7 @@ import { requireAclPermission, requireAuth, requireBizAccess } from '../middlewa
 import { fail, ok } from './_api.js'
 import { sanitizeUnknown } from '../lib/sanitize.js'
 import { executeCrudRouteAction } from '../services/action-route-bridge.js'
+import { syncCoverageLaneAssignmentAvailability } from '../services/coverage-lanes.js'
 
 const {
   db,
@@ -36,6 +37,8 @@ const {
   staffingDemandSelectors,
   staffingResponses,
   staffingAssignments,
+  coverageLanes,
+  coverageLaneMemberships,
 } = dbPackage
 
 async function createStaffingRow(
@@ -176,6 +179,7 @@ const requirementBodySchema = z.object({
 
 const staffingDemandBodySchema = z.object({
   staffingPoolId: z.string().optional(),
+  coverageLaneId: z.string().optional(),
   demandType: z.enum(['replacement', 'open_shift', 'internal_task', 'on_call', 'overtime']).optional(),
   fillMode: z.enum(['direct_assign', 'fcfs_claim', 'invite_accept', 'auction', 'auto_match']).optional(),
   status: z.enum(['open', 'offered', 'claimed', 'assigned', 'filled', 'expired', 'cancelled']).optional(),
@@ -221,6 +225,7 @@ const createAssignmentBodySchema = z
   .object({
     staffingResponseId: z.string().optional(),
     resourceId: z.string().optional(),
+    coverageLaneId: z.string().optional(),
     status: z.enum(['planned', 'confirmed', 'in_progress', 'completed', 'cancelled']).optional(),
     compensationRateMinor: z.number().int().min(0).optional(),
     metadata: z.record(z.unknown()).optional(),
@@ -348,12 +353,36 @@ async function computeDemandCandidates(bizId: string, demandId: string): Promise
   if (!graph) return []
 
   const demandTime = new Date(graph.demand.startsAt)
-  const resourceRows = await db.query.resources.findMany({
+  const baseResourceRows = await db.query.resources.findMany({
     where: and(
       eq(resources.bizId, bizId),
       graph.demand.targetResourceType ? eq(resources.type, graph.demand.targetResourceType) : undefined,
     ),
   })
+  let resourceRows = baseResourceRows
+
+  if (graph.demand.coverageLaneId) {
+    const laneMembershipRows = await db.query.coverageLaneMemberships.findMany({
+      where: and(
+        eq(coverageLaneMemberships.bizId, bizId),
+        eq(coverageLaneMemberships.coverageLaneId, graph.demand.coverageLaneId),
+        eq(coverageLaneMemberships.status, 'active'),
+        eq(coverageLaneMemberships.isDispatchEligible, true),
+      ),
+    })
+
+    const eligibleResourceIds = new Set(
+      laneMembershipRows
+        .filter((row) => {
+          const startsOk = !row.effectiveFrom || row.effectiveFrom.getTime() <= demandTime.getTime()
+          const endsOk = !row.effectiveTo || row.effectiveTo.getTime() >= demandTime.getTime()
+          return startsOk && endsOk
+        })
+        .map((row) => row.resourceId),
+    )
+    resourceRows = resourceRows.filter((row) => eligibleResourceIds.has(row.id))
+  }
+
   const resourceIds = resourceRows.map((row) => row.id)
   if (resourceIds.length === 0) return []
 
@@ -546,6 +575,16 @@ staffingRoutes.post(
     const parsed = capabilityAssignmentBodySchema.safeParse(await c.req.json().catch(() => null))
     if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
 
+    const existing = await db.query.resourceCapabilityAssignments.findFirst({
+      where: and(
+        eq(resourceCapabilityAssignments.bizId, bizId),
+        eq(resourceCapabilityAssignments.resourceId, parsed.data.resourceId),
+        eq(resourceCapabilityAssignments.capabilityTemplateId, parsed.data.capabilityTemplateId),
+      ),
+      orderBy: [desc(resourceCapabilityAssignments.isPrimary), asc(resourceCapabilityAssignments.id)],
+    })
+    if (existing) return ok(c, existing)
+
     const created = await createStaffingRow(c, bizId, 'resourceCapabilityAssignments', {
         bizId,
         resourceId: parsed.data.resourceId,
@@ -592,9 +631,18 @@ staffingRoutes.post(
     const parsed = staffingDemandBodySchema.safeParse(await c.req.json().catch(() => null))
     if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid request body.', 400, parsed.error.flatten())
 
+    if (parsed.data.coverageLaneId) {
+      const coverageLane = await db.query.coverageLanes.findFirst({
+        where: and(eq(coverageLanes.bizId, bizId), eq(coverageLanes.id, parsed.data.coverageLaneId)),
+        columns: { id: true },
+      })
+      if (!coverageLane) return fail(c, 'NOT_FOUND', 'Coverage lane not found.', 404)
+    }
+
     const demand = await createStaffingRow(c, bizId, 'staffingDemands', {
           bizId,
           staffingPoolId: parsed.data.staffingPoolId,
+          coverageLaneId: parsed.data.coverageLaneId,
           demandType: parsed.data.demandType ?? 'open_shift',
           fillMode: parsed.data.fillMode ?? 'invite_accept',
           status: parsed.data.status ?? 'open',
@@ -875,10 +923,20 @@ staffingRoutes.post(
     })
     if (!resource) return fail(c, 'NOT_FOUND', 'Resource not found.', 404)
 
+    const coverageLaneId = parsed.data.coverageLaneId ?? graph.demand.coverageLaneId ?? null
+    if (coverageLaneId) {
+      const coverageLane = await db.query.coverageLanes.findFirst({
+        where: and(eq(coverageLanes.bizId, bizId), eq(coverageLanes.id, coverageLaneId)),
+        columns: { id: true },
+      })
+      if (!coverageLane) return fail(c, 'NOT_FOUND', 'Coverage lane not found.', 404)
+    }
+
     const assignment = await createStaffingRow(c, bizId, 'staffingAssignments', {
         bizId,
         staffingDemandId: demandId,
         resourceId,
+        coverageLaneId,
         staffingResponseId: response?.id ?? null,
         fulfillmentAssignmentId: graph.demand.fulfillmentAssignmentId ?? null,
         fulfillmentUnitId: graph.demand.fulfillmentUnitId ?? null,
@@ -894,6 +952,12 @@ staffingRoutes.post(
       displayName: resource.name,
     })
     if (assignment instanceof Response) return assignment
+
+    await syncCoverageLaneAssignmentAvailability({
+      bizId,
+      staffingAssignmentId: String((assignment as Record<string, unknown>).id),
+      actorUserId: c.get('user')?.id ?? null,
+    })
 
     const demandUpdated = await updateStaffingRow(c, bizId, 'staffingDemands', demandId, {
         status: 'filled',

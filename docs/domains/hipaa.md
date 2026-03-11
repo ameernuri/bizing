@@ -8,12 +8,14 @@ tags:
 
 # Hipaa Domain
 
-This file is generated from route/schema source files and exists to keep domain docs synchronized with code reality.
+This file is generated from route/schema source files and the canonical domain manifest to keep docs synchronized with runtime mounts.
 
 ## Source
 
-- Route file: `/Users/ameer/bizing/code/apps/api/src/routes/hipaa.ts`
-- Schema file: `/Users/ameer/bizing/code/packages/db/src/schema/hipaa.ts`
+- Route file: `apps/api/src/routes/hipaa.ts`
+- Schema file: `packages/db/src/schema/hipaa.ts`
+- Mount path: `/`
+- Auth class (manifest): `machine_allowed`
 
 ## Route Intent (top JSDoc)
 
@@ -38,22 +40,22 @@ _No top JSDoc comment found._
 
 ## API Surface
 
-- `GET` `/bizes/:bizId/hipaa/access-policies`
-- `POST` `/bizes/:bizId/hipaa/access-policies`
-- `GET` `/bizes/:bizId/hipaa/access-events`
-- `POST` `/bizes/:bizId/hipaa/access-events`
-- `GET` `/bizes/:bizId/hipaa/break-glass-reviews`
-- `POST` `/bizes/:bizId/hipaa/break-glass-reviews`
-- `GET` `/bizes/:bizId/hipaa/baas`
-- `POST` `/bizes/:bizId/hipaa/baas`
-- `GET` `/bizes/:bizId/hipaa/disclosures`
-- `POST` `/bizes/:bizId/hipaa/disclosures`
-- `GET` `/bizes/:bizId/hipaa/security-incidents`
-- `POST` `/bizes/:bizId/hipaa/security-incidents`
-- `PATCH` `/bizes/:bizId/hipaa/security-incidents/:incidentId`
-- `GET` `/bizes/:bizId/hipaa/breach-notifications`
-- `POST` `/bizes/:bizId/hipaa/breach-notifications`
-- `PATCH` `/bizes/:bizId/hipaa/breach-notifications/:notificationId`
+- `GET` `/api/v1/bizes/:bizId/hipaa/access-policies`
+- `POST` `/api/v1/bizes/:bizId/hipaa/access-policies`
+- `GET` `/api/v1/bizes/:bizId/hipaa/access-events`
+- `POST` `/api/v1/bizes/:bizId/hipaa/access-events`
+- `GET` `/api/v1/bizes/:bizId/hipaa/break-glass-reviews`
+- `POST` `/api/v1/bizes/:bizId/hipaa/break-glass-reviews`
+- `GET` `/api/v1/bizes/:bizId/hipaa/baas`
+- `POST` `/api/v1/bizes/:bizId/hipaa/baas`
+- `GET` `/api/v1/bizes/:bizId/hipaa/disclosures`
+- `POST` `/api/v1/bizes/:bizId/hipaa/disclosures`
+- `GET` `/api/v1/bizes/:bizId/hipaa/security-incidents`
+- `POST` `/api/v1/bizes/:bizId/hipaa/security-incidents`
+- `PATCH` `/api/v1/bizes/:bizId/hipaa/security-incidents/:incidentId`
+- `GET` `/api/v1/bizes/:bizId/hipaa/breach-notifications`
+- `POST` `/api/v1/bizes/:bizId/hipaa/breach-notifications`
+- `PATCH` `/api/v1/bizes/:bizId/hipaa/breach-notifications/:notificationId`
 
 ## Tables
 

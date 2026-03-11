@@ -534,7 +534,7 @@ instrumentRoutes.get(
   requireAclPermission('compliance.read', { bizIdParam: 'bizId' }),
   async (c) => {
     const bizId = c.req.param('bizId')
-    const limit = parsePositiveInt(c.req.query('limit'), 100)
+    const limit = Math.min(parsePositiveInt(c.req.query('limit'), 100), 200)
     const offset = Math.max(0, Number(c.req.query('offset') ?? '0') || 0)
     const rows = await db.query.instrumentRuns.findMany({
       where: eq(instrumentRuns.bizId, bizId),

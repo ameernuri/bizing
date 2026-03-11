@@ -42,6 +42,11 @@ const ROUTE_CLASS_RULES: RouteClassRule[] = [
     class: 'internal_only',
   },
   {
+    key: 'internal-operator-surface',
+    path: /^\/api\/v1\/internal(?:\/|$)/,
+    class: 'internal_only',
+  },
+  {
     key: 'public-v1-surface',
     path: /^\/api\/v1\/public(?:\/|$)/,
     class: 'public',

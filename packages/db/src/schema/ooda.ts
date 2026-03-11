@@ -395,3 +395,62 @@ export const oodaLoopActions = pgTable(
     ),
   }),
 );
+
+/**
+ * ooda_asciip_documents
+ *
+ * ELI5:
+ * Stores Asciip editor documents as DB-backed collaborative artifacts.
+ *
+ * Why this exists:
+ * - avoids file-system coupling in OODash UX flows,
+ * - gives optimistic revision control for concurrent editors,
+ * - makes documents queryable/auditable in the same platform data plane.
+ */
+export const oodaAsciipDocuments = pgTable(
+  "ooda_asciip_documents",
+  {
+    id: idWithTag("ooda_asciip_doc"),
+
+    /** Optional tenant scope (null means platform/global workspace). */
+    bizId: idRef("biz_id").references(() => bizes.id),
+
+    /** Stable machine path/key (examples: `checkout/handoff.asciip`). */
+    documentPath: varchar("document_path", { length: 600 }).notNull(),
+
+    /** Human-readable display name. */
+    title: varchar("title", { length: 180 }).notNull(),
+
+    /** Canonical serialized editor state payload. */
+    editorState: jsonb("editor_state").default({}).notNull(),
+
+    /** Optimistic concurrency counter incremented on each save. */
+    revision: integer("revision").default(1).notNull(),
+
+    /** Lifecycle status for archive/soft-delete workflows. */
+    status: varchar("status", { length: 24 }).default("active").notNull(),
+
+    createdAt,
+    updatedAt,
+    deletedAt,
+    createdBy: idRef("created_by").references(() => users.id),
+    updatedBy: idRef("updated_by").references(() => users.id),
+    deletedBy: idRef("deleted_by").references(() => users.id),
+  },
+  (table) => ({
+    oodaAsciipDocumentsPathUnique: uniqueIndex("ooda_asciip_documents_path_unique").on(table.documentPath),
+    oodaAsciipDocumentsBizStatusIdx: index("ooda_asciip_documents_biz_status_idx").on(
+      table.bizId,
+      table.status,
+      table.updatedAt,
+    ),
+    oodaAsciipDocumentsRevisionCheck: check(
+      "ooda_asciip_documents_revision_check",
+      sql`"revision" >= 1`,
+    ),
+    oodaAsciipDocumentsStatusCheck: check(
+      "ooda_asciip_documents_status_check",
+      sql`"status" IN ('active', 'archived')`,
+    ),
+  }),
+);

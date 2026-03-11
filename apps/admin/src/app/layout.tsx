@@ -4,8 +4,8 @@ import { ThemeProvider } from '@/components/ThemeProvider'
 import { AuthProvider } from '@/components/AuthProvider'
 
 export const metadata: Metadata = {
-  title: 'Bizing Admin',
-  description: 'Sell your services and digital products online',
+  title: 'Bizing',
+  description: 'Run operations, sales, scheduling, and payments in one place.',
   icons: {
     icon: '/images/bizing.logo.icon.svg'
   }

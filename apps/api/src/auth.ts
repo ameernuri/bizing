@@ -25,8 +25,11 @@ const trustedOrigins = Array.from(
       process.env.BETTER_AUTH_URL || '',
       process.env.BETTER_AUTH_BASE_URL || '',
       process.env.ADMIN_APP_ORIGIN || '',
+      process.env.CANVASCII_APP_ORIGIN || '',
       'http://localhost:9000',
       'http://127.0.0.1:9000',
+      'http://localhost:9101',
+      'http://127.0.0.1:9101',
       'http://localhost:6129',
       'http://127.0.0.1:6129',
     ]
@@ -49,6 +52,18 @@ export const auth = betterAuth({
   baseURL: process.env.BETTER_AUTH_URL || process.env.BETTER_AUTH_BASE_URL,
   basePath: '/api/auth',
   trustedOrigins,
+  /**
+   * ELI5:
+   * Browsers scope cookies by domain/path, not by port.
+   * That means `localhost:3000` and `localhost:9000` can collide if both apps
+   * use Better Auth's default cookie names.
+   *
+   * We force a Bizing-specific cookie prefix so this API's session cookies do
+   * not overwrite sessions from other local Better Auth apps.
+   */
+  advanced: {
+    cookiePrefix: process.env.BETTER_AUTH_COOKIE_PREFIX || 'bizing-auth',
+  },
   emailAndPassword: {
     enabled: true,
   },
@@ -56,6 +71,18 @@ export const auth = betterAuth({
     modelName: 'users',
     fields: {
       image: 'avatarUrl',
+    },
+    additionalFields: {
+      firstName: {
+        type: 'string',
+        required: false,
+        fieldName: 'firstName',
+      },
+      lastName: {
+        type: 'string',
+        required: false,
+        fieldName: 'lastName',
+      },
     },
   },
   session: {

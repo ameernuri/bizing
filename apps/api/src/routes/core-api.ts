@@ -23,6 +23,7 @@ import { sagaRoutes } from './sagas.js'
 import { authzRoutes } from './authz.js'
 import { authMachineRoutes } from './auth-machine.js'
 import { serviceRoutes } from './services.js'
+import { offerComponentRoutes } from './offer-components.js'
 import { serviceProductRoutes } from './service-products.js'
 import { serviceProductRequirementRoutes } from './service-product-requirements.js'
 import { calendarRoutes } from './calendars.js'
@@ -35,6 +36,7 @@ import { policyRoutes } from './policies.js'
 import { bookingParticipantRoutes } from './booking-participants.js'
 import { operationsRoutes } from './operations.js'
 import { staffingRoutes } from './staffing.js'
+import { coverageLaneRoutes } from './coverage-lanes.js'
 import { fulfillmentRoutes } from './fulfillment.js'
 import { compensationRoutes } from './compensation.js'
 import { accessRoutes } from './access.js'
@@ -82,86 +84,121 @@ import { giftDeliveryRoutes } from './gift-delivery.js'
 import { marketingPerformanceRoutes } from './marketing-performance.js'
 import { customerOpsRoutes } from './customer-ops.js'
 import { oodaRoutes } from './ooda.js'
+import { knowledgeRoutes } from './knowledge.js'
+import { inventoryRoutes } from './inventory.js'
+import { valueProgramRoutes } from './value-programs.js'
+import { workforceRoutes } from './workforce.js'
+import { growthRoutes } from './growth.js'
+import { workItemRoutes } from './work-items.js'
+import { commandRoutes } from './commands.js'
+import { aiActionRoutes } from './ai-actions.js'
+import { domainManifestEntries } from './domain-manifest.js'
 import testRoutes from './test-failures.js'
 
 export const coreApiRoutes = new Hono()
 
-coreApiRoutes.route('/bizes', bizRoutes)
-coreApiRoutes.route('/', locationRoutes)
-coreApiRoutes.route('/', resourceRoutes)
-coreApiRoutes.route('/', offerRoutes)
-coreApiRoutes.route('/', bookingRoutes)
-coreApiRoutes.route('/', queueRoutes)
-coreApiRoutes.route('/', complianceRoutes)
-coreApiRoutes.route('/', demandPricingRoutes)
-coreApiRoutes.route('/', channelRoutes)
-coreApiRoutes.route('/', dispatchRoutes)
-coreApiRoutes.route('/', paymentRoutes)
-coreApiRoutes.route('/', subjectSubscriptionRoutes)
-coreApiRoutes.route('/', serviceRoutes)
+const coreRouteRegistry: Record<string, Hono> = {
+  bizes: bizRoutes,
+  locations: locationRoutes,
+  resources: resourceRoutes,
+  offers: offerRoutes,
+  bookings: bookingRoutes,
+  queues: queueRoutes,
+  compliance: complianceRoutes,
+  'demand-pricing': demandPricingRoutes,
+  channels: channelRoutes,
+  dispatch: dispatchRoutes,
+  payments: paymentRoutes,
+  'subject-subscriptions': subjectSubscriptionRoutes,
+  services: serviceRoutes,
+  calendars: calendarRoutes,
+  communications: communicationRoutes,
+  instruments: instrumentRoutes,
+  'custom-fields': customFieldRoutes,
+  'group-accounts': groupAccountRoutes,
+  entitlements: entitlementRoutes,
+  policies: policyRoutes,
+  'booking-participants': bookingParticipantRoutes,
+  operations: operationsRoutes,
+  staffing: staffingRoutes,
+  'coverage-lanes': coverageLaneRoutes,
+  fulfillment: fulfillmentRoutes,
+  compensation: compensationRoutes,
+  access: accessRoutes,
+  'virtual-meetings': virtualMeetingRoutes,
+  extensions: extensionRoutes,
+  receivables: receivableRoutes,
+  supply: supplyRoutes,
+  sla: slaRoutes,
+  'tax-fx': taxFxRoutes,
+  commitments: commitmentRoutes,
+  actions: actionRoutes,
+  workflows: workflowRoutes,
+  promotions: promotionRoutes,
+  referrals: referralRoutes,
+  'lifecycle-hooks': lifecycleHookRoutes,
+  crm: crmRoutes,
+  analytics: analyticsRoutes,
+  education: educationRoutes,
+  'work-management': workManagementRoutes,
+  leave: leaveRoutes,
+  hipaa: hipaaRoutes,
+  'biz-configs': bizConfigRoutes,
+  reporting: reportingRoutes,
+  'calendar-sharing': calendarSharingRoutes,
+  governance: governanceRoutes,
+  'sellable-pricing': sellablePricingRoutes,
+  sellables: sellableRoutes,
+  seating: seatingRoutes,
+  'notification-endpoints': notificationEndpointRoutes,
+  'subject-events': subjectEventRoutes,
+  products: productRoutes,
+  'sellable-variants': sellableVariantRoutes,
+  checkout: checkoutRoutes,
+  progression: progressionRoutes,
+  'session-interactions': sessionInteractionRoutes,
+  'queue-counters': queueCounterRoutes,
+  'access-transfers': accessTransferRoutes,
+  'customer-library': customerLibraryRoutes,
+  'access-security': accessSecurityRoutes,
+  'credential-exchange': credentialExchangeRoutes,
+  enterprise: enterpriseRoutes,
+  wishlists: wishlistRoutes,
+  'sales-quotes': salesQuoteRoutes,
+  'gift-delivery': giftDeliveryRoutes,
+  'marketing-performance': marketingPerformanceRoutes,
+  'customer-ops': customerOpsRoutes,
+  ooda: oodaRoutes,
+  knowledge: knowledgeRoutes,
+  inventory: inventoryRoutes,
+  'value-programs': valueProgramRoutes,
+  workforce: workforceRoutes,
+  growth: growthRoutes,
+  'work-items': workItemRoutes,
+  commands: commandRoutes,
+  'ai-actions': aiActionRoutes,
+  sagas: sagaRoutes,
+  authz: authzRoutes,
+  'auth-machine': authMachineRoutes,
+  mcp: codeModeRoutes,
+}
+
+for (const entry of domainManifestEntries) {
+  const router = coreRouteRegistry[entry.key]
+  if (!router) {
+    throw new Error(`core-api route registry is missing router for manifest key: ${entry.key}`)
+  }
+  coreApiRoutes.route(entry.mountPath, router)
+}
+
+/**
+ * Hidden legacy mounts kept only so internal saga/runtime coverage can finish
+ * migrating away from service/service-product endpoints during the catalog cut.
+ * They are intentionally omitted from the public domain manifest.
+ */
 coreApiRoutes.route('/', serviceProductRoutes)
 coreApiRoutes.route('/', serviceProductRequirementRoutes)
-coreApiRoutes.route('/', calendarRoutes)
-coreApiRoutes.route('/', communicationRoutes)
-coreApiRoutes.route('/', instrumentRoutes)
-coreApiRoutes.route('/', customFieldRoutes)
-coreApiRoutes.route('/', groupAccountRoutes)
-coreApiRoutes.route('/', entitlementRoutes)
-coreApiRoutes.route('/', policyRoutes)
-coreApiRoutes.route('/', bookingParticipantRoutes)
-coreApiRoutes.route('/', operationsRoutes)
-coreApiRoutes.route('/', staffingRoutes)
-coreApiRoutes.route('/', fulfillmentRoutes)
-coreApiRoutes.route('/', compensationRoutes)
-coreApiRoutes.route('/', accessRoutes)
-coreApiRoutes.route('/', virtualMeetingRoutes)
-coreApiRoutes.route('/', extensionRoutes)
-coreApiRoutes.route('/', receivableRoutes)
-coreApiRoutes.route('/', supplyRoutes)
-coreApiRoutes.route('/', slaRoutes)
-coreApiRoutes.route('/', taxFxRoutes)
-coreApiRoutes.route('/', commitmentRoutes)
-coreApiRoutes.route('/', actionRoutes)
-coreApiRoutes.route('/', workflowRoutes)
-coreApiRoutes.route('/', promotionRoutes)
-coreApiRoutes.route('/', referralRoutes)
-coreApiRoutes.route('/', lifecycleHookRoutes)
-coreApiRoutes.route('/', crmRoutes)
-coreApiRoutes.route('/', analyticsRoutes)
-coreApiRoutes.route('/', educationRoutes)
-coreApiRoutes.route('/', workManagementRoutes)
-coreApiRoutes.route('/', leaveRoutes)
-coreApiRoutes.route('/', hipaaRoutes)
-coreApiRoutes.route('/', bizConfigRoutes)
-coreApiRoutes.route('/', reportingRoutes)
-coreApiRoutes.route('/', calendarSharingRoutes)
-coreApiRoutes.route('/', governanceRoutes)
-coreApiRoutes.route('/', sellablePricingRoutes)
-coreApiRoutes.route('/', sellableRoutes)
-coreApiRoutes.route('/', seatingRoutes)
-coreApiRoutes.route('/', notificationEndpointRoutes)
-coreApiRoutes.route('/', subjectEventRoutes)
-coreApiRoutes.route('/', productRoutes)
-coreApiRoutes.route('/', sellableVariantRoutes)
-coreApiRoutes.route('/', checkoutRoutes)
-coreApiRoutes.route('/', progressionRoutes)
-coreApiRoutes.route('/', sessionInteractionRoutes)
-coreApiRoutes.route('/', queueCounterRoutes)
-coreApiRoutes.route('/', accessTransferRoutes)
-coreApiRoutes.route('/', customerLibraryRoutes)
-coreApiRoutes.route('/', accessSecurityRoutes)
-coreApiRoutes.route('/', credentialExchangeRoutes)
-coreApiRoutes.route('/', enterpriseRoutes)
-coreApiRoutes.route('/', wishlistRoutes)
-coreApiRoutes.route('/', salesQuoteRoutes)
-coreApiRoutes.route('/', giftDeliveryRoutes)
-coreApiRoutes.route('/', marketingPerformanceRoutes)
-coreApiRoutes.route('/', customerOpsRoutes)
-coreApiRoutes.route('/', oodaRoutes)
-coreApiRoutes.route('/', sagaRoutes)
-coreApiRoutes.route('/', authzRoutes)
-coreApiRoutes.route('/', authMachineRoutes)
-coreApiRoutes.route('/agents', codeModeRoutes)
+coreApiRoutes.route('/', offerComponentRoutes)
 
 /**
  * Test-failure routes are explicitly opt-in for local runner diagnostics.

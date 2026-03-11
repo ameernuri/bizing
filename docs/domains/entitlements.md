@@ -8,12 +8,14 @@ tags:
 
 # Entitlements Domain
 
-This file is generated from route/schema source files and exists to keep domain docs synchronized with code reality.
+This file is generated from route/schema source files and the canonical domain manifest to keep docs synchronized with runtime mounts.
 
 ## Source
 
-- Route file: `/Users/ameer/bizing/code/apps/api/src/routes/entitlements.ts`
-- Schema file: `/Users/ameer/bizing/code/packages/db/src/schema/entitlements.ts`
+- Route file: `apps/api/src/routes/entitlements.ts`
+- Schema file: `packages/db/src/schema/entitlements.ts`
+- Mount path: `/`
+- Auth class (manifest): `machine_allowed`
 
 ## Route Intent (top JSDoc)
 
@@ -41,29 +43,27 @@ _No top JSDoc comment found._
 
 ## API Surface
 
-- `GET` `/bizes/:bizId/membership-plans`
-- `POST` `/bizes/:bizId/membership-plans`
-- `PATCH` `/bizes/:bizId/membership-plans/:membershipPlanId`
-- `GET` `/bizes/:bizId/memberships`
-- `POST` `/bizes/:bizId/memberships`
-- `GET` `/bizes/:bizId/memberships/:membershipId`
-- `PATCH` `/bizes/:bizId/memberships/:membershipId`
-- `GET` `/bizes/:bizId/entitlement-wallets`
-- `POST` `/bizes/:bizId/entitlement-wallets`
-- `GET` `/bizes/:bizId/entitlement-wallets/:walletId`
-- `POST` `/bizes/:bizId/entitlement-grants`
-- `POST` `/bizes/:bizId/entitlement-transfers`
-- `GET` `user`
-- `GET` `user`
-- `POST` `/bizes/:bizId/entitlement-wallets/:walletId/consume`
-- `GET` `/bizes/:bizId/entitlement-wallets/:walletId/ledger`
-- `POST` `/bizes/:bizId/gift-wallets`
-- `GET` `/bizes/:bizId/gift-wallets/:walletId`
-- `POST` `/public/bizes/:bizId/gift-wallets/redeem`
-- `POST` `/bizes/:bizId/gift-wallets/:walletId/transfer`
-- `POST` `/bizes/:bizId/gift-wallets/:walletId/revoke`
-- `POST` `/bizes/:bizId/gift-wallets/:walletId/extend`
-- `POST` `/bizes/:bizId/rollover-runs`
+- `GET` `/api/v1/bizes/:bizId/membership-plans`
+- `POST` `/api/v1/bizes/:bizId/membership-plans`
+- `PATCH` `/api/v1/bizes/:bizId/membership-plans/:membershipPlanId`
+- `GET` `/api/v1/bizes/:bizId/memberships`
+- `POST` `/api/v1/bizes/:bizId/memberships`
+- `GET` `/api/v1/bizes/:bizId/memberships/:membershipId`
+- `PATCH` `/api/v1/bizes/:bizId/memberships/:membershipId`
+- `GET` `/api/v1/bizes/:bizId/entitlement-wallets`
+- `POST` `/api/v1/bizes/:bizId/entitlement-wallets`
+- `GET` `/api/v1/bizes/:bizId/entitlement-wallets/:walletId`
+- `POST` `/api/v1/bizes/:bizId/entitlement-grants`
+- `POST` `/api/v1/bizes/:bizId/entitlement-transfers`
+- `POST` `/api/v1/bizes/:bizId/entitlement-wallets/:walletId/consume`
+- `GET` `/api/v1/bizes/:bizId/entitlement-wallets/:walletId/ledger`
+- `POST` `/api/v1/bizes/:bizId/gift-wallets`
+- `GET` `/api/v1/bizes/:bizId/gift-wallets/:walletId`
+- `POST` `/api/v1/public/bizes/:bizId/gift-wallets/redeem`
+- `POST` `/api/v1/bizes/:bizId/gift-wallets/:walletId/transfer`
+- `POST` `/api/v1/bizes/:bizId/gift-wallets/:walletId/revoke`
+- `POST` `/api/v1/bizes/:bizId/gift-wallets/:walletId/extend`
+- `POST` `/api/v1/bizes/:bizId/rollover-runs`
 
 ## Tables
 

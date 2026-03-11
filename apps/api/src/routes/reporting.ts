@@ -16,14 +16,20 @@
  */
 
 import { Hono } from 'hono'
-import { and, asc, eq } from 'drizzle-orm'
+import { and, asc, eq, gte, lte } from 'drizzle-orm'
 import { z } from 'zod'
 import dbPackage from '@bizing/db'
 import { requireAclPermission, requireAuth, requireBizAccess } from '../middleware/auth.js'
 import { executeCrudRouteAction } from '../services/action-route-bridge.js'
+import { computeCoverageLaneSummary } from '../services/coverage-lane-operations.js'
 import { fail, ok } from './_api.js'
 
-const { db, projectionCheckpoints } = dbPackage
+const {
+  db,
+  projectionCheckpoints,
+} = dbPackage
+
+const projectionCheckpointStatusSchema = z.enum(['healthy', 'lagging', 'degraded', 'failed'])
 
 const upsertCheckpointBodySchema = z.object({
   projectionKey: z.string().min(1).max(140),
@@ -33,7 +39,7 @@ const upsertCheckpointBodySchema = z.object({
   sellableId: z.string().optional(),
   subjectType: z.string().optional(),
   subjectId: z.string().optional(),
-  status: z.enum(['healthy', 'lagging', 'degraded', 'failed']).default('healthy'),
+  status: projectionCheckpointStatusSchema.default('healthy'),
   revision: z.number().int().min(0).default(0),
   lastLifecycleEventId: z.string().optional(),
   lastEventOccurredAt: z.string().datetime().optional(),
@@ -49,13 +55,24 @@ const upsertCheckpointBodySchema = z.object({
 })
 
 const replayCheckpointBodySchema = z.object({
-  toStatus: z.enum(['healthy', 'lagging', 'degraded', 'failed']).default('healthy'),
+  toStatus: projectionCheckpointStatusSchema.default('healthy'),
   lastLifecycleEventId: z.string().optional(),
   lastEventOccurredAt: z.string().datetime().optional(),
   lastAppliedAt: z.string().datetime().optional(),
   lagSeconds: z.number().int().min(0).default(0),
   errorSummary: z.string().max(2000).optional().nullable(),
   metadata: z.record(z.unknown()).optional(),
+})
+
+const listProjectionCheckpointsQuerySchema = z.object({
+  status: projectionCheckpointStatusSchema.optional(),
+  projectionKey: z.string().min(1).max(140).optional(),
+})
+
+const coverageLaneSummaryQuerySchema = z.object({
+  from: z.string().datetime().optional(),
+  to: z.string().datetime().optional(),
+  locationId: z.string().optional(),
 })
 
 function scopeWhere(bizId: string, body: z.infer<typeof upsertCheckpointBodySchema>) {
@@ -130,13 +147,14 @@ reportingRoutes.get(
   requireAclPermission('bizes.read', { bizIdParam: 'bizId' }),
   async (c) => {
     const bizId = c.req.param('bizId')
-    const status = c.req.query('status')
-    const projectionKey = c.req.query('projectionKey')
+    const parsed = listProjectionCheckpointsQuerySchema.safeParse(c.req.query())
+    if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid query parameters.', 400, parsed.error.flatten())
+
     const rows = await db.query.projectionCheckpoints.findMany({
       where: and(
         eq(projectionCheckpoints.bizId, bizId),
-        status ? eq(projectionCheckpoints.status, status as never) : undefined,
-        projectionKey ? eq(projectionCheckpoints.projectionKey, projectionKey) : undefined,
+        parsed.data.status ? eq(projectionCheckpoints.status, parsed.data.status) : undefined,
+        parsed.data.projectionKey ? eq(projectionCheckpoints.projectionKey, parsed.data.projectionKey) : undefined,
       ),
       orderBy: [asc(projectionCheckpoints.projectionKey), asc(projectionCheckpoints.lastAppliedAt)],
     })
@@ -205,6 +223,28 @@ reportingRoutes.post(
     })
     if (created instanceof Response) return created
     return ok(c, created, 201)
+  },
+)
+
+reportingRoutes.get(
+  '/bizes/:bizId/reporting/coverage-lanes/summary',
+  requireAuth,
+  requireBizAccess('bizId'),
+  requireAclPermission('bizes.read', { bizIdParam: 'bizId' }),
+  async (c) => {
+    const bizId = c.req.param('bizId')
+    const parsed = coverageLaneSummaryQuerySchema.safeParse(c.req.query())
+    if (!parsed.success) return fail(c, 'VALIDATION_ERROR', 'Invalid query parameters.', 400, parsed.error.flatten())
+
+    const from = parsed.data.from ? new Date(parsed.data.from) : new Date(Date.now() - 24 * 60 * 60 * 1000)
+    const to = parsed.data.to ? new Date(parsed.data.to) : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+    const summary = await computeCoverageLaneSummary({
+      bizId,
+      from,
+      to,
+      locationId: parsed.data.locationId ?? null,
+    })
+    return ok(c, summary)
   },
 )
 

@@ -15,6 +15,15 @@ import { domainEvents } from "./domain_events";
 import { crmContacts } from "./crm";
 import { users } from "./users";
 import { subjects } from "./subjects";
+import {
+  clientExternalSubjectStatusEnum,
+  clientInstallationCredentialStatusEnum,
+  clientInstallationStatusEnum,
+  customerIdentityHandleStatusEnum,
+  customerProfileStatusEnum,
+  customerVerificationChallengeStatusEnum,
+  customerVisibilityPolicyStatusEnum,
+} from "./enums";
 
 /**
  * client_installations
@@ -44,7 +53,7 @@ export const clientInstallations = pgTable(
     displayName: varchar("display_name", { length: 240 }).notNull(),
     originUrl: varchar("origin_url", { length: 700 }),
     siteKey: varchar("site_key", { length: 180 }),
-    status: varchar("status", { length: 32 }).default("active").notNull(),
+    status: clientInstallationStatusEnum("status").default("active").notNull(),
     trustMode: varchar("trust_mode", { length: 40 }).default("write_only").notNull(),
     config: jsonb("config").default({}).notNull(),
     metadata: jsonb("metadata").default({}).notNull(),
@@ -86,7 +95,7 @@ export const clientInstallationCredentials = pgTable(
     credentialType: varchar("credential_type", { length: 40 }).notNull(),
     publicKeyHint: varchar("public_key_hint", { length: 255 }),
     secretHash: varchar("secret_hash", { length: 255 }).notNull(),
-    status: varchar("status", { length: 32 }).default("active").notNull(),
+    status: clientInstallationCredentialStatusEnum("status").default("active").notNull(),
     lastUsedAt: timestamp("last_used_at", { withTimezone: true }),
     expiresAt: timestamp("expires_at", { withTimezone: true }),
     scopes: jsonb("scopes").default([]).notNull(),
@@ -132,7 +141,7 @@ export const customerProfiles = pgTable(
      * - merged
      * - archived
      */
-    status: varchar("status", { length: 32 }).default("shadow").notNull(),
+    status: customerProfileStatusEnum("status").default("shadow").notNull(),
 
     displayName: varchar("display_name", { length: 240 }),
     primaryEmail: varchar("primary_email", { length: 320 }),
@@ -177,6 +186,19 @@ export const customerProfiles = pgTable(
       table.bizId,
       table.primaryPhone,
     ),
+
+    /**
+     * Tenant-safe CRM primary-contact pointer.
+     *
+     * ELI5:
+     * A customer profile inside biz A cannot accidentally point to a CRM
+     * contact row that belongs to biz B.
+     */
+    customerProfilesPrimaryCrmContactTenantFk: foreignKey({
+      columns: [table.bizId, table.primaryCrmContactId],
+      foreignColumns: [crmContacts.bizId, crmContacts.id],
+      name: "customer_profiles_primary_crm_contact_tenant_fk",
+    }),
     customerProfilesStageCheck: check(
       "customer_profiles_stage_check",
       sql`
@@ -225,7 +247,7 @@ export const customerIdentityHandles = pgTable(
     handleType: varchar("handle_type", { length: 60 }).notNull(),
     normalizedValue: varchar("normalized_value", { length: 500 }).notNull(),
     displayValue: varchar("display_value", { length: 500 }),
-    status: varchar("status", { length: 32 }).default("active").notNull(),
+    status: customerIdentityHandleStatusEnum("status").default("active").notNull(),
     metadata: jsonb("metadata").default({}).notNull(),
 
     ...withAuditRefs(() => users.id),
@@ -317,7 +339,7 @@ export const clientExternalSubjects = pgTable(
     subjectKind: varchar("subject_kind", { length: 60 }).notNull(),
     externalSubjectKey: varchar("external_subject_key", { length: 240 }).notNull(),
     customerProfileId: idRef("customer_profile_id").references(() => customerProfiles.id),
-    status: varchar("status", { length: 32 }).default("active").notNull(),
+    status: clientExternalSubjectStatusEnum("status").default("active").notNull(),
     payload: jsonb("payload").default({}).notNull(),
     metadata: jsonb("metadata").default({}).notNull(),
 
@@ -358,7 +380,7 @@ export const customerVerificationChallenges = pgTable(
       .notNull(),
     handleId: idRef("handle_id").references(() => customerIdentityHandles.id),
     challengeType: varchar("challenge_type", { length: 40 }).notNull(),
-    status: varchar("status", { length: 32 }).default("pending").notNull(),
+    status: customerVerificationChallengeStatusEnum("status").default("pending").notNull(),
     codeHash: varchar("code_hash", { length: 255 }),
     sentTo: varchar("sent_to", { length: 500 }),
     expiresAt: timestamp("expires_at", { withTimezone: true }),
@@ -372,6 +394,16 @@ export const customerVerificationChallenges = pgTable(
 
     ...withAuditRefs(() => users.id),
   },
+  (table) => ({
+    /**
+     * Tenant-safe action request reference.
+     */
+    customerVerificationChallengesActionRequestTenantFk: foreignKey({
+      columns: [table.bizId, table.actionRequestId],
+      foreignColumns: [actionRequests.bizId, actionRequests.id],
+      name: "customer_verification_challenges_action_request_tenant_fk",
+    }),
+  }),
 );
 
 /**
@@ -401,6 +433,31 @@ export const customerProfileMerges = pgTable(
     ...withAuditRefs(() => users.id),
   },
   (table) => ({
+    customerProfileMergesSourceProfileTenantFk: foreignKey({
+      columns: [table.bizId, table.sourceCustomerProfileId],
+      foreignColumns: [customerProfiles.bizId, customerProfiles.id],
+      name: "customer_profile_merges_source_profile_tenant_fk",
+    }),
+    customerProfileMergesTargetProfileTenantFk: foreignKey({
+      columns: [table.bizId, table.targetCustomerProfileId],
+      foreignColumns: [customerProfiles.bizId, customerProfiles.id],
+      name: "customer_profile_merges_target_profile_tenant_fk",
+    }),
+    customerProfileMergesActionRequestTenantFk: foreignKey({
+      columns: [table.bizId, table.actionRequestId],
+      foreignColumns: [actionRequests.bizId, actionRequests.id],
+      name: "customer_profile_merges_action_request_tenant_fk",
+    }),
+    customerProfileMergesEventTenantFk: foreignKey({
+      columns: [table.bizId, table.mergeDomainEventId],
+      foreignColumns: [domainEvents.bizId, domainEvents.id],
+      name: "customer_profile_merges_event_tenant_fk",
+    }),
+    customerProfileMergesDebugSnapshotTenantFk: foreignKey({
+      columns: [table.bizId, table.debugSnapshotId],
+      foreignColumns: [debugSnapshots.bizId, debugSnapshots.id],
+      name: "customer_profile_merges_debug_snapshot_tenant_fk",
+    }),
     customerProfileMergesActionRequestIdx: index(
       "customer_profile_merges_action_request_idx",
     ).on(table.actionRequestId),
@@ -430,7 +487,7 @@ export const customerVisibilityPolicies = pgTable(
       () => clientInstallations.id,
     ),
     visibilityScope: varchar("visibility_scope", { length: 60 }).notNull(),
-    status: varchar("status", { length: 32 }).default("active").notNull(),
+    status: customerVisibilityPolicyStatusEnum("status").default("active").notNull(),
     policy: jsonb("policy").default({}).notNull(),
     metadata: jsonb("metadata").default({}).notNull(),
 

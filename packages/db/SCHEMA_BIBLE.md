@@ -2,8 +2,8 @@
 
 > **The canonical reference for understanding Bizing's data architecture.**
 
-**Version:** 2026.02.28  
-**Total Schema Files:** 85 modules  
+**Version:** 2026.03.04  
+**Total Schema Files:** 88+ modules  
 **Core Tables:** 150+  
 **Enums:** 100+ state machines  
 
@@ -180,19 +180,28 @@ type Resource = {
   type: "host" | "company_host" | "asset" | "venue"
   name: "Chair 3" | "Dr. Smith" | "Conference Room A"
   status: "active" | "inactive" | "maintenance" | "retired"
-  calendar_id: ULID  // Links to availability rules
+  // Calendar ownership is now mapped through calendar_bindings
+  // (resource -> calendar), not a direct calendar_id on resources.
 }
 ```
 
-**Polymorphism Strategy:** Single table with `type` discriminator. All resources have calendars. All can be assigned to fulfillments.
+**Polymorphism Strategy:** Single table with `type` discriminator. Resources can
+bind to calendars through `calendar_bindings` and all can be assigned to
+fulfillments.
 
 #### `time_availability` — Scheduling Engine
 
 **Tables:**
 
-- `availability_rules` — Weekly schedules, holiday overrides
-- `availability_blocks` — Booked/busy time segments
-- `calendar_bindings` — Links resources to schedules
+- `calendars` — Core schedule policy and slot horizon configuration
+- `calendar_bindings` — Links owners (resource/service/offer/location/user/custom subject) to calendars
+- `availability_rules` — Recurring/date/timestamp availability logic
+- `availability_gates` — Runtime signal-driven overrides
+- `capacity_holds` — Blocking and non-blocking demand reservations
+- `calendar_timeline_events` — Canonical calendar timeline projection
+- `calendar_owner_timeline_events` — Owner-scoped timeline projection
+- `availability_resolution_runs` — Decision traces for "why slot available/unavailable"
+- `time_scopes` — Normalized scope dictionary for reusable time/capacity policy targeting
 
 **Rule Precedence (High to Low):**
 
@@ -200,6 +209,73 @@ type Resource = {
 2. `date_range` — Holiday/seasonal overrides
 3. `recurring` — Weekly business hours
 4. `default_mode` — Fallback (available/unavailable by default)
+
+---
+
+### Inventory Procurement & Replenishment
+
+#### `inventory_procurement` — Supplier + Inbound Stock Execution
+
+**Tables:**
+
+- `supply_partners` + `supply_partner_catalog_items` — normalized supplier
+  identity and sourcing economics
+- `inventory_replenishment_policies` + `inventory_replenishment_runs` +
+  `inventory_replenishment_suggestions` — deterministic restock planning
+- `inventory_procurement_orders` + `inventory_procurement_order_lines` —
+  structured purchasing workflow
+- `inventory_receipt_batches` + `inventory_receipt_items` + `inventory_lot_units`
+  — receiving, QA, and lot/serial traceability
+
+**Why this matters:** stock availability, cost control, and fulfillment
+readiness now share one canonical execution model instead of ad hoc inventory
+rows.
+
+---
+
+### Value Programs (Loyalty / Credits)
+
+#### `value_programs` — Balance + Ledger Backbone
+
+**Tables:**
+
+- `value_programs` + `value_program_tiers` — reusable loyalty/value economies
+- `value_program_accounts` — owner-scoped wallet/account shells
+- `value_ledger_entries` — immutable movement accounting (source of truth)
+- `value_transfers` — transfer approval/execution lifecycle
+- `value_rules` + `value_rule_evaluations` — programmable earn/redeem runtime
+  with durable evidence
+
+**Why this matters:** loyalty, cashback, and points now behave like accounting
+systems with deterministic replay, not ephemeral counters.
+
+---
+
+### Workforce Core (HRIS + Hiring + Performance + Benefits)
+
+#### `workforce_core` — People Operations Backbone
+
+**Tables:**
+
+- Org structure/runtime staffing:
+  - `workforce_departments`
+  - `workforce_positions`
+  - `workforce_assignments`
+- Hiring:
+  - `workforce_requisitions`
+  - `workforce_candidates`
+  - `workforce_applications`
+  - `workforce_candidate_events`
+- Performance:
+  - `workforce_performance_cycles`
+  - `workforce_performance_reviews`
+- Benefits:
+  - `workforce_benefit_plans`
+  - `workforce_benefit_enrollments`
+
+**Why this matters:** staffing, recruiting, performance, and benefits now share
+one canonical people model that ties directly into compensation and leave
+modules.
 
 ---
 
@@ -257,6 +333,12 @@ The actual "who does what when":
   status: "pending" | "confirmed" | "in_progress" | "completed" | "cancelled"
 }
 ```
+
+Line-link invariant:
+- `fulfillment_units.booking_order_line_id` is the canonical direct linkage for
+  booking-line execution attribution.
+- `offer_component_id` remains as a legacy/fallback hint, but should not be the
+  primary linkage in new writes.
 
 #### `standing_reservation_contracts` — Recurring Bookings
 
@@ -796,6 +878,9 @@ newColumn: varchar().default('legacy_value')
 | `offers.ts`       | Catalog        | offers, offer_versions, offer_components                          |
 | `fulfillment.ts`  | Delivery       | booking_orders, fulfillment_units, standing_reservation_contracts |
 | `payments.ts`     | Commerce       | payment_intents, payment_transactions, payment_methods            |
+| `inventory_procurement.ts` | Inventory | supplier catalog, replenishment, procurement, receipts, lots |
+| `value_programs.ts` | Loyalty/Value | value programs, accounts, ledgers, rules, evaluations |
+| `workforce_core.ts` | Workforce | departments, positions, assignments, hiring, performance, benefits |
 | `queue.ts`        | Waitlist       | queues, queue_entries                                             |
 | `social_graph.ts` | Notifications  | graph_identities, graph_subject_subscriptions                     |
 | `enums.ts`        | State Machines | 100+ enums                                                        |

@@ -8,12 +8,14 @@ tags:
 
 # Offers Domain
 
-This file is generated from route/schema source files and exists to keep domain docs synchronized with code reality.
+This file is generated from route/schema source files and the canonical domain manifest to keep docs synchronized with runtime mounts.
 
 ## Source
 
-- Route file: `/Users/ameer/bizing/code/apps/api/src/routes/offers.ts`
-- Schema file: `/Users/ameer/bizing/code/packages/db/src/schema/offers.ts`
+- Route file: `apps/api/src/routes/offers.ts`
+- Schema file: `packages/db/src/schema/offers.ts`
+- Mount path: `/`
+- Auth class (manifest): `machine_allowed`
 
 ## Route Intent (top JSDoc)
 
@@ -25,20 +27,19 @@ _No top JSDoc comment found._
 
 ## API Surface
 
-- `GET` `requestId`
-- `GET` `/public/bizes/:bizId/offers`
-- `GET` `/public/bizes/:bizId/offers/:offerId/availability`
-- `GET` `/public/bizes/:bizId/offers/:offerId/walk-up`
-- `GET` `/bizes/:bizId/offers`
-- `POST` `/bizes/:bizId/offers`
-- `PATCH` `/bizes/:bizId/offers/:offerId/versions/:offerVersionId`
-- `GET` `/bizes/:bizId/offers/:offerId`
-- `PATCH` `/bizes/:bizId/offers/:offerId`
-- `DELETE` `/bizes/:bizId/offers/:offerId`
-- `GET` `/bizes/:bizId/offers/:offerId/versions`
-- `GET` `/bizes/:bizId/offers/:offerId/versions/:offerVersionId/admission-modes`
-- `POST` `/bizes/:bizId/offers/:offerId/versions/:offerVersionId/admission-modes`
-- `POST` `/bizes/:bizId/offers/:offerId/versions`
+- `GET` `/api/v1/public/bizes/:bizId/offers`
+- `GET` `/api/v1/public/bizes/:bizId/offers/:offerId/availability`
+- `GET` `/api/v1/public/bizes/:bizId/offers/:offerId/walk-up`
+- `GET` `/api/v1/bizes/:bizId/offers`
+- `POST` `/api/v1/bizes/:bizId/offers`
+- `PATCH` `/api/v1/bizes/:bizId/offers/:offerId/versions/:offerVersionId`
+- `GET` `/api/v1/bizes/:bizId/offers/:offerId`
+- `PATCH` `/api/v1/bizes/:bizId/offers/:offerId`
+- `DELETE` `/api/v1/bizes/:bizId/offers/:offerId`
+- `GET` `/api/v1/bizes/:bizId/offers/:offerId/versions`
+- `GET` `/api/v1/bizes/:bizId/offers/:offerId/versions/:offerVersionId/admission-modes`
+- `POST` `/api/v1/bizes/:bizId/offers/:offerId/versions/:offerVersionId/admission-modes`
+- `POST` `/api/v1/bizes/:bizId/offers/:offerId/versions`
 
 ## Tables
 

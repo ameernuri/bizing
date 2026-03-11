@@ -1,76 +1,43 @@
 # Saga Blocker Report
 
-- generatedAt: `2026-03-01T14:46:20.507Z`
-- totalFailedRuns: 25
-- totalFailures: 122
+- generatedAt: `2026-03-05T04:59:09.016Z`
+- total: 476
+- passed: 467
+- failed: 9
+- durationMs: 860230
+- totalFailedRuns: 9
+- totalFailures: 10
 
 ## By Domain
-- validator: 120
-- general: 2
+- general: 10
 
 ## Top Blockers
-### validator | runtime | no-endpoint
-- count: 25
-- sagas: uc-50-the-solo-entrepreneur-sarah, uc-51-the-solo-entrepreneur-sarah, uc-52-the-solo-entrepreneur-sarah, uc-53-the-solo-entrepreneur-sarah, uc-54-the-solo-entrepreneur-sarah, uc-55-the-solo-entrepreneur-sarah, uc-56-the-solo-entrepreneur-sarah, uc-57-the-solo-entrepreneur-sarah
-- steps: uc-need-validate-4
-- example: Exploratory validation blocked: Insufficient evidence to validate the requirement for policy-based retention.
-- example: Exploratory validation blocked: Exploratory evidence is insufficient to assert a hard requirement failure.
-- example: Exploratory validation blocked: Exploratory evidence is insufficient to assert a hard requirement failure.
+### general | runtime | no-endpoint
+- count: 3
+- sagas: hole-34-inventory-replenishment-procurement-deep, hole-34-inventory-replenishment-procurement-medium, hole-34-inventory-replenishment-procurement-shallow
+- steps: inventory-adversary-cross-scope-denied
+- example: API failure for GET /api/v1/bizes/3AVmAtfwJb46QxMIMnNkR9qUfJ2/inventory-procurement-orders: {"success":false,"error":{"code":"FORBIDDEN","message":"You are not a member of this biz."},"meta":{"requestId":"7cfbc1bc-95f9-405f-9a0f-cb4a387488d7","timestamp":"2026-03-05T04:46:12.825Z"}}
+- example: API failure for GET /api/v1/bizes/3AVmBB01PxzJ9wWaZnqhxJnpExL/inventory-procurement-orders: {"success":false,"error":{"code":"FORBIDDEN","message":"You are not a member of this biz."},"meta":{"requestId":"fb294272-7b1c-427e-a8cd-c629b8efece7","timestamp":"2026-03-05T04:46:14.544Z"}}
+- example: API failure for GET /api/v1/bizes/3AVmBAKdpZTcho9yCtiQIB8t0Rx/inventory-procurement-orders: {"success":false,"error":{"code":"FORBIDDEN","message":"You are not a member of this biz."},"meta":{"requestId":"b40ddf2b-e4c8-404e-bcc7-9067ae04a53e","timestamp":"2026-03-05T04:46:14.841Z"}}
 
-### validator | runtime | no-endpoint
-- count: 25
-- sagas: uc-50-the-solo-entrepreneur-sarah, uc-51-the-solo-entrepreneur-sarah, uc-52-the-solo-entrepreneur-sarah, uc-53-the-solo-entrepreneur-sarah, uc-54-the-solo-entrepreneur-sarah, uc-55-the-solo-entrepreneur-sarah, uc-56-the-solo-entrepreneur-sarah, uc-57-the-solo-entrepreneur-sarah
-- steps: uc-need-validate-5
-- example: Exploratory validation blocked: Insufficient evidence to validate the requirement for being searchable by user, date, field, and booking.
-- example: Exploratory validation blocked: Exploratory evidence is insufficient to assert a hard requirement failure.
-- example: Exploratory validation blocked: Exploratory evidence is insufficient to assert a hard requirement failure.
+### general | runtime | no-endpoint
+- count: 3
+- sagas: hole-35-value-ledger-transfer-traceability-medium, hole-35-value-ledger-transfer-traceability-deep, hole-35-value-ledger-transfer-traceability-shallow
+- steps: value-adversary-cross-scope-denied
+- example: API failure for GET /api/v1/bizes/3AVmB8gKbXpYOEXVdjEgYQru2jC/value-transfers: {"success":false,"error":{"code":"FORBIDDEN","message":"You are not a member of this biz."},"meta":{"requestId":"1210dc6f-6fab-4501-b190-32aafda27e98","timestamp":"2026-03-05T04:46:15.456Z"}}
+- example: API failure for GET /api/v1/bizes/3AVmB7jvo2e48jUddSiX9chARqz/value-transfers: {"success":false,"error":{"code":"FORBIDDEN","message":"You are not a member of this biz."},"meta":{"requestId":"b2c6b10b-8ad1-474b-a41d-d02c733af595","timestamp":"2026-03-05T04:46:15.641Z"}}
+- example: API failure for GET /api/v1/bizes/3AVmBPWBvnZ49PuIFPxoLJ1Sybr/value-transfers: {"success":false,"error":{"code":"FORBIDDEN","message":"You are not a member of this biz."},"meta":{"requestId":"26b41b83-7658-4c89-a7fb-02e0f242fb64","timestamp":"2026-03-05T04:46:17.360Z"}}
 
-### validator | runtime | no-endpoint
-- count: 22
-- sagas: uc-50-the-solo-entrepreneur-sarah, uc-52-the-solo-entrepreneur-sarah, uc-53-the-solo-entrepreneur-sarah, uc-54-the-solo-entrepreneur-sarah, uc-55-the-solo-entrepreneur-sarah, uc-56-the-solo-entrepreneur-sarah, uc-58-the-solo-entrepreneur-sarah, uc-60-the-solo-entrepreneur-sarah
-- steps: uc-need-validate-2
-- example: Exploratory validation blocked: Insufficient evidence to validate the requirement for capturing audit logs.
-- example: Exploratory validation blocked: Exploratory evidence is insufficient to assert a hard requirement failure.
-- example: Exploratory validation blocked: Exploratory evidence is insufficient to assert a hard requirement failure.
-
-### validator | runtime | no-endpoint
-- count: 21
-- sagas: uc-50-the-solo-entrepreneur-sarah, uc-52-the-solo-entrepreneur-sarah, uc-53-the-solo-entrepreneur-sarah, uc-54-the-solo-entrepreneur-sarah, uc-56-the-solo-entrepreneur-sarah, uc-58-the-solo-entrepreneur-sarah, uc-60-the-solo-entrepreneur-sarah, uc-61-the-solo-entrepreneur-sarah
-- steps: uc-need-validate-3
-- example: Exploratory validation blocked: Insufficient evidence to validate the requirement for immutable storage.
-- example: Exploratory validation blocked: Exploratory evidence is insufficient to assert a hard requirement failure.
-- example: Exploratory validation blocked: Insufficient evidence to validate the requirement for 'Estimated wait time'.
-
-### validator | runtime | no-endpoint
-- count: 19
-- sagas: uc-50-the-solo-entrepreneur-sarah, uc-52-the-solo-entrepreneur-sarah, uc-54-the-solo-entrepreneur-sarah, uc-55-the-solo-entrepreneur-sarah, uc-56-the-solo-entrepreneur-sarah, uc-58-the-solo-entrepreneur-sarah, uc-60-the-solo-entrepreneur-sarah, uc-61-the-solo-entrepreneur-sarah
-- steps: uc-need-validate-1
-- example: Exploratory validation blocked: Exploratory evidence is insufficient to assert a hard requirement failure.
-- example: Exploratory validation blocked: Exploratory evidence is insufficient to assert a hard requirement failure.
-- example: Exploratory validation blocked: Exploratory evidence is insufficient to assert a hard requirement failure.
-
-### validator | runtime | no-endpoint
-- count: 7
-- sagas: uc-50-the-solo-entrepreneur-sarah, uc-51-the-solo-entrepreneur-sarah, uc-52-the-solo-entrepreneur-sarah, uc-53-the-solo-entrepreneur-sarah, uc-54-the-solo-entrepreneur-sarah, uc-56-the-solo-entrepreneur-sarah, uc-57-the-solo-entrepreneur-sarah
-- steps: uc-need-validate-6
-- example: Exploratory validation blocked: Insufficient evidence to validate the requirement for export capability.
-- example: Exploratory validation blocked: Exploratory evidence is insufficient to assert a hard requirement failure.
-- example: Exploratory validation blocked: Exploratory evidence is insufficient to assert a hard requirement failure.
-
-### validator | runtime | no-endpoint
-- count: 1
-- sagas: uc-50-the-solo-entrepreneur-sarah
-- steps: uc-need-validate-7
-- example: Exploratory validation blocked: Insufficient evidence to validate the requirement for anomaly detection.
+### general | runtime | no-endpoint
+- count: 3
+- sagas: hole-36-workforce-hire-performance-lifecycle-deep, hole-36-workforce-hire-performance-lifecycle-medium, hole-36-workforce-hire-performance-lifecycle-shallow
+- steps: workforce-adversary-cross-scope-denied
+- example: API failure for GET /api/v1/bizes/3AVmBWUfzxCixNQ5Idu89WH2OvV/workforce-requisitions: {"success":false,"error":{"code":"FORBIDDEN","message":"You are not a member of this biz."},"meta":{"requestId":"67398ac0-c28e-48e5-bc44-00ee617dc3bc","timestamp":"2026-03-05T04:46:17.842Z"}}
+- example: API failure for GET /api/v1/bizes/3AVmBVcexJDJK8ntoAVBgQ6QfxC/workforce-requisitions: {"success":false,"error":{"code":"FORBIDDEN","message":"You are not a member of this biz."},"meta":{"requestId":"95e90396-90fa-412f-950c-14f46f2794ce","timestamp":"2026-03-05T04:46:18.203Z"}}
+- example: API failure for GET /api/v1/bizes/3AVmBYa8DRzbSAN4D9FYY3mRFi8/workforce-requisitions: {"success":false,"error":{"code":"FORBIDDEN","message":"You are not a member of this biz."},"meta":{"requestId":"acb50c50-639c-4684-8f17-1fee51304e70","timestamp":"2026-03-05T04:46:18.347Z"}}
 
 ### general | runtime | no-endpoint
 - count: 1
-- sagas: uc-59-the-multi-location-owner-marcus
-- steps: persona-scenario-validate-3
-- example: persona-scenario-validate-3: Different location pricing rules have not been configured yet.
-
-### general | runtime | no-endpoint
-- count: 1
-- sagas: uc-59-the-multi-location-owner-marcus
-- steps: persona-scenario-validate-4
-- example: persona-scenario-validate-4: No multi-location staff representation exists yet.
+- sagas: hole-35-value-ledger-transfer-traceability-deep
+- steps: value-owner-idempotent-transfer-decision
+- example: API failure for PATCH /api/v1/bizes/3AVmB7jvo2e48jUddSiX9chARqz/value-transfers/value_transfer_3AVmBDxdq55BZbKwjs4Z4ggGLJc/decision: {"success":false,"error":{"code":"CONFLICT","message":"Transfer is already completed."},"meta":{"requestId":"feb81c67-913b-42a5-bde0-fc66d791873d","timestamp":"2026-03-05T04:46:15.319Z"}}

@@ -8,12 +8,14 @@ tags:
 
 # Bizes Domain
 
-This file is generated from route/schema source files and exists to keep domain docs synchronized with code reality.
+This file is generated from route/schema source files and the canonical domain manifest to keep docs synchronized with runtime mounts.
 
 ## Source
 
-- Route file: `/Users/ameer/bizing/code/apps/api/src/routes/bizes.ts`
-- Schema file: `/Users/ameer/bizing/code/packages/db/src/schema/bizes.ts`
+- Route file: `apps/api/src/routes/bizes.ts`
+- Schema file: `packages/db/src/schema/bizes.ts`
+- Mount path: `/bizes`
+- Auth class (manifest): `machine_allowed`
 
 ## Route Intent (top JSDoc)
 
@@ -28,14 +30,15 @@ _No top JSDoc comment found._
 
 ## API Surface
 
-- `GET` `/`
-- `POST` `/`
-- `GET` `/:bizId/audit/events`
-- `POST` `/:bizId/data-export-requests`
-- `GET` `requestId`
-- `GET` `/:bizId`
-- `PATCH` `/:bizId`
-- `DELETE` `/:bizId`
+- `GET` `/api/v1/bizes`
+- `POST` `/api/v1/bizes`
+- `GET` `/api/v1/bizes/public`
+- `GET` `/api/v1/bizes/:bizId/audit/events`
+- `POST` `/api/v1/bizes/:bizId/data-export-requests`
+- `POST` `/api/v1/bizes/:bizId/onboarding/welcome-email`
+- `GET` `/api/v1/bizes/:bizId`
+- `PATCH` `/api/v1/bizes/:bizId`
+- `DELETE` `/api/v1/bizes/:bizId`
 
 ## Tables
 
